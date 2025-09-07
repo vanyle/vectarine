@@ -1,0 +1,12 @@
+[package]
+name = "editor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+notify-debouncer-full = "0.6.0"
+runtime = { path = "../runtime", version = "0.1.0" }
+
+[[bin]]
+name = "vecta"
+path = "src/main.rs"

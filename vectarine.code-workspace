@@ -1,0 +1,30 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "Vectarine",
+		},
+	],
+	"extensions": {
+		"recommendations": [
+			"rust-lang.rust-analyzer",
+			"vadimcn.vscode-lldb",
+			"sumneko.lua",
+		],
+	},
+	"settings": {
+		"rust-analyzer.completion.autoimport.enable": true,
+		// Uncomment to work on the web build.
+		// "rust-analyzer.cargo.target": "wasm32-unknown-emscripten",
+		"rust-analyzer.check.command": "clippy",
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "always",
+		},
+		"search.useIgnoreFiles": false,
+		"[rust]": {
+			"editor.formatOnSave": true,
+			"editor.defaultFormatter": "rust-lang.rust-analyzer",
+		},
+		"Lua.workspace.library": ["lua-api"],
+	},
+}
