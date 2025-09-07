@@ -1,5 +1,7 @@
 ---@meta
 
+--- Clear the canvas
+function Clear() end
 
 --- Set the current drawing color
 --- @param r number
