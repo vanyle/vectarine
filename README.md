@@ -28,31 +28,6 @@ See [Targeting the web](./docs/targeting-the-web.md) for more details on how to 
 - Start the editor: `cargo run -p editor`
 - Start the editor (hot recompile): `bacon editor`
 
-## TODO
-
-- [x] Luau (with a function to draw rects probably)
-- [x] Luau : hot reload for script
-- [x] Web build
-- [x] Properly manage the different build types (using cargo workspaces probably?)
-  - [x] Make web build and native build work without config changes
-- [x] Loading external files (like lua) from rust, for web.
-  - [x] Call JS from rust
-  - [x] Call rust from JS
-  - [x] Calling async function from both platforms
-  - [x] Reading a lua file
-- [x] Cross-platform keyboard input
-  - [x] Access to keyboard from lua
-- [ ] Setup the editor
-  - [ ] When no CLI arguments are passed, open the editor
-  - [ ] Show EGui widget in the editor
-  - [ ] Be able to load a game.lua file
-- [ ] Loading assets from lua code
-- [ ] Tiled parsing
-- [ ] Assets "resource" system
-- [ ] Textures as an asset class
-- [ ] Hot reloading for assets
-- [ ] Investigate how to have true interactive documentation
-
 ## Structure / Goals / Roadmap
 
 ### Editor
