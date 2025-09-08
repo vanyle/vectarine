@@ -6,7 +6,8 @@ use runtime::init_sdl;
 pub fn main() {
     use runtime::helpers::{file::read_file, game::Game};
 
-    let (canvas, event_pump) = init_sdl();
+    let (_sdl, _video, window, event_pump) = init_sdl();
+    let canvas = window.into_canvas().build().unwrap();
     let lua_env = lua_env::LuaEnvironment::new();
 
     read_file(
