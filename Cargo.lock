@@ -664,8 +664,12 @@ dependencies = [
 name = "runtime"
 version = "0.1.0"
 dependencies = [
+ "egui",
+ "egui_glow",
+ "egui_sdl2_platform",
  "emscripten-functions",
  "emscripten-val",
+ "glow",
  "mlua",
  "sdl2",
 ]

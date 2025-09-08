@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+egui = "0.32.2"
+egui_glow = "0.32.2"
+egui_sdl2_platform = "0.4.0"
+glow = "0.16.0"
 mlua = { version = "0.11.2", features = ["luau", "send", "serde", "vendored"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
