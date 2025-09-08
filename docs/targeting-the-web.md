@@ -22,5 +22,5 @@ emcc -v
 # Copyright (C) 2025 the Emscripten authors (see AUTHORS.txt)
 # This is free and open source software under the MIT license.
 # There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-cargo build --target=wasm32-unknown-emscripten
+cargo build -p runtime --target=wasm32-unknown-emscripten
 ```

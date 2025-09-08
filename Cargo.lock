@@ -93,6 +93,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c1f3aa9a59cdd296650e7ba9bb966ad418aa754c17a5af69860a51153106a95"
 
 [[package]]
+name = "emscripten-val"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92b61c2cd37b7ee668e840c885e58ec1c64600559a1fe88aa6413dceb7fdddd6"
+dependencies = [
+ "emscripten-val-sys",
+]
+
+[[package]]
+name = "emscripten-val-sys"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c571df2ce955dea1ca1bc586f7432a8e724c09fd215c25b3ee3a76c011df133"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "env_home"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -115,7 +133,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "778e2ac28f6c47af28e4907f13ffd1e1ddbd400980a9abd7c8df189bf578a5ad"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -432,6 +450,7 @@ name = "runtime"
 version = "0.1.0"
 dependencies = [
  "emscripten-functions",
+ "emscripten-val",
  "mlua",
  "sdl2",
 ]
@@ -452,7 +471,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]

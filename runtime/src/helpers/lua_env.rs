@@ -6,7 +6,7 @@ use std::{
 
 use sdl2::keyboard::Keycode;
 
-use crate::runtime::draw_instruction;
+use crate::helpers::draw_instruction;
 
 #[derive(Clone, Debug)]
 pub struct LuaEnvironment {

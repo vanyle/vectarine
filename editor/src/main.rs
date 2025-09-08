@@ -1,11 +1,11 @@
-use std::{fs, sync::mpsc::channel, thread, time::Duration};
+use std::{fs, path::Path, sync::mpsc::channel, thread, time::Duration};
 
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::runtime::{
+use runtime::helpers::{
     game::Game,
-    init_sdl,
     lua_env::{LuaEnvironment, run_file_and_display_error},
 };
+use runtime::init_sdl;
 
 fn main() {
     gui_main();
@@ -31,6 +31,13 @@ fn gui_main() {
     let lua_env = LuaEnvironment::new();
 
     let lua_for_reload = lua_env.clone();
+
+    let path = Path::new("game.lua");
+    let content = fs::read(path);
+    if let Ok(content) = content {
+        run_file_and_display_error(&lua_for_reload, &content, path);
+    }
+
     thread::spawn(move || {
         loop {
             let event = debounce_receiver.recv();

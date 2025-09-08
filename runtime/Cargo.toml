@@ -13,6 +13,7 @@ sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","g
 sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer","static-link","bundled"]}
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
+emscripten-val = "0.2.0"
 emscripten-functions = "0.3.0"
 sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer"]}
 

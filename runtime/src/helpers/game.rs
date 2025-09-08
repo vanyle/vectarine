@@ -3,7 +3,7 @@ use sdl2::{
     video::Window,
 };
 
-use crate::runtime::{draw_instruction, lua_env::LuaEnvironment};
+use crate::helpers::{draw_instruction, lua_env::LuaEnvironment};
 
 pub struct Game {
     canvas: Canvas<Window>,

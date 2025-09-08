@@ -1,19 +1,10 @@
-#[cfg(target_os = "emscripten")]
-use emscripten_functions::emscripten::set_main_loop;
 use std::path::Path;
 
-pub mod runtime;
-
-use runtime::{
-    init_sdl,
-    lua_env::{self, run_file_and_display_error},
-    maybelater,
-};
+use runtime::helpers::lua_env::{self, run_file_and_display_error};
+use runtime::init_sdl;
 
 pub fn main() {
-    maybelater::init_runtime();
-
-    use runtime::{file::read_file, game::Game};
+    use runtime::helpers::{file::read_file, game::Game};
 
     let (canvas, event_pump) = init_sdl();
     let lua_env = lua_env::LuaEnvironment::new();

@@ -30,6 +30,18 @@
 				height: 100vh;
 				background-color: black;
 			}
+			#status {
+				color: white;
+				font-family: Arial, sans-serif;
+				font-size: 24px;
+				text-shadow: 1px 1px 3px 2px #eee;
+			}
+			.loading-info {
+				display: flex;
+				flex-direction: column;
+				row-gap: 16px;
+				align-items: center;
+			}
 			.spinner {
 				height: 30px;
 				width: 30px;
@@ -68,23 +80,24 @@
 			oncontextmenu="event.preventDefault()"
 		></canvas>
 		<script>
-			function read_file_for_rust(promise_id, filename) {
+			function read_file_for_rust(filename, callback) {
 				(async () => {
 					try {
 						const response = await fetch(filename);
 						const content = await response.text();
-						fulfill_promise(promise_id, content); // This always throws to catch the execution flow
+						callback(content); // This always throws to catch the execution flow
 					} catch (err) {
 						if (String(err) !== "unwind") {
 							console.error("Error fetching file:");
 							console.log(err);
-							fulfill_promise(promise_id, ""); // TODO: proper error handling with JSON message passing.
+							callback(""); // TODO: proper error handling with JSON message passing.
 						}
 					}
 				})();
 			}
 
-			var loadingInfoElement = document.getElementById("loading-info");
+			const loadingInfoElement = document.getElementById("loading-info");
+			const statusText = document.getElementById("status");
 			var Module = {
 				preRun: [],
 				postRun: [],
@@ -128,7 +141,8 @@
 					var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
 					var now = Date.now();
 					if (m && now - Date.now() < 30) return; // if this is a progress update, skip it if too soon
-					console.trace("Status: ", text);
+
+					//console.trace("Status: ", text);
 					if (text.trim() === "Running...") {
 						loadingInfoElement.style.display = "none";
 					}
@@ -151,18 +165,19 @@
 			window.onerror = function (event) {
 				// TODO: do not warn on ok events like simulating an infinite loop or exitStatus
 				Module.setStatus("Exception thrown, see JavaScript console");
-				spinnerElement.style.display = "none";
+				//loadingInfoElement.style.display = "none";
 				Module.setStatus = function (text) {
 					if (text) Module.printErr("[post-exception status] " + text);
 				};
 			};
+
+			function scriptLoadError() {
+				statusText.textContent = "Error loading runtime, is the file there?";
+			}
 		</script>
-		<script src="target/wasm32-unknown-emscripten/debug/vectarine.js"></script>
-		<script>
-			window.fulfill_promise = Module.cwrap("fulfill_promise", "void", [
-				"number",
-				"string",
-			]);
-		</script>
+		<script
+			onerror="scriptLoadError()"
+			src="target/wasm32-unknown-emscripten/debug/runtime.js"
+		></script>
 	</body>
 </html>
