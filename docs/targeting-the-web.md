@@ -10,11 +10,13 @@ Note for windows users:
 - You can check the environment works by running `where.exe python`, `where.exe node` and `where.exe emcc`
 
 ```bash
+# Needed to setup emsdk
 git clone https://github.com/emscripten-core/emsdk
 cd emsdk
 git checkout 404dc1ec13f64fce1af1eaf5c007e18212f63527
 cd ..
 emsdk/emsdk install 4.0.13
+# You only need to do this once emsdk is installed.
 emsdk/emsdk activate 4.0.13
 # Check the installation / activation
 emcc -v
@@ -29,6 +31,8 @@ cargo build -p runtime --target=wasm32-unknown-emscripten
 ## Using threads in the web build
 
 The `env-for-web-thread-build.ps1` script is interesting to read if you want to enable `-pthread` on the web.
+
+While `-pthread` works, we don't use threading for now and the build is experimental.
 
 The idea is that we need to build with `-pthread` for all C files and `+atomics,+bulk-memory,+mutable-globals` for all rust files, including the standard library.
 We thus need to set the rust version to nightly to enable the `-build-std=std,panic_abort` flag.
