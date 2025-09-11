@@ -22,5 +22,29 @@ emcc -v
 # Copyright (C) 2025 the Emscripten authors (see AUTHORS.txt)
 # This is free and open source software under the MIT license.
 # There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 cargo build -p runtime --target=wasm32-unknown-emscripten
+```
+
+## Using threads in the web build
+
+The `env-for-web-thread-build.ps1` script is interesting to read if you want to enable `-pthread` on the web.
+
+The idea is that we need to build with `-pthread` for all C files and `+atomics,+bulk-memory,+mutable-globals` for all rust files, including the standard library.
+We thus need to set the rust version to nightly to enable the `-build-std=std,panic_abort` flag.
+
+Setting environment variable is the only way to pass flags to emcc and cargo. Using `toml` files or `build.rs` **will NOT work**.
+
+## Miscellaneous
+
+
+This link contains rustflags that we might want: https://github.com/emscripten-core/emscripten/discussions/18156
+
+```bash
+EMCC_CFLAGS="-g -s ERROR_ON_UNDEFINED_SYMBOLS=0 --no-entry -s FULL_ES3=1"
+
+# You need to set these manually or using a script, I cannot get cargo to set them.
+# $env:RUSTFLAGS='-C target-feature=+atomics,+bulk-memory'
+# $env:EMCC_CFLAGS = "-O3 -pthread"
+# $env:CFLAGS = "-O3 -pthread"
 ```

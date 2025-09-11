@@ -60,5 +60,7 @@ Run the editor: `cargo run -p editor`
 
 ## Build
 
-For cross platform reason, all build script need to be python (if we do python code gen for rust?)
+To make the project cross-platform, we use python for all build scripts.
+
+To make a release build, run `uv run ./scripts/release-engine.py`.
 

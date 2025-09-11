@@ -3,14 +3,16 @@
 - [ ] Setup the editor
   - [x] When no CLI arguments are passed, open the editor
   - [x] Show EGui widget in the editor
+  - [ ] use glium for opengl to have 3d
   - [ ] Use OpenGL for quad drawing in the runtime
   - [ ] Be able to load a game.lua file
+- [ ] pthread support
+- [ ] no asyncify support
 - [ ] Loading assets from lua code
 - [ ] Tiled parsing
 - [ ] Assets "resource" system
 - [ ] Textures as an asset class
 - [ ] Hot reloading for assets
-- [ ] use glium for opengl to have 3d
 - [ ] Investigate how to have true interactive documentation
 
 # Done
