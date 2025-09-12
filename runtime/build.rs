@@ -5,7 +5,7 @@ fn main() {
         println!("cargo:rustc-link-arg=-sALLOW_MEMORY_GROWTH -sASYNCIFY=1");
         println!("cargo:rustc-link-arg=-sEXPORTED_RUNTIME_METHODS=ccall,cwrap");
         println!("cargo:rustc-link-arg=-sEXPORTED_FUNCTIONS=_main");
-        println!("cargo:rustc-link-arg=-sFULL_ES2 -sFULL_ES3");
+        println!("cargo:rustc-link-arg=-sUSE_WEBGL2=1");
 
         // println!("cargo:rustc-link-arg=--use-port=sdl2_image:formats=png");
         // println!("cargo:rustc-link-arg=--embed-file=assets");
