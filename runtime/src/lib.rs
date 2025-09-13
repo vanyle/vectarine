@@ -1,16 +1,19 @@
 pub mod graphics;
 pub mod helpers;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
 use sdl2::{EventPump, Sdl, VideoSubsystem, video::Window};
 
-pub fn init_sdl() -> (
-    Sdl,
-    Rc<RefCell<VideoSubsystem>>,
-    Rc<RefCell<Window>>,
-    EventPump,
-) {
+pub struct RenderingBlock {
+    pub video: Rc<RefCell<VideoSubsystem>>,
+    pub window: Rc<RefCell<Window>>,
+    pub event_pump: EventPump,
+    pub sdl: Sdl,
+    pub gl: Arc<glow::Context>,
+}
+
+pub fn init_sdl() -> RenderingBlock {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let gl_attr = video_subsystem.gl_attr();
@@ -25,13 +28,27 @@ pub fn init_sdl() -> (
         .build()
         .unwrap();
 
-    // This lines creates an error in the console:  Cannot set timing mode for main loop
-    // This is dumb because we need a canvas before setting a main loop!
     let event_pump = sdl_context.event_pump().unwrap();
-    (
-        sdl_context,
-        Rc::new(RefCell::new(video_subsystem)),
-        Rc::new(RefCell::new(window)),
+
+    let _gl_context = ManuallyDrop::new(
+        window
+            .gl_create_context()
+            .expect("Failed to create GL context"),
+    );
+
+    let gl = unsafe {
+        egui_glow::painter::Context::from_loader_function(|name| {
+            video_subsystem.gl_get_proc_address(name) as *const _
+        })
+    };
+
+    let gl: Arc<glow::Context> = Arc::new(gl);
+
+    RenderingBlock {
+        sdl: sdl_context,
+        video: Rc::new(RefCell::new(video_subsystem)),
+        window: Rc::new(RefCell::new(window)),
         event_pump,
-    )
+        gl,
+    }
 }

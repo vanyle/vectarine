@@ -28,6 +28,10 @@ impl LuaEnvironment {
         let queue_for_closure = draw_instructions.clone();
 
         lua.globals()
+            .set("Global", lua.create_table().unwrap())
+            .unwrap();
+
+        lua.globals()
             .set(
                 "drawRect",
                 lua.create_function(move |_, (x, y, w, h, color): (f32, f32, f32, f32, Table)| {

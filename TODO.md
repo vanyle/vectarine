@@ -2,12 +2,13 @@
 
 - [ ] Loading images and drawing them from lua code
 - [ ] Assets "resource" system
+- [ ] Hot reloading for assets
+- [ ] Performance: Batch drawing implementation
 - [ ] Loading fonts and drawing text from lua code
 - [ ] Allow window resizing
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Tiled parsing
 - [ ] Textures as an asset class
-- [ ] Hot reloading for assets
 - [ ] Investigate how to have true interactive documentation
 
 # Done

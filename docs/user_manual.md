@@ -32,3 +32,20 @@ You can serve these files with any static file server, for example by doing `pyt
 
 If you see: "Error loading runtime", it means that you opened `index.html` directly from the file system instead of starting a server.
 It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`.
+
+## Lua API
+
+When your application is first loaded, the lua function `Load` is called.
+Then, every frame, the function `Update` is called with the time delta since the last frame in seconds.
+
+A minimal example:
+
+```lua
+function Load()
+    dprint("Game loaded")
+end
+
+function Update(time_delta)
+    fprint("Frame update, time since last frame: " .. time_delta .. " seconds")
+end
+```

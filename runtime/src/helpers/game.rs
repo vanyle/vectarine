@@ -22,10 +22,24 @@ impl Game {
         }
     }
 
+    pub fn load(&mut self) {
+        let load_fn = self.lua_env.lua.globals().get::<mlua::Function>("Load");
+        if let Ok(load_fn) = load_fn {
+            let err = load_fn.call::<()>(());
+            if let Err(err) = err {
+                self.lua_env
+                    .messages
+                    .borrow_mut()
+                    .push_back(format!("Lua error while calling Load():\n{err}"));
+            }
+        }
+    }
+
     pub fn main_loop(
         &mut self,
         events: &[sdl2::event::Event],
         window: &Rc<RefCell<sdl2::video::Window>>,
+        delta_time: std::time::Duration,
     ) {
         process_events(self, events);
 
@@ -39,7 +53,7 @@ impl Game {
         {
             let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
-                let err = update_fn.call::<()>(());
+                let err = update_fn.call::<()>((delta_time.as_secs_f64(),));
                 if let Err(err) = err {
                     self.lua_env
                         .messages

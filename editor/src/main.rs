@@ -1,12 +1,12 @@
 use std::{
     fs,
     path::Path,
-    sync::{Arc, mpsc::channel},
+    sync::mpsc::channel,
     time::{Duration, Instant},
 };
 
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::init_sdl;
+use runtime::{RenderingBlock, init_sdl};
 use runtime::{
     graphics::batchdraw::BatchDraw2d,
     helpers::{
@@ -24,7 +24,13 @@ fn main() {
 }
 
 fn gui_main() {
-    let (sdl, video, window, event_pump) = init_sdl();
+    let RenderingBlock {
+        sdl,
+        video,
+        window,
+        event_pump,
+        gl,
+    } = init_sdl();
 
     let (debounce_event_sender, debounce_receiver) = channel();
     let mut debouncer = new_debouncer(
@@ -53,19 +59,6 @@ fn gui_main() {
         .watch("./assets", RecursiveMode::Recursive)
         .unwrap();
 
-    let _gl_context = window
-        .borrow()
-        .gl_create_context()
-        .expect("Failed to create GL context");
-
-    let gl = unsafe {
-        egui_glow::painter::Context::from_loader_function(|name| {
-            video.borrow().gl_get_proc_address(name) as *const _
-        })
-    };
-
-    let gl: Arc<glow::Context> = Arc::new(gl);
-
     let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
 
     // Create the egui + sdl2 platform
@@ -74,11 +67,15 @@ fn gui_main() {
     // Get the time before the loop started
     let start_time = Instant::now();
     let mut text_command = String::new();
+    let mut is_console_shown = false;
 
     let batch = BatchDraw2d::new(&gl).unwrap();
     let mut game = Game::new(batch, event_pump, lua_env);
 
+    game.load();
+
     // The main loop
+    let mut now = Instant::now();
     loop {
         reload_assets_if_needed(&lua_for_reload, &debounce_receiver);
         // Update the time
@@ -87,43 +84,67 @@ fn gui_main() {
         let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
 
         // Render the game
-        game.main_loop(&latest_events, &window);
+        game.main_loop(&latest_events, &window, now.elapsed());
+        now = Instant::now();
 
         // Get the egui context and begin drawing the frame
         let ctx = platform.context();
-        // Draw an egui window
-        egui::Window::new("Console").show(&ctx, |ui| {
-            egui::ScrollArea::vertical()
-                .id_salt("console")
-                .max_height(300.0)
-                .stick_to_bottom(true)
-                .show(ui, |ui| {
-                    let messages = &mut game.lua_env.messages.borrow_mut();
-                    for line in messages.iter().rev() {
-                        ui.label(line);
-                    }
-                    messages.truncate(100);
+
+        if ctx.input_mut(|i| {
+            i.consume_key(
+                egui::Modifiers::COMMAND | egui::Modifiers::NONE,
+                egui::Key::I,
+            )
+        }) {
+            is_console_shown = !is_console_shown;
+        }
+        egui::TopBottomPanel::top("toppanel").show(&ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Vectarine Editor");
+                egui::MenuBar::new().ui(ui, |ui| {
+                    ui.menu_button("File", |ui| {
+                        if ui.button("Toggle console (Ctrl+Shift+I)").clicked() {
+                            is_console_shown = !is_console_shown;
+                        }
+                    });
                 });
-            ui.separator();
-            egui::ScrollArea::vertical()
-                .id_salt("frame console")
-                .max_height(300.0)
-                .stick_to_bottom(true)
-                .show(ui, |ui| {
-                    let messages = &mut game.lua_env.frame_messages.borrow_mut();
-                    for line in messages.iter() {
-                        ui.label(line);
-                    }
-                    messages.clear();
-                });
-            ui.separator();
-            let response = ui.add(egui::TextEdit::singleline(&mut text_command));
-            if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                // println!("Running command: {text_command}");
-                text_command.clear();
-                response.request_focus();
-            }
+            });
         });
+
+        if is_console_shown {
+            egui::Window::new("Console").show(&ctx, |ui| {
+                egui::ScrollArea::vertical()
+                    .id_salt("console")
+                    .max_height(300.0)
+                    .stick_to_bottom(true)
+                    .show(ui, |ui| {
+                        let messages = &mut game.lua_env.messages.borrow_mut();
+                        for line in messages.iter().rev() {
+                            ui.label(line);
+                        }
+                        messages.truncate(100);
+                    });
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .id_salt("frame console")
+                    .max_height(300.0)
+                    .stick_to_bottom(true)
+                    .show(ui, |ui| {
+                        let messages = &mut game.lua_env.frame_messages.borrow_mut();
+                        for line in messages.iter() {
+                            ui.label(line);
+                        }
+                        messages.clear();
+                    });
+                ui.separator();
+                let response = ui.add(egui::TextEdit::singleline(&mut text_command));
+                if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                    // println!("Running command: {text_command}");
+                    text_command.clear();
+                    response.request_focus();
+                }
+            });
+        }
 
         // Stop drawing the egui frame and get the full output
         let full_output = platform.end_frame(&mut video.borrow_mut()).unwrap();
