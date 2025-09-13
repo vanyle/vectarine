@@ -6,24 +6,22 @@ use std::{
     time::{Duration, Instant},
 };
 
-use egui_sdl2_platform::sdl2::{
-    self,
-    event::{Event, WindowEvent},
-};
-use glow::HasContext;
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::helpers::{
-    game::Game,
-    lua_env::{LuaEnvironment, run_file_and_display_error},
-};
 use runtime::init_sdl;
+use runtime::{
+    graphics::batchdraw::BatchDraw2d,
+    helpers::{
+        game::Game,
+        lua_env::{LuaEnvironment, run_file_and_display_error},
+    },
+};
 
 fn main() {
     gui_main();
 }
 
 fn gui_main() {
-    let (sdl, mut video, window, mut event_pump) = init_sdl();
+    let (sdl, video, window, event_pump) = init_sdl();
 
     let (debounce_event_sender, debounce_receiver) = channel();
     let mut debouncer = new_debouncer(
@@ -42,7 +40,7 @@ fn gui_main() {
 
     let lua_for_reload = lua_env.clone();
 
-    let path = Path::new("game.lua");
+    let path = Path::new("assets/scripts/game.lua");
     let content = fs::read(path);
     if let Ok(content) = content {
         run_file_and_display_error(&lua_for_reload, &content, path);
@@ -67,89 +65,94 @@ fn gui_main() {
         }
     });
 
-    debouncer.watch(".", RecursiveMode::NonRecursive).unwrap();
+    debouncer
+        .watch("./assets", RecursiveMode::Recursive)
+        .unwrap();
 
     let _gl_context = window
+        .borrow()
         .gl_create_context()
         .expect("Failed to create GL context");
 
     let gl = unsafe {
         egui_glow::painter::Context::from_loader_function(|name| {
-            video.gl_get_proc_address(name) as *const _
+            video.borrow().gl_get_proc_address(name) as *const _
         })
     };
 
-    let mut painter = egui_glow::Painter::new(Arc::new(gl), "", None, true).unwrap();
+    let gl: Arc<glow::Context> = Arc::new(gl);
+
+    let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
 
     // Create the egui + sdl2 platform
-    let mut platform = egui_sdl2_platform::Platform::new(window.size()).unwrap();
-
-    // The clear color
-    let mut color = [0.0, 0.0, 0.0, 1.0];
-    // The textedit text
-    let mut text = String::new();
+    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().size()).unwrap();
 
     // Get the time before the loop started
     let start_time = Instant::now();
+    let mut text_command = String::new();
+
+    let batch = BatchDraw2d::new(&gl).unwrap();
+    let mut game = Game::new(batch, event_pump, lua_env);
 
     // The main loop
-    'main: loop {
+    loop {
         // Update the time
         platform.update_time(start_time.elapsed().as_secs_f64());
+
+        let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
+
+        // Render the game
+        game.main_loop(&latest_events);
 
         // Get the egui context and begin drawing the frame
         let ctx = platform.context();
         // Draw an egui window
-        egui::Window::new("Hello, world!").show(&ctx, |ui| {
-            ui.label("Hello, world!");
-            if ui.button("Greet").clicked() {
-                println!("Hello, world!");
+        egui::Window::new("Console").show(&ctx, |ui| {
+            egui::ScrollArea::vertical()
+                .id_salt("console")
+                .max_height(300.0)
+                .stick_to_bottom(true)
+                .show(ui, |ui| {
+                    let messages = &mut game.lua_env.messages.lock().unwrap();
+                    for line in messages.iter().rev() {
+                        ui.label(line);
+                    }
+                    messages.truncate(100);
+                });
+            ui.separator();
+            egui::ScrollArea::vertical()
+                .id_salt("frame console")
+                .max_height(300.0)
+                .stick_to_bottom(true)
+                .show(ui, |ui| {
+                    let messages = &mut game.lua_env.frame_messages.lock().unwrap();
+                    for line in messages.iter() {
+                        ui.label(line);
+                    }
+                    messages.clear();
+                });
+            ui.separator();
+            let response = ui.add(egui::TextEdit::singleline(&mut text_command));
+            if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                // println!("Running command: {text_command}");
+                text_command.clear();
+                response.request_focus();
             }
-            ui.horizontal(|ui| {
-                ui.label("Color: ");
-                ui.color_edit_button_rgba_premultiplied(&mut color);
-            });
-            ui.code_editor(&mut text);
         });
 
         // Stop drawing the egui frame and get the full output
-        let full_output = platform.end_frame(&mut video).unwrap();
+        let full_output = platform.end_frame(&mut video.borrow_mut()).unwrap();
         // Get the paint jobs
         let paint_jobs = platform.tessellate(&full_output);
         let pj = paint_jobs.as_slice();
 
-        unsafe {
-            painter.gl().clear_color(color[0], color[1], color[2], 1.0);
-            painter.gl().clear(glow::COLOR_BUFFER_BIT);
-        }
-
-        let size = window.size();
+        // Render the editor interface on top of the game.
+        let size = window.borrow().size();
         painter.paint_and_update_textures([size.0, size.1], 1.0, pj, &full_output.textures_delta);
-        window.gl_swap_window();
+        window.borrow().gl_swap_window();
 
-        // Handle sdl events
-        for event in event_pump.poll_iter() {
-            // Handle sdl events
-            match event {
-                Event::Window {
-                    window_id,
-                    win_event,
-                    ..
-                } => {
-                    if window_id == window.id() {
-                        if let WindowEvent::Close = win_event {
-                            break 'main;
-                        }
-                    }
-                }
-                Event::KeyDown {
-                    keycode: Some(sdl2::keyboard::Keycode::Escape),
-                    ..
-                } => break 'main,
-                _ => {}
-            }
-            // Let the egui platform handle the event
-            platform.handle_event(&event, &sdl, &video);
+        for event in latest_events {
+            platform.handle_event(&event, &sdl, &video.borrow());
         }
     }
 }

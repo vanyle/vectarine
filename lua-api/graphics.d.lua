@@ -1,17 +1,15 @@
 ---@meta
 
---- Clear the canvas
-function Clear() end
+--- @alias Color {r: number, g: number, b: number, a: number}
 
---- Set the current drawing color
---- @param r number
---- @param g number
---- @param b number
-function SetColor(r, g, b) end
+--- Clear the canvas
+--- @param color Color
+function Clear(color) end
 
 --- Draws a filled rectangle at the position given
 --- @param x number
 --- @param y number
 --- @param w number
 --- @param h number
-function DrawRect(x, y, w, h) end
+--- @param color Color
+function DrawRect(x, y, w, h, color) end

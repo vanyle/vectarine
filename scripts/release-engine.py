@@ -106,9 +106,9 @@ def main() -> None:
         os.path.join(root_path, "engine-release/lua-api"),
         dirs_exist_ok=True,
     )
-    shutil.copyfile(
-        os.path.join(root_path, "game.lua"),
-        os.path.join(root_path, "engine-release/game.lua"),
+    shutil.copytree(
+        os.path.join(root_path, "assets"),
+        os.path.join(root_path, "engine-release/assets"),
     )
     console.print("[blue]Zipping")
     shutil.rmtree(os.path.join(root_path, "vectarine.zip"), ignore_errors=True)

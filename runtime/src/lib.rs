@@ -1,12 +1,9 @@
+pub mod graphics;
 pub mod helpers;
 
 use std::{cell::RefCell, rc::Rc};
 
-use sdl2::{
-    EventPump, Sdl, VideoSubsystem, libc,
-    video::{GLProfile, Window, gl_attr},
-};
-use sdl2_sys::{SDL_GLattr, SDL_GLprofile};
+use sdl2::{EventPump, Sdl, VideoSubsystem, video::Window};
 
 pub fn init_sdl() -> (
     Sdl,

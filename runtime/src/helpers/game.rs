@@ -1,30 +1,30 @@
-use sdl2::{
-    EventPump, event::Event, keyboard::Keycode, pixels::Color, rect::FRect, render::Canvas,
-    video::Window,
+use sdl2::{EventPump, event::Event, keyboard::Keycode};
+
+use crate::{
+    graphics::batchdraw::BatchDraw2d,
+    helpers::{draw_instruction, lua_env::LuaEnvironment},
 };
 
-use crate::helpers::{draw_instruction, lua_env::LuaEnvironment};
-
 pub struct Game {
-    canvas: Canvas<Window>,
-    event_pump: EventPump,
-    lua_env: LuaEnvironment,
+    pub batch: BatchDraw2d,
+    pub event_pump: EventPump,
+    pub lua_env: LuaEnvironment,
 }
 
 impl Game {
-    pub fn new(canvas: Canvas<Window>, event_pump: EventPump, lua_env: LuaEnvironment) -> Self {
+    pub fn new(batch: BatchDraw2d, event_pump: EventPump, lua_env: LuaEnvironment) -> Self {
         Game {
-            canvas,
+            batch,
             event_pump,
             lua_env,
         }
     }
 
-    pub fn main_loop(&mut self) {
+    pub fn main_loop(&mut self, events: &[sdl2::event::Event]) {
         {
             let mut keyboard_state = self.lua_env.keyboard_state.lock().unwrap();
 
-            for event in self.event_pump.poll_iter() {
+            for event in events.iter() {
                 match event {
                     Event::Quit { .. }
                     | Event::KeyDown {
@@ -37,13 +37,13 @@ impl Game {
                         let Some(keycode) = keycode else {
                             return;
                         };
-                        keyboard_state.insert(keycode, false);
+                        keyboard_state.insert(*keycode, false);
                     }
                     Event::KeyDown { keycode, .. } => {
                         let Some(keycode) = keycode else {
                             return;
                         };
-                        keyboard_state.insert(keycode, true);
+                        keyboard_state.insert(*keycode, true);
                     }
                     _ => {}
                 }
@@ -61,23 +61,20 @@ impl Game {
             let mut instructions = self.lua_env.draw_instructions.lock().unwrap();
             while let Some(instruction) = instructions.pop_front() {
                 match instruction {
-                    draw_instruction::DrawInstruction::Rectangle { x, y, w, h } => {
-                        self.canvas.fill_frect(FRect::new(x, y, w, h)).unwrap();
+                    draw_instruction::DrawInstruction::Rectangle { x, y, w, h, color } => {
+                        self.batch.draw_rect(x, y, w, h, color);
                     }
                     // draw_instruction::DrawInstruction::Circle { x, y, radius } => {
                     //     // ...
                     // }
-                    draw_instruction::DrawInstruction::SetColor { r, g, b } => {
-                        self.canvas.set_draw_color(Color::RGB(r, g, b));
-                    }
-                    draw_instruction::DrawInstruction::Clear => {
-                        self.canvas.clear();
+                    draw_instruction::DrawInstruction::Clear { color } => {
+                        self.batch.clear(color[0], color[1], color[2], color[3]);
                     }
                     _ => (),
                 }
             }
         }
 
-        self.canvas.present();
+        self.batch.draw(true);
     }
 }
