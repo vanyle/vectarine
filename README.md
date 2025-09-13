@@ -41,20 +41,17 @@ or to build one.
 
 ### Runtime
 
-The main package (with code inside `src`) is an hybrid lib/bin package that can compile to the web without all the editor features like debugging, etc...
+The main package (with code inside `runtime`) is an hybrid lib/bin package that can compile to the web without all the editor features like debugging, etc...
 It provides the run time code for stuff like asset loading with multiple implementations per target.
 
-`runtime` needs to be able to load images and other resources through HTTP requests to avoid super long load times.
-This means that asset fetching functions need to be async. We can provide some non-async resources like a font and some icons
-for loading screens and the logo of the engine.
+### Editor
 
-### Game
-
-The `game` package is a small binary wrapper around the `runtime` to be able to run the game on desktops.
+The `editor` package is a wrapper around the `runtime` package that adds editor features like
+debugging, hot reloading, etc...
 
 ## Usage
 
-Run the game: `cargo run -p game`
+Run the game: `cargo run -p runtime`
 Build the game for the web: `cargo build -p runtime --target wasm32-unknown-unknown`
 Run the editor: `cargo run -p editor`
 
