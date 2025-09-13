@@ -15,7 +15,7 @@ serde = "1.0.219"
 sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer","static-link","use-vcpkg"]}
 
 [target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
-sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer","static-link","bundled"]}
+sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer","static-link","use-pkgconfig"]}
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
 emscripten-val = "0.2.0"

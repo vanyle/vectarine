@@ -7,7 +7,7 @@
 
 ## Getting start making games
 
-See [Getting start](./docs/getting-started.md) for how to make games with vectarine
+See [the manual](./docs/user_manual.md) for how to make games with vectarine
 Below are information on how to improve the engine.
 
 ## Requirements for working on the engine

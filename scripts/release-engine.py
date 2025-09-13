@@ -22,6 +22,12 @@ from rich.console import Console
 is_windows = os.name == "nt"
 
 
+def copy_from_root(root_path: str, src: str, dst: str) -> None:
+    src_file = os.path.join(root_path, src)
+    if os.path.exists(src_file):
+        shutil.copyfile(src_file, os.path.join(root_path, dst))
+
+
 def main() -> None:
     root_path = str(Path(__file__).parent.parent)
 
@@ -69,38 +75,45 @@ def main() -> None:
     Path("engine-release").mkdir(parents=True, exist_ok=True)
 
     if is_windows:
-        shutil.copyfile(
-            os.path.join(root_path, "target/release/vecta.exe"),
-            os.path.join(root_path, "engine-release/vecta.exe"),
+        copy_from_root(
+            root_path, "target/release/vecta.exe", "engine-release/vecta.exe"
         )
-        shutil.copyfile(
-            os.path.join(root_path, "target/release/runtime.exe"),
-            os.path.join(root_path, "engine-release/runtime.exe"),
+        copy_from_root(
+            root_path, "target/release/runtime.exe", "engine-release/runtime.exe"
+        )
+        # If there is a linux release in the target, we ship it too.
+        copy_from_root(
+            root_path,
+            "target/x86_64-unknown-linux-gnu/release/vecta",
+            "engine-release/vecta-linux",
+        )
+        copy_from_root(
+            root_path,
+            "target/x86_64-unknown-linux-gnu/release/runtime",
+            "engine-release/runtime-linux",
         )
     else:
-        shutil.copyfile(
-            os.path.join(root_path, "target/release/vecta"),
-            os.path.join(root_path, "engine-release/vecta"),
-        )
-        shutil.copyfile(
-            os.path.join(root_path, "target/release/runtime"),
-            os.path.join(root_path, "engine-release/runtime"),
-        )
+        copy_from_root(root_path, "target/release/vecta", "engine-release/vecta")
+        copy_from_root(root_path, "target/release/runtime", "engine-release/runtime")
 
-    shutil.copyfile(
-        os.path.join(root_path, "target/wasm32-unknown-emscripten/release/runtime.js"),
-        os.path.join(root_path, "engine-release/runtime.js"),
+    copy_from_root(
+        root_path, "docs/user_manual.md", "engine-release/vectarine_guide.md"
     )
-    shutil.copyfile(
-        os.path.join(
-            root_path, "target/wasm32-unknown-emscripten/release/runtime.wasm"
-        ),
-        os.path.join(root_path, "engine-release/runtime.wasm"),
+
+    # Copy debug runtime for now because of a bug with emval
+    copy_from_root(
+        root_path,
+        "target/wasm32-unknown-emscripten/debug/runtime.js",
+        "engine-release/runtime.js",
     )
-    shutil.copyfile(
-        os.path.join(root_path, "index.html"),
-        os.path.join(root_path, "engine-release/index.html"),
+
+    copy_from_root(
+        root_path,
+        "target/wasm32-unknown-emscripten/debug/runtime.wasm",
+        "engine-release/runtime.wasm",
     )
+    copy_from_root(root_path, "index.html", "engine-release/index.html")
+
     shutil.copytree(
         os.path.join(root_path, "lua-api"),
         os.path.join(root_path, "engine-release/lua-api"),
@@ -110,6 +123,20 @@ def main() -> None:
         os.path.join(root_path, "assets"),
         os.path.join(root_path, "engine-release/assets"),
     )
+
+    # Replace src="target/wasm32-unknown-emscripten/debug/runtime.js" with src="runtime.js" inside index.html
+
+    console.print("[blue]Patching")
+    index_html = ""
+    with open(os.path.join(root_path, "engine-release/index.html"), "r") as f:
+        index_html = f.read()
+        index_html = index_html.replace(
+            "target/wasm32-unknown-emscripten/debug/runtime.js",
+            "runtime.js",
+        )
+    with open(os.path.join(root_path, "engine-release/index.html"), "w") as f:
+        f.write(index_html)
+
     console.print("[blue]Zipping")
     shutil.rmtree(os.path.join(root_path, "vectarine.zip"), ignore_errors=True)
     console.print(f"[blue]Creating {os.path.join(root_path, 'vectarine.zip')} ...")

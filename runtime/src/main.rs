@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 use std::path::Path;
 use std::sync::Arc;
 

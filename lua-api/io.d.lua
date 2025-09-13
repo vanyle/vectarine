@@ -12,6 +12,7 @@ function isKeyDown(keycode) end
 function getKeysDown() end
 
 --- Print something to the editor console
+--- Does nothing when used in the runtime
 --- If you are printing inside Update(), consider using fprint.
 --- @param msg any The thing to print
 function dprint(msg) end
