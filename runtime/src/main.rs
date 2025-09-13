@@ -24,7 +24,6 @@ pub fn main() {
         Box::new(move |content| {
             run_file_and_display_error(&lua_env, &content, Path::new("game.lua"));
 
-            // let drawing_target = DrawingTarget::new(&gl);
             let batch = BatchDraw2d::new(&gl).unwrap();
             let mut game = Game::new(batch, event_pump, lua_env.clone());
 
