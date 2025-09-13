@@ -672,6 +672,7 @@ dependencies = [
  "glow",
  "mlua",
  "sdl2",
+ "serde",
 ]
 
 [[package]]

@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Mouse input
 - [ ] Loading images and drawing them from lua code
 - [ ] Assets "resource" system
 - [ ] Loading fonts and drawing text from lua code
@@ -13,6 +12,9 @@
 
 # Done
 
+- [x] Window size
+- [x] Mouse input
+- [x] Editor console
 - [x] pthread support (requires rust nightly, but it works)
 - [x] Setup the editor
   - [x] When no CLI arguments are passed, open the editor

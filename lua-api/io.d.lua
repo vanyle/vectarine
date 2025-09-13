@@ -5,11 +5,11 @@
 --- You can use 'GetKeysDown' to find the name of keys
 --- @param keycode string
 --- @return boolean
-function IsKeyDown(keycode) end
+function isKeyDown(keycode) end
 
 --- Returns a list of key that are currently pressed
 --- @return string[]
-function GetKeysDown() end
+function getKeysDown() end
 
 --- Print something to the editor console
 --- If you are printing inside Update(), consider using fprint.
@@ -20,3 +20,17 @@ function dprint(msg) end
 --- The message is cleared on the next frame
 --- @param msg any The thing to print
 function fprint(msg) end
+
+--- Get the current mouse position
+--- @return { x: number, y: number }
+function mouse() end
+
+--- Get the current window size
+--- @return { x: number, y: number }
+function windowSize() end
+
+--- Return a string representation of arg
+--- Works for tables.
+--- @param arg any
+--- @return string
+function toString(arg) end

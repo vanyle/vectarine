@@ -37,7 +37,13 @@ pub fn main() {
 
             set_main_loop_wrapper(move || {
                 let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
-                game.main_loop(&latest_events);
+                game.main_loop(&latest_events, &window);
+
+                // These are for debug and are never displayed in the runtime.
+                // We still need to clear them to avoid memory leaks.
+                game.lua_env.messages.borrow_mut().clear();
+                game.lua_env.frame_messages.borrow_mut().clear();
+
                 window.borrow().gl_swap_window();
             });
         }),

@@ -2,7 +2,6 @@ use std::{
     fs,
     path::Path,
     sync::{Arc, mpsc::channel},
-    thread,
     time::{Duration, Instant},
 };
 
@@ -15,6 +14,10 @@ use runtime::{
         lua_env::{LuaEnvironment, run_file_and_display_error},
     },
 };
+
+use crate::reload::reload_assets_if_needed;
+
+pub mod reload;
 
 fn main() {
     gui_main();
@@ -45,25 +48,6 @@ fn gui_main() {
     if let Ok(content) = content {
         run_file_and_display_error(&lua_for_reload, &content, path);
     }
-
-    thread::spawn(move || {
-        loop {
-            let event = debounce_receiver.recv();
-            if let Ok(event) = event {
-                for path in event.event.paths {
-                    if path.extension().is_some() && path.extension().unwrap() == "lua" {
-                        // println!("Reloading script: {}", path.to_string_lossy());
-                        let content = fs::read(&path);
-                        let Ok(content) = content else {
-                            println!("Failed to read file: {}", path.to_string_lossy());
-                            continue;
-                        };
-                        run_file_and_display_error(&lua_for_reload, &content, &path);
-                    }
-                }
-            }
-        }
-    });
 
     debouncer
         .watch("./assets", RecursiveMode::Recursive)
@@ -96,13 +80,14 @@ fn gui_main() {
 
     // The main loop
     loop {
+        reload_assets_if_needed(&lua_for_reload, &debounce_receiver);
         // Update the time
         platform.update_time(start_time.elapsed().as_secs_f64());
 
         let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
 
         // Render the game
-        game.main_loop(&latest_events);
+        game.main_loop(&latest_events, &window);
 
         // Get the egui context and begin drawing the frame
         let ctx = platform.context();
@@ -113,7 +98,7 @@ fn gui_main() {
                 .max_height(300.0)
                 .stick_to_bottom(true)
                 .show(ui, |ui| {
-                    let messages = &mut game.lua_env.messages.lock().unwrap();
+                    let messages = &mut game.lua_env.messages.borrow_mut();
                     for line in messages.iter().rev() {
                         ui.label(line);
                     }
@@ -125,7 +110,7 @@ fn gui_main() {
                 .max_height(300.0)
                 .stick_to_bottom(true)
                 .show(ui, |ui| {
-                    let messages = &mut game.lua_env.frame_messages.lock().unwrap();
+                    let messages = &mut game.lua_env.frame_messages.borrow_mut();
                     for line in messages.iter() {
                         ui.label(line);
                     }

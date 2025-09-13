@@ -4,7 +4,7 @@
 
 --- Clear the canvas
 --- @param color Color
-function Clear(color) end
+function clear(color) end
 
 --- Draws a filled rectangle at the position given
 --- @param x number
@@ -12,4 +12,4 @@ function Clear(color) end
 --- @param w number
 --- @param h number
 --- @param color Color
-function DrawRect(x, y, w, h, color) end
+function drawRect(x, y, w, h, color) end

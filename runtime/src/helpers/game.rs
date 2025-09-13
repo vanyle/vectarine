@@ -1,8 +1,10 @@
-use sdl2::{EventPump, event::Event, keyboard::Keycode};
+use std::{cell::RefCell, rc::Rc};
+
+use sdl2::EventPump;
 
 use crate::{
     graphics::batchdraw::BatchDraw2d,
-    helpers::{draw_instruction, lua_env::LuaEnvironment},
+    helpers::{draw_instruction, io::process_events, lua_env::LuaEnvironment},
 };
 
 pub struct Game {
@@ -20,45 +22,35 @@ impl Game {
         }
     }
 
-    pub fn main_loop(&mut self, events: &[sdl2::event::Event]) {
-        {
-            let mut keyboard_state = self.lua_env.keyboard_state.lock().unwrap();
+    pub fn main_loop(
+        &mut self,
+        events: &[sdl2::event::Event],
+        window: &Rc<RefCell<sdl2::video::Window>>,
+    ) {
+        process_events(self, events);
 
-            for event in events.iter() {
-                match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
-                        ..
-                    } => {
-                        std::process::exit(0);
-                    }
-                    Event::KeyUp { keycode, .. } => {
-                        let Some(keycode) = keycode else {
-                            return;
-                        };
-                        keyboard_state.insert(*keycode, false);
-                    }
-                    Event::KeyDown { keycode, .. } => {
-                        let Some(keycode) = keycode else {
-                            return;
-                        };
-                        keyboard_state.insert(*keycode, true);
-                    }
-                    _ => {}
-                }
-            }
+        {
+            let mut env_state = self.lua_env.env_state.borrow_mut();
+            let (width, height) = window.borrow().size();
+            env_state.window_width = width;
+            env_state.window_height = height;
         }
 
         {
             let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
-                update_fn.call::<()>(()).unwrap();
+                let err = update_fn.call::<()>(());
+                if let Err(err) = err {
+                    self.lua_env
+                        .messages
+                        .borrow_mut()
+                        .push_back(format!("Lua error while calling Update():\n{err}"));
+                }
             }
         }
 
         {
-            let mut instructions = self.lua_env.draw_instructions.lock().unwrap();
+            let mut instructions = self.lua_env.draw_instructions.borrow_mut();
             while let Some(instruction) = instructions.pop_front() {
                 match instruction {
                     draw_instruction::DrawInstruction::Rectangle { x, y, w, h, color } => {
