@@ -80,7 +80,9 @@
 			oncontextmenu="event.preventDefault()"
 		></canvas>
 		<script>
-			function read_file_for_rust(filename, callback) {
+			function read_file_for_rust(o) {
+				const filename = o.filename;
+				const callback = o.callback;
 				(async () => {
 					try {
 						const response = await fetch(filename);
@@ -95,6 +97,10 @@
 					}
 				})();
 			}
+
+			window.vectarine = {
+				read_file_for_rust: read_file_for_rust,
+			};
 
 			const loadingInfoElement = document.getElementById("loading-info");
 			const statusText = document.getElementById("status");
@@ -177,7 +183,7 @@
 		</script>
 		<script
 			onerror="scriptLoadError()"
-			src="target/wasm32-unknown-emscripten/debug/runtime.js"
+			src="target/wasm32-unknown-emscripten/release/runtime.js"
 		></script>
 	</body>
 </html>

@@ -8,6 +8,7 @@ egui = "0.32.2"
 egui_glow = "0.32.2"
 egui_sdl2_platform = "0.4.0"
 glow = "0.16.0"
+image = { version = "0.25.8", features = ["png", "bmp", "jpeg", "ico", "gif", "webp"] }
 mlua = { version = "0.11.2", features = ["luau", "serde", "vendored"] }
 serde = "1.0.219"
 
@@ -18,7 +19,7 @@ sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","g
 sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer","static-link","use-pkgconfig"]}
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
-emscripten-val = "0.2.0"
+emscripten-val = { git = "https://github.com/vanyle/emscripten-val", package = "emscripten-val", rev = "2f77cc9" }
 emscripten-functions = "0.3.0"
 sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer"]}
 

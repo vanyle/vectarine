@@ -100,16 +100,15 @@ def main() -> None:
         root_path, "docs/user_manual.md", "engine-release/vectarine_guide.md"
     )
 
-    # Copy debug runtime for now because of a bug with emval
     copy_from_root(
         root_path,
-        "target/wasm32-unknown-emscripten/debug/runtime.js",
+        "target/wasm32-unknown-emscripten/release/runtime.js",
         "engine-release/runtime.js",
     )
 
     copy_from_root(
         root_path,
-        "target/wasm32-unknown-emscripten/debug/runtime.wasm",
+        "target/wasm32-unknown-emscripten/release/runtime.wasm",
         "engine-release/runtime.wasm",
     )
     copy_from_root(root_path, "index.html", "engine-release/index.html")
@@ -124,14 +123,12 @@ def main() -> None:
         os.path.join(root_path, "engine-release/assets"),
     )
 
-    # Replace src="target/wasm32-unknown-emscripten/debug/runtime.js" with src="runtime.js" inside index.html
-
     console.print("[blue]Patching")
     index_html = ""
     with open(os.path.join(root_path, "engine-release/index.html"), "r") as f:
         index_html = f.read()
         index_html = index_html.replace(
-            "target/wasm32-unknown-emscripten/debug/runtime.js",
+            "target/wasm32-unknown-emscripten/release/runtime.js",
             "runtime.js",
         )
     with open(os.path.join(root_path, "engine-release/index.html"), "w") as f:
