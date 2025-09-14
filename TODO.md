@@ -1,9 +1,5 @@
 # TODO
 
-- [ ] Assets "resource" system
-  - [ ] Resource tab in editor
-  - [ ] Error system when asset fails to load
-  - [ ] Hot reloading for assets
 - [ ] Loading fonts and drawing text from lua code
 - [ ] Allow window resizing and handle aspect ratios
 - [ ] Fullscreen API (for web too!)
@@ -22,6 +18,10 @@
 
 # Done
 
+- [x] Assets "resource" system
+  - [x] Resource tab in editor
+  - [x] Error system when asset fails to load
+  - [x] Hot reloading for assets
 - [x] Loading images and drawing them from lua code
 - [x] Performance: Batch drawing implementation
 - [x] Window size

@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct EditorConfig {
     is_console_shown: bool,
     is_resources_window_shown: bool,
+    debug_resource_shown: Option<u32>,
 }
 
 pub struct EditorState {
@@ -19,7 +20,7 @@ pub struct EditorState {
     start_time: std::time::Instant,
     video: Rc<RefCell<sdl2::VideoSubsystem>>,
     window: Rc<RefCell<sdl2::video::Window>>,
-    _gl: Arc<glow::Context>,
+    gl: Arc<glow::Context>,
 }
 
 impl EditorState {
@@ -53,7 +54,7 @@ impl EditorState {
             start_time: Instant::now(),
             video,
             window,
-            _gl: gl,
+            gl,
         }
     }
 
@@ -105,8 +106,7 @@ impl EditorState {
             // sdl2_sys::SDL_SetWindowHitTest(window_handle, callback, callback_data)
         });
 
-        let config = self.config.borrow();
-        if config.is_console_shown {
+        if self.config.borrow().is_console_shown {
             egui::Window::new("Console").show(&ctx, |ui| {
                 egui::ScrollArea::vertical()
                     .id_salt("console")
@@ -141,13 +141,14 @@ impl EditorState {
             });
         }
 
-        if config.is_resources_window_shown {
+        if self.config.borrow().is_resources_window_shown {
             egui::Window::new("Resources").show(&ctx, |ui| {
                 let available_height = ui.available_height();
                 let table = egui_extras::TableBuilder::new(ui)
                     .striped(true)
                     .resizable(true)
                     .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                    .column(Column::auto())
                     .column(Column::auto())
                     .column(Column::auto())
                     .column(Column::auto())
@@ -163,9 +164,14 @@ impl EditorState {
                         header.col(|ui| {
                             ui.label("Status");
                         });
+                        header.col(|ui| {
+                            ui.label("Actions");
+                        });
                     })
                     .body(|mut body| {
-                        for res in &game.lua_env.resources.borrow().resources {
+                        for (id, res) in
+                            game.lua_env.resources.borrow().resources.iter().enumerate()
+                        {
                             let description = res.get_resource_info();
                             body.row(20.0, |mut row| {
                                 row.col(|ui| {
@@ -184,10 +190,47 @@ impl EditorState {
                                 row.col(|ui| {
                                     ui.label(format!("{}", res.get_loading_status()));
                                 });
+                                row.col(|ui| {
+                                    if ui.button("Reload").clicked() {
+                                        let res = res.clone();
+                                        let gl = self.gl.clone();
+                                        res.reload(gl);
+                                    }
+                                    let mut config = self.config.borrow_mut();
+                                    let id = id as u32;
+                                    let shown = config.debug_resource_shown == Some(id);
+                                    let text = if shown { "Hide" } else { "Show" };
+                                    ui.button(text).clicked().then(|| {
+                                        if shown {
+                                            config.debug_resource_shown = None;
+                                        } else {
+                                            config.debug_resource_shown = Some(id);
+                                        }
+                                    });
+                                });
                             });
                         }
                     })
             });
+        }
+
+        if let Some(id) = self.config.borrow().debug_resource_shown {
+            if let Some(res) = game
+                .lua_env
+                .resources
+                .borrow_mut()
+                .resources
+                .get_mut(id as usize)
+            {
+                egui::Window::new(format!(
+                    "Resource debug - {}",
+                    res.get_resource_info().path.to_string_lossy()
+                ))
+                .resizable(true)
+                .show(&ctx, |ui| {
+                    res.draw_debug_gui(ui);
+                });
+            }
         }
 
         // Stop drawing the egui frame and get the full output

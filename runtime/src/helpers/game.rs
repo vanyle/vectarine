@@ -153,7 +153,7 @@ impl Game {
             }
         }
         for resource in to_reload {
-            resource.reload(gl.clone(), self);
+            resource.reload(gl.clone());
         }
     }
 }

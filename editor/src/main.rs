@@ -78,7 +78,12 @@ fn gui_main() {
     let mut start_of_frame = Instant::now();
     loop {
         game.load_resource_as_needed(gl.clone());
-        reload_assets_if_needed(&lua_for_reload, &debounce_receiver);
+        reload_assets_if_needed(
+            &gl,
+            &game.lua_env.resources.clone(),
+            &lua_for_reload,
+            &debounce_receiver,
+        );
 
         let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
 

@@ -4,8 +4,6 @@ use std::{
     sync::Arc,
 };
 
-use crate::helpers::game::Game;
-
 pub mod image_resource;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -23,12 +21,12 @@ pub struct ResourceManager {
     pub resources: Vec<Rc<dyn Resource>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResourceStatus {
     Loaded,
     Loading,
     Unloaded,
-    Error,
+    Error(String),
 }
 
 impl std::fmt::Display for ResourceStatus {
@@ -37,7 +35,7 @@ impl std::fmt::Display for ResourceStatus {
             ResourceStatus::Loaded => write!(f, "Loaded"),
             ResourceStatus::Loading => write!(f, "Loading"),
             ResourceStatus::Unloaded => write!(f, "Not yet loaded"),
-            ResourceStatus::Error => write!(f, "Loading Error"),
+            ResourceStatus::Error(msg) => write!(f, "Loading Error: {msg}"),
         }
     }
 }
@@ -58,15 +56,28 @@ impl ResourceManager {
         self.resources.push(resource);
         id
     }
+
+    pub fn get_by_path(&self, path: &Path) -> Option<Rc<dyn Resource>> {
+        let to_match = get_absolute_path(path);
+
+        for res in &self.resources {
+            let p1 = get_absolute_path(&res.get_resource_info().path);
+            if to_match == p1 {
+                return Some(res.clone());
+            }
+        }
+        None
+    }
 }
 
 pub trait Resource: ResourceToAny {
     fn get_resource_info(&self) -> ResourceDescription;
 
-    fn reload(self: Rc<Self>, gl: Arc<glow::Context>, game: &mut Game);
+    /// Request the resource to be reloaded. This can only be called when the state is not 'Loading'
+    fn reload(self: Rc<Self>, gl: Arc<glow::Context>);
 
     /// Draw an interface with information about the resource.
-    fn draw_debug_gui(&mut self, ui: &mut egui::Ui);
+    fn draw_debug_gui(&self, ui: &mut egui::Ui);
 
     /// A resource can be in an unloaded state. If that is true, reload will be called until the resource is loaded or loading.
     /// A resource is loaded if it is in a usable state.
