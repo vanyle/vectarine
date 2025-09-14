@@ -4,7 +4,7 @@
 # dependencies = []
 # ///
 import sys
-from http.server import HTTPServer, SimpleHTTPRequestHandler, test
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 """
 A tiny Python HTTP server to serve the content of the build folder with the proper HTTP headers for web assembly. 
