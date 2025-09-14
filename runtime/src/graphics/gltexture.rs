@@ -76,3 +76,11 @@ impl Texture {
         u32::from(self.tex.0)
     }
 }
+
+impl Drop for Texture {
+    fn drop(&mut self) {
+        unsafe {
+            self.gl.delete_texture(self.tex);
+        }
+    }
+}
