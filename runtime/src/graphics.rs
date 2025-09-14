@@ -7,3 +7,5 @@ pub mod gltypes;
 pub mod batchdraw;
 pub mod gltexture;
 pub mod gluniforms;
+
+pub mod shadersources;
