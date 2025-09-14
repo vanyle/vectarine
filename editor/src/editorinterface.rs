@@ -1,8 +1,9 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 
 use egui::RichText;
+use egui_extras::Column;
 use egui_sdl2_platform::sdl2;
-use runtime::helpers::{file, game::Game};
+use runtime::helpers::{file, game::Game, game_resource::get_absolute_path};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -142,7 +143,50 @@ impl EditorState {
 
         if config.is_resources_window_shown {
             egui::Window::new("Resources").show(&ctx, |ui| {
-                ui.label("Resources loaded:");
+                let available_height = ui.available_height();
+                let table = egui_extras::TableBuilder::new(ui)
+                    .striped(true)
+                    .resizable(true)
+                    .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                    .column(Column::auto())
+                    .column(Column::auto())
+                    .column(Column::auto())
+                    .max_scroll_height(available_height);
+                table
+                    .header(20.0, |mut header| {
+                        header.col(|ui| {
+                            ui.label("Path");
+                        });
+                        header.col(|ui| {
+                            ui.label("Type");
+                        });
+                        header.col(|ui| {
+                            ui.label("Status");
+                        });
+                    })
+                    .body(|mut body| {
+                        for res in &game.lua_env.resources.borrow().resources {
+                            let description = res.get_resource_info();
+                            body.row(20.0, |mut row| {
+                                row.col(|ui| {
+                                    if ui
+                                        .link(description.path.to_string_lossy().to_string())
+                                        .clicked()
+                                    {
+                                        // Open the file
+                                        let absolute_path = get_absolute_path(&description.path);
+                                        open::that(absolute_path).ok();
+                                    }
+                                });
+                                row.col(|ui| {
+                                    ui.label(res.get_type_name().to_string());
+                                });
+                                row.col(|ui| {
+                                    ui.label(format!("{}", res.get_loading_status()));
+                                });
+                            });
+                        }
+                    })
             });
         }
 

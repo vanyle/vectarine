@@ -12,7 +12,7 @@ use crate::{
     helpers::{
         file,
         game::Game,
-        game_resource::{Resource, ResourceDescription, ResourceManager},
+        game_resource::{Resource, ResourceDescription, ResourceManager, get_absolute_path},
     },
 };
 
@@ -24,19 +24,20 @@ pub struct ImageResource {
 }
 
 impl Resource for ImageResource {
+    fn get_type_name(&self) -> &'static str {
+        "ImageResource"
+    }
     fn get_resource_info(&self) -> ResourceDescription {
         self.description.clone()
     }
-
     fn reload(self: Rc<Self>, gl: Arc<glow::Context>, _game: &mut Game) {
         let r = self.clone();
         self.is_loading.replace(true);
 
-        let abs_path = PathBuf::from("assets").join(&self.description.path);
-        let as_str = abs_path.to_string_lossy();
+        let abs_path = get_absolute_path(&self.description.path);
 
         file::read_file(
-            &as_str,
+            &abs_path,
             Box::new(move |data| {
                 let result = image::load_from_memory(data.as_slice());
                 let Ok(mut image) = result else {

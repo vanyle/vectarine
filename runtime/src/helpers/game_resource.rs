@@ -31,6 +31,17 @@ pub enum ResourceStatus {
     Error,
 }
 
+impl std::fmt::Display for ResourceStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResourceStatus::Loaded => write!(f, "Loaded"),
+            ResourceStatus::Loading => write!(f, "Loading"),
+            ResourceStatus::Unloaded => write!(f, "Not yet loaded"),
+            ResourceStatus::Error => write!(f, "Loading Error"),
+        }
+    }
+}
+
 impl std::fmt::Debug for ResourceManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ResourceManager")
@@ -69,11 +80,22 @@ pub trait Resource: ResourceToAny {
         matches!(self.get_loading_status(), ResourceStatus::Loaded)
     }
 
+    /// A human-friendly name for this type of Resource.
+    /// This is usually the name of the struct implementing the trait.
+    fn get_type_name(&self) -> &'static str;
+
     /// Create a resource from a file. If the resource has dependencies, load them too and
     /// store them in the ResourceManager.
     fn from_file(manager: &mut ResourceManager, path: &Path) -> Self
     where
         Self: Sized;
+}
+
+pub fn get_absolute_path(resource_path: &Path) -> String {
+    let abs_path = PathBuf::from("assets").join(resource_path);
+    let abs_path = abs_path.canonicalize().unwrap_or(abs_path);
+    let as_str = abs_path.to_string_lossy();
+    as_str.into_owned()
 }
 
 pub trait ResourceToAny: 'static {
