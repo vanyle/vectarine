@@ -71,8 +71,9 @@ def main() -> None:
     )
 
     console.print("[blue]Packaging")
-    shutil.rmtree("engine-release", ignore_errors=True)
-    Path("engine-release").mkdir(parents=True, exist_ok=True)
+    release_path = os.path.join(root_path, "engine-release")
+    shutil.rmtree(release_path, ignore_errors=True)
+    Path(release_path).mkdir(parents=True, exist_ok=True)
 
     if is_windows:
         copy_from_root(

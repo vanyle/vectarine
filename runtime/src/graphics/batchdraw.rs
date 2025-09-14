@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::graphics::{
-    glbuffer::{BufferUsageHint, GpuVertexData},
+    glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
     gldraw::DrawingTarget,
     glprogram::GLProgram,
     gltypes::{DataLayout, GLTypes, UsageHint},
@@ -15,7 +15,7 @@ pub struct BatchDraw2d {
     color_program: GLProgram,
     texture_program: GLProgram,
 
-    vertex_data: Vec<(GpuVertexData, Uniforms, bool)>, // bool = is textured?
+    vertex_data: Vec<(SharedGPUCPUBuffer, Uniforms, bool)>, // bool = is textured?
     drawing_target: DrawingTarget,
 }
 
@@ -82,18 +82,70 @@ impl BatchDraw2d {
     }
 
     pub fn draw(&mut self, auto_flush: bool) {
-        for (vertex, uniforms, is_textured) in &self.vertex_data {
+        for (vertex, uniforms, is_textured) in &mut self.vertex_data {
             let program = if *is_textured {
                 &self.texture_program
             } else {
                 &self.color_program
             };
 
-            self.drawing_target.draw(vertex, program, uniforms);
+            // This is probably a dubious optimization, it needs to be benchmarked.
+            let hint = if auto_flush {
+                BufferUsageHint::StreamDraw
+            } else {
+                BufferUsageHint::StaticDraw
+            };
+
+            self.drawing_target.draw(
+                vertex.send_to_gpu_with_usage(self.drawing_target.gl(), hint),
+                program,
+                uniforms,
+            );
         }
         if auto_flush {
             self.flush();
         }
+    }
+
+    fn add_to_batch_by_trying_to_merge(
+        &mut self,
+        vertices: &[f32],
+        indices: &[u32],
+        uniforms: Uniforms,
+        is_textured: bool,
+    ) {
+        let last_item = self.vertex_data.last_mut();
+        let Some(last_item) = last_item else {
+            self.add_to_batch_as_new_entry(vertices, indices, uniforms, is_textured);
+            return;
+        };
+        let (last_vertex_buffer, last_uniforms, last_is_textured) = last_item;
+        // Merging is not possible if the uniforms are not the same / the shader is different.
+        if *last_is_textured != is_textured || !last_uniforms.similar(&uniforms) {
+            self.add_to_batch_as_new_entry(vertices, indices, uniforms, is_textured);
+            return;
+        }
+
+        last_vertex_buffer.append_from(vertices, indices);
+    }
+
+    fn add_to_batch_as_new_entry(
+        &mut self,
+        vertices: &[f32],
+        indices: &[u32],
+        uniforms: Uniforms,
+        is_textured: bool,
+    ) {
+        let layout = if is_textured {
+            self.texture_program.vertex_layout.clone()
+        } else {
+            self.color_program.vertex_layout.clone()
+        };
+        self.vertex_data.push((
+            SharedGPUCPUBuffer::from_data(layout, vertices, indices),
+            uniforms,
+            is_textured,
+        ));
     }
 
     pub fn draw_rect(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
@@ -111,14 +163,37 @@ impl BatchDraw2d {
             2, 3, 0, // second triangle
         ];
 
-        let mut vertex_buffer = GpuVertexData::new(self.drawing_target.gl());
-        vertex_buffer.apply_layout(self.color_program.vertex_layout.clone());
-        vertex_buffer
-            .set_data_with_usage(&vertices, &indices, BufferUsageHint::StreamDraw)
-            .expect("The data shape matches the layout.");
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, Uniforms::new(), false);
+    }
 
-        let uniforms = Uniforms::new();
-        self.vertex_data.push((vertex_buffer, uniforms, false));
+    pub fn draw_circle(&mut self, x: f32, y: f32, radius: f32, color: [f32; 4]) {
+        const CIRCLE_SEGMENTS: usize = 32;
+        let mut vertices: Vec<f32> = Vec::with_capacity((CIRCLE_SEGMENTS + 1) * 7);
+        let mut indices: Vec<u32> = Vec::with_capacity(CIRCLE_SEGMENTS * 3);
+
+        // Center vertex
+        vertices.push(x);
+        vertices.push(y);
+        vertices.push(0.0);
+        vertices.extend_from_slice(&color);
+
+        for i in 0..=CIRCLE_SEGMENTS {
+            let theta = (i as f32 / CIRCLE_SEGMENTS as f32) * std::f32::consts::TAU;
+            let vx = x + radius * theta.cos();
+            let vy = y + radius * theta.sin();
+            vertices.push(vx);
+            vertices.push(vy);
+            vertices.push(0.0);
+            vertices.extend_from_slice(&color);
+
+            if i < CIRCLE_SEGMENTS {
+                indices.push(0);
+                indices.push(i as u32 + 1);
+                indices.push(i as u32 + 2);
+            }
+        }
+
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, Uniforms::new(), false);
     }
 
     pub fn flush(&mut self) {

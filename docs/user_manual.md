@@ -19,7 +19,7 @@ Write your game inside `assets/scripts/game.lua`. As you save, the window update
 
 ## Release and distribute your game
 
-Files ending with `.exe` are windows executable. Files with the same name, but without the `.exe` extension are for Linux.
+Files ending with `.exe` are windows executables. Files with the same name, but without the `.exe` extension are for Linux.
 
 **Desktop release**
 
@@ -36,7 +36,8 @@ It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the s
 ## Lua API
 
 When your application is first loaded, the lua function `Load` is called.
-Then, every frame, the function `Update` is called with the time delta since the last frame in seconds.
+Then, every frame, the function `Update` is called with `time_delta` which is the duration since the start of the last frame in seconds.
+Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` seconds and increases as your rendering gets more complicated.
 
 A minimal example:
 
@@ -49,3 +50,8 @@ function Update(time_delta)
     fprint("Frame update, time since last frame: " .. time_delta .. " seconds")
 end
 ```
+
+## Performance
+
+Call at drawRect at most 20 000 times per frame for 60 fps on all platforms.
+I don't really know why you'd want to draw that many rectangles.

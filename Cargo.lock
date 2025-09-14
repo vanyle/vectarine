@@ -274,6 +274,7 @@ dependencies = [
  "glow",
  "notify-debouncer-full",
  "runtime",
+ "sdl2-sys",
 ]
 
 [[package]]

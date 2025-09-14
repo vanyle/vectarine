@@ -13,6 +13,13 @@ pub enum DrawInstruction {
         radius: f32,
         color: [f32; 4],
     },
+    Image {
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        resource_id: u32,
+    },
     Clear {
         color: [f32; 4],
     },

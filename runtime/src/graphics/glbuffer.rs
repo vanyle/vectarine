@@ -70,24 +70,22 @@ impl GpuVertexData {
             return Err("You must apply a layout before setting data!".to_string());
         }
         self.drawn_point_count = index_data.len();
+        let vertex_raw_data;
+        let vertex_data_byte_count = std::mem::size_of_val(vertex_data);
+        unsafe {
+            vertex_raw_data = std::slice::from_raw_parts(
+                vertex_data.as_ptr() as *const u8,
+                vertex_data_byte_count,
+            );
+        }
 
-        let max_index = index_data.iter().max().cloned().unwrap_or(0) as usize;
+        if !self.layout.is_sound(vertex_raw_data, index_data, 0) {
+            return Err("The provided data is not sound for the current layout!".to_string());
+        }
 
         let stride = self.layout.stride();
-
-        let vertex_data_byte_count = std::mem::size_of_val(vertex_data);
-        if vertex_data_byte_count % stride != 0 {
-            return Err(format!(
-                "Vertex data size (in bytes) is not a multiple of the layout stride! Got {vertex_data_byte_count}, expected multiple of {stride}",
-            ));
-        }
         let point_count = vertex_data_byte_count / stride;
         self.buffer_row_count = point_count;
-        if point_count <= max_index {
-            return Err(format!(
-                "An index provided is bigger than the number of points in the vertext data! Vertex count: {point_count}, Max index: {max_index}",
-            ));
-        }
 
         unsafe {
             let gl = self.gl.as_ref();
@@ -95,12 +93,7 @@ impl GpuVertexData {
 
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.vbo));
 
-            let transmutated = std::slice::from_raw_parts(
-                vertex_data.as_ptr() as *const u8,
-                vertex_data_byte_count,
-            );
-
-            gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, transmutated, usage.to_gl_enum());
+            gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, vertex_raw_data, usage.to_gl_enum());
 
             gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.ebo));
             gl.buffer_data_u8_slice(
@@ -156,7 +149,7 @@ impl GpuVertexData {
     }
 }
 
-impl std::fmt::Display for GpuVertexData {
+impl std::fmt::Debug for GpuVertexData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(
             f,
@@ -182,4 +175,117 @@ pub fn convert_u32_to_u8(data: &[u32]) -> &[u8] {
     let len = 4 * data.len();
     let ptr = data.as_ptr() as *const u8;
     unsafe { std::slice::from_raw_parts(ptr, len) }
+}
+
+/// A buffer that contains data which may or may not be in the GPU.
+/// The data in the buffer is always sound with regards to the layout.
+#[derive(Debug)]
+pub struct SharedGPUCPUBuffer {
+    cpu_vertex_data: Vec<u8>,
+    cpu_index_data: Vec<u32>,
+    gpu_buffer: Option<GpuVertexData>,
+    gpu_up_to_date: bool,
+    layout: DataLayout,
+}
+
+impl SharedGPUCPUBuffer {
+    pub fn new(layout: DataLayout) -> Self {
+        Self {
+            cpu_vertex_data: Vec::new(),
+            cpu_index_data: Vec::new(),
+            gpu_buffer: None,
+            gpu_up_to_date: false,
+            layout,
+        }
+    }
+    pub fn from_raw_data(layout: DataLayout, vertex_data: Vec<u8>, index_data: Vec<u32>) -> Self {
+        debug_assert!(layout.is_sound(&vertex_data, &index_data, 0));
+        Self {
+            cpu_vertex_data: vertex_data,
+            cpu_index_data: index_data,
+            gpu_buffer: None,
+            gpu_up_to_date: false,
+            layout,
+        }
+    }
+
+    pub fn from_data<T: Copy>(layout: DataLayout, vertex_data: &[T], index_data: &[u32]) -> Self {
+        let vertex_data_byte_count = std::mem::size_of_val(vertex_data);
+        let vertex_raw_data;
+        unsafe {
+            vertex_raw_data = std::slice::from_raw_parts(
+                vertex_data.as_ptr() as *const u8,
+                vertex_data_byte_count,
+            );
+        }
+        Self::from_raw_data(layout, vertex_raw_data.to_vec(), index_data.to_vec())
+    }
+
+    /// Append data to the buffer. Performs index renumbering.
+    pub fn append(&mut self, data: &[u8], indices: &[u32]) {
+        debug_assert!(self.layout.is_sound(data, indices, 0));
+        let vertex_offset = self.cpu_vertex_data.len() / self.layout.stride();
+        let renumbered_indices = indices.iter().map(|i| i + vertex_offset as u32);
+        self.cpu_vertex_data.extend_from_slice(data);
+        self.cpu_index_data.extend(renumbered_indices);
+        self.gpu_up_to_date = false;
+    }
+
+    pub fn append_from<T: Copy>(&mut self, data: &[T], indices: &[u32]) {
+        let vertex_data_byte_count = std::mem::size_of_val(data);
+        let vertex_raw_data;
+        unsafe {
+            vertex_raw_data =
+                std::slice::from_raw_parts(data.as_ptr() as *const u8, vertex_data_byte_count);
+        }
+        self.append(vertex_raw_data, indices);
+    }
+
+    pub fn send_to_gpu(&mut self, gl: &Arc<glow::Context>) -> &GpuVertexData {
+        self.send_to_gpu_with_usage(gl, BufferUsageHint::StaticDraw)
+    }
+
+    pub fn send_to_gpu_with_usage(
+        &mut self,
+        gl: &Arc<glow::Context>,
+        usage_hint: BufferUsageHint,
+    ) -> &GpuVertexData {
+        if self.gpu_up_to_date {
+            return self.gpu_buffer.as_ref().unwrap();
+        }
+        let mut gpu_buffer = GpuVertexData::new(gl);
+        gpu_buffer.apply_layout(self.layout.clone());
+        // We know set_data only performs a soundness check, so we can safely unwrap.
+        gpu_buffer
+            .set_data_with_usage(&self.cpu_vertex_data, &self.cpu_index_data, usage_hint)
+            .unwrap();
+        self.gpu_buffer = Some(gpu_buffer);
+        self.gpu_up_to_date = true;
+        self.gpu_buffer.as_ref().unwrap()
+    }
+
+    pub fn is_on_gpu(&self) -> bool {
+        self.gpu_buffer.is_some()
+    }
+
+    pub fn gpu_up_to_date(&self) -> bool {
+        self.gpu_up_to_date
+    }
+
+    pub fn gpu_buffer(&self) -> Option<&GpuVertexData> {
+        self.gpu_buffer.as_ref()
+    }
+
+    pub fn clear_cpu_data(&mut self) {
+        // Note: no data is always sound.
+        self.cpu_vertex_data.clear();
+        self.cpu_index_data.clear();
+    }
+
+    pub fn clear(&mut self) {
+        self.cpu_vertex_data.clear();
+        self.cpu_index_data.clear();
+        self.gpu_buffer = None;
+        self.gpu_up_to_date = false;
+    }
 }

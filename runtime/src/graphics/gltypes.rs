@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::graphics::gluniforms::UniformValue;
 
 /// Internal representation for OpenGL types used in shaders
@@ -152,10 +154,59 @@ impl DataLayout {
         self.fields.iter().map(|(_, t, _)| t.size_in_bytes()).sum()
     }
 
+    /// Checks if a DataLayout is valid for an array buffer.
     pub fn is_valid_for_vertex(&self) -> bool {
         self.fields
             .iter()
             .all(|(_, t, _)| !matches!(t, GLTypes::Sampler2D | GLTypes::SamplerCube))
+    }
+
+    /// Checks if a vertex data containing the provided vertices and indices
+    /// would by valid for this layout
+    /// We assume that vertices[0] is the contains the vertex_offset-th vertex.
+    /// This is useful when merging VertexData together.
+    /// We also assume that indices can only reference the vertices, and never any previous ones.
+    pub fn is_sound(&self, vertices: &[u8], indices: &[u32], idx_of_first_vertex: usize) -> bool {
+        let stride = self.stride();
+        // 0 data per row means the buffer needs to be empty for this to be valid.
+        if stride == 0 {
+            return vertices.is_empty() && indices.is_empty();
+        }
+        // Row is incomplete
+        if vertices.len() % stride != 0 {
+            return false;
+        }
+        // We assume that triangles are drawn
+        if indices.len() % 3 != 0 {
+            return false;
+        }
+        let vertex_count = vertices.len() / stride;
+        if indices.iter().any(|&i| {
+            i as usize >= vertex_count + idx_of_first_vertex && i as usize >= idx_of_first_vertex
+        }) {
+            return false;
+        }
+        // We could add a check that makes sure that all vertices are used at least once by indices
+        // but this is a bit expansive and it is not a correctness check, just a performance test.
+        true
+    }
+
+    /// Checks that every vertex provided in the buffer is used by at least one index.
+    /// If the data is not found, we also return false
+    /// This method requires us to interate over all vertices to check that they are used, so it can be slow for large buffers.
+    pub fn is_not_wasteful(
+        &self,
+        vertices: &[u8],
+        indices: &[u32],
+        idx_of_first_vertex: usize,
+    ) -> bool {
+        if !self.is_sound(vertices, indices, idx_of_first_vertex) {
+            return false;
+        }
+        let stride = self.stride();
+        let vertex_count = vertices.len() / stride;
+        let indices_used = HashSet::<u32>::from_iter(indices.iter().cloned());
+        (0..vertex_count).all(|i| indices_used.contains(&((i + idx_of_first_vertex) as u32)))
     }
 }
 

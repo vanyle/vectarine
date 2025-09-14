@@ -30,8 +30,12 @@ function mouse() end
 --- @return { x: number, y: number }
 function windowSize() end
 
---- Return a string representation of arg
---- Works for tables.
+--- Return a friendly string representation of arg
 --- @param arg any
 --- @return string
 function toString(arg) end
+
+--- Returns a number which increases by one every second. You can use this for
+--- timings or FPS computations.
+--- @return number A number which increases by one every second
+function time() end

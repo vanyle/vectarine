@@ -70,9 +70,14 @@ impl Game {
                     draw_instruction::DrawInstruction::Rectangle { x, y, w, h, color } => {
                         self.batch.draw_rect(x, y, w, h, color);
                     }
-                    // draw_instruction::DrawInstruction::Circle { x, y, radius } => {
-                    //     // ...
-                    // }
+                    draw_instruction::DrawInstruction::Circle {
+                        x,
+                        y,
+                        radius,
+                        color,
+                    } => {
+                        self.batch.draw_circle(x, y, radius, color);
+                    }
                     draw_instruction::DrawInstruction::Clear { color } => {
                         self.batch.clear(color[0], color[1], color[2], color[3]);
                     }

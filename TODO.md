@@ -3,9 +3,9 @@
 - [ ] Loading images and drawing them from lua code
 - [ ] Assets "resource" system
 - [ ] Hot reloading for assets
-- [ ] Performance: Batch drawing implementation
 - [ ] Loading fonts and drawing text from lua code
-- [ ] Allow window resizing
+- [ ] Allow window resizing and handle aspect ratios
+- [ ] Fullscreen API (for web too!)
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Tiled parsing
 - [ ] Textures as an asset class
@@ -13,6 +13,7 @@
 
 # Done
 
+- [x] Performance: Batch drawing implementation
 - [x] Window size
 - [x] Mouse input
 - [x] Editor console

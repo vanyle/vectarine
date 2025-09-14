@@ -14,6 +14,8 @@ pub struct Texture {
 impl Texture {
     /// Create a new RGBA texture
     pub fn new_rgba(gl: &Arc<glow::Context>, data: &[u8], width: u32, height: u32) -> Arc<Self> {
+        assert!(data.len() as u32 == width * height * 4);
+
         unsafe {
             let glref = gl.as_ref();
             let tex = glref.create_texture().expect("Cannot create texture");

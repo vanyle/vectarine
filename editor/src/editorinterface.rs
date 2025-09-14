@@ -1,0 +1,120 @@
+use std::{cell::RefCell, rc::Rc, sync::Arc, time::Instant};
+
+use egui::RichText;
+use egui_sdl2_platform::sdl2;
+use runtime::helpers::game::Game;
+
+pub struct EditorState {
+    is_console_shown: bool,
+    text_command: String,
+
+    start_time: std::time::Instant,
+    video: Rc<RefCell<sdl2::VideoSubsystem>>,
+    window: Rc<RefCell<sdl2::video::Window>>,
+    _gl: Arc<glow::Context>,
+}
+
+impl EditorState {
+    pub fn new(
+        video: Rc<RefCell<sdl2::VideoSubsystem>>,
+        window: Rc<RefCell<sdl2::video::Window>>,
+        gl: Arc<glow::Context>,
+    ) -> Self {
+        Self {
+            is_console_shown: false,
+            text_command: String::new(),
+            start_time: Instant::now(),
+            video,
+            window,
+            _gl: gl,
+        }
+    }
+
+    pub fn draw_editor_interface(
+        &mut self,
+        platform: &mut egui_sdl2_platform::Platform,
+        sdl: &sdl2::Sdl,
+        game: &mut Game,
+        latest_events: &Vec<sdl2::event::Event>,
+        painter: &mut egui_glow::Painter,
+    ) {
+        // Update the time
+        platform.update_time(self.start_time.elapsed().as_secs_f64());
+        // Get the egui context and begin drawing the frame
+        let ctx = platform.context();
+
+        if ctx.input_mut(|i| {
+            i.consume_key(
+                egui::Modifiers::COMMAND | egui::Modifiers::NONE,
+                egui::Key::I,
+            )
+        }) {
+            self.is_console_shown = !self.is_console_shown;
+        }
+        egui::TopBottomPanel::top("toppanel").show(&ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Vectarine Editor").size(18.0));
+                egui::MenuBar::new().ui(ui, |ui| {
+                    ui.menu_button("File", |ui| {
+                        if ui.button("Toggle console (Ctrl+Shift+I)").clicked() {
+                            self.is_console_shown = !self.is_console_shown;
+                        }
+                        if ui.button("Exit (Alt+F4)").clicked() {
+                            std::process::exit(0);
+                        }
+                    });
+                });
+            });
+            // let window_handle = self.window.borrow().raw();
+            // sdl2_sys::SDL_SetWindowHitTest(window_handle, callback, callback_data)
+        });
+
+        if self.is_console_shown {
+            egui::Window::new("Console").show(&ctx, |ui| {
+                egui::ScrollArea::vertical()
+                    .id_salt("console")
+                    .max_height(300.0)
+                    .stick_to_bottom(true)
+                    .show(ui, |ui| {
+                        let messages = &mut game.lua_env.messages.borrow_mut();
+                        for line in messages.iter().rev() {
+                            ui.label(line);
+                        }
+                        messages.truncate(100);
+                    });
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .id_salt("frame console")
+                    .max_height(300.0)
+                    .stick_to_bottom(true)
+                    .show(ui, |ui| {
+                        let messages = &mut game.lua_env.frame_messages.borrow_mut();
+                        for line in messages.iter() {
+                            ui.label(line);
+                        }
+                        messages.clear();
+                    });
+                ui.separator();
+                let response = ui.text_edit_singleline(&mut self.text_command);
+                if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                    println!("Running command: {}", self.text_command);
+                    self.text_command.clear();
+                    response.request_focus();
+                }
+            });
+        }
+
+        // Stop drawing the egui frame and get the full output
+        let full_output = platform.end_frame(&mut self.video.borrow_mut()).unwrap();
+        // Get the paint jobs
+        let paint_jobs = platform.tessellate(&full_output);
+        let pj = paint_jobs.as_slice();
+
+        // Render the editor interface on top of the game.
+        let size = self.window.borrow().size();
+        painter.paint_and_update_textures([size.0, size.1], 1.0, pj, &full_output.textures_delta);
+        for event in latest_events {
+            platform.handle_event(event, sdl, &self.video.borrow());
+        }
+    }
+}

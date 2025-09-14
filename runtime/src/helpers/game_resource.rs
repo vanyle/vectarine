@@ -1,4 +1,10 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    rc::Rc,
+    sync::Arc,
+};
+
+use crate::helpers::game::Game;
 
 pub mod image_resource;
 
@@ -15,6 +21,13 @@ pub struct ResourceDescription {
 #[derive(Default)]
 pub struct ResourceManager {
     pub resources: Vec<Box<dyn Resource>>,
+}
+
+pub enum ResourceStatus {
+    Loaded,
+    Loading,
+    Unloaded,
+    Error,
 }
 
 impl std::fmt::Debug for ResourceManager {
@@ -38,10 +51,23 @@ impl ResourceManager {
 pub trait Resource {
     fn get_resource_info(&self) -> ResourceDescription;
 
-    fn reload(&mut self);
+    fn reload(self: Rc<Self>, gl: Arc<glow::Context>, game: &mut Game);
 
     /// Draw an interface with information about the resource.
     fn draw_debug_gui(&mut self, ui: &mut egui::Ui);
+
+    /// A resource can be in an unloaded state. If that is true, reload will be called until the resource is loaded or loading.
+    /// A resource is loaded if it is in a usable state.
+    fn get_loading_status(&self) -> ResourceStatus;
+
+    fn is_loading(&self) -> bool {
+        matches!(self.get_loading_status(), ResourceStatus::Loading)
+    }
+
+    fn is_loaded(&self) -> bool {
+        matches!(self.get_loading_status(), ResourceStatus::Loaded)
+    }
+
     /// Create a resource from a file. If the resource has dependencies, load them too and
     /// store them in the ResourceManager.
     fn from_file(manager: &mut ResourceManager, path: &Path) -> Self

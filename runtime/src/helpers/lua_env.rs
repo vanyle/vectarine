@@ -3,7 +3,11 @@ use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 use mlua::Table;
 use sdl2::keyboard::Keycode;
 
-use crate::helpers::{draw_instruction, game_resource::ResourceManager, io::IoEnvState};
+use crate::helpers::{
+    draw_instruction::{self, DrawInstruction},
+    game_resource::{ResourceManager, image_resource::ImageResource},
+    io::IoEnvState,
+};
 
 #[derive(Debug, Clone)]
 pub struct LuaEnvironment {
@@ -50,7 +54,47 @@ impl LuaEnvironment {
                 ];
                 queue_for_closure
                     .borrow_mut()
-                    .push_back(draw_instruction::DrawInstruction::Rectangle { x, y, w, h, color });
+                    .push_back(DrawInstruction::Rectangle { x, y, w, h, color });
+                Ok(())
+            },
+        );
+
+        let queue_for_closure = draw_instructions.clone();
+        add_global_fn(
+            &lua,
+            "drawCircle",
+            move |_, (x, y, radius, color): (f32, f32, f32, Table)| {
+                let color = [
+                    color.get::<f32>("r").unwrap_or(0.0),
+                    color.get::<f32>("g").unwrap_or(0.0),
+                    color.get::<f32>("b").unwrap_or(0.0),
+                    color.get::<f32>("a").unwrap_or(0.0),
+                ];
+                queue_for_closure
+                    .borrow_mut()
+                    .push_back(DrawInstruction::Circle {
+                        x,
+                        y,
+                        radius,
+                        color,
+                    });
+                Ok(())
+            },
+        );
+
+        let queue_for_closure = draw_instructions.clone();
+        add_global_fn(
+            &lua,
+            "drawImage",
+            move |_, (resource_id, x, y, w, h): (u32, f32, f32, f32, f32)| {
+                let draw_ins = DrawInstruction::Image {
+                    x,
+                    y,
+                    w,
+                    h,
+                    resource_id,
+                };
+                queue_for_closure.borrow_mut().push_back(draw_ins);
                 Ok(())
             },
         );
@@ -65,7 +109,7 @@ impl LuaEnvironment {
             ];
             queue_for_closure
                 .borrow_mut()
-                .push_back(draw_instruction::DrawInstruction::Clear { color });
+                .push_back(DrawInstruction::Clear { color });
             Ok(())
         });
 
@@ -130,8 +174,15 @@ impl LuaEnvironment {
             Ok(table)
         });
 
-        add_global_fn(&lua, "toString", move |_, args: (mlua::Value,)| {
-            let string = stringify_lua_value(&args.0);
+        let resources_for_closure = resources.clone();
+        add_global_fn(&lua, "loadImage", move |_, path: String| {
+            let mut manager = resources_for_closure.borrow_mut();
+            let id = manager.load_resource::<ImageResource>(Path::new(&path));
+            Ok(id)
+        });
+
+        add_global_fn(&lua, "toString", move |_, (arg,): (mlua::Value,)| {
+            let string = stringify_lua_value(&arg);
             Ok(string)
         });
 
@@ -191,19 +242,22 @@ fn stringify_lua_value_helper(value: &mlua::Value, mut seen: Vec<mlua::Value>) -
         mlua::Value::Integer(i) => i.to_string(),
         mlua::Value::Number(n) => n.to_string(),
         mlua::Value::String(s) => s.to_string_lossy(),
-        mlua::Value::Table(table) => table
-            .pairs::<mlua::Value, mlua::Value>()
-            .map(|pair| {
-                if let Ok((key, value)) = pair {
-                    let key_str = stringify_lua_value(&key);
-                    let value_str = stringify_lua_value(&value);
-                    format!("[{key_str}] = {value_str}")
-                } else {
-                    "[error]".to_string()
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(", "),
+        mlua::Value::Table(table) => format!(
+            "{{{}}}",
+            table
+                .pairs::<mlua::Value, mlua::Value>()
+                .map(|pair| {
+                    if let Ok((key, value)) = pair {
+                        let key_str = stringify_lua_value(&key);
+                        let value_str = stringify_lua_value(&value);
+                        format!("[{key_str}] = {value_str}")
+                    } else {
+                        "[error]".to_string()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
         mlua::Value::Function(func) => {
             let fninfo = func.info();
             format!(
