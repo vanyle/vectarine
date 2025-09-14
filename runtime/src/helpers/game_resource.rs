@@ -4,6 +4,9 @@ use std::{
     sync::Arc,
 };
 
+use crate::helpers::file;
+
+pub mod font_resource;
 pub mod image_resource;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -74,7 +77,21 @@ pub trait Resource: ResourceToAny {
     fn get_resource_info(&self) -> ResourceDescription;
 
     /// Request the resource to be reloaded. This can only be called when the state is not 'Loading'
-    fn reload(self: Rc<Self>, gl: Arc<glow::Context>);
+    fn reload(self: Rc<Self>, gl: Arc<glow::Context>) {
+        self.set_as_loading();
+        let abs_path = get_absolute_path(&self.get_resource_info().path);
+        let r = self.clone();
+        file::read_file(
+            &abs_path,
+            Box::new(move |data| {
+                r.reload_from_data(gl.clone(), data);
+            }),
+        );
+    }
+
+    /// Load the resource from the data and initialize it.
+    /// After this has finished, the state needs to be either Error or Loaded
+    fn reload_from_data(self: Rc<Self>, gl: Arc<glow::Context>, data: Vec<u8>);
 
     /// Draw an interface with information about the resource.
     fn draw_debug_gui(&self, ui: &mut egui::Ui);
@@ -82,6 +99,8 @@ pub trait Resource: ResourceToAny {
     /// A resource can be in an unloaded state. If that is true, reload will be called until the resource is loaded or loading.
     /// A resource is loaded if it is in a usable state.
     fn get_loading_status(&self) -> ResourceStatus;
+
+    fn set_as_loading(&self);
 
     fn is_loading(&self) -> bool {
         matches!(self.get_loading_status(), ResourceStatus::Loading)
