@@ -56,6 +56,55 @@ impl Texture {
         }
     }
 
+    /// Create a new texture with 1 byte per pixel
+    pub fn new_grayscale(
+        gl: &Arc<glow::Context>,
+        data: &[u8],
+        width: u32,
+        height: u32,
+    ) -> Arc<Self> {
+        assert!(data.len() as u32 == width * height);
+
+        unsafe {
+            let glref = gl.as_ref();
+            let tex = glref.create_texture().expect("Cannot create texture");
+
+            glref.bind_texture(glow::TEXTURE_2D, Some(tex));
+            glref.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
+            glref.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+            // set texture filtering parameters
+            glref.tex_parameter_i32(
+                glow::TEXTURE_2D,
+                glow::TEXTURE_MIN_FILTER,
+                glow::LINEAR as i32,
+            );
+            glref.tex_parameter_i32(
+                glow::TEXTURE_2D,
+                glow::TEXTURE_MAG_FILTER,
+                glow::LINEAR as i32,
+            );
+
+            glref.tex_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                glow::RED as i32,
+                width as i32,
+                height as i32,
+                0,
+                glow::RED,
+                glow::UNSIGNED_BYTE,
+                PixelUnpackData::Slice(Some(data)),
+            );
+
+            Arc::new(Self {
+                tex,
+                width,
+                height,
+                gl: gl.clone(),
+            })
+        }
+    }
+
     pub fn bind(self: &Arc<Self>, slot: u32) {
         unsafe {
             let gl = self.gl.as_ref();
