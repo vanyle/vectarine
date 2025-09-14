@@ -71,4 +71,8 @@ impl Texture {
     pub fn height(self: &Arc<Self>) -> u32 {
         self.height
     }
+
+    pub fn id(self: &Arc<Self>) -> u32 {
+        u32::from(self.tex.0)
+    }
 }

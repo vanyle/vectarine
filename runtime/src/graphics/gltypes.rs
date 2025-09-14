@@ -166,29 +166,47 @@ impl DataLayout {
     /// We assume that vertices[0] is the contains the vertex_offset-th vertex.
     /// This is useful when merging VertexData together.
     /// We also assume that indices can only reference the vertices, and never any previous ones.
-    pub fn is_sound(&self, vertices: &[u8], indices: &[u32], idx_of_first_vertex: usize) -> bool {
+    pub fn is_sound(
+        &self,
+        vertices: &[u8],
+        indices: &[u32],
+        idx_of_first_vertex: usize,
+    ) -> Option<String> {
         let stride = self.stride();
         // 0 data per row means the buffer needs to be empty for this to be valid.
         if stride == 0 {
-            return vertices.is_empty() && indices.is_empty();
+            if vertices.is_empty() && indices.is_empty() {
+                return None;
+            } else {
+                return Some("Layout has no data, but buffer is not empty".to_string());
+            }
         }
         // Row is incomplete
         if vertices.len() % stride != 0 {
-            return false;
+            return Some(format!(
+                "A row is incomplete, the row is made of {stride} bytes but the vertex buffer has {} bytes",
+                vertices.len()
+            ));
         }
         // We assume that triangles are drawn
         if indices.len() % 3 != 0 {
-            return false;
+            return Some(
+                "Index buffer is not a multiple of 3, but we are drawing triangles".to_string(),
+            );
         }
         let vertex_count = vertices.len() / stride;
-        if indices.iter().any(|&i| {
-            i as usize >= vertex_count + idx_of_first_vertex && i as usize >= idx_of_first_vertex
-        }) {
-            return false;
+        for i in indices.iter() {
+            let idx = *i as usize;
+            if idx >= vertex_count + idx_of_first_vertex && idx < idx_of_first_vertex {
+                return Some(format!(
+                    "Index buffer is not valid, {} is outside {}..<{}, the bounds of the vertex data",
+                    idx,
+                    idx_of_first_vertex,
+                    vertex_count + idx_of_first_vertex
+                ));
+            }
         }
-        // We could add a check that makes sure that all vertices are used at least once by indices
-        // but this is a bit expansive and it is not a correctness check, just a performance test.
-        true
+        None
     }
 
     /// Checks that every vertex provided in the buffer is used by at least one index.
@@ -200,7 +218,10 @@ impl DataLayout {
         indices: &[u32],
         idx_of_first_vertex: usize,
     ) -> bool {
-        if !self.is_sound(vertices, indices, idx_of_first_vertex) {
+        if self
+            .is_sound(vertices, indices, idx_of_first_vertex)
+            .is_some()
+        {
             return false;
         }
         let stride = self.stride();

@@ -1,11 +1,20 @@
 # TODO
 
-- [ ] Loading images and drawing them from lua code
 - [ ] Assets "resource" system
-- [ ] Hot reloading for assets
+  - [ ] Resource tab in editor
+  - [ ] Error system when asset fails to load
+  - [ ] Hot reloading for assets
 - [ ] Loading fonts and drawing text from lua code
 - [ ] Allow window resizing and handle aspect ratios
 - [ ] Fullscreen API (for web too!)
+- [ ] More complete drawing API
+  - [ ] Draw portions of images
+  - [ ] Rotation
+  - [ ] Lines
+  - [ ] Quads
+  - [ ] Polygons
+  - [ ] Outlines
+- [ ] Canvas API
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Tiled parsing
 - [ ] Textures as an asset class
@@ -13,6 +22,7 @@
 
 # Done
 
+- [x] Loading images and drawing them from lua code
 - [x] Performance: Batch drawing implementation
 - [x] Window size
 - [x] Mouse input

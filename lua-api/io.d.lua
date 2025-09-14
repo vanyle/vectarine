@@ -34,8 +34,3 @@ function windowSize() end
 --- @param arg any
 --- @return string
 function toString(arg) end
-
---- Returns a number which increases by one every second. You can use this for
---- timings or FPS computations.
---- @return number A number which increases by one every second
-function time() end

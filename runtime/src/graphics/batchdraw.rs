@@ -4,8 +4,9 @@ use crate::graphics::{
     glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
     gldraw::DrawingTarget,
     glprogram::GLProgram,
+    gltexture::Texture,
     gltypes::{DataLayout, GLTypes, UsageHint},
-    gluniforms::Uniforms,
+    gluniforms::{UniformValue, Uniforms},
 };
 
 /// A simple structure to get quickly start drawing shapes.
@@ -57,19 +58,19 @@ impl BatchDraw2d {
     pub fn new(gl: &Arc<glow::Context>) -> Result<Self, String> {
         let mut color_program =
             GLProgram::from_source(gl, COLOR_VERTEX_SHADER_SOURCE, COLOR_FRAG_SHADER_SOURCE)?;
-
         let mut layout = DataLayout::new();
         layout
             .add_field("in_vert", GLTypes::Vec3, Some(UsageHint::Position))
             .add_field("in_color", GLTypes::Vec4, Some(UsageHint::Color));
         color_program.vertex_layout = layout;
 
-        let texture_program =
+        let mut texture_program =
             GLProgram::from_source(gl, TEX_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE)?;
         let mut layout = DataLayout::new();
         layout
             .add_field("in_vert", GLTypes::Vec3, Some(UsageHint::Position))
             .add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
+        texture_program.vertex_layout = layout;
 
         let drawing_target = DrawingTarget::new(gl);
 
@@ -194,6 +195,26 @@ impl BatchDraw2d {
         }
 
         self.add_to_batch_by_trying_to_merge(&vertices, &indices, Uniforms::new(), false);
+    }
+
+    pub fn draw_image(&mut self, x: f32, y: f32, width: f32, height: f32, texture: &Arc<Texture>) {
+        #[rustfmt::skip]
+        let vertices: [f32; 4 * 5] = [
+            // positions       // tex coords
+            x, y, 0.0, 0.0, 0.0, // bottom left
+            x + width, y, 0.0, 1.0, 0.0, // bottom right
+            x + width, y + height, 0.0, 1.0, 1.0, // top right
+            x, y + height, 0.0, 0.0, 1.0, // top left
+        ];
+
+        let indices: [u32; 6] = [
+            0, 1, 2, // first triangle
+            2, 3, 0, // second triangle
+        ];
+
+        let mut uniforms = Uniforms::new();
+        uniforms.add("tex", UniformValue::Sampler2D(texture.clone()));
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, true);
     }
 
     pub fn flush(&mut self) {

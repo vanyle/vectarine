@@ -1,4 +1,11 @@
-use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
+use std::{
+    cell::RefCell,
+    path::{Path, PathBuf},
+    rc::Rc,
+    sync::Arc,
+};
+
+use image::metadata::Orientation;
 
 use crate::{
     graphics::gltexture::{self, Texture},
@@ -25,15 +32,21 @@ impl Resource for ImageResource {
         let r = self.clone();
         self.is_loading.replace(true);
 
+        let abs_path = PathBuf::from("assets").join(&self.description.path);
+        let as_str = abs_path.to_string_lossy();
+
         file::read_file(
-            &self.description.path.to_string_lossy(),
+            &as_str,
             Box::new(move |data| {
                 let result = image::load_from_memory(data.as_slice());
-                let Ok(image) = result else {
+                let Ok(mut image) = result else {
                     r.is_loading.replace(false);
                     r.is_error.replace(true);
                     return;
                 };
+                // We could do this in the shader instead. I don't really know which option is better.
+                image.apply_orientation(Orientation::FlipVertical);
+
                 r.texture.replace(Some(Texture::new_rgba(
                     &gl,
                     image.to_rgba8().as_raw().as_slice(),

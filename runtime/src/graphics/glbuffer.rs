@@ -79,8 +79,11 @@ impl GpuVertexData {
             );
         }
 
-        if !self.layout.is_sound(vertex_raw_data, index_data, 0) {
-            return Err("The provided data is not sound for the current layout!".to_string());
+        let e = self.layout.is_sound(vertex_raw_data, index_data, 0);
+        if let Some(e) = e {
+            return Err(format!(
+                "The provided data is not sound for the current layout: {e}"
+            ));
         }
 
         let stride = self.layout.stride();
@@ -199,7 +202,10 @@ impl SharedGPUCPUBuffer {
         }
     }
     pub fn from_raw_data(layout: DataLayout, vertex_data: Vec<u8>, index_data: Vec<u32>) -> Self {
-        debug_assert!(layout.is_sound(&vertex_data, &index_data, 0));
+        #![cfg(debug_assertions)]
+        if let Some(e) = layout.is_sound(&vertex_data, &index_data, 0) {
+            panic!("The provided data is not sound for the provided layout: {e}")
+        }
         Self {
             cpu_vertex_data: vertex_data,
             cpu_index_data: index_data,
@@ -223,7 +229,10 @@ impl SharedGPUCPUBuffer {
 
     /// Append data to the buffer. Performs index renumbering.
     pub fn append(&mut self, data: &[u8], indices: &[u32]) {
-        debug_assert!(self.layout.is_sound(data, indices, 0));
+        #![cfg(debug_assertions)]
+        if let Some(e) = self.layout.is_sound(data, indices, 0) {
+            panic!("The provided data is not sound for the current layout: {e}")
+        }
         let vertex_offset = self.cpu_vertex_data.len() / self.layout.stride();
         let renumbered_indices = indices.iter().map(|i| i + vertex_offset as u32);
         self.cpu_vertex_data.extend_from_slice(data);

@@ -20,9 +20,10 @@ pub struct ResourceDescription {
 
 #[derive(Default)]
 pub struct ResourceManager {
-    pub resources: Vec<Box<dyn Resource>>,
+    pub resources: Vec<Rc<dyn Resource>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceStatus {
     Loaded,
     Loading,
@@ -42,13 +43,13 @@ impl ResourceManager {
     /// Create a new resource from a file and store it.
     pub fn load_resource<T: Resource + 'static>(&mut self, path: &Path) -> u32 {
         let id = self.resources.len() as u32;
-        let resource = Box::new(T::from_file(self, path));
+        let resource = Rc::new(T::from_file(self, path));
         self.resources.push(resource);
         id
     }
 }
 
-pub trait Resource {
+pub trait Resource: ResourceToAny {
     fn get_resource_info(&self) -> ResourceDescription;
 
     fn reload(self: Rc<Self>, gl: Arc<glow::Context>, game: &mut Game);
@@ -73,4 +74,14 @@ pub trait Resource {
     fn from_file(manager: &mut ResourceManager, path: &Path) -> Self
     where
         Self: Sized;
+}
+
+pub trait ResourceToAny: 'static {
+    fn as_any(&self) -> &dyn std::any::Any;
+}
+
+impl<T: Resource + 'static> ResourceToAny for T {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
