@@ -70,6 +70,7 @@ fn gui_main() {
     let batch = BatchDraw2d::new(&gl).unwrap();
     let mut game = Game::new(batch, event_pump, lua_env);
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
+    editor_state.load_config();
 
     game.load();
 

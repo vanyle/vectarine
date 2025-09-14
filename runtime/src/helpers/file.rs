@@ -11,6 +11,26 @@ pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
     callback(content.unwrap_or_default());
 }
 
+/// Writes to the filename provided the data provided.
+/// Returns true on success, false otherwise.
+#[cfg(not(target_os = "emscripten"))]
+pub fn write_file(filename: &str, data: &[u8]) -> bool {
+    use std::{fs::File, io::Write};
+
+    let file = File::create(filename);
+    let Ok(mut file) = file else {
+        return false;
+    };
+    file.write_all(data).is_ok()
+}
+
+#[cfg(target_os = "emscripten")]
+pub fn write_file(_filename: &str, _data: &[u8]) -> bool {
+    // Writing files is not supported on Emscripten.
+    // In the future, we could probably make it work using a fake file-system.
+    false
+}
+
 #[cfg(target_os = "emscripten")]
 pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
     use base64::prelude::*;

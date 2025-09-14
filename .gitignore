@@ -6,3 +6,4 @@
 *.zip
 .DS_Store
 node_modules
+vectarine_config.toml

@@ -1,11 +1,18 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc, time::Instant};
+use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 
 use egui::RichText;
 use egui_sdl2_platform::sdl2;
-use runtime::helpers::game::Game;
+use runtime::helpers::{file, game::Game};
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+pub struct EditorConfig {
+    is_console_shown: bool,
+    is_resources_window_shown: bool,
+}
 
 pub struct EditorState {
-    is_console_shown: bool,
+    pub config: Rc<RefCell<EditorConfig>>,
     text_command: String,
 
     start_time: std::time::Instant,
@@ -15,13 +22,32 @@ pub struct EditorState {
 }
 
 impl EditorState {
+    pub fn save_config(&self) {
+        let config = &self.config.borrow();
+        let data = toml::to_string(config.deref()).unwrap_or_default();
+
+        file::write_file("vectarine_config.toml", data.as_bytes());
+    }
+
+    pub fn load_config(&self) {
+        let config_store = self.config.clone();
+        file::read_file(
+            "vectarine_config.toml",
+            Box::new(move |data: Vec<u8>| {
+                if let Ok(config) = toml::from_slice::<EditorConfig>(data.as_slice()) {
+                    *config_store.borrow_mut() = config;
+                }
+            }),
+        );
+    }
+
     pub fn new(
         video: Rc<RefCell<sdl2::VideoSubsystem>>,
         window: Rc<RefCell<sdl2::video::Window>>,
         gl: Arc<glow::Context>,
     ) -> Self {
         Self {
-            is_console_shown: false,
+            config: Rc::new(RefCell::new(EditorConfig::default())),
             text_command: String::new(),
             start_time: Instant::now(),
             video,
@@ -49,7 +75,8 @@ impl EditorState {
                 egui::Key::I,
             )
         }) {
-            self.is_console_shown = !self.is_console_shown;
+            let mut config = self.config.borrow_mut();
+            config.is_console_shown = !config.is_console_shown;
         }
         egui::TopBottomPanel::top("toppanel").show(&ctx, |ui| {
             ui.horizontal(|ui| {
@@ -57,7 +84,15 @@ impl EditorState {
                 egui::MenuBar::new().ui(ui, |ui| {
                     ui.menu_button("File", |ui| {
                         if ui.button("Toggle console (Ctrl+Shift+I)").clicked() {
-                            self.is_console_shown = !self.is_console_shown;
+                            let mut config = self.config.borrow_mut();
+                            config.is_console_shown = !config.is_console_shown;
+                        }
+                        if ui.button("Resources").clicked() {
+                            let mut config = self.config.borrow_mut();
+                            config.is_resources_window_shown = !config.is_resources_window_shown;
+                        }
+                        if ui.button("Save config").clicked() {
+                            self.save_config();
                         }
                         if ui.button("Exit (Alt+F4)").clicked() {
                             std::process::exit(0);
@@ -69,7 +104,8 @@ impl EditorState {
             // sdl2_sys::SDL_SetWindowHitTest(window_handle, callback, callback_data)
         });
 
-        if self.is_console_shown {
+        let config = self.config.borrow();
+        if config.is_console_shown {
             egui::Window::new("Console").show(&ctx, |ui| {
                 egui::ScrollArea::vertical()
                     .id_salt("console")
@@ -78,7 +114,7 @@ impl EditorState {
                     .show(ui, |ui| {
                         let messages = &mut game.lua_env.messages.borrow_mut();
                         for line in messages.iter().rev() {
-                            ui.label(line);
+                            ui.label(RichText::new(line).monospace());
                         }
                         messages.truncate(100);
                     });
@@ -90,7 +126,7 @@ impl EditorState {
                     .show(ui, |ui| {
                         let messages = &mut game.lua_env.frame_messages.borrow_mut();
                         for line in messages.iter() {
-                            ui.label(line);
+                            ui.label(RichText::new(line).monospace());
                         }
                         messages.clear();
                     });
@@ -101,6 +137,12 @@ impl EditorState {
                     self.text_command.clear();
                     response.request_focus();
                 }
+            });
+        }
+
+        if config.is_resources_window_shown {
+            egui::Window::new("Resources").show(&ctx, |ui| {
+                ui.label("Resources loaded:");
             });
         }
 
