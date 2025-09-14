@@ -12,12 +12,13 @@ function isKeyDown(keycode) end
 function getKeysDown() end
 
 --- Print something to the editor console
---- Does nothing when used in the runtime
+--- Prints to the browser console on the web for when using debug builds.
 --- If you are printing inside Update(), consider using fprint.
 --- @param msg any The thing to print
 function dprint(msg) end
 
 --- Print something to the editor console
+--- Does nothing when used in the runtime
 --- The message is cleared on the next frame
 --- @param msg any The thing to print
 function fprint(msg) end

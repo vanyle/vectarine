@@ -86,14 +86,19 @@
 				(async () => {
 					try {
 						const response = await fetch(filename);
-						const content = await response.text();
-						callback(content); // This always throws to catch the execution flow
+						const blob = await response.blob();
+						const reader = new FileReader();
+						reader.readAsDataURL(blob);
+						reader.onloadend = function () {
+							const base64data = reader.result.split(",")[1];
+							try {
+								callback(base64data); // This always throws to catch the execution flow
+							} catch (err) {}
+						};
 					} catch (err) {
-						if (String(err) !== "unwind") {
-							console.error("Error fetching file:");
-							console.log(err);
-							callback(""); // TODO: proper error handling with JSON message passing.
-						}
+						console.error("Error fetching file:");
+						console.log(err);
+						callback(""); // TODO: proper error handling with JSON message passing.
 					}
 				})();
 			}
@@ -183,7 +188,7 @@
 		</script>
 		<script
 			onerror="scriptLoadError()"
-			src="target/wasm32-unknown-emscripten/release/runtime.js"
+			src="target/wasm32-unknown-emscripten/debug/runtime.js"
 		></script>
 	</body>
 </html>

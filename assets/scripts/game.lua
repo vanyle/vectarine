@@ -7,7 +7,7 @@ function Load()
 end
 
 function Update(time_delta)
-    local bg_color = { r = 1, g = 0, b = 0, a = 255 }
+    local bg_color = { r = 1, g = 1, b = 1, a = 1 }
     clear(bg_color)
 
     local rect_color = { r = 0, g = 0, b = 1, a = 1 }
@@ -34,20 +34,17 @@ function Update(time_delta)
         table.remove(Global.frame_times, 1)
     end
 
-    -- fprint("ft = " .. toString(Global.frame_times));
-    fprint(Global.logo)
-
     fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
     fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
 
-    drawCircle(x, y, 0.1, rect_color)
+    drawRect(x, y, 0.1, 0.1, rect_color)
 
-    slow = false
+    local slow = false
     if slow then
-        slow_factor = 150
+        local slow_factor = 150
         for i = 0, slow_factor do
             for j = 0, slow_factor do
-                ratio = slow_factor / 2
+                local ratio = slow_factor / 2
                 rect_color.g = (i + t * 3) % 255 / 255
                 rect_color.b = (j + t) % 255 / 255
                 drawRect(-1 + i / ratio, -1 + j / ratio, 0.1, 0.1, rect_color)
@@ -55,5 +52,5 @@ function Update(time_delta)
         end
     end
 
-    drawImage(Global.logo, 0, 0, 0.3, 0.3)
+    drawImage(Global.logo, -0.2, -0.2, 0.4, 0.4)
 end

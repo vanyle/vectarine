@@ -17,7 +17,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from rich.console import Console
+from rich.console import Console  # type: ignore
 
 is_windows = os.name == "nt"
 
@@ -130,6 +130,9 @@ def main() -> None:
         index_html = f.read()
         index_html = index_html.replace(
             "target/wasm32-unknown-emscripten/release/runtime.js",
+            "runtime.js",
+        ).replace(
+            "target/wasm32-unknown-emscripten/debug/runtime.js",
             "runtime.js",
         )
     with open(os.path.join(root_path, "engine-release/index.html"), "w") as f:

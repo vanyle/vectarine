@@ -3,6 +3,7 @@ pub mod helpers;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
+use glow::HasContext;
 use sdl2::{EventPump, Sdl, VideoSubsystem, video::Window};
 
 pub struct RenderingBlock {
@@ -43,6 +44,11 @@ pub fn init_sdl() -> RenderingBlock {
     };
 
     let gl: Arc<glow::Context> = Arc::new(gl);
+
+    unsafe {
+        gl.enable(glow::BLEND);
+        gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+    }
 
     RenderingBlock {
         sdl: sdl_context,

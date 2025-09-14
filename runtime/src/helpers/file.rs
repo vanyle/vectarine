@@ -13,6 +13,7 @@ pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
 
 #[cfg(target_os = "emscripten")]
 pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
+    use base64::prelude::*;
     use emscripten_val::Val;
 
     let read_file_handle = Val::global("vectarine");
@@ -24,8 +25,9 @@ pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
         &Val::from_fn1(move |content: &Val| {
             // callback is FnOnce, we turn it into FnMut using this Option.
             if let Some(callback) = callback_option.take() {
-                let s = content.as_bytes();
-                callback(s);
+                let s = content.as_string();
+                let decoded = BASE64_STANDARD.decode(&s).unwrap_or_default();
+                callback(decoded);
             };
             ().into()
         }),

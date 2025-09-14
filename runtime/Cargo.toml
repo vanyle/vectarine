@@ -21,6 +21,7 @@ sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","g
 [target.'cfg(target_os = "emscripten")'.dependencies]
 emscripten-val = { git = "https://github.com/vanyle/emscripten-val", package = "emscripten-val", rev = "2f77cc9" }
 emscripten-functions = "0.3.0"
+base64 = "0.22.1"
 sdl2 = {version = "0.38", default-features = false, features = ["ttf","image","gfx","mixer"]}
 
 [package.metadata.vcpkg]

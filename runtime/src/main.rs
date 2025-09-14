@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::path::Path;
 use std::time::Instant;
 
@@ -33,11 +33,18 @@ pub fn main() {
 
             set_main_loop_wrapper(move || {
                 let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
+                game.load_resource_as_needed(gl.clone());
                 game.main_loop(&latest_events, &window, now.elapsed());
                 now = Instant::now();
 
                 // These are for debug and are never displayed in the runtime.
                 // We still need to clear them to avoid memory leaks.
+                {
+                    #![cfg(debug_assertions)]
+                    for m in game.lua_env.messages.borrow_mut().drain(..) {
+                        println!("{m}");
+                    }
+                }
                 game.lua_env.messages.borrow_mut().clear();
                 game.lua_env.frame_messages.borrow_mut().clear();
 
