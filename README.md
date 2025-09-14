@@ -1,11 +1,11 @@
-# Vectarine Evolved
+# 🍊 Vectarine Evolved
 
 ## Requirements for making games
 
 - A text editor like Visual Studio Code
 - (Optional) Installing a lua extension for your editor
 
-## Getting start making games
+## Getting started making games
 
 See [the manual](./docs/user_manual.md) for how to make games with vectarine
 Below are information on how to improve the engine.
@@ -28,7 +28,12 @@ See [Targeting the web](./docs/targeting-the-web.md) for more details on how to 
 - Start the editor: `cargo run -p editor`
 - Start the editor (hot recompile): `bacon editor`
 
-## Structure / Goals / Roadmap
+## Structure
+
+### Runtime
+
+The main package (with code inside `runtime`) is an hybrid lib/bin package that can compile to the web without all the editor features like debugging, etc...
+It provides the run time code for stuff like asset loading with multiple implementations per target.
 
 ### Editor
 
@@ -39,13 +44,6 @@ you can select and run projects or see the documentation.
 Running it with options allows you to create new project from templates, to open a specific project
 or to build one.
 
-### Runtime
-
-The main package (with code inside `runtime`) is an hybrid lib/bin package that can compile to the web without all the editor features like debugging, etc...
-It provides the run time code for stuff like asset loading with multiple implementations per target.
-
-### Editor
-
 The `editor` package is a wrapper around the `runtime` package that adds editor features like
 debugging, hot reloading, etc...
 
@@ -55,9 +53,9 @@ Run the game: `cargo run -p runtime`
 Build the game for the web: `cargo build -p runtime --target wasm32-unknown-unknown`
 Run the editor: `cargo run -p editor`
 
-## Build
+## Create an engine release
 
 To make the project cross-platform, we use python for all build scripts.
 
 To make a release build, run `uv run ./scripts/release-engine.py`.
-
+A distributable zip file will be created at the root.
