@@ -26,5 +26,16 @@
 			"editor.defaultFormatter": "rust-lang.rust-analyzer",
 		},
 		"Lua.workspace.library": ["lua-api"],
+		"search.exclude": {
+			"target/**/incremental": true,
+			"target/**/.fingerprint": true,
+			"target/**/deps": true,
+			"target/**/build": true,
+			"emsdk/upstream/**": true,
+			"emsdk/node/**": true,
+			"emsdk/python/**": true,
+			"emsdk/bazel/**": true,
+			"**/.venv/**": true,
+		},
 	},
 }
