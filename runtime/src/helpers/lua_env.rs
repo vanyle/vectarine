@@ -5,7 +5,7 @@ use sdl2::keyboard::Keycode;
 
 use crate::helpers::{
     draw_instruction::{self, DrawInstruction},
-    game_resource::{ResourceManager, image_resource::ImageResource},
+    game_resource::{ResourceManager, font_resource::FontResource, image_resource::ImageResource},
     io::IoEnvState,
 };
 
@@ -100,6 +100,30 @@ impl LuaEnvironment {
         );
 
         let queue_for_closure = draw_instructions.clone();
+        add_global_fn(
+            &lua,
+            "drawText",
+            move |_, (text, font_id, x, y, size, color): (String, u32, f32, f32, f32, Table)| {
+                let color = [
+                    color.get::<f32>("r").unwrap_or(0.0),
+                    color.get::<f32>("g").unwrap_or(0.0),
+                    color.get::<f32>("b").unwrap_or(0.0),
+                    color.get::<f32>("a").unwrap_or(0.0),
+                ];
+                let draw_ins = DrawInstruction::Text {
+                    x,
+                    y,
+                    text,
+                    color,
+                    font_size: size,
+                    font_resource_id: font_id,
+                };
+                queue_for_closure.borrow_mut().push_back(draw_ins);
+                Ok(())
+            },
+        );
+
+        let queue_for_closure = draw_instructions.clone();
         add_global_fn(&lua, "clear", move |_, (color,): (Table,)| {
             let color = [
                 color.get::<f32>("r").unwrap_or(0.0),
@@ -178,6 +202,13 @@ impl LuaEnvironment {
         add_global_fn(&lua, "loadImage", move |_, path: String| {
             let mut manager = resources_for_closure.borrow_mut();
             let id = manager.load_resource::<ImageResource>(Path::new(&path));
+            Ok(id)
+        });
+
+        let resources_for_closure = resources.clone();
+        add_global_fn(&lua, "loadFont", move |_, path: String| {
+            let mut manager = resources_for_closure.borrow_mut();
+            let id = manager.load_resource::<FontResource>(Path::new(&path));
             Ok(id)
         });
 

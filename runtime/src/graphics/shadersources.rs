@@ -30,3 +30,23 @@ pub const TEX_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
     void main() {
         frag_color = texture(tex, uv);
     }"#;
+
+pub const FONT_VERTEX_SHADER_SOURCE: &str = r#"
+    layout (location = 0) in vec2 in_vert;
+    layout (location = 1) in vec2 in_uv;
+    out vec2 uv;
+    void main() {
+        uv = in_uv;
+        gl_Position = vec4(in_vert.xy, 0.0, 1.0);
+    }
+"#;
+
+pub const FONT_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
+    in vec2 uv;
+    uniform sampler2D tex;
+    uniform vec4 text_color;
+    out vec4 frag_color;
+    void main() {
+        float r = texture(tex, uv).r;
+        frag_color = vec4(text_color.rgb, r * text_color.a);
+    }"#;

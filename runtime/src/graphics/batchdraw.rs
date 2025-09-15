@@ -1,17 +1,27 @@
 use std::sync::Arc;
 
-use crate::graphics::{
-    glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
-    gldraw::DrawingTarget,
-    glprogram::GLProgram,
-    gltexture::Texture,
-    gltypes::{DataLayout, GLTypes, UsageHint},
-    gluniforms::{UniformValue, Uniforms},
-    shadersources::{
-        COLOR_FRAG_SHADER_SOURCE, COLOR_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE,
-        TEX_VERTEX_SHADER_SOURCE,
+use crate::{
+    graphics::{
+        glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
+        gldraw::DrawingTarget,
+        glprogram::GLProgram,
+        gltexture::Texture,
+        gltypes::{DataLayout, GLTypes, UsageHint},
+        gluniforms::{UniformValue, Uniforms},
+        shadersources::{
+            COLOR_FRAG_SHADER_SOURCE, COLOR_VERTEX_SHADER_SOURCE, FONT_FRAG_SHADER_SOURCE,
+            FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
+        },
     },
+    helpers::game_resource::font_resource::FontRenderingData,
 };
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub enum DefaultShader {
+    Color,
+    Texture,
+    Font,
+}
 
 /// A simple structure to get quickly start drawing shapes.
 /// Batches OpenGL calls together when possible.
@@ -19,8 +29,9 @@ use crate::graphics::{
 pub struct BatchDraw2d {
     color_program: GLProgram,
     texture_program: GLProgram,
+    text_program: GLProgram,
 
-    vertex_data: Vec<(SharedGPUCPUBuffer, Uniforms, bool)>, // bool = is textured?
+    vertex_data: Vec<(SharedGPUCPUBuffer, Uniforms, DefaultShader)>,
     drawing_target: DrawingTarget,
 }
 
@@ -43,22 +54,31 @@ impl BatchDraw2d {
             .add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
         texture_program.vertex_layout = layout;
 
+        let mut text_program =
+            GLProgram::from_source(gl, FONT_VERTEX_SHADER_SOURCE, FONT_FRAG_SHADER_SOURCE)?;
+        let mut layout = DataLayout::new();
+        layout
+            .add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position))
+            .add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
+        text_program.vertex_layout = layout;
+
         let drawing_target = DrawingTarget::new(gl);
 
         Ok(Self {
             color_program,
             texture_program,
+            text_program,
             vertex_data: Vec::new(),
             drawing_target,
         })
     }
 
     pub fn draw(&mut self, auto_flush: bool) {
-        for (vertex, uniforms, is_textured) in &mut self.vertex_data {
-            let program = if *is_textured {
-                &self.texture_program
-            } else {
-                &self.color_program
+        for (vertex, uniforms, shader) in &mut self.vertex_data {
+            let program = match shader {
+                DefaultShader::Color => &self.color_program,
+                DefaultShader::Texture => &self.texture_program,
+                DefaultShader::Font => &self.text_program,
             };
 
             // This is probably a dubious optimization, it needs to be benchmarked.
@@ -84,17 +104,17 @@ impl BatchDraw2d {
         vertices: &[f32],
         indices: &[u32],
         uniforms: Uniforms,
-        is_textured: bool,
+        shader_to_use: DefaultShader,
     ) {
         let last_item = self.vertex_data.last_mut();
         let Some(last_item) = last_item else {
-            self.add_to_batch_as_new_entry(vertices, indices, uniforms, is_textured);
+            self.add_to_batch_as_new_entry(vertices, indices, uniforms, shader_to_use);
             return;
         };
         let (last_vertex_buffer, last_uniforms, last_is_textured) = last_item;
         // Merging is not possible if the uniforms are not the same / the shader is different.
-        if *last_is_textured != is_textured || !last_uniforms.similar(&uniforms) {
-            self.add_to_batch_as_new_entry(vertices, indices, uniforms, is_textured);
+        if *last_is_textured != shader_to_use || !last_uniforms.similar(&uniforms) {
+            self.add_to_batch_as_new_entry(vertices, indices, uniforms, shader_to_use);
             return;
         }
 
@@ -106,17 +126,20 @@ impl BatchDraw2d {
         vertices: &[f32],
         indices: &[u32],
         uniforms: Uniforms,
-        is_textured: bool,
+        shader_to_use: DefaultShader,
     ) {
-        let layout = if is_textured {
-            self.texture_program.vertex_layout.clone()
-        } else {
-            self.color_program.vertex_layout.clone()
-        };
+        let layout = (match shader_to_use {
+            DefaultShader::Color => &self.color_program,
+            DefaultShader::Texture => &self.texture_program,
+            DefaultShader::Font => &self.text_program,
+        })
+        .vertex_layout
+        .clone();
+
         self.vertex_data.push((
             SharedGPUCPUBuffer::from_data(layout, vertices, indices),
             uniforms,
-            is_textured,
+            shader_to_use,
         ));
     }
 
@@ -135,7 +158,12 @@ impl BatchDraw2d {
             2, 3, 0, // second triangle
         ];
 
-        self.add_to_batch_by_trying_to_merge(&vertices, &indices, Uniforms::new(), false);
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &indices,
+            Uniforms::new(),
+            DefaultShader::Color,
+        );
     }
 
     pub fn draw_circle(&mut self, x: f32, y: f32, radius: f32, color: [f32; 4]) {
@@ -165,7 +193,12 @@ impl BatchDraw2d {
             }
         }
 
-        self.add_to_batch_by_trying_to_merge(&vertices, &indices, Uniforms::new(), false);
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &indices,
+            Uniforms::new(),
+            DefaultShader::Color,
+        );
     }
 
     pub fn draw_image(&mut self, x: f32, y: f32, width: f32, height: f32, texture: &Arc<Texture>) {
@@ -185,7 +218,69 @@ impl BatchDraw2d {
 
         let mut uniforms = Uniforms::new();
         uniforms.add("tex", UniformValue::Sampler2D(texture.clone()));
-        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, true);
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, DefaultShader::Texture);
+    }
+
+    pub fn draw_text(
+        &mut self,
+        x: f32,
+        y: f32,
+        text: &str,
+        color: [f32; 4],
+        font_size: f32,
+        font_resource: &FontRenderingData,
+    ) {
+        let mut vertices = Vec::<f32>::new();
+        let mut indices = Vec::<u32>::new();
+        let mut x_pos = 0.0;
+
+        for c in text.chars() {
+            if let Some(char_info) = font_resource.font_cache.get(&c) {
+                let bounds = char_info.metrics.bounds.scale(font_size / 64.0);
+                let x0 = x_pos + x + bounds.xmin;
+                let y0 = y + bounds.ymin;
+                let x1 = x0 + bounds.width;
+                let y1 = y0 + bounds.height;
+
+                x_pos += char_info.metrics.advance_width * (font_size / 64.0);
+
+                // Use the stored atlas coordinates instead of calculating from metrics
+                let s0 = char_info.atlas_x;
+                let t0 = char_info.atlas_y;
+                let s1 = char_info.atlas_x + char_info.atlas_width;
+                let t1 = char_info.atlas_y + char_info.atlas_height + 0.04;
+
+                let s = &[
+                    // positions       // tex coords
+                    x0, y0, s0, t1, // bottom left
+                    x1, y0, s1, t1, // bottom right
+                    x1, y1, s1, t0, // top right
+                    x0, y1, s0, t0, // top left
+                ];
+
+                // println!("Rendering glyph: {:?}", s);
+                vertices.extend_from_slice(s);
+
+                let base_index = (vertices.len() / 4 - 4) as u32; // Each vertex has 4 components
+
+                indices.extend_from_slice(&[
+                    base_index,
+                    base_index + 1,
+                    base_index + 2, // first triangle
+                    base_index + 2,
+                    base_index + 3,
+                    base_index, // second triangle
+                ]);
+            }
+        }
+
+        let mut uniforms = Uniforms::new();
+        uniforms.add(
+            "tex",
+            UniformValue::Sampler2D(font_resource.font_atlas.clone()),
+        );
+        uniforms.add("text_color", UniformValue::Vec4(color));
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, DefaultShader::Font);
     }
 
     pub fn flush(&mut self) {

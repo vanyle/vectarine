@@ -7,6 +7,7 @@ edition = "2024"
 egui = "0.32.2"
 egui_glow = "0.32.2"
 egui_sdl2_platform = "0.4.0"
+fontdue = "0.9.3"
 glow = "0.16.0"
 image = { version = "0.25.8", features = ["png", "bmp", "jpeg", "ico", "gif", "webp"] }
 mlua = { version = "0.11.2", features = ["luau", "serde", "vendored"] }

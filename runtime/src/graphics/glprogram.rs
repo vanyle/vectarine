@@ -93,11 +93,12 @@ impl GLProgram {
         let gl = self.gl.as_ref();
         for (uniform_name, uniform_value) in &uniforms.data {
             unsafe {
-                let location = gl
-                    .get_uniform_location(self.program, uniform_name.as_str())
-                    .unwrap_or_else(|| {
-                        panic!("The uniform {uniform_name} should exist in the shader")
-                    });
+                let location = gl.get_uniform_location(self.program, uniform_name.as_str());
+                let Some(location) = location else {
+                    // Uniform not found, maybe it was optimized out.
+                    // TODO: put a warning.
+                    continue;
+                };
 
                 match uniform_value {
                     UniformValue::Float(v) => {

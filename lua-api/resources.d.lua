@@ -14,4 +14,13 @@ Global = {}
 --- Load an image from a path inside assets
 --- @param path string
 --- @return ImageResource
+--- @nodiscard
 function loadImage(path) end
+
+--- @alias FontResource `FontResource`
+
+--- Load a font from a path inside assets
+--- @param path string
+--- @return FontResource
+--- @nodiscard
+function loadFont(path) end

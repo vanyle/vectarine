@@ -6,7 +6,9 @@ use crate::{
     graphics::batchdraw::BatchDraw2d,
     helpers::{
         draw_instruction,
-        game_resource::{ResourceStatus, image_resource::ImageResource},
+        game_resource::{
+            ResourceStatus, font_resource::FontResource, image_resource::ImageResource,
+        },
         io::process_events,
         lua_env::LuaEnvironment,
     },
@@ -129,6 +131,50 @@ impl Game {
                         };
 
                         self.batch.draw_image(x, y, w, h, texture);
+                    }
+                    draw_instruction::DrawInstruction::Text {
+                        x,
+                        y,
+                        text,
+                        color,
+                        font_size,
+                        font_resource_id,
+                    } => {
+                        let resource_manager = self.lua_env.resources.borrow();
+                        let resource = resource_manager.resources.get(font_resource_id as usize);
+                        let Some(resource) = resource else {
+                            self.print_to_editor_console(
+                                &format!(
+                                    "Warning: Tried to draw text with font id '{font_resource_id}' which does not exist.",
+                                ),
+                            );
+                            continue;
+                        };
+                        if !resource.is_loaded() {
+                            continue; // Not loaded now, maybe on the next frame it will be.
+                        }
+
+                        let res = resource.as_any().downcast_ref::<FontResource>();
+                        let Some(res) = res else {
+                            self.print_to_editor_console(
+                                &format!(
+                                    "Warning: Tried to draw text with font id '{font_resource_id}' which is not a font.",
+                                ),
+                            );
+                            continue;
+                        };
+
+                        let font_rendering_data = res.font_rendering.borrow();
+                        let font_rendering_data = font_rendering_data.as_ref();
+                        let Some(font_rendering_data) = font_rendering_data else {
+                            debug_assert!(
+                                false,
+                                "Resource said it was loaded but the texture is None"
+                            );
+                            continue; // texture is not loaded. This probably breaks an invariant.
+                        };
+                        self.batch
+                            .draw_text(x, y, &text, color, font_size, font_rendering_data);
                     }
                     draw_instruction::DrawInstruction::Clear { color } => {
                         self.batch.clear(color[0], color[1], color[2], color[3]);

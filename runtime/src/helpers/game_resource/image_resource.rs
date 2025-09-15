@@ -24,18 +24,15 @@ impl Resource for ImageResource {
     fn reload_from_data(self: Rc<Self>, gl: Arc<glow::Context>, data: Vec<u8>) {
         if data.is_empty() {
             self.is_loading.replace(false);
-            self.error.replace(Some(
-                "File is empty or does not exist. Check the path.".to_string(),
-            ));
+            self.error
+                .replace(Some("File is empty or does not exist.".to_string()));
             return;
         }
         let result = image::load_from_memory(data.as_slice());
         let Ok(mut image) = result else {
             self.is_loading.replace(false);
-            self.error.replace(Some(format!(
-                "Failed to load image: {}",
-                result.err().unwrap()
-            )));
+            self.error
+                .replace(Some(format!("{}", result.err().unwrap())));
             return;
         };
         // We could do this in the shader instead. I don't really know which option is better.

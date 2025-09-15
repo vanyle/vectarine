@@ -28,3 +28,12 @@ function drawCircle(x, y, radius, color) end
 --- @param w number
 --- @param h number
 function drawImage(image, x, y, w, h) end
+
+--- Draws text
+--- @param text string
+--- @param font FontResource
+--- @param x number
+--- @param y number
+--- @param size number
+--- @param color Color
+function drawText(text, font, x, y, size, color) end
