@@ -19,6 +19,8 @@ pub fn main() {
     } = init_sdl();
     let lua_env = lua_env::LuaEnvironment::new();
 
+    window.borrow_mut().set_resizable(true);
+
     read_file(
         "assets/scripts/game.lua",
         Box::new(move |content| {

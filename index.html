@@ -103,8 +103,12 @@
 				})();
 			}
 
+			const canvas = document.getElementById("canvas");
 			window.vectarine = {
 				read_file_for_rust: read_file_for_rust,
+				getCanvasSizeInPx: function () {
+					return { width: canvas.clientWidth, height: canvas.clientHeight };
+				},
 			};
 
 			const loadingInfoElement = document.getElementById("loading-info");

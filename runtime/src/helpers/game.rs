@@ -53,14 +53,28 @@ impl Game {
         window: &Rc<RefCell<sdl2::video::Window>>,
         delta_time: std::time::Duration,
     ) {
-        process_events(self, events);
-
+        let framebuffer_width;
+        let framebuffer_height;
         {
             let mut env_state = self.lua_env.env_state.borrow_mut();
-            let (width, height) = window.borrow().size();
+            let (width, height) = screen_size(&window.borrow());
             env_state.window_width = width;
             env_state.window_height = height;
+            let aspect_ratio = width as f32 / height as f32;
+            // This works in the editor, but not the runtime.
+            self.batch.set_aspect_ratio(aspect_ratio);
+
+            framebuffer_width = width;
+            framebuffer_height = height;
         }
+
+        // This is incorrect on the web.
+        process_events(
+            self,
+            events,
+            framebuffer_width as f32,
+            framebuffer_height as f32,
+        );
 
         {
             let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
@@ -183,4 +197,18 @@ impl Game {
             resource.reload(gl.clone());
         }
     }
+}
+
+#[cfg(not(target_os = "emscripten"))]
+pub fn screen_size(window: &sdl2::video::Window) -> (u32, u32) {
+    window.size()
+}
+
+#[cfg(target_os = "emscripten")]
+pub fn screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
+    use emscripten_val::Val;
+    let size = Val::global("vectarine").call("getCanvasSizeInPx", &[]);
+    let width = size.get(&Val::from_str("width")).as_i32();
+    let height = size.get(&Val::from_str("height")).as_i32();
+    (width as u32, height as u32)
 }

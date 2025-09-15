@@ -30,6 +30,7 @@ pub struct BatchDraw2d {
     color_program: GLProgram,
     texture_program: GLProgram,
     text_program: GLProgram,
+    aspect_ratio: f32,
 
     vertex_data: Vec<(SharedGPUCPUBuffer, Uniforms, DefaultShader)>,
     drawing_target: DrawingTarget,
@@ -69,8 +70,13 @@ impl BatchDraw2d {
             texture_program,
             text_program,
             vertex_data: Vec::new(),
+            aspect_ratio: 1.0,
             drawing_target,
         })
+    }
+
+    pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {
+        self.aspect_ratio = aspect_ratio;
     }
 
     pub fn draw(&mut self, auto_flush: bool) {
@@ -179,7 +185,7 @@ impl BatchDraw2d {
 
         for i in 0..=CIRCLE_SEGMENTS {
             let theta = (i as f32 / CIRCLE_SEGMENTS as f32) * std::f32::consts::TAU;
-            let vx = x + radius * theta.cos();
+            let vx = x + (radius * theta.cos()) / self.aspect_ratio;
             let vy = y + radius * theta.sin();
             vertices.push(vx);
             vertices.push(vy);
@@ -239,9 +245,9 @@ impl BatchDraw2d {
         for c in text.chars() {
             if let Some(char_info) = font_resource.font_cache.get(&c) {
                 let bounds = char_info.metrics.bounds.scale(scale);
-                let x0 = x_pos + x + bounds.xmin;
-                let y0 = y_pos + y + bounds.ymin;
-                let x1 = x0 + bounds.width;
+                let x0 = x + (x_pos + bounds.xmin) / self.aspect_ratio;
+                let y0 = y + y_pos + bounds.ymin;
+                let x1 = x0 + bounds.width / self.aspect_ratio;
                 let y1 = y0 + bounds.height;
 
                 x_pos += char_info.metrics.advance_width * scale;

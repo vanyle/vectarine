@@ -173,7 +173,7 @@ impl Resource for FontResource {
 }
 
 impl FontResource {
-    pub fn measure_text(&self, text: &str, font_size: f32) -> (f32, f32, f32) {
+    pub fn measure_text(&self, text: &str, font_size: f32, aspect_ratio: f32) -> (f32, f32, f32) {
         let font_rendering_data = self.font_rendering.borrow();
         let font_rendering_data = font_rendering_data.as_ref();
         let Some(font_rendering_data) = font_rendering_data else {
@@ -194,6 +194,10 @@ impl FontResource {
         }
 
         let scale = font_size / font_rendering_data.font_size;
-        (width * scale, height * scale, max_ascent * scale)
+        (
+            width * scale / aspect_ratio,
+            height * scale,
+            max_ascent * scale,
+        )
     }
 }

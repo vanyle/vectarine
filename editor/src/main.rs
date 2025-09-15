@@ -72,6 +72,8 @@ fn gui_main() {
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
     editor_state.load_config();
 
+    window.borrow_mut().set_resizable(true);
+
     game.load();
 
     // The main loop

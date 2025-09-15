@@ -124,6 +124,7 @@ impl LuaEnvironment {
         );
 
         let resources_for_closure = resources.clone();
+        let env_state_for_closure = env_state.clone();
         add_global_fn(
             &lua,
             "measureText",
@@ -137,7 +138,10 @@ impl LuaEnvironment {
                     let _ = result.set("bearingY", 0.0);
                     return Ok(result);
                 };
-                let (width, height, max_ascent) = font_resource.measure_text(&text, font_size);
+                let env_state = env_state_for_closure.borrow();
+                let ratio = env_state.window_width as f32 / env_state.window_height as f32;
+                let (width, height, max_ascent) =
+                    font_resource.measure_text(&text, font_size, ratio);
                 let _ = result.set("width", width);
                 let _ = result.set("height", height);
                 let _ = result.set("bearingY", max_ascent);

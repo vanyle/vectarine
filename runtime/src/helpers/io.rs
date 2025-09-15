@@ -31,7 +31,12 @@ impl Default for IoEnvState {
     }
 }
 
-pub fn process_events(game: &mut Game, events: &[sdl2::event::Event]) {
+pub fn process_events(
+    game: &mut Game,
+    events: &[sdl2::event::Event],
+    framebuffer_width: f32,
+    framebuffer_height: f32,
+) {
     for event in events.iter() {
         match event {
             Event::Quit { .. }
@@ -66,8 +71,8 @@ pub fn process_events(game: &mut Game, events: &[sdl2::event::Event]) {
                 yrel: _,
             } => {
                 let mouse_state = &mut game.lua_env.env_state.borrow_mut().mouse_state;
-                mouse_state.x = *x as f32;
-                mouse_state.y = *y as f32;
+                mouse_state.x = (*x as f32) / framebuffer_width * 2.0 - 1.0;
+                mouse_state.y = -((*y as f32) / framebuffer_height * 2.0 - 1.0);
                 mouse_state.is_left_down = mousestate.left();
                 mouse_state.is_right_down = mousestate.right();
             }

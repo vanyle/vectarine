@@ -1,6 +1,11 @@
 # TODO
 
 - [ ] Allow window resizing and handle aspect ratios
+  - [x] Draw text with proper aspect ratio
+  - [x] Draw circle with proper aspect ratio
+  - [ ] Lua API to toggle resizable window
+  - [ ] Lua API to set window size
+  - [ ] Lua API to get screen size
 - [ ] Fullscreen API (for web too!)
 - [ ] More complete drawing API
   - [ ] Draw portions of images
@@ -11,6 +16,7 @@
   - [ ] Outlines
 - [ ] Canvas API
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
+- [ ] Resource refacto: move loading state management out of the individual resources
 - [ ] Aseprite support
 - [ ] Investigate how to have true interactive documentation
 - [ ] Tiled parsing
