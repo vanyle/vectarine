@@ -2,9 +2,12 @@ use std::sync::Arc;
 
 use glow::HasContext;
 
-use crate::graphics::{
-    gltypes::DataLayout,
-    gluniforms::{UniformValue, Uniforms},
+use crate::{
+    get_shader_version,
+    graphics::{
+        gltypes::DataLayout,
+        gluniforms::{UniformValue, Uniforms},
+    },
 };
 
 pub struct GLProgram {
@@ -39,7 +42,7 @@ impl GLProgram {
         let program = unsafe {
             let program = gl.create_program().expect("Cannot create program");
 
-            let shader_version = "#version 300 es";
+            let shader_version = get_shader_version();
 
             let shaders = [
                 (glow::VERTEX_SHADER, vert_src),
