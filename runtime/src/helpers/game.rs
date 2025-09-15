@@ -98,29 +98,20 @@ impl Game {
                         resource_id,
                     } => {
                         let resource_manager = self.lua_env.resources.borrow();
-                        let resource = resource_manager.resources.get(resource_id as usize);
-                        let Some(resource) = resource else {
-                            self.print_to_editor_console(
+                        let resource = resource_manager.get_by_id::<ImageResource>(resource_id);
+                        let image_resource = match resource {
+                            Ok(res) => res,
+                            Err(cause) => {
+                                self.print_to_editor_console(
                                 &format!(
-                                    "Warning: Tried to draw image with id '{resource_id}' which does not exist.",
+                                    "Warning: Failed to draw image with id '{resource_id}': {cause}",
                                 ),
                             );
-                            continue;
+                                continue;
+                            }
                         };
-                        if !resource.is_loaded() {
-                            continue; // Not loaded now, maybe on the next frame it will be.
-                        }
 
-                        let res = resource.as_any().downcast_ref::<ImageResource>();
-                        let Some(res) = res else {
-                            self.print_to_editor_console(
-                                &format!(
-                                    "Warning: Tried to draw image with id '{resource_id}' which is not an image.",
-                                ),
-                            );
-                            continue;
-                        };
-                        let texture = res.texture.borrow();
+                        let texture = image_resource.texture.borrow();
                         let texture = texture.as_ref();
                         let Some(texture) = texture else {
                             debug_assert!(
@@ -141,27 +132,17 @@ impl Game {
                         font_resource_id,
                     } => {
                         let resource_manager = self.lua_env.resources.borrow();
-                        let resource = resource_manager.resources.get(font_resource_id as usize);
-                        let Some(resource) = resource else {
-                            self.print_to_editor_console(
+                        let resource = resource_manager.get_by_id::<FontResource>(font_resource_id);
+                        let res = match resource {
+                            Ok(res) => res,
+                            Err(cause) => {
+                                self.print_to_editor_console(
                                 &format!(
-                                    "Warning: Tried to draw text with font id '{font_resource_id}' which does not exist.",
+                                    "Warning: Failed to draw text with font id '{font_resource_id}': {cause}",
                                 ),
                             );
-                            continue;
-                        };
-                        if !resource.is_loaded() {
-                            continue; // Not loaded now, maybe on the next frame it will be.
-                        }
-
-                        let res = resource.as_any().downcast_ref::<FontResource>();
-                        let Some(res) = res else {
-                            self.print_to_editor_console(
-                                &format!(
-                                    "Warning: Tried to draw text with font id '{font_resource_id}' which is not a font.",
-                                ),
-                            );
-                            continue;
+                                continue;
+                            }
                         };
 
                         let font_rendering_data = res.font_rendering.borrow();

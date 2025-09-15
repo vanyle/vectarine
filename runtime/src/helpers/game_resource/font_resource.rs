@@ -29,6 +29,7 @@ pub struct FontResource {
 }
 
 const CHARSET: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/\\`~ \n";
+const FONT_DETAIL: f32 = 64.0; // Base font size for rasterization
 
 impl Resource for FontResource {
     fn get_resource_info(&self) -> ResourceDescription {
@@ -56,7 +57,6 @@ impl Resource for FontResource {
         self.error.replace(None);
 
         // Initialize the font atlas
-        let font_size = 64.0;
         let chars: Vec<char> = CHARSET.chars().collect();
 
         let mut char_data: Vec<(char, fontdue::Metrics, Vec<u8>)> = Vec::new();
@@ -64,7 +64,7 @@ impl Resource for FontResource {
         let mut max_height = 0u32;
 
         for &c in &chars {
-            let (metrics, bitmap) = font.rasterize(c, font_size);
+            let (metrics, bitmap) = font.rasterize(c, FONT_DETAIL);
             total_width += metrics.width as u32;
             max_height = max_height.max(metrics.height as u32);
             char_data.push((c, metrics, bitmap));
@@ -76,16 +76,12 @@ impl Resource for FontResource {
         let atlas_width = total_width + ((chars.len() + 1) as u32 * PADDING);
         let atlas_height = max_height + PADDING * 2;
 
-        // Create the atlas bitmap
         let mut atlas_data = vec![0u8; (atlas_width * atlas_height) as usize];
         let mut current_x = PADDING;
 
-        // Initialize the font cache
         let mut font_cache = HashMap::new();
 
-        // Second pass: place characters in atlas and store texture coordinates
         for (c, metrics, bitmap) in char_data {
-            // Copy character bitmap to atlas
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
                     let src_idx = y * metrics.width + x;
@@ -124,7 +120,7 @@ impl Resource for FontResource {
             font_atlas: atlas_texture,
             font_cache,
             font_loader: font,
-            font_size,
+            font_size: FONT_DETAIL,
         }));
     }
 
@@ -173,5 +169,31 @@ impl Resource for FontResource {
             is_loading: RefCell::new(false),
             error: RefCell::new(None),
         }
+    }
+}
+
+impl FontResource {
+    pub fn measure_text(&self, text: &str, font_size: f32) -> (f32, f32, f32) {
+        let font_rendering_data = self.font_rendering.borrow();
+        let font_rendering_data = font_rendering_data.as_ref();
+        let Some(font_rendering_data) = font_rendering_data else {
+            return (0.0, 0.0, 0.0);
+        };
+
+        let mut width = 0.0;
+        let mut height = 0.0;
+        let mut max_ascent = 0.0;
+
+        for c in text.chars() {
+            if let Some(char_info) = font_rendering_data.font_cache.get(&c) {
+                let bounds = char_info.metrics.bounds;
+                width += char_info.metrics.advance_width;
+                max_ascent = f32::max(max_ascent, bounds.height - bounds.ymin);
+                height = f32::max(height, bounds.height);
+            }
+        }
+
+        let scale = font_size / font_rendering_data.font_size;
+        (width * scale, height * scale, max_ascent * scale)
     }
 }

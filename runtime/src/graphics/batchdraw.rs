@@ -230,19 +230,22 @@ impl BatchDraw2d {
         font_size: f32,
         font_resource: &FontRenderingData,
     ) {
+        let scale = font_size / font_resource.font_size;
         let mut vertices = Vec::<f32>::new();
         let mut indices = Vec::<u32>::new();
         let mut x_pos = 0.0;
+        let mut y_pos = 0.0;
 
         for c in text.chars() {
             if let Some(char_info) = font_resource.font_cache.get(&c) {
-                let bounds = char_info.metrics.bounds.scale(font_size / 64.0);
+                let bounds = char_info.metrics.bounds.scale(scale);
                 let x0 = x_pos + x + bounds.xmin;
-                let y0 = y + bounds.ymin;
+                let y0 = y_pos + y + bounds.ymin;
                 let x1 = x0 + bounds.width;
                 let y1 = y0 + bounds.height;
 
-                x_pos += char_info.metrics.advance_width * (font_size / 64.0);
+                x_pos += char_info.metrics.advance_width * scale;
+                y_pos += char_info.metrics.advance_height * scale;
 
                 // Use the stored atlas coordinates instead of calculating from metrics
                 let s0 = char_info.atlas_x;
@@ -258,7 +261,6 @@ impl BatchDraw2d {
                     x0, y1, s0, t0, // top left
                 ];
 
-                // println!("Rendering glyph: {:?}", s);
                 vertices.extend_from_slice(s);
 
                 let base_index = (vertices.len() / 4 - 4) as u32; // Each vertex has 4 components

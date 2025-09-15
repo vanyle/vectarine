@@ -1,8 +1,5 @@
 # TODO
 
-- [x] Loading fonts and drawing text from lua code
-  - [x] Draw text
-  - [ ] Measure text
 - [ ] Allow window resizing and handle aspect ratios
 - [ ] Fullscreen API (for web too!)
 - [ ] More complete drawing API
@@ -14,11 +11,11 @@
   - [ ] Outlines
 - [ ] Canvas API
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
+- [ ] Aseprite support
+- [ ] Investigate how to have true interactive documentation
 - [ ] Tiled parsing
   - [ ] Sprites as an asset class
   - [ ] Reading tiled files
-- [ ] Aseprite support
-- [ ] Investigate how to have true interactive documentation
 - [ ] Potential performance improvements
   - [ ] No base64 for loading data on the web
   - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.
@@ -27,6 +24,9 @@
 
 # Done
 
+- [x] Loading fonts and drawing text from lua code
+  - [x] Draw text
+  - [x] Measure text
 - [x] Assets "resource" system
   - [x] Resource tab in editor
   - [x] Error system when asset fails to load

@@ -123,6 +123,28 @@ impl LuaEnvironment {
             },
         );
 
+        let resources_for_closure = resources.clone();
+        add_global_fn(
+            &lua,
+            "measureText",
+            move |lua, (text, font_resource_id, font_size): (String, u32, f32)| {
+                let font_resource = resources_for_closure.borrow();
+                let font_resource = font_resource.get_by_id::<FontResource>(font_resource_id);
+                let result = lua.create_table().unwrap();
+                let Ok(font_resource) = font_resource else {
+                    let _ = result.set("width", 0.0);
+                    let _ = result.set("height", 0.0);
+                    let _ = result.set("bearingY", 0.0);
+                    return Ok(result);
+                };
+                let (width, height, max_ascent) = font_resource.measure_text(&text, font_size);
+                let _ = result.set("width", width);
+                let _ = result.set("height", height);
+                let _ = result.set("bearingY", max_ascent);
+                Ok(result)
+            },
+        );
+
         let queue_for_closure = draw_instructions.clone();
         add_global_fn(&lua, "clear", move |_, (color,): (Table,)| {
             let color = [

@@ -60,6 +60,19 @@ impl ResourceManager {
         id
     }
 
+    pub fn get_by_id<T: Resource + 'static>(&self, id: u32) -> Result<Rc<T>, String> {
+        let resource = self
+            .resources
+            .get(id as usize)
+            .ok_or("Resource not found")?;
+        if !resource.is_loaded() {
+            return Err("Resource not loaded".into());
+        }
+        let res = resource.clone().as_any_rc();
+        let res = res.downcast::<T>().map_err(|_| "Resource type mismatch")?;
+        Ok(res)
+    }
+
     pub fn get_by_path(&self, path: &Path) -> Option<Rc<dyn Resource>> {
         let to_match = get_absolute_path(path);
 
@@ -130,10 +143,14 @@ pub fn get_absolute_path(resource_path: &Path) -> String {
 
 pub trait ResourceToAny: 'static {
     fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any_rc(self: Rc<Self>) -> Rc<dyn std::any::Any>;
 }
 
 impl<T: Resource + 'static> ResourceToAny for T {
     fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn as_any_rc(self: Rc<Self>) -> Rc<dyn std::any::Any> {
         self
     }
 }

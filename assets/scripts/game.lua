@@ -3,6 +3,7 @@ local t = 0
 function Load()
     dprint("Loading ...")
     Global.logo = loadImage("textures/logo.png")
+    Global.font = loadFont("fonts/arial.ttf")
     Global.frame_times = {}
 end
 
@@ -51,6 +52,14 @@ function Update(time_delta)
             end
         end
     end
+    -- drawImage(Global.logo, -0.2, -0.2, 0.4, 0.4)
+    local text = "HY$@llo World!  ..."
+    local textSize = 0.1
 
-    drawImage(Global.logo, -0.2, -0.2, 0.4, 0.4)
+    -- Technique for drawing a box around text.
+    local mesurement = measureText(text, Global.font, textSize)
+    local toBaseline = mesurement.height - mesurement.bearingY
+    drawRect(-0.5, 0.5 + toBaseline, mesurement.width, mesurement.height, { r = 0, g = 1, b = 0, a = 0.5 })
+
+    drawText(text, Global.font, -0.5, 0.5, textSize, { r = 0, g = 0, b = 0, a = 1 })
 end
