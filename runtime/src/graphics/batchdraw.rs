@@ -33,7 +33,7 @@ pub struct BatchDraw2d {
     aspect_ratio: f32,
 
     vertex_data: Vec<(SharedGPUCPUBuffer, Uniforms, DefaultShader)>,
-    drawing_target: DrawingTarget,
+    pub drawing_target: DrawingTarget,
 }
 
 impl BatchDraw2d {

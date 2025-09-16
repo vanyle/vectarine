@@ -1,5 +1,6 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
+use glow::HasContext;
 use sdl2::EventPump;
 
 use crate::{
@@ -15,14 +16,21 @@ use crate::{
 };
 
 pub struct Game {
+    pub gl: Arc<glow::Context>,
     pub batch: BatchDraw2d,
     pub event_pump: EventPump,
     pub lua_env: LuaEnvironment,
 }
 
 impl Game {
-    pub fn new(batch: BatchDraw2d, event_pump: EventPump, lua_env: LuaEnvironment) -> Self {
+    pub fn new(
+        gl: &Arc<glow::Context>,
+        batch: BatchDraw2d,
+        event_pump: EventPump,
+        lua_env: LuaEnvironment,
+    ) -> Self {
         Game {
+            gl: gl.clone(),
             batch,
             event_pump,
             lua_env,
@@ -62,10 +70,19 @@ impl Game {
             env_state.window_height = height;
             let aspect_ratio = width as f32 / height as f32;
             // This works in the editor, but not the runtime.
+            // On the web, this is different, the aspect ratio needs to be squared??
+            //self.batch.set_aspect_ratio(aspect_ratio * aspect_ratio);
             self.batch.set_aspect_ratio(aspect_ratio);
 
             framebuffer_width = width;
             framebuffer_height = height;
+        }
+
+        {
+            let gl = &self.gl;
+            unsafe {
+                gl.viewport(0, 0, framebuffer_width as i32, framebuffer_height as i32);
+            }
         }
 
         // This is incorrect on the web.

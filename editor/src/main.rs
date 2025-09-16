@@ -68,7 +68,7 @@ fn gui_main() {
     let mut platform = egui_sdl2_platform::Platform::new(window.borrow().size()).unwrap();
 
     let batch = BatchDraw2d::new(&gl).unwrap();
-    let mut game = Game::new(batch, event_pump, lua_env);
+    let mut game = Game::new(&gl, batch, event_pump, lua_env);
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
     editor_state.load_config();
 
@@ -79,6 +79,7 @@ fn gui_main() {
     // The main loop
     let mut start_of_frame = Instant::now();
     loop {
+        let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
         game.load_resource_as_needed(gl.clone());
         reload_assets_if_needed(
             &gl,
@@ -86,8 +87,6 @@ fn gui_main() {
             &lua_for_reload,
             &debounce_receiver,
         );
-
-        let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
 
         // Render the game
         let new_start_of_frame = Instant::now();
