@@ -12,7 +12,7 @@ pub fn main() {
 
     let RenderingBlock {
         sdl: _sdl,
-        video: video,
+        video,
         window,
         event_pump,
         gl,

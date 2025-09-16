@@ -45,6 +45,13 @@ function setWindowSize(width, height) end
 --- @param resizeable boolean
 function setResizeable(resizeable) end
 
+--- Set the window to fullscreen or windowed mode
+--- Before calling this function, you can set the window size to the size of the screen to avoid black borders.
+--- On the web, the game is usually embedded in an iframe / player which already provides a fullscreen button, so this
+--- function does nothing.
+--- @param fullscreen boolean
+function setFullscreen(fullscreen) end
+
 --- Return a friendly string representation of arg
 --- @param arg any
 --- @return string

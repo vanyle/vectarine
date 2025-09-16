@@ -249,6 +249,12 @@ impl LuaEnvironment {
             },
         );
 
+        let env_state_for_closure = env_state.clone();
+        add_global_fn(&lua, "setFullscreen", move |_, (fullscreen,): (bool,)| {
+            env_state_for_closure.borrow_mut().fullscreen_state_request = Some(fullscreen);
+            Ok(())
+        });
+
         let resources_for_closure = resources.clone();
         add_global_fn(&lua, "loadImage", move |_, path: String| {
             let mut manager = resources_for_closure.borrow_mut();

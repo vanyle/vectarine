@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use glow::HasContext;
-use sdl2::EventPump;
+use sdl2::{EventPump, video::FullscreenType};
 
 use crate::{
     graphics::batchdraw::BatchDraw2d,
@@ -117,6 +117,14 @@ impl Game {
                 let (target_width, target_height) = target_size;
                 let _ = window.borrow_mut().set_size(target_width, target_height);
                 env_state.window_target_size = None;
+            }
+            if let Some(fullscreen_request) = env_state.fullscreen_state_request {
+                if fullscreen_request {
+                    let _ = window.borrow_mut().set_fullscreen(FullscreenType::True);
+                } else {
+                    let _ = window.borrow_mut().set_fullscreen(FullscreenType::Off);
+                }
+                env_state.fullscreen_state_request = None;
             }
         }
 

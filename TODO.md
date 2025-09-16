@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Fullscreen API (for web too!)
 - [ ] More complete drawing API
   - [ ] Draw portions of images
   - [ ] Rotation
@@ -39,6 +38,7 @@
 
 # Done
 
+- [x] Fullscreen API
 - [x] Allow window resizing and handle aspect ratios
   - [x] Draw text with proper aspect ratio
   - [x] Draw circle with proper aspect ratio
