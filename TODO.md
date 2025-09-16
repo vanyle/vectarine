@@ -14,14 +14,28 @@
   - [ ] Quads
   - [ ] Polygons
   - [ ] Outlines
+- [ ] Resource update
+  - [ ] Move loading state management out of the individual resources
+  - [ ] Scripts are resources
+  - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
 - [ ] Canvas API
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
-- [ ] Resource refacto: move loading state management out of the individual resources
-- [ ] Aseprite support
-- [ ] Investigate how to have true interactive documentation
+- [ ] Project System in the editor
+  - [ ] 'assets' should be 'gamedata'
+  - [ ] Have a game.toml inside 'gamedata'. It is loaded first instead of game.lua
+    - [ ] Manifest contains name of the game, logo and root source.
+    - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
+  - [ ] Open manifest in the editor from the file menu
+  - [ ] Allow opening zips that are "compiled projects" (from the runtime)
+  - [ ] Have an export feature in the editor to make zips
+- [ ] Investigate how to have true interactive web documentation
+  - [ ] Add a 'docs' emscripten target.
+  - [ ] JavaScript API to interact with the runtime (in this 'docs' project)
+  - [ ] Ability to switch projects and load resources from the JS
 - [ ] Tiled parsing
   - [ ] Sprites as an asset class
   - [ ] Reading tiled files
+- [ ] Aseprite support
 - [ ] Potential performance improvements
   - [ ] No base64 for loading data on the web
   - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.
