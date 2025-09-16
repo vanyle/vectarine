@@ -14,10 +14,17 @@ pub struct MouseState {
 
 #[derive(Clone, Debug)]
 pub struct IoEnvState {
+    // Inputs
     pub window_width: u32,
     pub window_height: u32,
+    pub screen_width: u32,
+    pub screen_height: u32,
     pub mouse_state: MouseState,
     pub keyboard_state: HashMap<Keycode, bool>,
+
+    // Outputs
+    pub is_window_resizeable: bool,
+    pub window_target_size: Option<(u32, u32)>,
 }
 
 impl Default for IoEnvState {
@@ -25,8 +32,12 @@ impl Default for IoEnvState {
         Self {
             window_width: 800,
             window_height: 600,
+            screen_width: 0,
+            screen_height: 0,
             mouse_state: MouseState::default(),
             keyboard_state: HashMap::new(),
+            is_window_resizeable: false,
+            window_target_size: None,
         }
     }
 }
@@ -39,11 +50,7 @@ pub fn process_events(
 ) {
     for event in events.iter() {
         match event {
-            Event::Quit { .. }
-            | Event::KeyDown {
-                keycode: Some(Keycode::Escape),
-                ..
-            } => {
+            Event::Quit { .. } => {
                 std::process::exit(0);
             }
             Event::KeyUp { keycode, .. } => {

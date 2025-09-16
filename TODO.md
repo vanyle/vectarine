@@ -1,11 +1,5 @@
 # TODO
 
-- [ ] Allow window resizing and handle aspect ratios
-  - [x] Draw text with proper aspect ratio
-  - [x] Draw circle with proper aspect ratio
-  - [ ] Lua API to toggle resizable window
-  - [ ] Lua API to set window size
-  - [ ] Lua API to get screen size
 - [ ] Fullscreen API (for web too!)
 - [ ] More complete drawing API
   - [ ] Draw portions of images
@@ -18,6 +12,7 @@
   - [ ] Move loading state management out of the individual resources
   - [ ] Scripts are resources
   - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
+- [ ] Handle high DPI screens (MacOS...)
 - [ ] Canvas API
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
@@ -44,6 +39,12 @@
 
 # Done
 
+- [x] Allow window resizing and handle aspect ratios
+  - [x] Draw text with proper aspect ratio
+  - [x] Draw circle with proper aspect ratio
+  - [x] Lua API to toggle resizable window
+  - [x] Lua API to set window size
+  - [x] Lua API to get screen size
 - [x] Loading fonts and drawing text from lua code
   - [x] Draw text
   - [x] Measure text

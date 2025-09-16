@@ -27,9 +27,23 @@ function fprint(msg) end
 --- @return { x: number, y: number }
 function mouse() end
 
---- Get the current window size
+--- Get the current window size (in px)
 --- @return { x: number, y: number }
 function windowSize() end
+
+--- Get the current screen size (in px)
+--- @return { x: number, y: number }
+function screenSize() end
+
+--- Sets the window size
+--- Does nothing on the web
+--- @param width number
+--- @param height number
+function setWindowSize(width, height) end
+
+--- Set if the window is resizeable
+--- @param resizeable boolean
+function setResizeable(resizeable) end
 
 --- Return a friendly string representation of arg
 --- @param arg any

@@ -74,7 +74,7 @@ fn gui_main() {
 
     window.borrow_mut().set_resizable(true);
 
-    game.load();
+    game.load(&video, &window);
 
     // The main loop
     let mut start_of_frame = Instant::now();
@@ -90,7 +90,7 @@ fn gui_main() {
 
         // Render the game
         let new_start_of_frame = Instant::now();
-        game.main_loop(&latest_events, &window, start_of_frame.elapsed());
+        game.main_loop(&latest_events, &window, start_of_frame.elapsed(), true);
         start_of_frame = new_start_of_frame;
         editor_state.draw_editor_interface(
             &mut platform,

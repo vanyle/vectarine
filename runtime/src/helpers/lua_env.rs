@@ -224,6 +224,31 @@ impl LuaEnvironment {
             Ok(table)
         });
 
+        let env_state_for_closure = env_state.clone();
+        add_global_fn(&lua, "screenSize", move |lua, ()| {
+            let state = env_state_for_closure.borrow();
+            let table = lua.create_table().unwrap();
+            let _ = table.set("x", state.screen_width);
+            let _ = table.set("y", state.screen_height);
+            Ok(table)
+        });
+
+        let env_state_for_closure = env_state.clone();
+        add_global_fn(&lua, "setResizeable", move |_, (resizeable,): (bool,)| {
+            env_state_for_closure.borrow_mut().is_window_resizeable = resizeable;
+            Ok(())
+        });
+
+        let env_state_for_closure = env_state.clone();
+        add_global_fn(
+            &lua,
+            "setWindowSize",
+            move |_, (width, height): (u32, u32)| {
+                env_state_for_closure.borrow_mut().window_target_size = Some((width, height));
+                Ok(())
+            },
+        );
+
         let resources_for_closure = resources.clone();
         add_global_fn(&lua, "loadImage", move |_, path: String| {
             let mut manager = resources_for_closure.borrow_mut();

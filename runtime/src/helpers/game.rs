@@ -37,7 +37,23 @@ impl Game {
         }
     }
 
-    pub fn load(&mut self) {
+    /// Initializes the game and then calls the Load function in Lua, if it exists.
+    pub fn load(
+        &mut self,
+        video: &Rc<RefCell<sdl2::VideoSubsystem>>,
+        window: &Rc<RefCell<sdl2::video::Window>>,
+    ) {
+        // Make screen and window size accessible inside Load.
+        if let Ok(display_size) = video.borrow().display_bounds(0) {
+            self.lua_env.env_state.borrow_mut().screen_width = display_size.width();
+            self.lua_env.env_state.borrow_mut().screen_height = display_size.height();
+        }
+        {
+            let (width, height) = window.borrow().size();
+            self.lua_env.env_state.borrow_mut().window_width = width;
+            self.lua_env.env_state.borrow_mut().window_height = height;
+        }
+
         let load_fn = self.lua_env.lua.globals().get::<mlua::Function>("Load");
         if let Ok(load_fn) = load_fn {
             let err = load_fn.call::<()>(());
@@ -60,6 +76,7 @@ impl Game {
         events: &[sdl2::event::Event],
         window: &Rc<RefCell<sdl2::video::Window>>,
         delta_time: std::time::Duration,
+        _in_editor: bool,
     ) {
         let framebuffer_width;
         let framebuffer_height;
@@ -79,13 +96,30 @@ impl Game {
         }
 
         {
+            // This is incorrect on the web.
             let gl = &self.gl;
             unsafe {
                 gl.viewport(0, 0, framebuffer_width as i32, framebuffer_height as i32);
             }
         }
 
-        // This is incorrect on the web.
+        {
+            let env_state = self.lua_env.env_state.borrow_mut();
+            if env_state.is_window_resizeable {
+                window.borrow_mut().set_resizable(true);
+            } else {
+                window.borrow_mut().set_resizable(false);
+            }
+        }
+        {
+            let mut env_state = self.lua_env.env_state.borrow_mut();
+            if let Some(target_size) = env_state.window_target_size {
+                let (target_width, target_height) = target_size;
+                let _ = window.borrow_mut().set_size(target_width, target_height);
+                env_state.window_target_size = None;
+            }
+        }
+
         process_events(
             self,
             events,

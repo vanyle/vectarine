@@ -12,14 +12,12 @@ pub fn main() {
 
     let RenderingBlock {
         sdl: _sdl,
-        video: _video,
+        video: video,
         window,
         event_pump,
         gl,
     } = init_sdl();
     let lua_env = lua_env::LuaEnvironment::new();
-
-    window.borrow_mut().set_resizable(true);
 
     read_file(
         "assets/scripts/game.lua",
@@ -29,14 +27,14 @@ pub fn main() {
             let batch = BatchDraw2d::new(&gl).unwrap();
             let mut game = Game::new(&gl, batch, event_pump, lua_env.clone());
 
-            game.load();
+            game.load(&video, &window);
 
             let mut now = Instant::now();
 
             set_main_loop_wrapper(move || {
                 let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
                 game.load_resource_as_needed(gl.clone());
-                game.main_loop(&latest_events, &window, now.elapsed());
+                game.main_loop(&latest_events, &window, now.elapsed(), false);
                 now = Instant::now();
 
                 // These are for debug and are never displayed in the runtime.
