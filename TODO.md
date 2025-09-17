@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Vector API for Lua
 - [ ] More complete drawing API
   - [ ] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
   - [ ] Rotation of images
@@ -38,6 +37,7 @@
 
 # Done
 
+- [x] Vector API for Lua
 - [x] Handle high DPI screens (MacOS...)
 - [x] Fullscreen API
 - [x] Allow window resizing and handle aspect ratios

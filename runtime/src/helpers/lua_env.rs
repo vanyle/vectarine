@@ -1,7 +1,9 @@
 use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
-use mlua::Table;
+use mlua::{ObjectLike, Table};
 use sdl2::keyboard::Keycode;
+
+pub mod vec2;
 
 use crate::helpers::{
     draw_instruction::{self, DrawInstruction},
@@ -41,6 +43,8 @@ impl LuaEnvironment {
         lua.globals()
             .set("Global", lua.create_table().unwrap())
             .unwrap();
+
+        let _ = vec2::setup_vec2_api(&lua);
 
         add_global_fn(
             &lua,
