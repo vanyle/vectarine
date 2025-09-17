@@ -163,22 +163,15 @@ impl Game {
             let mut instructions = self.lua_env.draw_instructions.borrow_mut();
             while let Some(instruction) = instructions.pop_front() {
                 match instruction {
-                    draw_instruction::DrawInstruction::Rectangle { x, y, w, h, color } => {
-                        self.batch.draw_rect(x, y, w, h, color);
+                    draw_instruction::DrawInstruction::Rectangle { pos, size, color } => {
+                        self.batch.draw_rect(pos.x, pos.y, size.x, size.y, color);
                     }
-                    draw_instruction::DrawInstruction::Circle {
-                        x,
-                        y,
-                        radius,
-                        color,
-                    } => {
-                        self.batch.draw_circle(x, y, radius, color);
+                    draw_instruction::DrawInstruction::Circle { pos, radius, color } => {
+                        self.batch.draw_circle(pos.x, pos.y, radius, color);
                     }
                     draw_instruction::DrawInstruction::Image {
-                        x,
-                        y,
-                        w,
-                        h,
+                        pos,
+                        size,
                         resource_id,
                     } => {
                         let resource_manager = self.lua_env.resources.borrow();
@@ -205,11 +198,10 @@ impl Game {
                             continue; // texture is not loaded. This probably breaks an invariant.
                         };
 
-                        self.batch.draw_image(x, y, w, h, texture);
+                        self.batch.draw_image(pos.x, pos.y, size.x, size.y, texture);
                     }
                     draw_instruction::DrawInstruction::Text {
-                        x,
-                        y,
+                        pos,
                         text,
                         color,
                         font_size,
@@ -238,6 +230,7 @@ impl Game {
                             );
                             continue; // texture is not loaded. This probably breaks an invariant.
                         };
+                        let (x, y) = (pos.x, pos.y);
                         self.batch
                             .draw_text(x, y, &text, color, font_size, font_rendering_data);
                     }

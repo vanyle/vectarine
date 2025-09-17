@@ -7,38 +7,32 @@
 function clear(color) end
 
 --- Draws a filled rectangle
---- @param x number X
---- @param y number Y
---- @param w number Width
---- @param h number Height
+--- @param pos Vec2
+--- @param size Vec2
 --- @param color Color
-function drawRect(x, y, w, h, color) end
+function drawRect(pos, size, color) end
 
 --- Draws a filled circle
---- @param x number X
---- @param y number Y
+--- @param center Vec2
 --- @param radius number Radius
 --- @param color Color
-function drawCircle(x, y, radius, color) end
+function drawCircle(center, radius, color) end
 
 --- Draws an image
 --- @param image ImageResource
---- @param x number
---- @param y number
---- @param w number
---- @param h number
-function drawImage(image, x, y, w, h) end
+--- @param pos Vec2
+--- @param size Vec2
+function drawImage(image, pos, size) end
 
 --- Draws text at (x,y) with given font, size and color
 --- size is the maximum height that a text of that font will take on the screen
 --- This is sometimes called the line height.
 --- @param text string
 --- @param font FontResource
---- @param x number
---- @param y number
+--- @param pos Vec2
 --- @param size number
 --- @param color Color
-function drawText(text, font, x, y, size, color) end
+function drawText(text, font, pos, size, color) end
 
 --- Measures how much space the text will take when drawn
 --- height will always be less than size.

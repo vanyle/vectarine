@@ -24,15 +24,19 @@ function dprint(...) end
 function fprint(...) end
 
 --- Get the current mouse position
---- @return { x: number, y: number }
-function mouse() end
+--- @return Vec2
+function getMouse() end
+
+--- Get the current mouse state
+--- @return {is_left_down: boolean, is_right_down: boolean}
+function getMouseState() end
 
 --- Get the current window size (in px)
---- @return { x: number, y: number }
+--- @return Vec2
 function getWindowSize() end
 
 --- Get the current screen size (in px)
---- @return { x: number, y: number }
+--- @return Vec2
 function getScreenSize() end
 
 --- Sets the window size

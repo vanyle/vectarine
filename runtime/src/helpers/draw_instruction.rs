@@ -1,28 +1,24 @@
+use crate::helpers::lua_env::vec2::Vec2;
+
 #[derive(Debug, Clone)]
 pub enum DrawInstruction {
     Rectangle {
-        x: f32,
-        y: f32,
-        w: f32,
-        h: f32,
+        pos: Vec2,
+        size: Vec2,
         color: [f32; 4],
     },
     Circle {
-        x: f32,
-        y: f32,
+        pos: Vec2,
         radius: f32,
         color: [f32; 4],
     },
     Image {
-        x: f32,
-        y: f32,
-        w: f32,
-        h: f32,
+        pos: Vec2,
+        size: Vec2,
         resource_id: u32,
     },
     Text {
-        x: f32,
-        y: f32,
+        pos: Vec2,
         text: String,
         color: [f32; 4],
         font_size: f32,

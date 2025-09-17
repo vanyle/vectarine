@@ -1,7 +1,5 @@
 --- @meta _
 
-
-
 --- @class Vec2
 --- @operator add(Vec2): Vec2
 --- @operator sub(Vec2): Vec2

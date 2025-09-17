@@ -3,13 +3,14 @@ local t = 0
 Global.fullscreen = false
 if Global.fullscreen then
     local screen = getScreenSize()
-    dprint("Screen: " .. toString(getScreenSize()))
+    dprint("Screen: ", screen)
     setFullscreen(true)
     setWindowSize(screen.x, screen.y)
 
     local v = V2(1, 2)
+
     local w = V2(1, 2)
-    local r = v:add(w) --> v.add(v, w)
+    local r = v + w
 else
     setFullscreen(false)
     setWindowSize(800, 600)
@@ -30,14 +31,17 @@ function Update(time_delta)
 
     local rect_color = { r = 0, g = 0, b = 1, a = 1 }
 
+    local v = V2(1, 2)
+    local w = V2(1, 2)
+    local r = v * w
+    fprint("hello", r.x, r.y)
+
     if isKeyDown("space") then
         rect_color = { r = 1, g = 0, b = 1, a = 1 }
     end
 
     t = t + 1
-    local m = mouse()
-    local x = m.x
-    local y = m.y
+    local m = getMouse()
     -- fprint("Hello: " .. x .. "," .. y)
 
     local time_sum = 0
@@ -54,17 +58,19 @@ function Update(time_delta)
     fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
     fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
 
-    drawCircle(x, y, 0.1, rect_color)
+    drawCircle(m, 0.1, rect_color)
 
     local slow = false
     if slow then
         local slow_factor = 150
+        local s = V2(0.1, 0.1)
         for i = 0, slow_factor do
             for j = 0, slow_factor do
                 local ratio = slow_factor / 2
                 rect_color.g = (i + t * 3) % 255 / 255
                 rect_color.b = (j + t) % 255 / 255
-                drawRect(-1 + i / ratio, -1 + j / ratio, 0.1, 0.1, rect_color)
+                local p = V2(-1 + i / ratio, -1 + j / ratio)
+                drawRect(p, s, rect_color)
             end
         end
     end
@@ -75,10 +81,10 @@ function Update(time_delta)
     -- Technique for drawing a box around text.
     local mesurement = measureText(text, Global.font, textSize)
     local toBaseline = mesurement.height - mesurement.bearingY
-    drawRect(-0.5, 0.5 + toBaseline, mesurement.width, mesurement.height, { r = 0, g = 1, b = 0, a = 0.5 })
+    drawRect(V2(-0.5, 0.5 + toBaseline), V2(mesurement.width, mesurement.height), { r = 0, g = 1, b = 0, a = 0.5 })
 
     -- Center of the screen
-    drawCircle(0, 0, 0.1, { r = 0.5, g = 0, b = 0.5, a = 1 })
+    drawCircle(V2(0, 0), 0.1, { r = 0.5, g = 0, b = 0.5, a = 1 })
 
-    drawText(text, Global.font, -0.5, 0.5, textSize, { r = 0, g = 0, b = 0, a = 1 })
+    drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
 end

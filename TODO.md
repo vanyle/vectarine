@@ -38,6 +38,7 @@
 # Done
 
 - [x] Vector API for Lua
+  - [x] Use V2 for all pairs of coordinate in APIs
 - [x] Handle high DPI screens (MacOS...)
 - [x] Fullscreen API
 - [x] Allow window resizing and handle aspect ratios

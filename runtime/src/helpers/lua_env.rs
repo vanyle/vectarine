@@ -9,6 +9,7 @@ use crate::helpers::{
     draw_instruction::{self, DrawInstruction},
     game_resource::{ResourceManager, font_resource::FontResource, image_resource::ImageResource},
     io::IoEnvState,
+    lua_env::vec2::Vec2,
 };
 
 #[derive(Debug, Clone)]
@@ -49,7 +50,7 @@ impl LuaEnvironment {
         add_global_fn(
             &lua,
             "drawRect",
-            move |_, (x, y, w, h, color): (f32, f32, f32, f32, Table)| {
+            move |_, (pos, size, color): (Vec2, Vec2, Table)| {
                 let color = [
                     color.get::<f32>("r").unwrap_or(0.0),
                     color.get::<f32>("g").unwrap_or(0.0),
@@ -58,7 +59,7 @@ impl LuaEnvironment {
                 ];
                 queue_for_closure
                     .borrow_mut()
-                    .push_back(DrawInstruction::Rectangle { x, y, w, h, color });
+                    .push_back(DrawInstruction::Rectangle { pos, size, color });
                 Ok(())
             },
         );
@@ -67,7 +68,7 @@ impl LuaEnvironment {
         add_global_fn(
             &lua,
             "drawCircle",
-            move |_, (x, y, radius, color): (f32, f32, f32, Table)| {
+            move |_, (pos, radius, color): (Vec2, f32, Table)| {
                 let color = [
                     color.get::<f32>("r").unwrap_or(0.0),
                     color.get::<f32>("g").unwrap_or(0.0),
@@ -76,12 +77,7 @@ impl LuaEnvironment {
                 ];
                 queue_for_closure
                     .borrow_mut()
-                    .push_back(DrawInstruction::Circle {
-                        x,
-                        y,
-                        radius,
-                        color,
-                    });
+                    .push_back(DrawInstruction::Circle { pos, radius, color });
                 Ok(())
             },
         );
@@ -90,12 +86,10 @@ impl LuaEnvironment {
         add_global_fn(
             &lua,
             "drawImage",
-            move |_, (resource_id, x, y, w, h): (u32, f32, f32, f32, f32)| {
+            move |_, (resource_id, pos, size): (u32, Vec2, Vec2)| {
                 let draw_ins = DrawInstruction::Image {
-                    x,
-                    y,
-                    w,
-                    h,
+                    pos,
+                    size,
                     resource_id,
                 };
                 queue_for_closure.borrow_mut().push_back(draw_ins);
@@ -107,7 +101,7 @@ impl LuaEnvironment {
         add_global_fn(
             &lua,
             "drawText",
-            move |_, (text, font_id, x, y, size, color): (String, u32, f32, f32, f32, Table)| {
+            move |_, (text, font_id, pos, size, color): (String, u32, Vec2, f32, Table)| {
                 let color = [
                     color.get::<f32>("r").unwrap_or(0.0),
                     color.get::<f32>("g").unwrap_or(0.0),
@@ -115,8 +109,7 @@ impl LuaEnvironment {
                     color.get::<f32>("a").unwrap_or(0.0),
                 ];
                 let draw_ins = DrawInstruction::Text {
-                    x,
-                    y,
+                    pos,
                     text,
                     color,
                     font_size: size,
@@ -224,12 +217,18 @@ impl LuaEnvironment {
         );
 
         let env_state_for_closure = env_state.clone();
+        add_global_fn(&lua, "getMouse", move |_, ()| {
+            let mouse_state = env_state_for_closure.borrow().mouse_state.clone();
+            Ok(Vec2 {
+                x: mouse_state.x,
+                y: mouse_state.y,
+            })
+        });
 
-        add_global_fn(&lua, "mouse", move |lua, ()| {
+        let env_state_for_closure = env_state.clone();
+        add_global_fn(&lua, "getMouseState", move |lua, ()| {
             let mouse_state = env_state_for_closure.borrow().mouse_state.clone();
             let table = lua.create_table().unwrap();
-            let _ = table.set("x", mouse_state.x);
-            let _ = table.set("y", mouse_state.y);
             let _ = table.set("is_left_down", mouse_state.is_left_down);
             let _ = table.set("is_right_down", mouse_state.is_right_down);
             Ok(table)
