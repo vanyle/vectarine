@@ -20,8 +20,8 @@ function Update(time_delta)
     t = t + 1
     local m = mouse()
     local w = windowSize()
-    local x = (m.x / w.x) * 2 - 1
-    local y = (-m.y / w.y) * 2 + 1
+    local x = m.x
+    local y = m.y
     -- fprint("Hello: " .. x .. "," .. y)
 
     local time_sum = 0

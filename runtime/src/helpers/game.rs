@@ -47,7 +47,18 @@ impl Game {
         if let Ok(display_size) = video.borrow().display_bounds(0) {
             self.lua_env.env_state.borrow_mut().screen_width = display_size.width();
             self.lua_env.env_state.borrow_mut().screen_height = display_size.height();
+
+            let size = window.borrow().size();
+            let drawable_size = window.borrow().drawable_size();
+            let (px_ratio_x, px_ratio_y) = (
+                drawable_size.0 as f32 / size.0 as f32,
+                drawable_size.1 as f32 / size.1 as f32,
+            );
+
+            self.lua_env.env_state.borrow_mut().px_ratio_x = px_ratio_x;
+            self.lua_env.env_state.borrow_mut().px_ratio_y = px_ratio_y;
         }
+
         {
             let (width, height) = window.borrow().size();
             self.lua_env.env_state.borrow_mut().window_width = width;
@@ -260,7 +271,7 @@ impl Game {
 
 #[cfg(not(target_os = "emscripten"))]
 pub fn screen_size(window: &sdl2::video::Window) -> (u32, u32) {
-    window.size()
+    window.drawable_size()
 }
 
 #[cfg(target_os = "emscripten")]

@@ -52,6 +52,7 @@ pub fn init_sdl() -> RenderingBlock {
     let window: Window = video_subsystem
         .window("Vectarine", 800, 600)
         .opengl()
+        .allow_highdpi() // For Retina displays on macOS
         .position_centered()
         .build()
         .unwrap();

@@ -11,7 +11,6 @@
   - [ ] Move loading state management out of the individual resources
   - [ ] Scripts are resources
   - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
-- [ ] Handle high DPI screens (MacOS...)
 - [ ] Canvas API
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
@@ -38,6 +37,7 @@
 
 # Done
 
+- [x] Handle high DPI screens (MacOS...)
 - [x] Fullscreen API
 - [x] Allow window resizing and handle aspect ratios
   - [x] Draw text with proper aspect ratio

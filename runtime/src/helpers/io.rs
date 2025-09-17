@@ -19,6 +19,8 @@ pub struct IoEnvState {
     pub window_height: u32,
     pub screen_width: u32,
     pub screen_height: u32,
+    pub px_ratio_x: f32,
+    pub px_ratio_y: f32,
     pub mouse_state: MouseState,
     pub keyboard_state: HashMap<Keycode, bool>,
 
@@ -35,6 +37,8 @@ impl Default for IoEnvState {
             window_height: 600,
             screen_width: 0,
             screen_height: 0,
+            px_ratio_x: 1.0,
+            px_ratio_y: 1.0,
             mouse_state: MouseState::default(),
             keyboard_state: HashMap::new(),
             is_window_resizeable: false,
@@ -79,9 +83,13 @@ pub fn process_events(
                 xrel: _,
                 yrel: _,
             } => {
-                let mouse_state = &mut game.lua_env.env_state.borrow_mut().mouse_state;
-                mouse_state.x = (*x as f32) / framebuffer_width * 2.0 - 1.0;
-                mouse_state.y = -((*y as f32) / framebuffer_height * 2.0 - 1.0);
+                let mut env_state = game.lua_env.env_state.borrow_mut();
+                let px_ratio_x = env_state.px_ratio_x; // convert between real and fake pixels
+                let px_ratio_y = env_state.px_ratio_y;
+                let mouse_state = &mut env_state.mouse_state;
+
+                mouse_state.x = (*x as f32) * px_ratio_x / framebuffer_width * 2.0 - 1.0;
+                mouse_state.y = -((*y as f32) * px_ratio_y / framebuffer_height * 2.0 - 1.0);
                 mouse_state.is_left_down = mousestate.left();
                 mouse_state.is_right_down = mousestate.right();
             }

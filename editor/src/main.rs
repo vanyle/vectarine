@@ -65,7 +65,7 @@ fn gui_main() {
     let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
 
     // Create the egui + sdl2 platform
-    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().size()).unwrap();
+    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().drawable_size()).unwrap();
 
     let batch = BatchDraw2d::new(&gl).unwrap();
     let mut game = Game::new(&gl, batch, event_pump, lua_env);

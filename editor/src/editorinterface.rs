@@ -3,6 +3,7 @@ use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 use egui::RichText;
 use egui_extras::Column;
 use egui_sdl2_platform::sdl2;
+use glow::HasContext;
 use runtime::helpers::{file, game::Game, game_resource::get_absolute_path};
 use serde::{Deserialize, Serialize};
 
@@ -240,9 +241,11 @@ impl EditorState {
         let pj = paint_jobs.as_slice();
 
         // Render the editor interface on top of the game.
-        let size = self.window.borrow().size();
-        painter.paint_and_update_textures([size.0, size.1], 1.0, pj, &full_output.textures_delta);
+        let size = self.window.borrow().drawable_size();
+
+        painter.paint_and_update_textures([size.0, size.1], 2.0, pj, &full_output.textures_delta);
         for event in latest_events {
+            // Convert mouse position.
             platform.handle_event(event, sdl, &self.video.borrow());
         }
     }
