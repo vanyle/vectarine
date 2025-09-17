@@ -14,14 +14,14 @@ function getKeysDown() end
 --- Print something to the editor console
 --- Prints to the browser console on the web for when using debug builds.
 --- If you are printing inside Update(), consider using fprint.
---- @param msg any The thing to print
-function dprint(msg) end
+--- @vararg any The things to print
+function dprint(...) end
 
 --- Print something to the editor console
 --- Does nothing when used in the runtime
 --- The message is cleared on the next frame
---- @param msg any The thing to print
-function fprint(msg) end
+--- @vararg any The things to print
+function fprint(...) end
 
 --- Get the current mouse position
 --- @return { x: number, y: number }

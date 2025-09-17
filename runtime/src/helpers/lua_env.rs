@@ -194,18 +194,34 @@ impl LuaEnvironment {
 
         let frame_messages_for_closure = frame_messages.clone();
 
-        add_global_fn(&lua, "fprint", move |_, msg: mlua::Value| {
-            let msg = msg.to_string().unwrap_or_default();
-            frame_messages_for_closure.borrow_mut().push(msg);
-            Ok(())
-        });
+        add_global_fn(
+            &lua,
+            "fprint",
+            move |_, args: mlua::Variadic<mlua::Value>| {
+                let msg = args
+                    .iter()
+                    .map(stringify_lua_value)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                frame_messages_for_closure.borrow_mut().push(msg);
+                Ok(())
+            },
+        );
 
         let messages_for_closure = messages.clone();
-        add_global_fn(&lua, "dprint", move |_, msg: mlua::Value| {
-            let msg = msg.to_string().unwrap_or_default();
-            messages_for_closure.borrow_mut().push_front(msg);
-            Ok(())
-        });
+        add_global_fn(
+            &lua,
+            "dprint",
+            move |_, args: mlua::Variadic<mlua::Value>| {
+                let msg = args
+                    .iter()
+                    .map(stringify_lua_value)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                messages_for_closure.borrow_mut().push_front(msg);
+                Ok(())
+            },
+        );
 
         let env_state_for_closure = env_state.clone();
 
@@ -363,8 +379,10 @@ fn stringify_lua_value_helper(value: &mlua::Value, mut seen: Vec<mlua::Value>) -
             format!("[thread: {ptr:?}]")
         }
         mlua::Value::UserData(userdata) => {
-            let ptr = userdata.to_pointer();
-            format!("[userdata: {ptr:?}]")
+            return userdata.to_string().unwrap_or_else(|_| {
+                let ptr = userdata.to_pointer();
+                format!("[userdata: {ptr:?}]")
+            });
         }
         mlua::Value::LightUserData(lightuserdata) => {
             let ptr = lightuserdata.0;
