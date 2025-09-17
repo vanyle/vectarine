@@ -216,7 +216,7 @@ impl LuaEnvironment {
         });
 
         let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "windowSize", move |lua, ()| {
+        add_global_fn(&lua, "getWindowSize", move |lua, ()| {
             let state = env_state_for_closure.borrow();
             let table = lua.create_table().unwrap();
             let _ = table.set("x", state.window_width);
@@ -225,7 +225,7 @@ impl LuaEnvironment {
         });
 
         let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "screenSize", move |lua, ()| {
+        add_global_fn(&lua, "getScreenSize", move |lua, ()| {
             let state = env_state_for_closure.borrow();
             let table = lua.create_table().unwrap();
             let _ = table.set("x", state.screen_width);

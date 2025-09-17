@@ -1,9 +1,26 @@
 local t = 0
 
+Global.fullscreen = false
+if Global.fullscreen then
+    local screen = getScreenSize()
+    dprint("Screen: " .. toString(getScreenSize()))
+    setFullscreen(true)
+    setWindowSize(screen.x, screen.y)
+
+    local v = V2(1, 2)
+    local w = V2(1, 2)
+    local r = v:add(w) --> v.add(v, w)
+else
+    setFullscreen(false)
+    setWindowSize(800, 600)
+end
+
+
 function Load()
     dprint("Loading ...")
     Global.logo = loadImage("textures/logo.png")
     Global.font = loadFont("fonts/arial.ttf")
+    Global.fullscreen = false
     Global.frame_times = {}
 end
 
@@ -19,7 +36,6 @@ function Update(time_delta)
 
     t = t + 1
     local m = mouse()
-    local w = windowSize()
     local x = m.x
     local y = m.y
     -- fprint("Hello: " .. x .. "," .. y)
@@ -38,7 +54,7 @@ function Update(time_delta)
     fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
     fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
 
-    drawRect(x, y, 0.1, 0.1, rect_color)
+    drawCircle(x, y, 0.1, rect_color)
 
     local slow = false
     if slow then
@@ -60,6 +76,9 @@ function Update(time_delta)
     local mesurement = measureText(text, Global.font, textSize)
     local toBaseline = mesurement.height - mesurement.bearingY
     drawRect(-0.5, 0.5 + toBaseline, mesurement.width, mesurement.height, { r = 0, g = 1, b = 0, a = 0.5 })
+
+    -- Center of the screen
+    drawCircle(0, 0, 0.1, { r = 0.5, g = 0, b = 0.5, a = 1 })
 
     drawText(text, Global.font, -0.5, 0.5, textSize, { r = 0, g = 0, b = 0, a = 1 })
 end

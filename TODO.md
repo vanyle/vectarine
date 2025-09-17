@@ -1,8 +1,9 @@
 # TODO
 
+- [ ] Vector API for Lua
 - [ ] More complete drawing API
-  - [ ] Draw portions of images
-  - [ ] Rotation
+  - [ ] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
+  - [ ] Rotation of images
   - [ ] Lines
   - [ ] Quads
   - [ ] Polygons

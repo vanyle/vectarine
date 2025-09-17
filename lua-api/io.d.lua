@@ -29,11 +29,11 @@ function mouse() end
 
 --- Get the current window size (in px)
 --- @return { x: number, y: number }
-function windowSize() end
+function getWindowSize() end
 
 --- Get the current screen size (in px)
 --- @return { x: number, y: number }
-function screenSize() end
+function getScreenSize() end
 
 --- Sets the window size
 --- Does nothing on the web
