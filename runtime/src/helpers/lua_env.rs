@@ -100,6 +100,34 @@ impl LuaEnvironment {
         let queue_for_closure = draw_instructions.clone();
         add_global_fn(
             &lua,
+            "drawImage",
+            move |_,
+                  (resource_id, p1, p2, p3, p4, src_pos, src_size): (
+                u32,
+                Vec2,
+                Vec2,
+                Vec2,
+                Vec2,
+                Vec2,
+                Vec2,
+            )| {
+                let draw_ins = DrawInstruction::ImagePart {
+                    p1,
+                    p2,
+                    p3,
+                    p4,
+                    uv_pos: src_pos,
+                    uv_size: src_size,
+                    resource_id,
+                };
+                queue_for_closure.borrow_mut().push_back(draw_ins);
+                Ok(())
+            },
+        );
+
+        let queue_for_closure = draw_instructions.clone();
+        add_global_fn(
+            &lua,
             "drawText",
             move |_, (text, font_id, pos, size, color): (String, u32, Vec2, f32, Table)| {
                 let color = [

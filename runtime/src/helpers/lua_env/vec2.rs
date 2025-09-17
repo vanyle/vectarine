@@ -13,6 +13,18 @@ impl mlua::FromLua for Vec2 {
     }
 }
 
+impl Vec2 {
+    pub fn new(x: f32, y: f32) -> Self {
+        Self { x, y }
+    }
+    pub fn with_x(self, x: f32) -> Self {
+        Self { x, y: self.y }
+    }
+    pub fn with_y(self, y: f32) -> Self {
+        Self { x: self.x, y }
+    }
+}
+
 impl mlua::UserData for Vec2 {
     fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("x", |_, v| Ok(v.x));

@@ -13,7 +13,7 @@ use crate::{
             FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
         },
     },
-    helpers::game_resource::font_resource::FontRenderingData,
+    helpers::{game_resource::font_resource::FontRenderingData, lua_env::vec2::Vec2},
 };
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -208,13 +208,33 @@ impl BatchDraw2d {
     }
 
     pub fn draw_image(&mut self, x: f32, y: f32, width: f32, height: f32, texture: &Arc<Texture>) {
+        let p1 = Vec2::new(x, y);
+        let p2 = Vec2::new(x + width, y);
+        let p3 = Vec2::new(x + width, y + height);
+        let p4 = Vec2::new(x, y + height);
+        let uv_pos = Vec2::new(0.0, 0.0);
+        let uv_size = Vec2::new(1.0, 1.0);
+        self.draw_image_part(p1, p2, p3, p4, texture, uv_pos, uv_size);
+    }
+
+    #[rustfmt::skip]
+    pub fn draw_image_part(
+        &mut self, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2,
+        texture: &Arc<Texture>,
+        uv_pos: Vec2, uv_size: Vec2,
+    ) {
+        let uv_x1 = uv_pos.x;
+        let uv_y1 = uv_pos.y;
+        let uv_x2 = uv_pos.x + uv_size.x;
+        let uv_y2 = uv_pos.y + uv_size.y;
+
         #[rustfmt::skip]
         let vertices: [f32; 4 * 5] = [
             // positions       // tex coords
-            x, y, 0.0, 0.0, 0.0, // bottom left
-            x + width, y, 0.0, 1.0, 0.0, // bottom right
-            x + width, y + height, 0.0, 1.0, 1.0, // top right
-            x, y + height, 0.0, 0.0, 1.0, // top left
+            p1.x, p1.y, 0.0, uv_x1, uv_y2, // bottom left
+            p2.x, p2.y, 0.0, uv_x2, uv_y2, // bottom right
+            p3.x, p3.y, 0.0, uv_x2, uv_y1, // top right
+            p4.x, p4.y, 0.0, uv_x1, uv_y1, // top left
         ];
 
         let indices: [u32; 6] = [

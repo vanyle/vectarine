@@ -1,17 +1,15 @@
 # TODO
 
 - [ ] More complete drawing API
-  - [ ] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
-  - [ ] Rotation of images
+  - [x] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
+  - [ ] Arrows
   - [ ] Lines
-  - [ ] Quads
   - [ ] Polygons
-  - [ ] Outlines
 - [ ] Resource update
   - [ ] Move loading state management out of the individual resources
   - [ ] Scripts are resources
   - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
-- [ ] Canvas API
+- [ ] Canvas API 'framebuffer'
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
   - [ ] 'assets' should be 'gamedata'
@@ -34,6 +32,10 @@
   - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.
   - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
   - [ ] Check if StreamDraw / StaticDraw actually does something
+- [ ] More complete Lua API
+  - [ ] V3, V4
+  - [ ] Organize functions in namespace better and use metamethods
+  - [ ] noise function (open simplex, for v2, v3 and v4) and worley
 
 # Done
 

@@ -17,6 +17,15 @@ pub enum DrawInstruction {
         size: Vec2,
         resource_id: u32,
     },
+    ImagePart {
+        p1: Vec2,
+        p2: Vec2,
+        p3: Vec2,
+        p4: Vec2,
+        resource_id: u32,
+        uv_pos: Vec2,
+        uv_size: Vec2,
+    },
     Text {
         pos: Vec2,
         text: String,

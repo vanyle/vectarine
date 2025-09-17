@@ -82,6 +82,24 @@ impl Game {
         messages.push_back(message.to_string());
     }
 
+    pub fn get_resource_or_print_error<T>(&self, resource_id: u32) -> Option<Rc<T>>
+    where
+        T: crate::helpers::game_resource::Resource,
+    {
+        let resource_manager = self.lua_env.resources.borrow();
+        let resource = resource_manager.get_by_id::<T>(resource_id);
+        let res = match resource {
+            Ok(res) => res,
+            Err(cause) => {
+                self.print_to_editor_console(&format!(
+                    "Warning: Failed to get resource with id '{resource_id}': {cause}",
+                ));
+                return None;
+            }
+        };
+        Some(res)
+    }
+
     pub fn main_loop(
         &mut self,
         events: &[sdl2::event::Event],
@@ -174,20 +192,11 @@ impl Game {
                         size,
                         resource_id,
                     } => {
-                        let resource_manager = self.lua_env.resources.borrow();
-                        let resource = resource_manager.get_by_id::<ImageResource>(resource_id);
-                        let image_resource = match resource {
-                            Ok(res) => res,
-                            Err(cause) => {
-                                self.print_to_editor_console(
-                                &format!(
-                                    "Warning: Failed to draw image with id '{resource_id}': {cause}",
-                                ),
-                            );
-                                continue;
-                            }
+                        let resource =
+                            self.get_resource_or_print_error::<ImageResource>(resource_id);
+                        let Some(image_resource) = resource else {
+                            continue;
                         };
-
                         let texture = image_resource.texture.borrow();
                         let texture = texture.as_ref();
                         let Some(texture) = texture else {
@@ -197,8 +206,33 @@ impl Game {
                             );
                             continue; // texture is not loaded. This probably breaks an invariant.
                         };
-
                         self.batch.draw_image(pos.x, pos.y, size.x, size.y, texture);
+                    }
+                    draw_instruction::DrawInstruction::ImagePart {
+                        p1,
+                        p2,
+                        p3,
+                        p4,
+                        resource_id,
+                        uv_pos,
+                        uv_size,
+                    } => {
+                        let resource =
+                            self.get_resource_or_print_error::<ImageResource>(resource_id);
+                        let Some(image_resource) = resource else {
+                            continue;
+                        };
+                        let texture = image_resource.texture.borrow();
+                        let texture = texture.as_ref();
+                        let Some(texture) = texture else {
+                            debug_assert!(
+                                false,
+                                "Resource said it was loaded but the texture is None"
+                            );
+                            continue;
+                        };
+                        self.batch
+                            .draw_image_part(p1, p2, p3, p4, texture, uv_pos, uv_size);
                     }
                     draw_instruction::DrawInstruction::Text {
                         pos,

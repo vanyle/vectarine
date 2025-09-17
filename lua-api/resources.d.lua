@@ -9,7 +9,9 @@ Global = {}
 -- --- @param path string For example assets/scripts/monster.lua
 -- function loadCode(path) end
 
---- @alias ImageResource `ImageResource`
+--- @class ImageResource
+local ImageResource = {}
+
 
 --- Load an image from a path inside assets
 --- @param path string
@@ -17,7 +19,8 @@ Global = {}
 --- @nodiscard
 function loadImage(path) end
 
---- @alias FontResource `FontResource`
+--- @class FontResource
+local FontResource = {}
 
 --- Load a font from a path inside assets
 --- @param path string
