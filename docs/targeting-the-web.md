@@ -13,7 +13,7 @@ Note for windows users:
 # Needed to setup emsdk
 git clone https://github.com/emscripten-core/emsdk
 cd emsdk
-git checkout 404dc1ec13f64fce1af1eaf5c007e18212f63527
+git checkout 404dc1ec13f64fce1af1eaf5c007e18212f63527 # optional
 cd ..
 emsdk/emsdk install 4.0.13
 # You only need to do this once emsdk is installed.
