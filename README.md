@@ -4,7 +4,7 @@
 
 <h1 align="center"> 🍊 Vectarine Evolved</h1>
 
-*Vectarine is a game engine with a focus on ultra fast prototyping, ease of use and a great developer experience.*
+_Vectarine is a game engine with a focus on ultra fast prototyping, ease of use and a great developer experience._
 
 ## Goals by importance
 
@@ -34,12 +34,16 @@ Below are information on how to work and improve the engine.
 
 ## Requirements for working on the engine
 
+All setup commands in this README need to be ran in a bash/zsh shell if you are on Unix and on a Powershell shell if you are on Windows.
+Commands are prefixed with `both>`, `wind>`, `unix>`, depending on the target where they need to be ran, `unix` meaning Linux or Mac.
+
+You'll need to get started:
+
 - A working `git` installation
 
 - A working `uv` installation (uv is a python manager). See how to [install `uv`](https://docs.astral.sh/uv/getting-started/installation/).
 
-- A working `rust` (and cargo!) installation
-You can install `rust` with [`rustup`](https://www.rust-lang.org/tools/install)
+- A working `rust` (and cargo!) installation. You can install `rust` with [`rustup`](https://www.rust-lang.org/tools/install)
 
 - (Optional but needed for web builds) A working [`emscripten`](https://emscripten.org/docs/getting_started/downloads.html) installation
 
@@ -47,12 +51,15 @@ You can install `emscripten` using:
 
 ```bash
 # Run this inside the vectarine folder
-git clone https://github.com/emscripten-core/emsdk.git
+both> git clone https://github.com/emscripten-core/emsdk.git
 # Depending on your OS, run one of the following commands:
-# On Windows (PowerShell):
-.\emsdk\emsdk.ps1 install 4.0.13
-# On Linux or MacOS (bash):
-./emsdk/emsdk install 4.0.13
+wind> .\emsdk\emsdk.ps1 install 4.0.13
+unix> ./emsdk/emsdk install 4.0.13
+# Activate it
+wind> .\emsdk\emsdk.ps1 activate 4.0.13
+unix> ./emsdk/emsdk activate 4.0.13
+# Add the emscripten target to the rust compiler
+both> rustup target add wasm32-unknown-emscripten
 ```
 
 See [Targeting the web](./docs/targeting-the-web.md) for more details on how to install emscripten and setup the web build.
@@ -62,37 +69,41 @@ See [Targeting the web](./docs/targeting-the-web.md) for more details on how to 
 Once you have everything installed, we need to setup SDL2.
 SDL2 is the library we use for windowing, input and OpenGL context creation.
 You can use the [following reference](https://github.com/Rust-SDL2/rust-sdl2) for more details.
-On Linux, you need to install the following package:
+
+If you are on linux and want to only compile for linux or the web, you can simply install the following packages:
 
 ```bash
 # Replace apt with your package manager of choice
 sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev
 
-# You might also need this, but this is unlikely as these can already be installed by other programs
+# You might also need this, but it can already be installed
 sudo apt-get install libmp3lame-dev
 ```
 
-On MacOS and Windows, SDL2 is installed using vcpkg. First, install [vcpkg](https://github.com/microsoft/vcpkg):
-
-On MacOS, you can install vcpkg using:
-
-```bash
-brew install vcpkg
-cargo install cargo-vcpkg
-cargo vcpkg build
-```
-
-On Window, you need to do it manually:
+Otherwise, you'll need to install SDL2 through vcpkg.
+On MacOS and Windows, this is mandatory. First, install [vcpkg](https://github.com/microsoft/vcpkg):
 
 ```bash
-cd /path/to/where/you/want/it-installed
-git clone https://github.com/microsoft/vcpkg.git
-./bootstrap-vcpkg.bat # Build it
+wind> cd $home
+unix> cd ~
+# We assume you are install vcpkg in your home folder, but you can put it anywhere on your computer
+both> git clone https://github.com/microsoft/vcpkg.git
+both> cd vcpkg
+
+wind> ./bootstrap-vcpkg.bat # Build it on windows
+unix> ./bootstrap-vcpkg.sh # Build it on Linux/MacOS
+
 # Add vcpkg to your PATH
 # On Windows, you can use the "Edit environment variables" utils to add a folder to your PATH
+unix> export PATH="$(pwd):$PATH"
+# Add VCPKG_ROOT to your path too:
+unix> export VCPKG_ROOT=$(pwd)
+wind> $env:VCPKG=(Get-Item .).FullName
+
 # Finally, you can setup the integration between vcpkg and cargo
-cargo install cargo-vcpkg
-cargo vcpkg build
+both> cd path/to/the/location/of/vectarine
+both> cargo install cargo-vcpkg
+both> cargo vcpkg build
 ```
 
 You are now ready to build and run the engine and the runtime!
@@ -106,10 +117,12 @@ Start the editor: `cargo run -p editor`
 Start the editor (with hot recompile): `bacon editor`
 
 Build the game for the web
+
 ```bash
-emsdk/emsdk_env.ps1
-cargo build -p runtime --target wasm32-unknown-emscripten
-uv run serve.py # Start this in another terminal.
+wind> ./emsdk/emsdk_env.ps1
+unix> source "./emsdk/emsdk_env.sh"
+both> cargo build -p runtime --target wasm32-unknown-emscripten
+both> uv run serve.py # Start this in another terminal.
 # Open http://localhost:8000 in your browser
 ```
 
@@ -138,3 +151,23 @@ To make the project cross-platform, we use python for all build scripts.
 
 To make a release build, run `uv run ./scripts/release-engine.py`.
 A distributable zip file will be created at the root.
+
+## Building for other platforms than yours
+
+You will need a [working Docker installation](https://docs.docker.com/engine/install/)
+
+If you are using Linux, you might want to create a release for Windows.
+If you are on Mac, you'd like to target Linux.
+
+To do so, first install `cross`:
+
+```bash
+cargo install cross --git https://github.com/cross-rs/cross
+```
+
+Then, build as usual while replacing `cargo` with `cross`:
+
+```bash
+# Making a Linux build on Windows/MacOS
+cross build -p editor --target x86_64-unknown-linux-gnu --release
+```

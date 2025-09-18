@@ -13,19 +13,74 @@ Tool to generate an engine-release aka a distributable zip with the engine and r
 """
 
 import os
+import sys
 import shutil
 import subprocess
 from pathlib import Path
 
 from rich.console import Console  # type: ignore
 
+os_friendly_name = "unknown"
+platform = sys.platform
+
+if platform.startswith("darwin"):
+    os_friendly_name = "macos"
+elif platform.startswith("linux"):
+    os_friendly_name = "linux"
+elif platform.startswith("win"):
+    os_friendly_name = "windows"
+
 is_windows = os.name == "nt"
 
 
-def copy_from_root(root_path: str, src: str, dst: str) -> None:
+def copy_from_root(root_path: str, src: str, dst: str, chmodx=False) -> None:
     src_file = os.path.join(root_path, src)
     if os.path.exists(src_file):
         shutil.copyfile(src_file, os.path.join(root_path, dst))
+        if not is_windows and chmodx:
+            st = os.stat(os.path.join(root_path, dst))
+            os.chmod(os.path.join(root_path, dst), st.st_mode | 0o111)
+
+
+def make_macos_app(root_path: str, executable_path: str, executable_dest_folder: str, friendly_name: str) -> None:
+    """
+    Example:
+    ```
+    make_macos_app(
+        root_path,
+        os.path.join(root_path, "target/aarch64-apple-darwin/release/vecta"),
+        release_path,
+        "Vectarine",
+    )
+    ```
+    """
+    if not os.path.exists(executable_path):
+        return
+    dest_executable_path = os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/MacOS/{friendly_name}")
+
+    Path(os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/MacOS")).mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(
+        executable_path,
+        dest_executable_path,
+    )
+    if not is_windows:
+        st = os.stat(dest_executable_path)
+        os.chmod(dest_executable_path, st.st_mode | 0o111)
+
+    # Write Info.plist
+    with open(os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/Info.plist"), "w") as f:
+        f.write(f"""
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>{friendly_name}</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.vectarine.{friendly_name}</string>
+</dict>
+</plist>
+""")
 
 
 def main() -> None:
@@ -33,24 +88,22 @@ def main() -> None:
 
     console = Console()
     console.print("[green]Building a release build of the engine.")
-    console.print(
-        "[green]Get a cup of coffee, tea or hot chocolate, this might take a while!"
-    )
+    console.print("[green]Get a cup of coffee, tea or hot chocolate, this might take a while!")
 
     console.print("[blue]Desktop build (runtime)")
     subprocess.run(
         ["cargo", "build", "-p", "runtime", "--release"],
-        shell=True,
+        shell=False,
         cwd=root_path,
-        stdout=subprocess.PIPE,
+        stdout=None,
     )
 
     console.print("[blue]Desktop build (editor)")
     subprocess.run(
         ["cargo", "build", "-p", "editor", "--release"],
-        shell=True,
+        shell=False,
         cwd=root_path,
-        stdout=subprocess.PIPE,
+        stdout=None,
     )
 
     # Note that the editor does not have a web build.
@@ -65,9 +118,9 @@ def main() -> None:
             "wasm32-unknown-emscripten",
             "--release",
         ],
-        shell=True,
+        shell=False,
         cwd=root_path,
-        stdout=subprocess.PIPE,
+        stdout=None,
     )
 
     console.print("[blue]Packaging")
@@ -76,30 +129,52 @@ def main() -> None:
     Path(release_path).mkdir(parents=True, exist_ok=True)
 
     if is_windows:
-        copy_from_root(
-            root_path, "target/release/vecta.exe", "engine-release/vecta.exe"
-        )
-        copy_from_root(
-            root_path, "target/release/runtime.exe", "engine-release/runtime.exe"
-        )
-        # If there is a linux release in the target, we ship it too.
-        copy_from_root(
-            root_path,
-            "target/x86_64-unknown-linux-gnu/release/vecta",
-            "engine-release/vecta-linux",
-        )
-        copy_from_root(
-            root_path,
-            "target/x86_64-unknown-linux-gnu/release/runtime",
-            "engine-release/runtime-linux",
-        )
+        copy_from_root(root_path, "target/release/vecta.exe", "engine-release/vecta.exe")
+        copy_from_root(root_path, "target/release/runtime.exe", "engine-release/runtime.exe")
     else:
-        copy_from_root(root_path, "target/release/vecta", "engine-release/vecta")
-        copy_from_root(root_path, "target/release/runtime", "engine-release/runtime")
+        copy_from_root(root_path, "target/release/vecta", f"engine-release/vecta-{os_friendly_name}", chmodx=True)
+        copy_from_root(root_path, "target/release/runtime", f"engine-release/runtime-{os_friendly_name}", chmodx=True)
 
+    # If there is a linux release in the target, we ship it too.
     copy_from_root(
-        root_path, "docs/user_manual.md", "engine-release/vectarine_guide.md"
+        root_path,
+        "target/x86_64-unknown-linux-gnu/release/vecta",
+        "engine-release/vecta-linux",
+        chmodx=True,
     )
+    copy_from_root(
+        root_path,
+        "target/x86_64-unknown-linux-gnu/release/runtime",
+        "engine-release/runtime-linux",
+        chmodx=True,
+    )
+    # Same for macOS
+    copy_from_root(
+        root_path,
+        "target/aarch64-apple-darwin/release/vecta",
+        "engine-release/vecta-macos",
+        chmodx=True,
+    )
+    copy_from_root(
+        root_path,
+        "target/aarch64-apple-darwin/release/vecta",
+        "engine-release/runtime-macos",
+        chmodx=True,
+    )
+
+    # Same for Windows
+    copy_from_root(
+        root_path,
+        "target/x86_64-pc-windows-msvc/release/vecta.exe",
+        "engine-release/vecta.exe",
+    )
+    copy_from_root(
+        root_path,
+        "target/x86_64-pc-windows-msvc/release/runtime.exe",
+        "engine-release/runtime.exe",
+    )
+
+    copy_from_root(root_path, "docs/user_manual.md", "engine-release/vectarine_guide.md")
 
     copy_from_root(
         root_path,

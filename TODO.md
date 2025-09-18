@@ -34,6 +34,7 @@
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
   - [ ] V3, V4
+  - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] Organize functions in namespace better and use metamethods
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
 

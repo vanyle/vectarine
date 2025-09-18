@@ -3,7 +3,6 @@ use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 use egui::RichText;
 use egui_extras::Column;
 use egui_sdl2_platform::sdl2;
-use glow::HasContext;
 use runtime::helpers::{file, game::Game, game_resource::get_absolute_path};
 use serde::{Deserialize, Serialize};
 

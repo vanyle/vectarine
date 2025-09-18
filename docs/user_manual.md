@@ -1,12 +1,10 @@
-# Vectarine User Manual
-
-*This documentation is for game makers, not for engine developers!*
-
-**🍊 Welcome to the Vectarine! 🍊**
+# 🍊 Vectarine User Manual
 
 Vectarine is a game engine to make games super quickly with the best possible developer experience.
 
 Vectarine uses [Lua](https://www.lua.org/manual/5.4/manual.html) as its scripting language.
+To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with optional static typing and better performance than regular Lua but the
+same syntax.
 
 ## Getting started
 
@@ -14,6 +12,11 @@ I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text
 you are free to use any text editor you want.
 
 Start the engine by running the `vecta` executable. A window should open.
+
+> ⚠️ On MacOS, executables from the internet are quarantined by default.
+> You might see this message when attempting to run `vecta-macos`: "This app is damaged"
+> You need to run this command to allow the execution:
+> `xattr -d com.apple.quarantine vecta-macos`
 
 Write your game inside `assets/scripts/game.lua`. As you save, the window updates. See the `lua-api` folder for a list of available functions. VSCode should autocomplete from them.
 
