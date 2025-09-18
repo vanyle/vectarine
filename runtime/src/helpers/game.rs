@@ -7,9 +7,7 @@ use crate::{
     graphics::batchdraw::BatchDraw2d,
     helpers::{
         draw_instruction,
-        game_resource::{
-            ResourceStatus, font_resource::FontResource, image_resource::ImageResource,
-        },
+        game_resource::{Status, font_resource::FontResource, image_resource::ImageResource},
         io::process_events,
         lua_env::LuaEnvironment,
     },
@@ -82,11 +80,11 @@ impl Game {
         messages.push_back(message.to_string());
     }
 
-    pub fn get_resource_or_print_error<T>(&self, resource_id: u32) -> Option<Rc<T>>
+    pub fn get_resource_or_print_error<T>(&self, resource_id: usize) -> Option<Rc<T>>
     where
         T: crate::helpers::game_resource::Resource,
     {
-        let resource_manager = self.lua_env.resources.borrow();
+        let resource_manager = &self.lua_env.resources;
         let resource = resource_manager.get_by_id::<T>(resource_id);
         let res = match resource {
             Ok(res) => res,
@@ -244,8 +242,8 @@ impl Game {
                         font_size,
                         font_resource_id,
                     } => {
-                        let resource_manager = self.lua_env.resources.borrow();
-                        let resource = resource_manager.get_by_id::<FontResource>(font_resource_id);
+                        let resources = &self.lua_env.resources;
+                        let resource = resources.get_by_id::<FontResource>(font_resource_id);
                         let res = match resource {
                             Ok(res) => res,
                             Err(cause) => {
@@ -285,16 +283,19 @@ impl Game {
     pub fn load_resource_as_needed(&mut self, gl: Arc<glow::Context>) {
         let mut to_reload = Vec::new();
         {
-            let resource_manager = self.lua_env.resources.borrow();
-            for resource in resource_manager.resources.iter() {
-                if resource.get_loading_status() != ResourceStatus::Unloaded {
+            let resource_manager = &self.lua_env.resources;
+            for (id, resource) in resource_manager.resources.borrow().iter().enumerate() {
+                if resource.get_status() != Status::Unloaded {
                     continue;
                 }
-                to_reload.push(resource.clone());
+                to_reload.push(id);
             }
         }
-        for resource in to_reload {
-            resource.reload(gl.clone());
+        for resource_id in to_reload {
+            self.lua_env
+                .resources
+                .clone()
+                .reload(resource_id, gl.clone());
         }
     }
 }

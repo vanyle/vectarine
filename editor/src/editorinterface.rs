@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct EditorConfig {
     is_console_shown: bool,
     is_resources_window_shown: bool,
-    debug_resource_shown: Option<u32>,
+    debug_resource_shown: Option<usize>,
 }
 
 pub struct EditorState {
@@ -170,17 +170,17 @@ impl EditorState {
                     })
                     .body(|mut body| {
                         for (id, res) in
-                            game.lua_env.resources.borrow().resources.iter().enumerate()
+                            game.lua_env.resources.resources.borrow().iter().enumerate()
                         {
-                            let description = res.get_resource_info();
+                            let resources = game.lua_env.resources.clone();
                             body.row(20.0, |mut row| {
                                 row.col(|ui| {
                                     if ui
-                                        .link(description.path.to_string_lossy().to_string())
+                                        .link(res.get_path().to_string_lossy().to_string())
                                         .clicked()
                                     {
                                         // Open the file
-                                        let absolute_path = get_absolute_path(&description.path);
+                                        let absolute_path = get_absolute_path(res.get_path());
                                         open::that(absolute_path).ok();
                                     }
                                 });
@@ -188,16 +188,14 @@ impl EditorState {
                                     ui.label(res.get_type_name().to_string());
                                 });
                                 row.col(|ui| {
-                                    ui.label(format!("{}", res.get_loading_status()));
+                                    ui.label(format!("{}", res.get_status()));
                                 });
                                 row.col(|ui| {
                                     if ui.button("Reload").clicked() {
-                                        let res = res.clone();
-                                        let gl = self.gl.clone();
-                                        res.reload(gl);
+                                        let gl: Arc<glow::Context> = self.gl.clone();
+                                        resources.reload(id, gl);
                                     }
                                     let mut config = self.config.borrow_mut();
-                                    let id = id as u32;
                                     let shown = config.debug_resource_shown == Some(id);
                                     let text = if shown { "Hide" } else { "Show" };
                                     ui.button(text).clicked().then(|| {
@@ -215,16 +213,10 @@ impl EditorState {
         }
 
         if let Some(id) = self.config.borrow().debug_resource_shown {
-            if let Some(res) = game
-                .lua_env
-                .resources
-                .borrow_mut()
-                .resources
-                .get_mut(id as usize)
-            {
+            if let Some(res) = game.lua_env.resources.resources.borrow().get(id) {
                 egui::Window::new(format!(
                     "Resource debug - {}",
-                    res.get_resource_info().path.to_string_lossy()
+                    res.get_path().to_string_lossy()
                 ))
                 .resizable(true)
                 .show(&ctx, |ui| {

@@ -1,15 +1,15 @@
-use std::{cell::RefCell, fs, rc::Rc, sync::Arc};
+use std::{fs, rc::Rc, sync::Arc};
 
 use notify_debouncer_full::DebouncedEvent;
 use runtime::helpers::{
-    game_resource::{ResourceManager, ResourceStatus},
+    game_resource::{ResourceManager, Status},
     lua_env::{LuaEnvironment, run_file_and_display_error},
 };
 
 // Reload assets corresponding to changed file as needed without blocking
 pub fn reload_assets_if_needed(
     gl: &Arc<glow::Context>,
-    resources: &Rc<RefCell<ResourceManager>>,
+    resources: &Rc<ResourceManager>,
     lua_for_reload: &LuaEnvironment,
     debounce_receiver: &std::sync::mpsc::Receiver<DebouncedEvent>,
 ) {
@@ -17,13 +17,14 @@ pub fn reload_assets_if_needed(
         for path in event.event.paths {
             // Check if a resource is in the list of path
             // If so, and the resource is in an unloaded / loaded state, load it.
-            if let Some(res) = resources.borrow().get_by_path(&path) {
-                let res_status = res.get_loading_status();
+            if let Some(res_id) = resources.get_id_by_path(&path) {
+                let res = resources.get_holder_by_id_unchecked(res_id);
+                let res_status = res.get_status();
                 if matches!(
                     res_status,
-                    ResourceStatus::Loaded | ResourceStatus::Error(_)
+                    Status::Unloaded | Status::Loaded | Status::Error(_)
                 ) {
-                    res.reload(gl.clone());
+                    resources.reload(res_id, gl.clone());
                 }
             };
 

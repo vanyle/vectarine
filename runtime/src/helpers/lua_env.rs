@@ -22,7 +22,7 @@ pub struct LuaEnvironment {
     pub frame_messages: Rc<RefCell<Vec<String>>>,
     pub messages: Rc<RefCell<VecDeque<String>>>,
 
-    pub resources: Rc<RefCell<ResourceManager>>,
+    pub resources: Rc<ResourceManager>,
 }
 
 impl LuaEnvironment {
@@ -35,7 +35,7 @@ impl LuaEnvironment {
         let _ = lua.sandbox(false);
 
         let draw_instructions = Rc::new(RefCell::new(VecDeque::new()));
-        let resources = Rc::new(RefCell::new(ResourceManager::default()));
+        let resources = Rc::new(ResourceManager::default());
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
         let frame_messages = Rc::new(RefCell::new(Vec::new()));
         let messages = Rc::new(RefCell::new(VecDeque::new()));
@@ -47,14 +47,11 @@ impl LuaEnvironment {
         let _ = vec2::setup_vec2_api(&lua);
         let _ = graphics::setup_graphics_api(&lua, &draw_instructions);
 
-        let resources_for_closure = resources.clone();
         let env_state_for_closure = env_state.clone();
-        add_global_fn(
-            &lua,
-            "measureText",
-            move |lua, (text, font_resource_id, font_size): (String, u32, f32)| {
-                let font_resource = resources_for_closure.borrow();
-                let font_resource = font_resource.get_by_id::<FontResource>(font_resource_id);
+        add_global_fn(&lua, "measureText", {
+            let resources = resources.clone();
+            move |lua, (text, font_resource_id, font_size): (String, usize, f32)| {
+                let font_resource = resources.get_by_id::<FontResource>(font_resource_id);
                 let result = lua.create_table().unwrap();
                 let Ok(font_resource) = font_resource else {
                     let _ = result.set("width", 0.0);
@@ -70,135 +67,146 @@ impl LuaEnvironment {
                 let _ = result.set("height", height);
                 let _ = result.set("bearingY", max_ascent);
                 Ok(result)
-            },
-        );
-
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "isKeyDown", move |_, keycode_name: String| {
-            let keycode = Keycode::from_name(&keycode_name);
-            let Some(keycode) = keycode else {
-                return Ok(false);
-            };
-            let is_pressed = *env_state_for_closure
-                .borrow()
-                .keyboard_state
-                .get(&keycode)
-                .unwrap_or(&false);
-            Ok(is_pressed)
-        });
-
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "getKeysDown", move |lua, ()| {
-            let table = lua.create_table().unwrap();
-            for (keycode, is_pressed) in env_state_for_closure.borrow().keyboard_state.iter() {
-                if *is_pressed {
-                    let _ = table.set(table.len().unwrap() + 1, keycode.name());
-                }
             }
-            Ok(table)
         });
 
-        let frame_messages_for_closure = frame_messages.clone();
+        add_global_fn(&lua, "isKeyDown", {
+            let env_state = env_state.clone();
+            move |_, keycode_name: String| {
+                let keycode = Keycode::from_name(&keycode_name);
+                let Some(keycode) = keycode else {
+                    return Ok(false);
+                };
+                let is_pressed = *env_state
+                    .borrow()
+                    .keyboard_state
+                    .get(&keycode)
+                    .unwrap_or(&false);
+                Ok(is_pressed)
+            }
+        });
 
-        add_global_fn(
-            &lua,
-            "fprint",
+        add_global_fn(&lua, "getKeysDown", {
+            let env_state = env_state.clone();
+            move |lua, ()| {
+                let table = lua.create_table().unwrap();
+                for (keycode, is_pressed) in env_state.borrow().keyboard_state.iter() {
+                    if *is_pressed {
+                        let _ = table.set(table.len().unwrap() + 1, keycode.name());
+                    }
+                }
+                Ok(table)
+            }
+        });
+
+        add_global_fn(&lua, "fprint", {
+            let frame_messages = frame_messages.clone();
             move |_, args: mlua::Variadic<mlua::Value>| {
                 let msg = args
                     .iter()
                     .map(stringify_lua_value)
                     .collect::<Vec<_>>()
                     .join(" ");
-                frame_messages_for_closure.borrow_mut().push(msg);
+                frame_messages.borrow_mut().push(msg);
                 Ok(())
-            },
-        );
+            }
+        });
 
-        let messages_for_closure = messages.clone();
-        add_global_fn(
-            &lua,
-            "dprint",
+        add_global_fn(&lua, "dprint", {
+            let messages = messages.clone();
             move |_, args: mlua::Variadic<mlua::Value>| {
                 let msg = args
                     .iter()
                     .map(stringify_lua_value)
                     .collect::<Vec<_>>()
                     .join(" ");
-                messages_for_closure.borrow_mut().push_front(msg);
+                messages.borrow_mut().push_front(msg);
                 Ok(())
-            },
-        );
-
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "getMouse", move |_, ()| {
-            let mouse_state = env_state_for_closure.borrow().mouse_state.clone();
-            Ok(Vec2 {
-                x: mouse_state.x,
-                y: mouse_state.y,
-            })
+            }
         });
 
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "getMouseState", move |lua, ()| {
-            let mouse_state = env_state_for_closure.borrow().mouse_state.clone();
-            let table = lua.create_table().unwrap();
-            let _ = table.set("is_left_down", mouse_state.is_left_down);
-            let _ = table.set("is_right_down", mouse_state.is_right_down);
-            Ok(table)
+        add_global_fn(&lua, "getMouse", {
+            let env_state = env_state.clone();
+            move |_, ()| {
+                let mouse_state = env_state.borrow().mouse_state.clone();
+                Ok(Vec2 {
+                    x: mouse_state.x,
+                    y: mouse_state.y,
+                })
+            }
         });
 
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "getWindowSize", move |lua, ()| {
-            let state = env_state_for_closure.borrow();
-            let table = lua.create_table().unwrap();
-            let _ = table.set("x", state.window_width);
-            let _ = table.set("y", state.window_height);
-            Ok(table)
+        add_global_fn(&lua, "getMouseState", {
+            let env_state = env_state.clone();
+            move |lua, ()| {
+                let mouse_state = env_state.borrow().mouse_state.clone();
+                let table = lua.create_table().unwrap();
+                let _ = table.set("is_left_down", mouse_state.is_left_down);
+                let _ = table.set("is_right_down", mouse_state.is_right_down);
+                Ok(table)
+            }
         });
 
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "getScreenSize", move |lua, ()| {
-            let state = env_state_for_closure.borrow();
-            let table = lua.create_table().unwrap();
-            let _ = table.set("x", state.screen_width);
-            let _ = table.set("y", state.screen_height);
-            Ok(table)
+        add_global_fn(&lua, "getWindowSize", {
+            let env_state = env_state.clone();
+            move |lua, ()| {
+                let state = env_state.borrow();
+                let table = lua.create_table().unwrap();
+                let _ = table.set("x", state.window_width);
+                let _ = table.set("y", state.window_height);
+                Ok(table)
+            }
         });
 
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "setResizeable", move |_, (resizeable,): (bool,)| {
-            env_state_for_closure.borrow_mut().is_window_resizeable = resizeable;
-            Ok(())
+        add_global_fn(&lua, "getScreenSize", {
+            let env_state = env_state.clone();
+            move |lua, ()| {
+                let state = env_state.borrow();
+                let table = lua.create_table().unwrap();
+                let _ = table.set("x", state.screen_width);
+                let _ = table.set("y", state.screen_height);
+                Ok(table)
+            }
         });
 
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(
-            &lua,
-            "setWindowSize",
+        add_global_fn(&lua, "setResizeable", {
+            let env_state = env_state.clone();
+            move |_, (resizeable,): (bool,)| {
+                env_state.borrow_mut().is_window_resizeable = resizeable;
+                Ok(())
+            }
+        });
+
+        add_global_fn(&lua, "setWindowSize", {
+            let env_state = env_state.clone();
             move |_, (width, height): (u32, u32)| {
-                env_state_for_closure.borrow_mut().window_target_size = Some((width, height));
+                env_state.borrow_mut().window_target_size = Some((width, height));
                 Ok(())
-            },
-        );
-
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "setFullscreen", move |_, (fullscreen,): (bool,)| {
-            env_state_for_closure.borrow_mut().fullscreen_state_request = Some(fullscreen);
-            Ok(())
+            }
         });
 
-        let resources_for_closure = resources.clone();
-        add_global_fn(&lua, "loadImage", move |_, path: String| {
-            let mut manager = resources_for_closure.borrow_mut();
-            let id = manager.load_resource::<ImageResource>(Path::new(&path));
-            Ok(id)
+        add_global_fn(&lua, "setFullscreen", {
+            let env_state = env_state.clone();
+            move |_, (fullscreen,): (bool,)| {
+                env_state.borrow_mut().fullscreen_state_request = Some(fullscreen);
+                Ok(())
+            }
         });
 
-        let resources_for_closure = resources.clone();
-        add_global_fn(&lua, "loadFont", move |_, path: String| {
-            let mut manager = resources_for_closure.borrow_mut();
-            let id = manager.load_resource::<FontResource>(Path::new(&path));
-            Ok(id)
+        add_global_fn(&lua, "loadImage", {
+            let resources = resources.clone();
+            move |_, path: String| {
+                let id = resources.load_resource::<ImageResource>(Path::new(&path));
+                Ok(id)
+            }
+        });
+
+        add_global_fn(&lua, "loadFont", {
+            let resources = resources.clone();
+            move |_, path: String| {
+                let id = resources.load_resource::<FontResource>(Path::new(&path));
+                Ok(id)
+            }
         });
 
         add_global_fn(&lua, "toString", move |_, (arg,): (mlua::Value,)| {

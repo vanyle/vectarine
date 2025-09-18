@@ -50,13 +50,12 @@ fn gui_main() {
 
     let lua_env = LuaEnvironment::new();
 
-    let lua_for_reload = lua_env.clone();
-
     let path = Path::new("assets/scripts/game.lua");
     let content = fs::read(path);
     if let Ok(content) = content {
-        run_file_and_display_error(&lua_for_reload, &content, path);
+        run_file_and_display_error(&lua_env, &content, path);
     }
+    let lua_env_for_reload = lua_env.clone();
 
     debouncer
         .watch("./assets", RecursiveMode::Recursive)
@@ -83,8 +82,8 @@ fn gui_main() {
         game.load_resource_as_needed(gl.clone());
         reload_assets_if_needed(
             &gl,
-            &game.lua_env.resources.clone(),
-            &lua_for_reload,
+            &game.lua_env.resources,
+            &lua_env_for_reload,
             &debounce_receiver,
         );
 

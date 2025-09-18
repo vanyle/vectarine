@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, sync::Arc};
 
 use crate::{
     graphics::gltexture,
-    helpers::game_resource::{Resource, ResourceDescription},
+    helpers::game_resource::{DependencyReporter, Resource, Status},
 };
 
 #[derive(Debug, Clone)]
@@ -22,39 +22,30 @@ pub struct FontRenderingData {
 }
 
 pub struct FontResource {
-    pub description: ResourceDescription,
     pub font_rendering: RefCell<Option<FontRenderingData>>,
-    pub is_loading: RefCell<bool>,
-    pub error: RefCell<Option<String>>,
 }
 
 const CHARSET: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/\\`~ \n";
 const FONT_DETAIL: f32 = 64.0; // Base font size for rasterization
 
 impl Resource for FontResource {
-    fn get_resource_info(&self) -> ResourceDescription {
-        self.description.clone()
-    }
-
-    fn reload_from_data(self: std::rc::Rc<Self>, gl: Arc<glow::Context>, data: Vec<u8>) {
+    fn load_from_data(
+        self: std::rc::Rc<Self>,
+        _assigned_id: usize,
+        _dependency_reporter: &DependencyReporter,
+        gl: Arc<glow::Context>,
+        data: &[u8],
+    ) -> Status {
         if data.is_empty() {
-            self.is_loading.replace(false);
-            self.error
-                .replace(Some("File is empty or does not exist.".to_string()));
-            return;
+            return Status::Error("File is empty or does not exist.".to_string());
         }
-        let font = fontdue::Font::from_bytes(data.as_slice(), fontdue::FontSettings::default());
+        let font = fontdue::Font::from_bytes(data, fontdue::FontSettings::default());
         let font = match font {
             Err(e) => {
-                self.is_loading.replace(false);
-                self.error.replace(Some(e.to_string()));
-                return;
+                return Status::Error(e.to_string());
             }
             Ok(f) => f,
         };
-
-        self.is_loading.replace(false);
-        self.error.replace(None);
 
         // Initialize the font atlas
         let chars: Vec<char> = CHARSET.chars().collect();
@@ -122,52 +113,23 @@ impl Resource for FontResource {
             font_loader: font,
             font_size: FONT_DETAIL,
         }));
+        Status::Loaded
     }
 
     fn draw_debug_gui(&self, ui: &mut egui::Ui) {
         ui.label("TODO: FontResource debug GUI");
     }
 
-    fn get_loading_status(&self) -> super::ResourceStatus {
-        if let Some(error) = self.error.borrow().as_ref() {
-            return super::ResourceStatus::Error(error.clone());
-        }
-        if self.font_rendering.borrow().is_some() {
-            super::ResourceStatus::Loaded
-        } else if *self.is_loading.borrow() {
-            super::ResourceStatus::Loading
-        } else {
-            super::ResourceStatus::Unloaded
-        }
-    }
-
-    fn set_as_loading(&self) {
-        self.is_loading.replace(true);
-    }
-
     fn get_type_name(&self) -> &'static str {
         "FontResource"
     }
 
-    fn from_file(_manager: &mut super::ResourceManager, path: &std::path::Path) -> Self
+    fn default() -> Self
     where
         Self: Sized,
     {
-        let name = path
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string();
-
         Self {
-            description: ResourceDescription {
-                name,
-                path: path.to_path_buf(),
-                dependencies: Vec::new(),
-            },
             font_rendering: RefCell::new(None),
-            is_loading: RefCell::new(false),
-            error: RefCell::new(None),
         }
     }
 }

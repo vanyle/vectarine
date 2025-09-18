@@ -16,10 +16,11 @@ _Vectarine is a game engine with a focus on ultra fast prototyping, ease of use 
 - 👾 Don't limit creativity
   - 🏭 Access to low-level primitives
   - 📐 3d & 2d support
-- 🌍 Reach a wide audience
   - 🚀 Performance: Render millions of entities at 60 fps
+- 🌍 Reach a wide audience
   - 🌐 Supports the Web, Windows, Linux, MacOS
   - 📦 Distribute your game by sharing only 2 files with a small size footprint.
+  - 📖 Free and open-source
 
 ## Getting started making games
 

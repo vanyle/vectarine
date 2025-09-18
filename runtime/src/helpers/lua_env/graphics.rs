@@ -89,7 +89,7 @@ pub fn setup_graphics_api(
     add_global_fn(
         lua,
         "drawImage",
-        move |_, (resource_id, pos, size): (u32, Vec2, Vec2)| {
+        move |_, (resource_id, pos, size): (usize, Vec2, Vec2)| {
             let draw_ins = DrawInstruction::Image {
                 pos,
                 size,
@@ -106,7 +106,7 @@ pub fn setup_graphics_api(
         "drawImage",
         move |_,
               (resource_id, p1, p2, p3, p4, src_pos, src_size): (
-            u32,
+            usize,
             Vec2,
             Vec2,
             Vec2,
@@ -132,7 +132,7 @@ pub fn setup_graphics_api(
     add_global_fn(
         lua,
         "drawText",
-        move |_, (text, font_id, pos, size, color): (String, u32, Vec2, f32, Table)| {
+        move |_, (text, font_id, pos, size, color): (String, usize, Vec2, f32, Table)| {
             let color = [
                 color.get::<f32>("r").unwrap_or(0.0),
                 color.get::<f32>("g").unwrap_or(0.0),

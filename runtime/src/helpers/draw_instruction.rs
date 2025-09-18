@@ -19,14 +19,14 @@ pub enum DrawInstruction {
     Image {
         pos: Vec2,
         size: Vec2,
-        resource_id: u32,
+        resource_id: usize,
     },
     ImagePart {
         p1: Vec2,
         p2: Vec2,
         p3: Vec2,
         p4: Vec2,
-        resource_id: u32,
+        resource_id: usize,
         uv_pos: Vec2,
         uv_size: Vec2,
     },
@@ -35,7 +35,7 @@ pub enum DrawInstruction {
         text: String,
         color: [f32; 4],
         font_size: f32,
-        font_resource_id: u32,
+        font_resource_id: usize,
     },
     Clear {
         color: [f32; 4],
