@@ -1,10 +1,5 @@
 # TODO
 
-- [ ] More complete drawing API
-  - [x] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
-  - [ ] Arrows
-  - [ ] Lines
-  - [ ] Polygons
 - [ ] Resource update
   - [ ] Move loading state management out of the individual resources
   - [ ] Scripts are resources
@@ -37,9 +32,14 @@
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] Organize functions in namespace better and use metamethods
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
+- [ ] Make a game with it !!!
 
 # Done
 
+- [x] More complete drawing API
+  - [x] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
+  - [x] Arrows
+  - [x] Polygons
 - [x] Vector API for Lua
   - [x] Use V2 for all pairs of coordinate in APIs
 - [x] Handle high DPI screens (MacOS...)

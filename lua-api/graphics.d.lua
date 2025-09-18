@@ -12,6 +12,18 @@ function clear(color) end
 --- @param color Color
 function drawRect(pos, size, color) end
 
+--- Draws a convex filled polygon
+--- @param points Vec2[] List of points in order
+--- @param color Color
+function drawPolygon(points, color) end
+
+--- Draws an arrow starting at `pos`, and towards `direction`
+--- @param pos Vec2
+--- @param direction Vec2
+--- @param color? Color
+--- @param size? number Size of the arrow head and width of the arrow shaft
+function drawArrow(pos, direction, color, size) end
+
 --- Draws a filled circle
 --- @param center Vec2
 --- @param radius number Radius
@@ -36,12 +48,6 @@ function drawImage(image, pos, size) end
 --- @param src_pos Vec2
 --- @param src_size Vec2
 function drawImage(image, dest_p1, dest_p2, dest_p3, dest_p4, src_pos, src_size) end
-
---- Draws an arrow starting at `pos`, and towards `direction`
---- @param pos Vec2
---- @param direction Vec2
---- @param color? Color
-function drawArrow(pos, direction, color) end
 
 --- Draws text at (x,y) with given font, size and color
 --- size is the maximum height that a text of that font will take on the screen

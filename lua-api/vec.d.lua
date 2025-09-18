@@ -16,10 +16,11 @@ local Vec2 = {}
 function V2(x, y) end
 
 --- Scale a vector by a number
+--- @param v Vec2
 --- @param k number
 --- @return Vec2
 --- @nodiscard
-function Vec2.scale(k) end
+function Vec2.scale(v, k) end
 
 --- Complex multiplication of two vectors
 --- @param a Vec2
@@ -29,6 +30,7 @@ function Vec2.scale(k) end
 function Vec2.cmul(a, b) end
 
 --- Get the length of the vector
+--- @param v Vec2
 --- @return number
 --- @nodiscard
-function Vec2.length() end
+function Vec2.length(v) end

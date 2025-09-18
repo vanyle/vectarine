@@ -1,12 +1,13 @@
 use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
-use mlua::{ObjectLike, Table};
+use mlua::ObjectLike;
 use sdl2::keyboard::Keycode;
 
+pub mod graphics;
 pub mod vec2;
 
 use crate::helpers::{
-    draw_instruction::{self, DrawInstruction},
+    draw_instruction::{self},
     game_resource::{ResourceManager, font_resource::FontResource, image_resource::ImageResource},
     io::IoEnvState,
     lua_env::vec2::Vec2,
@@ -39,114 +40,12 @@ impl LuaEnvironment {
         let frame_messages = Rc::new(RefCell::new(Vec::new()));
         let messages = Rc::new(RefCell::new(VecDeque::new()));
 
-        let queue_for_closure = draw_instructions.clone();
-
         lua.globals()
             .set("Global", lua.create_table().unwrap())
             .unwrap();
 
         let _ = vec2::setup_vec2_api(&lua);
-
-        add_global_fn(
-            &lua,
-            "drawRect",
-            move |_, (pos, size, color): (Vec2, Vec2, Table)| {
-                let color = [
-                    color.get::<f32>("r").unwrap_or(0.0),
-                    color.get::<f32>("g").unwrap_or(0.0),
-                    color.get::<f32>("b").unwrap_or(0.0),
-                    color.get::<f32>("a").unwrap_or(0.0),
-                ];
-                queue_for_closure
-                    .borrow_mut()
-                    .push_back(DrawInstruction::Rectangle { pos, size, color });
-                Ok(())
-            },
-        );
-
-        let queue_for_closure = draw_instructions.clone();
-        add_global_fn(
-            &lua,
-            "drawCircle",
-            move |_, (pos, radius, color): (Vec2, f32, Table)| {
-                let color = [
-                    color.get::<f32>("r").unwrap_or(0.0),
-                    color.get::<f32>("g").unwrap_or(0.0),
-                    color.get::<f32>("b").unwrap_or(0.0),
-                    color.get::<f32>("a").unwrap_or(0.0),
-                ];
-                queue_for_closure
-                    .borrow_mut()
-                    .push_back(DrawInstruction::Circle { pos, radius, color });
-                Ok(())
-            },
-        );
-
-        let queue_for_closure = draw_instructions.clone();
-        add_global_fn(
-            &lua,
-            "drawImage",
-            move |_, (resource_id, pos, size): (u32, Vec2, Vec2)| {
-                let draw_ins = DrawInstruction::Image {
-                    pos,
-                    size,
-                    resource_id,
-                };
-                queue_for_closure.borrow_mut().push_back(draw_ins);
-                Ok(())
-            },
-        );
-
-        let queue_for_closure = draw_instructions.clone();
-        add_global_fn(
-            &lua,
-            "drawImage",
-            move |_,
-                  (resource_id, p1, p2, p3, p4, src_pos, src_size): (
-                u32,
-                Vec2,
-                Vec2,
-                Vec2,
-                Vec2,
-                Vec2,
-                Vec2,
-            )| {
-                let draw_ins = DrawInstruction::ImagePart {
-                    p1,
-                    p2,
-                    p3,
-                    p4,
-                    uv_pos: src_pos,
-                    uv_size: src_size,
-                    resource_id,
-                };
-                queue_for_closure.borrow_mut().push_back(draw_ins);
-                Ok(())
-            },
-        );
-
-        let queue_for_closure = draw_instructions.clone();
-        add_global_fn(
-            &lua,
-            "drawText",
-            move |_, (text, font_id, pos, size, color): (String, u32, Vec2, f32, Table)| {
-                let color = [
-                    color.get::<f32>("r").unwrap_or(0.0),
-                    color.get::<f32>("g").unwrap_or(0.0),
-                    color.get::<f32>("b").unwrap_or(0.0),
-                    color.get::<f32>("a").unwrap_or(0.0),
-                ];
-                let draw_ins = DrawInstruction::Text {
-                    pos,
-                    text,
-                    color,
-                    font_size: size,
-                    font_resource_id: font_id,
-                };
-                queue_for_closure.borrow_mut().push_back(draw_ins);
-                Ok(())
-            },
-        );
+        let _ = graphics::setup_graphics_api(&lua, &draw_instructions);
 
         let resources_for_closure = resources.clone();
         let env_state_for_closure = env_state.clone();
@@ -173,20 +72,6 @@ impl LuaEnvironment {
                 Ok(result)
             },
         );
-
-        let queue_for_closure = draw_instructions.clone();
-        add_global_fn(&lua, "clear", move |_, (color,): (Table,)| {
-            let color = [
-                color.get::<f32>("r").unwrap_or(0.0),
-                color.get::<f32>("g").unwrap_or(0.0),
-                color.get::<f32>("b").unwrap_or(0.0),
-                color.get::<f32>("a").unwrap_or(0.0),
-            ];
-            queue_for_closure
-                .borrow_mut()
-                .push_back(DrawInstruction::Clear { color });
-            Ok(())
-        });
 
         let env_state_for_closure = env_state.clone();
         add_global_fn(&lua, "isKeyDown", move |_, keycode_name: String| {
@@ -405,12 +290,10 @@ fn stringify_lua_value_helper(value: &mlua::Value, mut seen: Vec<mlua::Value>) -
             let ptr = thread.to_pointer();
             format!("[thread: {ptr:?}]")
         }
-        mlua::Value::UserData(userdata) => {
-            return userdata.to_string().unwrap_or_else(|_| {
-                let ptr = userdata.to_pointer();
-                format!("[userdata: {ptr:?}]")
-            });
-        }
+        mlua::Value::UserData(userdata) => userdata.to_string().unwrap_or_else(|_| {
+            let ptr = userdata.to_pointer();
+            format!("[userdata: {ptr:?}]")
+        }),
         mlua::Value::LightUserData(lightuserdata) => {
             let ptr = lightuserdata.0;
             format!("[lightuserdata: {ptr:?}]")

@@ -85,6 +85,6 @@ function Update(time_delta)
 
     -- Center of the screen
     drawImage(Global.logo, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
-
     drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
+    drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))
 end

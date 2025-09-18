@@ -184,6 +184,9 @@ impl Game {
                     draw_instruction::DrawInstruction::Rectangle { pos, size, color } => {
                         self.batch.draw_rect(pos.x, pos.y, size.x, size.y, color);
                     }
+                    draw_instruction::DrawInstruction::Polygon { points, color } => {
+                        self.batch.draw_polygon(points, color);
+                    }
                     draw_instruction::DrawInstruction::Circle { pos, radius, color } => {
                         self.batch.draw_circle(pos.x, pos.y, radius, color);
                     }

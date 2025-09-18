@@ -1,3 +1,5 @@
+use std::ops;
+
 #[derive(Clone, Debug, PartialEq, Copy)]
 pub struct Vec2 {
     pub x: f32,
@@ -8,7 +10,11 @@ impl mlua::FromLua for Vec2 {
     fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
             mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => unreachable!(),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "Vec2".to_string(),
+                message: Some("expected Vec2 userdata".to_string()),
+            }),
         }
     }
 }
@@ -22,6 +28,70 @@ impl Vec2 {
     }
     pub fn with_y(self, y: f32) -> Self {
         Self { x: self.x, y }
+    }
+    pub fn zero() -> Self {
+        Self { x: 0.0, y: 0.0 }
+    }
+    pub fn length(self) -> f32 {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
+    pub fn dot(self, other: Self) -> f32 {
+        self.x * other.x + self.y * other.y
+    }
+    pub fn scale(self, k: f32) -> Self {
+        Self {
+            x: self.x * k,
+            y: self.y * k,
+        }
+    }
+    pub fn cmul(self, other: Self) -> Self {
+        Self {
+            x: self.x * other.x - self.y * other.y,
+            y: self.y * other.x + self.x * other.y,
+        }
+    }
+    pub fn rotated(self, angle_rad: f32) -> Self {
+        let cos_a = angle_rad.cos();
+        let sin_a = angle_rad.sin();
+        self.cmul(Self { x: cos_a, y: sin_a })
+    }
+    pub fn normalized(self) -> Self {
+        let len = self.length();
+        if len == 0.0 {
+            Self { x: 0.0, y: 0.0 }
+        } else {
+            self.scale(1.0 / len)
+        }
+    }
+}
+
+impl ops::Add for Vec2 {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl ops::Sub for Vec2 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+}
+
+impl ops::Mul for Vec2 {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+        }
     }
 }
 

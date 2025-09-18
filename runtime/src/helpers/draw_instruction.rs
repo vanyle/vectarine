@@ -7,6 +7,10 @@ pub enum DrawInstruction {
         size: Vec2,
         color: [f32; 4],
     },
+    Polygon {
+        points: Vec<Vec2>,
+        color: [f32; 4],
+    },
     Circle {
         pos: Vec2,
         radius: f32,

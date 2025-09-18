@@ -149,6 +149,31 @@ impl BatchDraw2d {
         ));
     }
 
+    pub fn draw_polygon(&mut self, points: Vec<Vec2>, color: [f32; 4]) {
+        #[rustfmt::skip]
+        let vertices: Vec<f32> = points.iter().flat_map(|p| {
+            vec![
+                p.x, p.y, 0.0, // position
+                color[0], color[1], color[2], color[3], // color
+            ]
+        }).collect();
+
+        // Triangulate the polygon using a triangle fan
+        let mut indices: Vec<u32> = Vec::with_capacity((points.len() - 2) * 3);
+        for i in 1..(points.len() - 1) {
+            indices.push(0);
+            indices.push(i as u32);
+            indices.push((i + 1) as u32);
+        }
+
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &indices,
+            Uniforms::new(),
+            DefaultShader::Color,
+        );
+    }
+
     pub fn draw_rect(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
         #[rustfmt::skip]
         let vertices: [f32; 4 * 7] = [
