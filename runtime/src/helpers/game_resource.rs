@@ -11,6 +11,7 @@ use crate::helpers::file;
 
 pub mod font_resource;
 pub mod image_resource;
+pub mod script_resource;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Status {
@@ -83,6 +84,18 @@ impl ResourceHolder {
 
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    pub fn get_underlying_resource<T: Resource + 'static>(&self) -> Result<Rc<T>, String> {
+        let res = self.resource.clone().as_any_rc();
+        let res = res.downcast::<T>().map_err(|_| {
+            format!(
+                "Resource type mismatch, {} expected, {} found",
+                std::any::type_name::<T>(),
+                std::any::type_name::<Self>()
+            )
+        })?;
+        Ok(res)
     }
 
     pub fn draw_debug_gui(&self, ui: &mut egui::Ui) {
@@ -218,9 +231,7 @@ impl ResourceManager {
         if !resource.is_loaded() {
             return Err("Resource not available yet".into());
         }
-        let res = resource.resource.clone().as_any_rc();
-        let res = res.downcast::<T>().map_err(|_| "Resource type mismatch")?;
-        Ok(res)
+        resource.get_underlying_resource::<T>()
     }
 
     pub fn get_holder_by_id(&self, id: usize) -> Option<Rc<ResourceHolder>> {

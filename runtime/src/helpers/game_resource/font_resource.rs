@@ -121,7 +121,7 @@ impl Resource for FontResource {
     }
 
     fn get_type_name(&self) -> &'static str {
-        "FontResource"
+        "Font"
     }
 
     fn default() -> Self

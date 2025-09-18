@@ -1,7 +1,7 @@
 # TODO
 
 - [ ] Resource update
-  - [ ] Move loading state management out of the individual resources
+  - [x] Move loading state management out of the individual resources
   - [ ] Scripts are resources
   - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
 - [ ] Canvas API 'framebuffer'

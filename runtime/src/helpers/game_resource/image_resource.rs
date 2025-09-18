@@ -13,7 +13,7 @@ pub struct ImageResource {
 
 impl Resource for ImageResource {
     fn get_type_name(&self) -> &'static str {
-        "ImageResource"
+        "Image"
     }
     fn load_from_data(
         self: Rc<Self>,
