@@ -4,7 +4,7 @@ members = ["editor", "runtime"]
 
 [profile.release]
 # Extra 
-lto = "thin"
+lto = "fat"
 strip = "symbols"
 # Same as usual
 opt-level = 3

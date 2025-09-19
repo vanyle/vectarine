@@ -33,6 +33,8 @@ pub fn set_opengl_attributes(gl_attr: GLAttr) {
     // MacOS does not support OpenGL ES.
     gl_attr.set_context_version(3, 0);
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
+    gl_attr.set_multisample_buffers(1);
+    gl_attr.set_multisample_samples(4);
     gl_attr.set_context_flags().forward_compatible().set(); // for macOS
 }
 
@@ -76,6 +78,10 @@ pub fn init_sdl() -> RenderingBlock {
     unsafe {
         gl.enable(glow::BLEND);
         gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+        //gl.blend_func(glow::SRC_ALPHA_SATURATE, glow::ONE);
+        //gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE);
+        //gl.enable(glow::POLYGON_SMOOTH);
+        gl.enable(glow::MULTISAMPLE);
     }
 
     RenderingBlock {

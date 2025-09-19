@@ -2,15 +2,17 @@
 	"folders": [
 		{
 			"path": ".",
-			"name": "Vectarine",
-		},
+			"name": "Vectarine"
+		}
 	],
 	"extensions": {
 		"recommendations": [
 			"rust-lang.rust-analyzer",
 			"vadimcn.vscode-lldb",
 			"sumneko.lua",
-		],
+			"esbenp.prettier-vscode",
+			"tamasfe.even-better-toml"
+		]
 	},
 	"settings": {
 		"rust-analyzer.completion.autoimport.enable": true,
@@ -18,14 +20,32 @@
 		// "rust-analyzer.cargo.target": "wasm32-unknown-emscripten",
 		"rust-analyzer.check.command": "clippy",
 		"editor.codeActionsOnSave": {
-			"source.organizeImports": "always",
+			"source.organizeImports": "always"
 		},
 		"search.useIgnoreFiles": false,
 		"[rust]": {
 			"editor.formatOnSave": true,
-			"editor.defaultFormatter": "rust-lang.rust-analyzer",
+			"editor.defaultFormatter": "rust-lang.rust-analyzer"
+		},
+		"[json]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.formatOnSave": true,
+			"prettier.tabWidth": 4,
+			"prettier.useTabs": true
+		},
+		"[jsonc]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.formatOnSave": true,
+			"prettier.tabWidth": 4,
+			"prettier.useTabs": true
+		},
+		"[toml]": {
+			"editor.defaultFormatter": "tamasfe.even-better-toml",
+			"editor.formatOnSave": true
 		},
 		"Lua.workspace.library": ["lua-api"],
+		"evenBetterToml.formatter.arrayAutoCollapse": true,
+		"evenBetterToml.formatter.columnWidth": 200,
 		"search.exclude": {
 			"target/**/incremental": true,
 			"target/**/.fingerprint": true,
@@ -35,7 +55,11 @@
 			"emsdk/node/**": true,
 			"emsdk/python/**": true,
 			"emsdk/bazel/**": true,
-			"**/.venv/**": true,
+			"**/.venv/**": true
 		},
-	},
+		"workbench.colorCustomizations": {
+			"titleBar.activeBackground": "#ffaa00c7",
+			"titleBar.activeForeground": "#541c29"
+		}
+	}
 }

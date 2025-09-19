@@ -104,6 +104,7 @@ wind> $env:VCPKG=(Get-Item .).FullName
 # Finally, you can setup the integration between vcpkg and cargo
 both> cd path/to/the/location/of/vectarine
 both> cargo install cargo-vcpkg
+both> cd runtime
 both> cargo vcpkg build
 ```
 
