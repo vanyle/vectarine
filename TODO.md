@@ -35,13 +35,19 @@
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
   - [ ] V3, V4
+  - [ ] V4 is a color
   - [ ] Default values (if a color is nil, it is infered to be black)
-  - [ ] Organize functions in namespace better and use metamethods
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
 - [ ] Make a game with it !!!
+- [ ] Modding API
+  - [ ] Add a way to load scripts in a separate environment with a subset of available functions
+  - [ ] Add a way to pass data to and from the sandbox
 
 # Done
 
+- [x] Lua API Reorg
+  - [x] Organize functions in namespace better and use metamethods
+  - [x] Compatible luau types and requires
 - [x] Resource update
   - [x] Move loading state management out of the individual resources
   - [x] Scripts are resources

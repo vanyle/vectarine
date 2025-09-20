@@ -20,8 +20,6 @@ impl Resource for ScriptResource {
         data: &[u8],
     ) -> Status {
         run_file_and_display_error_from_lua_handle(&lua, data, path);
-        // There is state duplication :'(
-        // The option stores the same thing as Status.
         self.script.replace(Some(data.to_vec()));
         Status::Loaded
     }
@@ -44,29 +42,3 @@ impl Resource for ScriptResource {
         }
     }
 }
-
-/*
-impl ScriptResource {
-    pub fn run_script(&self, lua: &LuaEnvironment, script_path: &Path) {
-        let script = self.script.borrow();
-        let Some(script_data) = script.as_ref() else {
-            return; // resource not loaded
-        };
-        run_file_and_display_error(lua, script_data, script_path);
-    }
-}
-*/
-
-/*
-pub fn run_script_resource(
-    lua: &LuaEnvironment,
-    resource_manager: &ResourceManager,
-    script_resource_id: ResourceId,
-) {
-    let holder = resource_manager.get_holder_by_id(script_resource_id);
-    let Ok(script_resource) = holder.get_underlying_resource::<ScriptResource>() else {
-        return; // resource type mismatch
-    };
-    script_resource.run_script(lua, holder.get_path());
-}
-*/

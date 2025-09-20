@@ -2,12 +2,13 @@ use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
 
+pub mod lua_event;
 pub mod lua_graphics;
 pub mod lua_io;
 pub mod lua_resource;
 pub mod lua_vec2;
 
-use crate::game_resource::{ResourceId, ResourceManager, font_resource::FontResource};
+use crate::game_resource::ResourceManager;
 use crate::graphics::draw_instruction;
 use crate::io::IoEnvState;
 
@@ -42,60 +43,31 @@ impl LuaEnvironment {
             .set("Global", lua.create_table().unwrap())
             .unwrap();
 
-        let _ = lua_vec2::setup_vec2_api(&lua);
-        let _ = lua_graphics::setup_graphics_api(&lua, &draw_instructions);
-        let _ = lua_io::setup_io_api(&lua, &env_state);
-        let _ = lua_resource::setup_resource_api(&lua, &resources);
+        lua.globals()
+            .set("VectarineUnsafeInternal", lua.create_table().unwrap())
+            .unwrap(); // Table used to store unsafe function that we need to access from Rust inside Rust.
 
-        let env_state_for_closure = env_state.clone();
-        add_global_fn(&lua, "measureText", {
-            let resources = resources.clone();
-            move |lua, (text, font, font_size): (String, ResourceId, f32)| {
-                let font_resource = resources.get_by_id::<FontResource>(font);
-                let result = lua.create_table().unwrap();
-                let Ok(font_resource) = font_resource else {
-                    let _ = result.set("width", 0.0);
-                    let _ = result.set("height", 0.0);
-                    let _ = result.set("bearingY", 0.0);
-                    return Ok(result);
-                };
-                let env_state = env_state_for_closure.borrow();
-                let ratio = env_state.window_width as f32 / env_state.window_height as f32;
-                let (width, height, max_ascent) =
-                    font_resource.measure_text(&text, font_size, ratio);
-                let _ = result.set("width", width);
-                let _ = result.set("height", height);
-                let _ = result.set("bearingY", max_ascent);
-                Ok(result)
-            }
-        });
+        let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
+        lua.register_module("@vectarine/vec", vec2_module).unwrap();
 
-        add_global_fn(&lua, "fprint", {
-            let frame_messages = frame_messages.clone();
-            move |_, args: mlua::Variadic<mlua::Value>| {
-                let msg = args
-                    .iter()
-                    .map(stringify_lua_value)
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                frame_messages.borrow_mut().push(msg);
-                Ok(())
-            }
-        });
+        let graphics_module =
+            lua_graphics::setup_graphics_api(&lua, &draw_instructions, &env_state, &resources)
+                .unwrap();
+        lua.register_module("@vectarine/graphics", graphics_module)
+            .unwrap();
 
-        add_global_fn(&lua, "dprint", {
-            let messages = messages.clone();
-            move |_, args: mlua::Variadic<mlua::Value>| {
-                let msg = args
-                    .iter()
-                    .map(stringify_lua_value)
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                messages.borrow_mut().push_front(msg);
-                Ok(())
-            }
-        });
+        let io_module = lua_io::setup_io_api(&lua, &env_state, &messages, &frame_messages).unwrap();
+        lua.register_module("@vectarine/io", io_module).unwrap();
 
+        let resources_module = lua_resource::setup_resource_api(&lua, &resources).unwrap();
+        lua.register_module("@vectarine/resources", resources_module)
+            .unwrap();
+
+        let event_module = lua_event::setup_event_api(&lua).unwrap();
+        lua.register_module("@vectarine/event", event_module)
+            .unwrap();
+
+        // Add this to utils module?
         add_global_fn(&lua, "toString", move |_, (arg,): (mlua::Value,)| {
             let string = stringify_lua_value(&arg);
             Ok(string)
@@ -129,6 +101,15 @@ where
         .unwrap()
 }
 
+pub fn add_fn_to_table<F, A, R>(lua: &Rc<mlua::Lua>, table: &mlua::Table, name: &str, func: F)
+where
+    F: Fn(&mlua::Lua, A) -> mlua::Result<R> + 'static,
+    A: mlua::FromLuaMulti,
+    R: mlua::IntoLuaMulti,
+{
+    table.set(name, lua.create_function(func).unwrap()).unwrap();
+}
+
 pub fn run_file_and_display_error(lua: &LuaEnvironment, file_content: &[u8], file_path: &Path) {
     run_file_and_display_error_from_lua_handle(&lua.lua, file_content, file_path);
 }
@@ -154,6 +135,12 @@ pub fn stringify_lua_value(value: &mlua::Value) -> String {
     let seen = Vec::new();
     stringify_lua_value_helper(value, seen)
 }
+
+pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
+    let globals = lua.globals();
+    globals.get("VectarineUnsafeInternal").unwrap()
+}
+
 fn stringify_lua_value_helper(value: &mlua::Value, mut seen: Vec<mlua::Value>) -> String {
     if seen.contains(value) {
         return "[circular]".to_string();

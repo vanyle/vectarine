@@ -4,14 +4,21 @@ use sdl2::keyboard::Keycode;
 
 use crate::{
     io::IoEnvState,
-    lua_env::{add_global_fn, lua_vec2::Vec2},
+    lua_env::{add_fn_to_table, lua_vec2::Vec2, stringify_lua_value},
 };
 
 /// Adds to the Lua environment functions to interact with the outside environment
 /// For example, the keyboard, the mouse, the window, etc...
 /// This is called the IO API.
-pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) -> mlua::Result<()> {
-    add_global_fn(lua, "isKeyDown", {
+pub fn setup_io_api(
+    lua: &Rc<mlua::Lua>,
+    env_state: &Rc<RefCell<IoEnvState>>,
+    messages: &Rc<RefCell<std::collections::VecDeque<String>>>,
+    frame_messages: &Rc<RefCell<Vec<String>>>,
+) -> mlua::Result<mlua::Table> {
+    let io_module = lua.create_table()?;
+
+    add_fn_to_table(lua, &io_module, "isKeyDown", {
         let env_state = env_state.clone();
         move |_, keycode_name: String| {
             let keycode = Keycode::from_name(&keycode_name);
@@ -27,7 +34,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "getKeysDown", {
+    add_fn_to_table(lua, &io_module, "getKeysDown", {
         let env_state = env_state.clone();
         move |lua, ()| {
             let table = lua.create_table().unwrap();
@@ -40,7 +47,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "getMouse", {
+    add_fn_to_table(lua, &io_module, "getMouse", {
         let env_state = env_state.clone();
         move |_, ()| {
             let mouse_state = env_state.borrow().mouse_state.clone();
@@ -51,7 +58,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "getMouseState", {
+    add_fn_to_table(lua, &io_module, "getMouseState", {
         let env_state = env_state.clone();
         move |lua, ()| {
             let mouse_state = env_state.borrow().mouse_state.clone();
@@ -62,7 +69,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "getWindowSize", {
+    add_fn_to_table(lua, &io_module, "getWindowSize", {
         let env_state = env_state.clone();
         move |lua, ()| {
             let state = env_state.borrow();
@@ -73,7 +80,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "getScreenSize", {
+    add_fn_to_table(lua, &io_module, "getScreenSize", {
         let env_state = env_state.clone();
         move |lua, ()| {
             let state = env_state.borrow();
@@ -84,7 +91,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "setResizeable", {
+    add_fn_to_table(lua, &io_module, "setResizeable", {
         let env_state = env_state.clone();
         move |_, (resizeable,): (bool,)| {
             env_state.borrow_mut().is_window_resizeable = resizeable;
@@ -92,7 +99,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "setWindowSize", {
+    add_fn_to_table(lua, &io_module, "setWindowSize", {
         let env_state = env_state.clone();
         move |_, (width, height): (u32, u32)| {
             env_state.borrow_mut().window_target_size = Some((width, height));
@@ -100,7 +107,7 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    add_global_fn(lua, "setFullscreen", {
+    add_fn_to_table(lua, &io_module, "setFullscreen", {
         let env_state = env_state.clone();
         move |_, (fullscreen,): (bool,)| {
             env_state.borrow_mut().fullscreen_state_request = Some(fullscreen);
@@ -108,5 +115,31 @@ pub fn setup_io_api(lua: &Rc<mlua::Lua>, env_state: &Rc<RefCell<IoEnvState>>) ->
         }
     });
 
-    Ok(())
+    add_fn_to_table(lua, &io_module, "fprint", {
+        let frame_messages = frame_messages.clone();
+        move |_, args: mlua::Variadic<mlua::Value>| {
+            let msg = args
+                .iter()
+                .map(stringify_lua_value)
+                .collect::<Vec<_>>()
+                .join(" ");
+            frame_messages.borrow_mut().push(msg);
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &io_module, "print", {
+        let messages = messages.clone();
+        move |_, args: mlua::Variadic<mlua::Value>| {
+            let msg = args
+                .iter()
+                .map(stringify_lua_value)
+                .collect::<Vec<_>>()
+                .join(" ");
+            messages.borrow_mut().push_front(msg);
+            Ok(())
+        }
+    });
+
+    Ok(io_module)
 }

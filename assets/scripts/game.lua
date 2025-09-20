@@ -1,55 +1,70 @@
+local Event = require('@vectarine/event')
+local Graphics = require('@vectarine/graphics')
+local Io = require('@vectarine/io')
+local Resources = require('@vectarine/resources')
+local Vec = require('@vectarine/vec')
+
+local V2 = Vec.V2
+
 local t = 0
 
-dprint("Reloaded")
-Global.logo = loadImage("textures/logo.png")
-Global.font = loadFont("fonts/arial.ttf")
-Global.other_script = loadScript("scripts/other_script.lua")
+Io.print("Reloaded")
+Global.logo = Resources.loadImage("textures/logo.png")
+Global.font = Resources.loadFont("fonts/arial.ttf")
+Global.other_script = Resources.loadScript("scripts/other_script.lua")
+
+
+Graphics.clear({r=1, g=0, b=0, a=1})
+
 
 Global.fullscreen = false
 if Global.fullscreen then
-    local screen = getScreenSize()
-    dprint("Screen: ", screen)
-    setFullscreen(true)
-    setWindowSize(screen.x, screen.y)
+    local screen = Io.getScreenSize()
+    Io.print("Screen: ", screen)
+    Io.setFullscreen(true)
+    Io.setWindowSize(screen.x, screen.y)
+
+    local myEvent: Event.Event<string> = Event.newEvent("custom")
+    myEvent:dispatch("hello!!")
 
     local v = V2(1, 2)
-
     local w = V2(1, 2)
-    local r = v + w
+    local _r = v:cmul(w)
 else
-    setFullscreen(false)
-    setWindowSize(800, 600)
+    Io.setFullscreen(false)
+    Io.setWindowSize(800, 600)
 end
 
 
+
 function Load()
-    dprint("Loading ...")
+    Io.print("Loading ...")
     Global.fullscreen = false
     Global.frame_times = {}
 end
 
 function Update(time_delta)
-    local bg_color = { r = 1, g = 1, b = 1, a = 1 }
-    clear(bg_color)
+    local bg_color: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
+    Graphics.clear(bg_color)
 
-    local rect_color = { r = 0, g = 0, b = 1, a = 1 }
+    local rect_color: Graphics.Color = { r = 0, g = 0, b = 1, a = 1 }
 
     local v = V2(1, 2)
     local w = V2(1, 2)
     local r = v * w
-    fprint("hello", r.x, r.y)
+    Io.fprint("hello", r.x, r.y)
 
-    if isKeyDown("space") then
+    if Io.isKeyDown("space") then
         rect_color = { r = 1, g = 0, b = 1, a = 1 }
     end
 
     t = t + 1
-    local m = getMouse()
+    local m: Vec.Vec2 = Io.getMouse()
     -- fprint("Hello: " .. x .. "," .. y)
 
     local time_sum = 0
-    for i, v in ipairs(Global.frame_times) do
-        time_sum = time_sum + v
+    for i, val in ipairs(Global.frame_times) do
+        time_sum = time_sum + val
     end
     local avg_time = time_sum / #Global.frame_times
 
@@ -58,10 +73,10 @@ function Update(time_delta)
         table.remove(Global.frame_times, 1)
     end
 
-    fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
-    fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
+    Io.fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
+    Io.fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
 
-    drawCircle(m, 0.1, rect_color)
+    Graphics.drawCircle(m, 0.1, rect_color)
 
     local slow = false
     if slow then
@@ -73,7 +88,7 @@ function Update(time_delta)
                 rect_color.g = (i + t * 3) % 255 / 255
                 rect_color.b = (j + t) % 255 / 255
                 local p = V2(-1 + i / ratio, -1 + j / ratio)
-                drawRect(p, s, rect_color)
+                Graphics.drawRect(p, s, rect_color)
             end
         end
     end
@@ -82,16 +97,18 @@ function Update(time_delta)
     local textSize = 0.1
 
     -- Technique for drawing a box around text.
-    local mesurement = measureText(text, Global.font, textSize)
+    local mesurement = Graphics.measureText(text, Global.font, textSize)
     local toBaseline = mesurement.height - mesurement.bearingY
-    drawRect(V2(-0.5, 0.5 + toBaseline), V2(mesurement.width, mesurement.height), { r = 0, g = 1, b = 0, a = 0.5 })
+    Graphics.drawRect(V2(-0.5, 0.5 + toBaseline), V2(mesurement.width, mesurement.height), { r = 0, g = 1, b = 0, a = 0.5 })
 
     -- Center of the screen
-    if isResourceReady(Global.logo) then
-        drawImage(Global.logo, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
+    if Resources.isResourceReady(Global.logo) then
+        Io.fprint("read: ", Resources.isResourceReady(Global.logo))
+        Graphics.drawImagePart(Global.logo, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
     end
-    if isResourceReady(Global.font) then
-        drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
+    if Resources.isResourceReady(Global.font) then
+        Graphics.drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
     end
-    drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))
+
+    Graphics.drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))
 end

@@ -148,14 +148,14 @@ impl mlua::UserData for Vec2 {
     }
 }
 
-pub fn setup_vec2_api(lua: &mlua::Lua) -> mlua::Result<()> {
-    let globals = lua.globals();
-    globals.set(
+pub fn setup_vec_api(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+    let vec2_module = lua.create_table()?;
+    vec2_module.set(
         "V2",
         lua.create_function(|lua, (x, y): (f32, f32)| {
             let data = mlua::Value::UserData(lua.create_userdata(Vec2 { x, y })?);
             Ok(data)
         })?,
     )?;
-    Ok(())
+    Ok(vec2_module)
 }
