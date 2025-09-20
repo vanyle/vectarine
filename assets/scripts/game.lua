@@ -1,5 +1,9 @@
 local t = 0
 
+dprint("Reloaded")
+Global.logo = loadImage("textures/logo.png")
+Global.font = loadFont("fonts/arial.ttf")
+
 Global.fullscreen = false
 if Global.fullscreen then
     local screen = getScreenSize()
@@ -19,8 +23,6 @@ end
 
 function Load()
     dprint("Loading ...")
-    Global.logo = loadImage("textures/logo.png")
-    Global.font = loadFont("fonts/arial.ttf")
     Global.fullscreen = false
     Global.frame_times = {}
 end

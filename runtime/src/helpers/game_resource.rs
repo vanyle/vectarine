@@ -1,11 +1,12 @@
 use std::{
     cell::RefCell,
     collections::HashSet,
-    ops::Index,
     path::{Path, PathBuf},
     rc::{Rc, Weak},
     sync::Arc,
 };
+
+use serde::{Deserialize, Serialize};
 
 use crate::helpers::file;
 
@@ -27,8 +28,39 @@ impl std::fmt::Display for Status {
             Status::Unloaded => write!(f, "Not yet loaded"),
             Status::Loading => write!(f, "Loading"),
             Status::Loaded => write!(f, "Loaded"),
-            Status::Error(msg) => write!(f, "Loading Error: {msg}"),
+            Status::Error(msg) => write!(f, "Error: {msg}"),
         }
+    }
+}
+
+/// Represents a valid identifier for a resource
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ResourceId(usize);
+
+impl std::fmt::Display for ResourceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RID({})", self.0)
+    }
+}
+
+impl mlua::FromLua for ResourceId {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+        match value {
+            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "ResourceId".to_string(),
+                message: Some("Expected ResourceId".to_string()),
+            }),
+        }
+    }
+}
+
+impl mlua::UserData for ResourceId {
+    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (Self,)| {
+            Ok(format!("ResourceId({})", id.0))
+        });
     }
 }
 
@@ -39,24 +71,24 @@ pub struct ResourceHolder {
     name: String,
     path: PathBuf,
     /// A list of ids of other resources that this resource needs to work
-    dependencies: RefCell<HashSet<usize>>,
+    dependencies: RefCell<HashSet<ResourceId>>,
     /// A list of ids of other resources that depend on this resource
-    dependent: RefCell<HashSet<usize>>,
+    dependent: RefCell<HashSet<ResourceId>>,
 }
 
 impl ResourceHolder {
     /// Request the resource to be reloaded.
     fn reload(
         self: Rc<Self>,
-        assigned_id: usize,
+        assigned_id: ResourceId,
         resource_manager: Rc<ResourceManager>,
+        lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
     ) {
         // Clean ourselves from dependent array of others:
         for dep_id in self.dependencies.borrow().iter() {
-            if let Some(dep) = resource_manager.resources.borrow().get(*dep_id) {
-                dep.dependent.borrow_mut().remove(&assigned_id);
-            }
+            let dep = resource_manager.get_holder_by_id(*dep_id);
+            dep.dependent.borrow_mut().remove(&assigned_id);
         }
         self.dependencies.borrow_mut().clear();
 
@@ -70,13 +102,26 @@ impl ResourceHolder {
         self.status.replace(Status::Loading);
         let abs_path = get_absolute_path(&self.path);
 
+        // We pass data to the resource into the closure.
+        // As this data needs to be kept alive, every piece of state pass inside needs Rc or Arc.
         file::read_file(
             &abs_path,
             Box::new(move |data| {
-                let resulting_status =
-                    self.resource
-                        .clone()
-                        .load_from_data(assigned_id, &dr, gl.clone(), &data);
+                let Some(data) = data else {
+                    self.status.replace(Status::Error(format!(
+                        "File not found: {}",
+                        self.path.display()
+                    )));
+                    return;
+                };
+                let resulting_status = self.resource.clone().load_from_data(
+                    assigned_id,
+                    &dr,
+                    lua.clone(),
+                    gl.clone(),
+                    &self.path,
+                    &data,
+                );
                 self.status.replace(resulting_status);
             }),
         );
@@ -125,7 +170,7 @@ impl ResourceHolder {
 
 #[derive(Default)]
 pub struct ResourceManager {
-    pub resources: RefCell<Vec<Rc<ResourceHolder>>>,
+    resources: RefCell<Vec<Rc<ResourceHolder>>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -142,7 +187,7 @@ impl std::fmt::Display for ResourceStatus {
             ResourceStatus::Loaded => write!(f, "Loaded"),
             ResourceStatus::Loading => write!(f, "Loading"),
             ResourceStatus::Unloaded => write!(f, "Not yet loaded"),
-            ResourceStatus::Error(msg) => write!(f, "Loading Error: {msg}"),
+            ResourceStatus::Error(msg) => write!(f, "Error: {msg}"),
         }
     }
 }
@@ -162,7 +207,7 @@ pub struct DependencyReporter {
 impl DependencyReporter {
     /// Declare that the resource with id `resource_id` depends on the resource at `path`.
     /// This will trigger loading of the required dependencies.
-    pub fn declare_dependency<T: Resource + 'static>(&self, id: usize, path: &Path) {
+    pub fn declare_dependency<T: Resource + 'static>(&self, id: ResourceId, path: &Path) {
         let Some(resource_manager) = self.resource_manager.upgrade() else {
             return;
         };
@@ -172,7 +217,12 @@ impl DependencyReporter {
 
 impl ResourceManager {
     /// Create a new resource from a file and store it.
-    pub fn load_resource<T: Resource + 'static>(&self, path: &Path) -> usize {
+    /// If the resource already exists at that path, do nothing.
+    /// Return the id of the resource.
+    pub fn load_resource<T: Resource + 'static>(&self, path: &Path) -> ResourceId {
+        if let Some(id) = self.get_id_by_path(path) {
+            return id;
+        }
         let id = self.resources.borrow().len();
         let resource = Rc::new(T::default());
         let name = path
@@ -189,13 +239,13 @@ impl ResourceManager {
             dependent: RefCell::new(HashSet::new()),
             resource,
         }));
-        id
+        ResourceId(id)
     }
 
-    fn declare_dependency<T: Resource + 'static>(&self, resource_id: usize, path: &Path) {
+    fn declare_dependency<T: Resource + 'static>(&self, resource_id: ResourceId, path: &Path) {
         let resources = self.resources.borrow();
-        let Some(resource) = resources.get(resource_id) else {
-            unreachable!("Incorrect resource id {resource_id}");
+        let Some(resource) = resources.get(resource_id.0) else {
+            unreachable!("Incorrect resource id {}", resource_id.0);
         };
         // Check if the dependency is already exists. Create it if not.
         let holder = &self
@@ -209,41 +259,78 @@ impl ResourceManager {
         self.load_resource::<T>(path);
     }
 
-    pub fn reload(self: &Rc<Self>, id: usize, gl: Arc<glow::Context>) {
-        let resource = self.resources.borrow()[id].clone();
-        resource.reload(id, self.clone(), gl);
+    pub fn reload(self: &Rc<Self>, id: ResourceId, lua: Rc<mlua::Lua>, gl: Arc<glow::Context>) {
+        let resource = self.get_holder_by_id(id);
+        resource.reload(id, self.clone(), lua, gl);
     }
 
-    pub fn get_id_by_path(&self, path: &Path) -> Option<usize> {
+    /// Performance: O(n) for now. Store the ID and use instead get_by_id if you already have the id.
+    /// instead of get_by_path.
+    pub fn get_id_by_path(&self, path: &Path) -> Option<ResourceId> {
         let to_match = get_absolute_path(path);
         for (i, res) in self.resources.borrow().iter().enumerate() {
             let p = get_absolute_path(&res.path);
             if to_match == p {
-                return Some(i);
+                return Some(ResourceId(i));
             }
         }
         None
     }
 
-    pub fn get_by_id<T: Resource + 'static>(&self, id: usize) -> Result<Rc<T>, String> {
-        let resources = self.resources.borrow();
-        let resource = resources.get(id).ok_or("Resource not found")?;
+    pub fn get_by_id<T: Resource + 'static>(&self, id: ResourceId) -> Result<Rc<T>, String> {
+        let resource = self.get_holder_by_id(id);
         if !resource.is_loaded() {
             return Err("Resource not available yet".into());
         }
         resource.get_underlying_resource::<T>()
     }
 
-    pub fn get_holder_by_id(&self, id: usize) -> Option<Rc<ResourceHolder>> {
+    pub fn get_holder_by_id(&self, id: ResourceId) -> Rc<ResourceHolder> {
         let resources = self.resources.borrow();
-        resources.get(id).cloned()
+        match resources.get(id.0) {
+            Some(res) => res.clone(),
+            None => unreachable!("ResourceId {} did not represent a valid resource", id),
+        }
     }
 
-    pub fn get_holder_by_id_unchecked(&self, id: usize) -> Rc<ResourceHolder> {
+    pub fn get_holder_by_id_unchecked(&self, id: ResourceId) -> Rc<ResourceHolder> {
         let resources = self.resources.borrow();
-        (*resources).index(id).clone()
+        // SAFETY: A ResourceId is always created from a valid index. Resources are never removed from the list.
+        unsafe { (*resources).get_unchecked(id.0).clone() }
     }
 
+    pub fn enumerate(&self) -> impl Iterator<Item = (ResourceId, Rc<ResourceHolder>)> {
+        self.iter().enumerate().map(|(i, r)| (ResourceId(i), r))
+    }
+
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Rc<ResourceHolder>> + 'a {
+        // resources is in a RefCell, We need to implement our own iterator to avoid cloning the whole vec
+        struct ResourceManagerIter<'a> {
+            inner: &'a ResourceManager,
+            idx: usize,
+        }
+        impl<'a> Iterator for ResourceManagerIter<'a> {
+            type Item = Rc<ResourceHolder>;
+            fn next(&mut self) -> Option<Self::Item> {
+                let idx = self.idx;
+                self.idx += 1;
+                self.inner.resources.borrow().get(idx).cloned()
+            }
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                let remaining = self.inner.resources.borrow().len().saturating_sub(self.idx);
+                (remaining, Some(remaining))
+            }
+        }
+
+        return ResourceManagerIter {
+            inner: self,
+            idx: 0,
+        };
+    }
+
+    #[deprecated(
+        note = "Use get_id_by_path + get_by_id instead and cache the ID. This function is O(n)."
+    )]
     pub fn get_by_path(&self, path: &Path) -> Option<Rc<dyn Resource>> {
         let to_match = get_absolute_path(path);
 
@@ -269,9 +356,11 @@ pub trait Resource: ResourceToAny {
     /// If the resource wants to prevent any further loading attempts, return `Loading` (this should be rare).
     fn load_from_data(
         self: Rc<Self>,
-        assigned_id: usize,
+        assigned_id: ResourceId,
         dependency_reporter: &DependencyReporter,
+        lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
+        path: &Path,
         data: &[u8],
     ) -> Status;
 

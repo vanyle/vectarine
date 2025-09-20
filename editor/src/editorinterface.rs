@@ -3,14 +3,18 @@ use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 use egui::RichText;
 use egui_extras::Column;
 use egui_sdl2_platform::sdl2;
-use runtime::helpers::{file, game::Game, game_resource::get_absolute_path};
+use runtime::helpers::{
+    file,
+    game::Game,
+    game_resource::{ResourceId, get_absolute_path},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct EditorConfig {
     is_console_shown: bool,
     is_resources_window_shown: bool,
-    debug_resource_shown: Option<usize>,
+    debug_resource_shown: Option<ResourceId>,
 }
 
 pub struct EditorState {
@@ -35,7 +39,10 @@ impl EditorState {
         let config_store = self.config.clone();
         file::read_file(
             "vectarine_config.toml",
-            Box::new(move |data: Vec<u8>| {
+            Box::new(move |data: Option<Vec<u8>>| {
+                let Some(data) = data else {
+                    return; // no config file
+                };
                 if let Ok(config) = toml::from_slice::<EditorConfig>(data.as_slice()) {
                     *config_store.borrow_mut() = config;
                 }
@@ -152,9 +159,13 @@ impl EditorState {
                     .column(Column::auto())
                     .column(Column::auto())
                     .column(Column::auto())
+                    .column(Column::auto())
                     .max_scroll_height(available_height);
                 table
                     .header(20.0, |mut header| {
+                        header.col(|ui| {
+                            ui.label("ID");
+                        });
                         header.col(|ui| {
                             ui.label("Path");
                         });
@@ -169,11 +180,12 @@ impl EditorState {
                         });
                     })
                     .body(|mut body| {
-                        for (id, res) in
-                            game.lua_env.resources.resources.borrow().iter().enumerate()
-                        {
+                        for (id, res) in game.lua_env.resources.enumerate() {
                             let resources = game.lua_env.resources.clone();
                             body.row(20.0, |mut row| {
+                                row.col(|ui| {
+                                    ui.label(id.to_string());
+                                });
                                 row.col(|ui| {
                                     if ui
                                         .link(res.get_path().to_string_lossy().to_string())
@@ -193,7 +205,7 @@ impl EditorState {
                                 row.col(|ui| {
                                     if ui.button("Reload").clicked() {
                                         let gl: Arc<glow::Context> = self.gl.clone();
-                                        resources.reload(id, gl);
+                                        resources.reload(id, game.lua_env.lua.clone(), gl);
                                     }
                                     let mut config = self.config.borrow_mut();
                                     let shown = config.debug_resource_shown == Some(id);
@@ -213,16 +225,15 @@ impl EditorState {
         }
 
         if let Some(id) = self.config.borrow().debug_resource_shown {
-            if let Some(res) = game.lua_env.resources.resources.borrow().get(id) {
-                egui::Window::new(format!(
-                    "Resource debug - {}",
-                    res.get_path().to_string_lossy()
-                ))
-                .resizable(true)
-                .show(&ctx, |ui| {
-                    res.draw_debug_gui(ui);
-                });
-            }
+            let res = game.lua_env.resources.get_holder_by_id(id);
+            egui::Window::new(format!(
+                "Resource debug - {}",
+                res.get_path().to_string_lossy()
+            ))
+            .resizable(true)
+            .show(&ctx, |ui| {
+                res.draw_debug_gui(ui);
+            });
         }
 
         // Stop drawing the egui frame and get the full output

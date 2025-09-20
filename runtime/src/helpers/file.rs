@@ -1,14 +1,14 @@
 /// Returns the content of the file at `path`
 /// Depending on your platform, this function can query the file system or perform an HTTP request to get the content.
 #[cfg(not(target_os = "emscripten"))]
-pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
+pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Option<Vec<u8>>)>) {
     use std::{
         fs::{self},
         path::Path,
     };
 
     let content = fs::read(Path::new(filename)).ok();
-    callback(content.unwrap_or_default());
+    callback(content);
 }
 
 /// Writes to the filename provided the data provided.
@@ -32,7 +32,7 @@ pub fn write_file(_filename: &str, _data: &[u8]) -> bool {
 }
 
 #[cfg(target_os = "emscripten")]
-pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
+pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Option<Vec<u8>>)>) {
     use base64::prelude::*;
     use emscripten_val::Val;
 
@@ -45,9 +45,13 @@ pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Vec<u8>)>) {
         &Val::from_fn1(move |content: &Val| {
             // callback is FnOnce, we turn it into FnMut using this Option.
             if let Some(callback) = callback_option.take() {
+                if (content.is_false()) {
+                    callback(None);
+                    return;
+                }
                 let s = content.as_string();
                 let decoded = BASE64_STANDARD.decode(&s).unwrap_or_default();
-                callback(decoded);
+                callback(Some(decoded));
             };
             ().into()
         }),

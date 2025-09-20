@@ -2,8 +2,18 @@
 
 - [ ] Resource update
   - [x] Move loading state management out of the individual resources
-  - [ ] Scripts are resources
+  - [x] Scripts are resources
+  - [x] Prevent loading twice the same resource
   - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
+  - [ ] Allow loading a script from Lua
+  - [ ] Event system
+  - [ ] Add a resource loaded/reloaded event
+- [ ] Console improvements
+  - [ ] Clear logs
+  - [ ] Verbosity (info/warn/error)
+  - [ ] Make it easy to print to the console from anywhere in the code
+  - [ ] Log search
+  - [ ] Better scrolling
 - [ ] Canvas API 'framebuffer'
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor

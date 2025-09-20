@@ -1,4 +1,4 @@
-use crate::helpers::lua_env::vec2::Vec2;
+use crate::helpers::{game_resource::ResourceId, lua_env::vec2::Vec2};
 
 #[derive(Debug, Clone)]
 pub enum DrawInstruction {
@@ -19,14 +19,14 @@ pub enum DrawInstruction {
     Image {
         pos: Vec2,
         size: Vec2,
-        resource_id: usize,
+        id: ResourceId,
     },
     ImagePart {
         p1: Vec2,
         p2: Vec2,
         p3: Vec2,
         p4: Vec2,
-        resource_id: usize,
+        id: ResourceId,
         uv_pos: Vec2,
         uv_size: Vec2,
     },
@@ -35,7 +35,7 @@ pub enum DrawInstruction {
         text: String,
         color: [f32; 4],
         font_size: f32,
-        font_resource_id: usize,
+        font_id: ResourceId,
     },
     Clear {
         color: [f32; 4],

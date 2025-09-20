@@ -1,10 +1,10 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
 use image::metadata::Orientation;
 
 use crate::{
     graphics::gltexture::{self, Texture},
-    helpers::game_resource::{DependencyReporter, Resource, Status},
+    helpers::game_resource::{DependencyReporter, Resource, ResourceId, Status},
 };
 
 pub struct ImageResource {
@@ -17,9 +17,11 @@ impl Resource for ImageResource {
     }
     fn load_from_data(
         self: Rc<Self>,
-        _assigned_id: usize,
+        _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
+        _lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
+        _path: &Path,
         data: &[u8],
     ) -> Status {
         if data.is_empty() {

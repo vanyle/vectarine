@@ -1,18 +1,14 @@
 use std::{
-    fs,
     path::Path,
     sync::mpsc::channel,
     time::{Duration, Instant},
 };
 
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::{RenderingBlock, init_sdl};
+use runtime::{RenderingBlock, helpers::game_resource::script_resource::ScriptResource, init_sdl};
 use runtime::{
     graphics::batchdraw::BatchDraw2d,
-    helpers::{
-        game::Game,
-        lua_env::{LuaEnvironment, run_file_and_display_error},
-    },
+    helpers::{game::Game, lua_env::LuaEnvironment},
 };
 
 use crate::{editorinterface::EditorState, reload::reload_assets_if_needed};
@@ -50,11 +46,8 @@ fn gui_main() {
 
     let lua_env = LuaEnvironment::new();
 
-    let path = Path::new("assets/scripts/game.lua");
-    let content = fs::read(path);
-    if let Ok(content) = content {
-        run_file_and_display_error(&lua_env, &content, path);
-    }
+    let path = Path::new("scripts/game.lua");
+    lua_env.resources.load_resource::<ScriptResource>(path);
     let lua_env_for_reload = lua_env.clone();
 
     debouncer

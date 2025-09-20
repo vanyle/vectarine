@@ -8,7 +8,9 @@ pub mod vec2;
 
 use crate::helpers::{
     draw_instruction::{self},
-    game_resource::{ResourceManager, font_resource::FontResource, image_resource::ImageResource},
+    game_resource::{
+        ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
+    },
     io::IoEnvState,
     lua_env::vec2::Vec2,
 };
@@ -50,8 +52,8 @@ impl LuaEnvironment {
         let env_state_for_closure = env_state.clone();
         add_global_fn(&lua, "measureText", {
             let resources = resources.clone();
-            move |lua, (text, font_resource_id, font_size): (String, usize, f32)| {
-                let font_resource = resources.get_by_id::<FontResource>(font_resource_id);
+            move |lua, (text, font, font_size): (String, ResourceId, f32)| {
+                let font_resource = resources.get_by_id::<FontResource>(font);
                 let result = lua.create_table().unwrap();
                 let Ok(font_resource) = font_resource else {
                     let _ = result.set("width", 0.0);
@@ -243,7 +245,15 @@ where
 }
 
 pub fn run_file_and_display_error(lua: &LuaEnvironment, file_content: &[u8], file_path: &Path) {
-    let lua_chunk = lua.lua.load(file_content);
+    run_file_and_display_error_from_lua_handle(&lua.lua, file_content, file_path);
+}
+
+pub fn run_file_and_display_error_from_lua_handle(
+    lua: &Rc<mlua::Lua>,
+    file_content: &[u8],
+    file_path: &Path,
+) {
+    let lua_chunk = lua.load(file_content);
     let result = lua_chunk
         .set_name("@".to_owned() + file_path.to_str().unwrap())
         .exec();

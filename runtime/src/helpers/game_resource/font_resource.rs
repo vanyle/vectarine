@@ -1,8 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc, sync::Arc};
 
 use crate::{
     graphics::gltexture,
-    helpers::game_resource::{DependencyReporter, Resource, Status},
+    helpers::game_resource::{DependencyReporter, Resource, ResourceId, Status},
 };
 
 #[derive(Debug, Clone)]
@@ -30,10 +30,12 @@ const FONT_DETAIL: f32 = 64.0; // Base font size for rasterization
 
 impl Resource for FontResource {
     fn load_from_data(
-        self: std::rc::Rc<Self>,
-        _assigned_id: usize,
+        self: Rc<Self>,
+        _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
+        _lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
+        _path: &Path,
         data: &[u8],
     ) -> Status {
         if data.is_empty() {

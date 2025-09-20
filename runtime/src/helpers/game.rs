@@ -7,7 +7,9 @@ use crate::{
     graphics::batchdraw::BatchDraw2d,
     helpers::{
         draw_instruction,
-        game_resource::{Status, font_resource::FontResource, image_resource::ImageResource},
+        game_resource::{
+            ResourceId, Status, font_resource::FontResource, image_resource::ImageResource,
+        },
         io::process_events,
         lua_env::LuaEnvironment,
     },
@@ -18,6 +20,7 @@ pub struct Game {
     pub batch: BatchDraw2d,
     pub event_pump: EventPump,
     pub lua_env: LuaEnvironment,
+    pub was_load_called: bool,
 }
 
 impl Game {
@@ -32,6 +35,7 @@ impl Game {
             batch,
             event_pump,
             lua_env,
+            was_load_called: false,
         }
     }
 
@@ -62,17 +66,6 @@ impl Game {
             self.lua_env.env_state.borrow_mut().window_width = width;
             self.lua_env.env_state.borrow_mut().window_height = height;
         }
-
-        let load_fn = self.lua_env.lua.globals().get::<mlua::Function>("Load");
-        if let Ok(load_fn) = load_fn {
-            let err = load_fn.call::<()>(());
-            if let Err(err) = err {
-                self.lua_env
-                    .messages
-                    .borrow_mut()
-                    .push_back(format!("Lua error while calling Load():\n{err}"));
-            }
-        }
     }
 
     pub fn print_to_editor_console(&self, message: &str) {
@@ -80,17 +73,17 @@ impl Game {
         messages.push_back(message.to_string());
     }
 
-    pub fn get_resource_or_print_error<T>(&self, resource_id: usize) -> Option<Rc<T>>
+    pub fn get_resource_or_print_error<T>(&self, id: ResourceId) -> Option<Rc<T>>
     where
         T: crate::helpers::game_resource::Resource,
     {
         let resource_manager = &self.lua_env.resources;
-        let resource = resource_manager.get_by_id::<T>(resource_id);
+        let resource = resource_manager.get_by_id::<T>(id);
         let res = match resource {
             Ok(res) => res,
             Err(cause) => {
                 self.print_to_editor_console(&format!(
-                    "Warning: Failed to get resource with id '{resource_id}': {cause}",
+                    "Warning: Failed to get resource with id '{id}': {cause}",
                 ));
                 return None;
             }
@@ -105,6 +98,20 @@ impl Game {
         delta_time: std::time::Duration,
         _in_editor: bool,
     ) {
+        if !self.was_load_called {
+            let load_fn = self.lua_env.lua.globals().get::<mlua::Function>("Load");
+            if let Ok(load_fn) = load_fn {
+                let err = load_fn.call::<()>(());
+                if let Err(err) = err {
+                    self.lua_env
+                        .messages
+                        .borrow_mut()
+                        .push_back(format!("Lua error while calling Load():\n{err}"));
+                }
+                self.was_load_called = true;
+            }
+        }
+
         let framebuffer_width;
         let framebuffer_height;
         {
@@ -172,6 +179,8 @@ impl Game {
                         .borrow_mut()
                         .push_back(format!("Lua error while calling Update():\n{err}"));
                 }
+            } else {
+                //println!("Update is not defined.");
             }
         }
 
@@ -188,13 +197,8 @@ impl Game {
                     draw_instruction::DrawInstruction::Circle { pos, radius, color } => {
                         self.batch.draw_circle(pos.x, pos.y, radius, color);
                     }
-                    draw_instruction::DrawInstruction::Image {
-                        pos,
-                        size,
-                        resource_id,
-                    } => {
-                        let resource =
-                            self.get_resource_or_print_error::<ImageResource>(resource_id);
+                    draw_instruction::DrawInstruction::Image { pos, size, id } => {
+                        let resource = self.get_resource_or_print_error::<ImageResource>(id);
                         let Some(image_resource) = resource else {
                             continue;
                         };
@@ -214,12 +218,11 @@ impl Game {
                         p2,
                         p3,
                         p4,
-                        resource_id,
+                        id,
                         uv_pos,
                         uv_size,
                     } => {
-                        let resource =
-                            self.get_resource_or_print_error::<ImageResource>(resource_id);
+                        let resource = self.get_resource_or_print_error::<ImageResource>(id);
                         let Some(image_resource) = resource else {
                             continue;
                         };
@@ -240,18 +243,16 @@ impl Game {
                         text,
                         color,
                         font_size,
-                        font_resource_id,
+                        font_id,
                     } => {
                         let resources = &self.lua_env.resources;
-                        let resource = resources.get_by_id::<FontResource>(font_resource_id);
+                        let resource = resources.get_by_id::<FontResource>(font_id);
                         let res = match resource {
                             Ok(res) => res,
                             Err(cause) => {
-                                self.print_to_editor_console(
-                                &format!(
-                                    "Warning: Failed to draw text with font id '{font_resource_id}': {cause}",
-                                ),
-                            );
+                                self.print_to_editor_console(&format!(
+                                    "Warning: Failed to draw text with '{font_id}': {cause}",
+                                ));
                                 continue;
                             }
                         };
@@ -284,7 +285,7 @@ impl Game {
         let mut to_reload = Vec::new();
         {
             let resource_manager = &self.lua_env.resources;
-            for (id, resource) in resource_manager.resources.borrow().iter().enumerate() {
+            for (id, resource) in resource_manager.enumerate() {
                 if resource.get_status() != Status::Unloaded {
                     continue;
                 }
@@ -292,10 +293,11 @@ impl Game {
             }
         }
         for resource_id in to_reload {
-            self.lua_env
-                .resources
-                .clone()
-                .reload(resource_id, gl.clone());
+            self.lua_env.resources.clone().reload(
+                resource_id,
+                self.lua_env.lua.clone(),
+                gl.clone(),
+            );
         }
     }
 }
