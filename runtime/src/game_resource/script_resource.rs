@@ -1,10 +1,8 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
 use crate::{
-    game_resource::{Resource, ResourceId, ResourceManager, Status},
-    lua_env::{
-        LuaEnvironment, run_file_and_display_error, run_file_and_display_error_from_lua_handle,
-    },
+    game_resource::{Resource, ResourceId, Status},
+    lua_env::run_file_and_display_error_from_lua_handle,
 };
 
 pub struct ScriptResource {
@@ -47,6 +45,7 @@ impl Resource for ScriptResource {
     }
 }
 
+/*
 impl ScriptResource {
     pub fn run_script(&self, lua: &LuaEnvironment, script_path: &Path) {
         let script = self.script.borrow();
@@ -56,7 +55,9 @@ impl ScriptResource {
         run_file_and_display_error(lua, script_data, script_path);
     }
 }
+*/
 
+/*
 pub fn run_script_resource(
     lua: &LuaEnvironment,
     resource_manager: &ResourceManager,
@@ -68,3 +69,4 @@ pub fn run_script_resource(
     };
     script_resource.run_script(lua, holder.get_path());
 }
+*/

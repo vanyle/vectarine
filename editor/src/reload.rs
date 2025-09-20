@@ -1,9 +1,12 @@
-use std::{fs, rc::Rc, sync::Arc};
+use std::{rc::Rc, sync::Arc};
 
-use notify_debouncer_full::DebouncedEvent;
+use notify_debouncer_full::{
+    DebouncedEvent,
+    notify::{EventKind, event::ModifyKind},
+};
 use runtime::{
     game_resource::{ResourceManager, Status},
-    lua_env::{LuaEnvironment, run_file_and_display_error},
+    lua_env::LuaEnvironment,
 };
 
 // Reload assets corresponding to changed file as needed without blocking
@@ -14,6 +17,15 @@ pub fn reload_assets_if_needed(
     debounce_receiver: &std::sync::mpsc::Receiver<DebouncedEvent>,
 ) {
     for event in debounce_receiver.try_iter() {
+        // Only file modification matters, no creation, deletion, etc...
+        let EventKind::Modify(modify) = event.kind else {
+            continue;
+        };
+        // We only care about data modifications, not metadata.
+        if !matches!(modify, ModifyKind::Data(_)) {
+            continue;
+        }
+
         for path in event.event.paths {
             // Check if a resource is in the list of path
             // If so, and the resource is in an unloaded / loaded state, load it.
@@ -26,16 +38,6 @@ pub fn reload_assets_if_needed(
                 ) {
                     resources.reload(res_id, lua_for_reload.lua.clone(), gl.clone());
                 }
-            };
-
-            if path.extension().is_some() && path.extension().unwrap() == "lua" {
-                // println!("Reloading script: {}", path.to_string_lossy());
-                let content = fs::read(&path);
-                let Ok(content) = content else {
-                    println!("Failed to read file: {}", path.to_string_lossy());
-                    continue;
-                };
-                run_file_and_display_error(lua_for_reload, &content, &path);
             }
         }
     }

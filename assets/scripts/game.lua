@@ -3,6 +3,7 @@ local t = 0
 dprint("Reloaded")
 Global.logo = loadImage("textures/logo.png")
 Global.font = loadFont("fonts/arial.ttf")
+Global.other_script = loadScript("scripts/other_script.lua")
 
 Global.fullscreen = false
 if Global.fullscreen then

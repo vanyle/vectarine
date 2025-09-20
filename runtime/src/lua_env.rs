@@ -139,6 +139,7 @@ pub fn run_file_and_display_error_from_lua_handle(
     file_path: &Path,
 ) {
     let lua_chunk = lua.load(file_content);
+    // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
     let result = lua_chunk
         .set_name("@".to_owned() + file_path.to_str().unwrap())
         .exec();

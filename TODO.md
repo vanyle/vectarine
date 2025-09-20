@@ -1,13 +1,9 @@
 # TODO
 
-- [ ] Resource update
-  - [x] Move loading state management out of the individual resources
-  - [x] Scripts are resources
-  - [x] Prevent loading twice the same resource
-  - [x] Check resource status from Lua (Loaded, Error, Loading, ...)
-  - [ ] Allow loading a script from Lua
-  - [ ] Event system
+- [ ] Event system
+  - [ ] Add an event system to Lua
   - [ ] Add a resource loaded/reloaded event
+  - [ ] Add a mouse click / key down event
 - [ ] Console improvements
   - [ ] Clear logs
   - [ ] Verbosity (info/warn/error)
@@ -46,6 +42,12 @@
 
 # Done
 
+- [x] Resource update
+  - [x] Move loading state management out of the individual resources
+  - [x] Scripts are resources
+  - [x] Prevent loading twice the same resource
+  - [x] Check resource status from Lua (Loaded, Error, Loading, ...)
+  - [x] Allow loading a script from Lua
 - [x] More complete drawing API
   - [x] Draw portions of images (the super general case with 8 vec2 as arguments, so 16 floats)
   - [x] Arrows

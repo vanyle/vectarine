@@ -3,6 +3,7 @@ use std::{path::Path, rc::Rc};
 use crate::{
     game_resource::{
         ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
+        script_resource::ScriptResource,
     },
     lua_env::add_global_fn,
 };
@@ -17,7 +18,7 @@ pub fn setup_resource_api(
     add_global_fn(lua, "loadImage", {
         let resources = resources.clone();
         move |_, path: String| {
-            let id = resources.load_resource::<ImageResource>(Path::new(&path));
+            let id = resources.schedule_load_resource::<ImageResource>(Path::new(&path));
             Ok(id)
         }
     });
@@ -25,7 +26,15 @@ pub fn setup_resource_api(
     add_global_fn(lua, "loadFont", {
         let resources = resources.clone();
         move |_, path: String| {
-            let id = resources.load_resource::<FontResource>(Path::new(&path));
+            let id = resources.schedule_load_resource::<FontResource>(Path::new(&path));
+            Ok(id)
+        }
+    });
+
+    add_global_fn(lua, "loadScript", {
+        let resources = resources.clone();
+        move |_, path: String| {
+            let id = resources.schedule_load_resource::<ScriptResource>(Path::new(&path));
             Ok(id)
         }
     });

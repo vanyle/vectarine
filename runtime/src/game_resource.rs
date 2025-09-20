@@ -85,6 +85,10 @@ impl ResourceHolder {
         lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
     ) {
+        if self.is_loading() {
+            return;
+        }
+
         // Clean ourselves from dependent array of others:
         for dep_id in self.dependencies.borrow().iter() {
             let dep = resource_manager.get_holder_by_id(*dep_id);
@@ -96,9 +100,6 @@ impl ResourceHolder {
             resource_manager: Rc::downgrade(&resource_manager),
         };
 
-        if self.is_loading() {
-            return;
-        }
         self.status.replace(Status::Loading);
         let abs_path = get_absolute_path(&self.path);
 
@@ -216,10 +217,10 @@ impl DependencyReporter {
 }
 
 impl ResourceManager {
-    /// Create a new resource from a file and store it.
+    /// Create a new resource from a file and schedule it for loading.
     /// If the resource already exists at that path, do nothing.
     /// Return the id of the resource.
-    pub fn load_resource<T: Resource + 'static>(&self, path: &Path) -> ResourceId {
+    pub fn schedule_load_resource<T: Resource + 'static>(&self, path: &Path) -> ResourceId {
         if let Some(id) = self.get_id_by_path(path) {
             return id;
         }
@@ -239,10 +240,32 @@ impl ResourceManager {
             dependent: RefCell::new(HashSet::new()),
             resource,
         }));
+
         ResourceId(id)
     }
 
-    fn declare_dependency<T: Resource + 'static>(&self, resource_id: ResourceId, path: &Path) {
+    /// Create a new resource from a file and start loading it immediately.
+    /// If the resource already exists at that path, do nothing.
+    /// Return the id of the resource.
+    pub fn load_resource<T: Resource + 'static>(
+        self: &Rc<Self>,
+        path: &Path,
+        lua: Rc<mlua::Lua>,
+        gl: Arc<glow::Context>,
+    ) -> ResourceId {
+        if let Some(id) = self.get_id_by_path(path) {
+            return id;
+        }
+        let id = self.schedule_load_resource::<T>(path);
+        self.reload(id, lua, gl);
+        id
+    }
+
+    fn declare_dependency<T: Resource + 'static>(
+        self: &Rc<Self>,
+        resource_id: ResourceId,
+        path: &Path,
+    ) {
         let resources = self.resources.borrow();
         let Some(resource) = resources.get(resource_id.0) else {
             unreachable!("Incorrect resource id {}", resource_id.0);
@@ -256,7 +279,7 @@ impl ResourceManager {
             resource.dependent.borrow_mut().insert(resource_id);
             return;
         };
-        self.load_resource::<T>(path);
+        self.schedule_load_resource::<T>(path);
     }
 
     pub fn reload(self: &Rc<Self>, id: ResourceId, lua: Rc<mlua::Lua>, gl: Arc<glow::Context>) {
@@ -322,10 +345,10 @@ impl ResourceManager {
             }
         }
 
-        return ResourceManagerIter {
+        ResourceManagerIter {
             inner: self,
             idx: 0,
-        };
+        }
     }
 
     #[deprecated(
