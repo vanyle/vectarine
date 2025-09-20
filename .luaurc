@@ -5,6 +5,6 @@
 		"FunctionUnused": false
 	},
 	"aliases": {
-		"vectarine": "lua-api"
+		"vectarine": "luau-api"
 	}
 }

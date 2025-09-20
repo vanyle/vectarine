@@ -122,7 +122,7 @@ pub fn setup_io_api(
                 .iter()
                 .map(stringify_lua_value)
                 .collect::<Vec<_>>()
-                .join(" ");
+                .join("");
             frame_messages.borrow_mut().push(msg);
             Ok(())
         }
@@ -135,7 +135,7 @@ pub fn setup_io_api(
                 .iter()
                 .map(stringify_lua_value)
                 .collect::<Vec<_>>()
-                .join(" ");
+                .join("");
             messages.borrow_mut().push_front(msg);
             Ok(())
         }

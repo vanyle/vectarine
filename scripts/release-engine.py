@@ -13,9 +13,9 @@ Tool to generate an engine-release aka a distributable zip with the engine and r
 """
 
 import os
-import sys
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from rich.console import Console  # type: ignore
@@ -190,8 +190,8 @@ def main() -> None:
     copy_from_root(root_path, "index.html", "engine-release/index.html")
 
     shutil.copytree(
-        os.path.join(root_path, "lua-api"),
-        os.path.join(root_path, "engine-release/lua-api"),
+        os.path.join(root_path, "luau-api"),
+        os.path.join(root_path, "engine-release/luau-api"),
         dirs_exist_ok=True,
     )
     shutil.copytree(

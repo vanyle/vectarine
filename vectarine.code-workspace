@@ -54,7 +54,7 @@
 		"luau-lsp.sourcemap.enabled": false,
 		"luau-lsp.sourcemap.autogenerate": false,
 		"luau-lsp.inlayHints.variableTypes": true,
-		"luau-lsp.types.definitionFiles": ["lua-api/global.d.luau"],
+		"luau-lsp.types.definitionFiles": ["luau-api/global.d.luau"],
 		"evenBetterToml.formatter.arrayAutoCollapse": true,
 		"evenBetterToml.formatter.columnWidth": 200,
 		"search.exclude": {
