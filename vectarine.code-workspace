@@ -39,6 +39,12 @@
 			"prettier.tabWidth": 4,
 			"prettier.useTabs": true
 		},
+		"[html]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.formatOnSave": true,
+			"prettier.tabWidth": 4,
+			"prettier.useTabs": true
+		},
 		"[toml]": {
 			"editor.defaultFormatter": "tamasfe.even-better-toml",
 			"editor.formatOnSave": true
@@ -47,6 +53,8 @@
 		"evenBetterToml.formatter.arrayAutoCollapse": true,
 		"evenBetterToml.formatter.columnWidth": 200,
 		"search.exclude": {
+			"target/debug/**": true,
+			"target/release/**": true,
 			"target/**/incremental": true,
 			"target/**/.fingerprint": true,
 			"target/**/deps": true,

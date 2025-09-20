@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en-us">
 	<head>
 		<meta charset="UTF-8" />
@@ -13,6 +13,7 @@
 				height: 100vh;
 				overflow: hidden;
 			}
+
 			.loading-info {
 				z-index: 1;
 				position: absolute;
@@ -20,6 +21,7 @@
 				left: 50%;
 				transform: translate(-50%, -50%);
 			}
+
 			/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
 			canvas {
 				border: 0px none;
@@ -30,18 +32,21 @@
 				height: 100vh;
 				background-color: black;
 			}
+
 			#status {
 				color: white;
 				font-family: Arial, sans-serif;
 				font-size: 24px;
 				text-shadow: 1px 1px 3px 2px #eee;
 			}
+
 			.loading-info {
 				display: flex;
 				flex-direction: column;
 				row-gap: 16px;
 				align-items: center;
 			}
+
 			.spinner {
 				height: 30px;
 				width: 30px;
@@ -58,16 +63,19 @@
 				border-radius: 100%;
 				background-color: rgb(189, 215, 46);
 			}
+
 			@keyframes rotation {
 				from {
 					transform: rotate(0deg);
 				}
+
 				to {
 					transform: rotate(360deg);
 				}
 			}
 		</style>
 	</head>
+
 	<body>
 		<div id="loading-info" class="loading-info">
 			<div class="spinner" id="spinner"></div>
@@ -98,7 +106,7 @@
 					} catch (err) {
 						console.error("Error fetching file:");
 						console.log(err);
-						callback(""); // TODO: proper error handling with JSON message passing.
+						callback(false);
 					}
 				})();
 			}
@@ -107,7 +115,10 @@
 			window.vectarine = {
 				read_file_for_rust: read_file_for_rust,
 				getCanvasSizeInPx: function () {
-					return { width: canvas.clientWidth, height: canvas.clientHeight };
+					return {
+						width: canvas.clientWidth,
+						height: canvas.clientHeight,
+					};
 				},
 			};
 
@@ -119,7 +130,9 @@
 				print: (function () {
 					return function (text) {
 						if (arguments.length > 1)
-							text = Array.prototype.slice.call(arguments).join(" ");
+							text = Array.prototype.slice
+								.call(arguments)
+								.join(" ");
 						// These replacements are necessary if you render to raw HTML
 						console.log("[WASM]", ...arguments);
 					};
@@ -142,7 +155,9 @@
 					canvas.addEventListener(
 						"webglcontextlost",
 						function (e) {
-							alert("WebGL context lost. You will need to reload the page.");
+							alert(
+								"WebGL context lost. You will need to reload the page."
+							);
 							e.preventDefault();
 						},
 						false
@@ -164,7 +179,10 @@
 				},
 				totalDependencies: 0,
 				monitorRunDependencies: function (left) {
-					this.totalDependencies = Math.max(this.totalDependencies, left);
+					this.totalDependencies = Math.max(
+						this.totalDependencies,
+						left
+					);
 					Module.setStatus(
 						left
 							? "Preparing... (" +
@@ -182,12 +200,14 @@
 				Module.setStatus("Exception thrown, see JavaScript console");
 				//loadingInfoElement.style.display = "none";
 				Module.setStatus = function (text) {
-					if (text) Module.printErr("[post-exception status] " + text);
+					if (text)
+						Module.printErr("[post-exception status] " + text);
 				};
 			};
 
 			function scriptLoadError() {
-				statusText.textContent = "Error loading runtime, is the file there?";
+				statusText.textContent =
+					"Error loading runtime, is the file there?";
 			}
 		</script>
 		<script
