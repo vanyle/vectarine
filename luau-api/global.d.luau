@@ -1,0 +1,2 @@
+
+declare Global: {[string]: any}

@@ -9,7 +9,7 @@ _Vectarine is a game engine with a focus on ultra fast prototyping, ease of use 
 ## Goals by importance
 
 - ⏰️ Developer time is valuable
-  - 🛠️ Lua scripting: Instant reload
+  - 🛠️ Luau scripting: Instant reload and strong typing
   - 🎨 Assets built into the engine for fast testing
   - 🖼️ Gallery of example: start with working templates
   - 🐛 Powerful debugging tools: waste less time on bugs
@@ -27,7 +27,7 @@ _Vectarine is a game engine with a focus on ultra fast prototyping, ease of use 
 You'll need:
 
 - A text editor like [Visual Studio Code](https://code.visualstudio.com/)
-- (Optional) Installing a lua extension for your editor
+- (Optional) Installing a Luau extension for your editor
 
 See [the manual](./docs/user_manual.md) for how to make games with vectarine
 

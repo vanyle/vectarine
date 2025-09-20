@@ -3,12 +3,11 @@
 Vectarine is a game engine to make games super quickly with the best possible developer experience.
 
 Vectarine uses [Lua](https://www.lua.org/manual/5.4/manual.html) as its scripting language.
-To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with optional static typing and better performance than regular Lua but the
-same syntax.
+To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with optional static typing and better performance than regular Lua but the same syntax.
 
 ## Getting started
 
-I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text editor with the [Lua extension](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) but
+I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text editor with the [Luau extension](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp) but
 you are free to use any text editor you want.
 
 Start the engine by running the `vecta` executable. A window should open.
@@ -18,7 +17,7 @@ Start the engine by running the `vecta` executable. A window should open.
 > You need to run this command to allow the execution:
 > `xattr -d com.apple.quarantine vecta-macos`
 
-Write your game inside `assets/scripts/game.lua`. As you save, the window updates. See the `lua-api` folder for a list of available functions. VSCode should autocomplete from them.
+Write your game inside `assets/scripts/game.lua`. As you save, the window updates. See the `luau-api` folder for a list of available functions. VSCode should autocomplete from them.
 
 ## Release and distribute your game
 
@@ -36,21 +35,23 @@ You can serve these files with any static file server, for example by doing `pyt
 If you see: "Error loading runtime", it means that you opened `index.html` directly from the file system instead of starting a server.
 It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`.
 
-## Lua API
+## Luau API
 
-When your application is first loaded, the lua function `Load` is called.
+When your application is first loaded, the function `Load` is called.
 Then, every frame, the function `Update` is called with `time_delta` which is the duration since the start of the last frame in seconds.
 Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` seconds and increases as your rendering gets more complicated.
 
 A minimal example:
 
 ```lua
+local Io = require('@vectarine/io')
+
 function Load()
-    dprint("Game loaded")
+    Io.print("Game loaded")
 end
 
 function Update(time_delta)
-    fprint("Frame update, time since last frame: " .. time_delta .. " seconds")
+    Io.print("Frame update, time since last frame: ", time_delta, " seconds")
 end
 ```
 

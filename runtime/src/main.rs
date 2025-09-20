@@ -18,7 +18,7 @@ pub fn main() {
     } = init_sdl();
     let lua_env = lua_env::LuaEnvironment::new();
 
-    let path = Path::new("scripts/game.lua");
+    let path = Path::new("scripts/game.luau");
     lua_env
         .resources
         .load_resource::<ScriptResource>(path, lua_env.lua.clone(), gl.clone());

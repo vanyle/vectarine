@@ -3,19 +3,21 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 use mlua::Table;
 
 use crate::{
-    game_resource::ResourceId,
-    graphics::draw_instruction::DrawInstruction,
-    lua_env::{add_global_fn, lua_vec2::Vec2},
+    game_resource::{ResourceId, font_resource::FontResource},
+    graphics::draw_instruction::{self, DrawInstruction},
+    lua_env::{add_fn_to_table, lua_vec2::Vec2},
 };
 
 pub fn setup_graphics_api(
     lua: &Rc<mlua::Lua>,
     draw_instructions: &Rc<RefCell<VecDeque<DrawInstruction>>>,
-) -> mlua::Result<()> {
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawRect",
+    env_state: &Rc<RefCell<crate::io::IoEnvState>>,
+    resources: &Rc<crate::game_resource::ResourceManager>,
+) -> mlua::Result<mlua::Table> {
+    let graphics_module = lua.create_table()?;
+
+    add_fn_to_table(lua, &graphics_module, "drawRect", {
+        let draw_instructions = draw_instructions.clone();
         move |_, (pos, size, color): (Vec2, Vec2, Table)| {
             let color = [
                 color.get::<f32>("r").unwrap_or(0.0),
@@ -23,26 +25,22 @@ pub fn setup_graphics_api(
                 color.get::<f32>("b").unwrap_or(0.0),
                 color.get::<f32>("a").unwrap_or(0.0),
             ];
-            queue_for_closure
+            draw_instructions
                 .borrow_mut()
                 .push_back(DrawInstruction::Rectangle { pos, size, color });
             Ok(())
-        },
-    );
+        }
+    });
 
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawPolygon",
+    add_fn_to_table(lua, &graphics_module, "drawPolygon", {
+        let draw_instructions = draw_instructions.clone();
         move |_, (points, color): (Vec<Vec2>, Table)| {
-            schedule_draw_polygon(&queue_for_closure, points, color)
-        },
-    );
+            schedule_draw_polygon(&draw_instructions, points, color)
+        }
+    });
 
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawArrow",
+    add_fn_to_table(lua, &graphics_module, "drawArrow", {
+        let draw_instructions = draw_instructions.clone();
         move |lua, (pos, dir, color, size): (Vec2, Vec2, Option<Table>, Option<f32>)| {
             let color = color.unwrap_or(get_default_color(lua).unwrap());
             let dir_len = (dir.x * dir.x + dir.y * dir.y).sqrt();
@@ -57,21 +55,19 @@ pub fn setup_graphics_api(
             let p1 = pos + dir - perp.scale(arrow_head_size / 1.5);
             let p2 = pos + dir + perp.scale(arrow_head_size / 1.5);
             let p3 = pos + dir + dir_norm.scale(arrow_head_size);
-            schedule_draw_polygon(&queue_for_closure, Vec::from([p1, p2, p3]), color.clone())?;
+            schedule_draw_polygon(&draw_instructions, Vec::from([p1, p2, p3]), color.clone())?;
 
             let p1 = pos - perp.scale(arrow_width / 2.0);
             let p2 = pos + dir - perp.scale(arrow_width / 2.0);
             let p3 = pos + dir + perp.scale(arrow_width / 2.0);
             let p4 = pos + perp.scale(arrow_width / 2.0);
-            schedule_draw_polygon(&queue_for_closure, Vec::from([p1, p2, p3, p4]), color)?;
+            schedule_draw_polygon(&draw_instructions, Vec::from([p1, p2, p3, p4]), color)?;
             Ok(())
-        },
-    );
+        }
+    });
 
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawCircle",
+    add_fn_to_table(lua, &graphics_module, "drawCircle", {
+        let draw_instructions = draw_instructions.clone();
         move |_, (pos, radius, color): (Vec2, f32, Table)| {
             let color = [
                 color.get::<f32>("r").unwrap_or(0.0),
@@ -79,28 +75,24 @@ pub fn setup_graphics_api(
                 color.get::<f32>("b").unwrap_or(0.0),
                 color.get::<f32>("a").unwrap_or(0.0),
             ];
-            queue_for_closure
+            draw_instructions
                 .borrow_mut()
                 .push_back(DrawInstruction::Circle { pos, radius, color });
             Ok(())
-        },
-    );
+        }
+    });
 
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawImage",
+    add_fn_to_table(lua, &graphics_module, "drawImage", {
+        let draw_instructions = draw_instructions.clone();
         move |_, (id, pos, size): (ResourceId, Vec2, Vec2)| {
             let draw_ins = DrawInstruction::Image { pos, size, id };
-            queue_for_closure.borrow_mut().push_back(draw_ins);
+            draw_instructions.borrow_mut().push_back(draw_ins);
             Ok(())
-        },
-    );
+        }
+    });
 
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawImage",
+    add_fn_to_table(lua, &graphics_module, "drawImagePart", {
+        let draw_instructions = draw_instructions.clone();
         move |_,
               (id, p1, p2, p3, p4, src_pos, src_size): (
             ResourceId,
@@ -120,15 +112,13 @@ pub fn setup_graphics_api(
                 uv_size: src_size,
                 id,
             };
-            queue_for_closure.borrow_mut().push_back(draw_ins);
+            draw_instructions.borrow_mut().push_back(draw_ins);
             Ok(())
-        },
-    );
+        }
+    });
 
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(
-        lua,
-        "drawText",
+    add_fn_to_table(lua, &graphics_module, "drawText", {
+        let draw_instructions = draw_instructions.clone();
         move |_, (text, font, pos, size, color): (String, ResourceId, Vec2, f32, Table)| {
             let color = [
                 color.get::<f32>("r").unwrap_or(0.0),
@@ -143,26 +133,50 @@ pub fn setup_graphics_api(
                 font_size: size,
                 font_id: font,
             };
-            queue_for_closure.borrow_mut().push_back(draw_ins);
+            draw_instructions.borrow_mut().push_back(draw_ins);
             Ok(())
-        },
-    );
-
-    let queue_for_closure = draw_instructions.clone();
-    add_global_fn(lua, "clear", move |_, (color,): (Table,)| {
-        let color = [
-            color.get::<f32>("r").unwrap_or(0.0),
-            color.get::<f32>("g").unwrap_or(0.0),
-            color.get::<f32>("b").unwrap_or(0.0),
-            color.get::<f32>("a").unwrap_or(0.0),
-        ];
-        queue_for_closure
-            .borrow_mut()
-            .push_back(DrawInstruction::Clear { color });
-        Ok(())
+        }
     });
 
-    Ok(())
+    add_fn_to_table(lua, &graphics_module, "clear", {
+        let draw_instructions = draw_instructions.clone();
+        move |_, (color,): (Table,)| {
+            let color = [
+                color.get::<f32>("r").unwrap_or(0.0),
+                color.get::<f32>("g").unwrap_or(0.0),
+                color.get::<f32>("b").unwrap_or(0.0),
+                color.get::<f32>("a").unwrap_or(0.0),
+            ];
+            draw_instructions
+                .borrow_mut()
+                .push_back(DrawInstruction::Clear { color });
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "measureText", {
+        let resources = resources.clone();
+        let env_state = env_state.clone();
+        move |lua, (text, font, font_size): (String, ResourceId, f32)| {
+            let font_resource = resources.get_by_id::<FontResource>(font);
+            let result = lua.create_table().unwrap();
+            let Ok(font_resource) = font_resource else {
+                let _ = result.set("width", 0.0);
+                let _ = result.set("height", 0.0);
+                let _ = result.set("bearingY", 0.0);
+                return Ok(result);
+            };
+            let env_state = env_state.borrow();
+            let ratio = env_state.window_width as f32 / env_state.window_height as f32;
+            let (width, height, max_ascent) = font_resource.measure_text(&text, font_size, ratio);
+            let _ = result.set("width", width);
+            let _ = result.set("height", height);
+            let _ = result.set("bearingY", max_ascent);
+            Ok(result)
+        }
+    });
+
+    Ok(graphics_module)
 }
 
 fn schedule_draw_polygon(

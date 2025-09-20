@@ -5,7 +5,7 @@ use crate::{
         ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
         script_resource::ScriptResource,
     },
-    lua_env::add_global_fn,
+    lua_env::add_fn_to_table,
 };
 
 /// Adds to the Lua environment functions to interact with the outside environment
@@ -14,8 +14,10 @@ use crate::{
 pub fn setup_resource_api(
     lua: &Rc<mlua::Lua>,
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<()> {
-    add_global_fn(lua, "loadImage", {
+) -> mlua::Result<mlua::Table> {
+    let resources_module = lua.create_table()?;
+
+    add_fn_to_table(lua, &resources_module, "loadImage", {
         let resources = resources.clone();
         move |_, path: String| {
             let id = resources.schedule_load_resource::<ImageResource>(Path::new(&path));
@@ -23,7 +25,7 @@ pub fn setup_resource_api(
         }
     });
 
-    add_global_fn(lua, "loadFont", {
+    add_fn_to_table(lua, &resources_module, "loadFont", {
         let resources = resources.clone();
         move |_, path: String| {
             let id = resources.schedule_load_resource::<FontResource>(Path::new(&path));
@@ -31,7 +33,7 @@ pub fn setup_resource_api(
         }
     });
 
-    add_global_fn(lua, "loadScript", {
+    add_fn_to_table(lua, &resources_module, "loadScript", {
         let resources = resources.clone();
         move |_, path: String| {
             let id = resources.schedule_load_resource::<ScriptResource>(Path::new(&path));
@@ -39,7 +41,7 @@ pub fn setup_resource_api(
         }
     });
 
-    add_global_fn(lua, "getResourceStatus", {
+    add_fn_to_table(lua, &resources_module, "getResourceStatus", {
         let resources = resources.clone();
         move |_, id: ResourceId| {
             let status = resources.get_holder_by_id(id).get_status();
@@ -47,10 +49,10 @@ pub fn setup_resource_api(
         }
     });
 
-    add_global_fn(lua, "isResourceReady", {
+    add_fn_to_table(lua, &resources_module, "isResourceReady", {
         let resources = resources.clone();
         move |_, id: ResourceId| Ok(resources.get_holder_by_id(id).is_loaded())
     });
 
-    Ok(())
+    Ok(resources_module)
 }
