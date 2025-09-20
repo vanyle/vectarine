@@ -86,7 +86,11 @@ function Update(time_delta)
     drawRect(V2(-0.5, 0.5 + toBaseline), V2(mesurement.width, mesurement.height), { r = 0, g = 1, b = 0, a = 0.5 })
 
     -- Center of the screen
-    drawImage(Global.logo, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
-    drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
+    if isResourceReady(Global.logo) then
+        drawImage(Global.logo, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
+    end
+    if isResourceReady(Global.font) then
+        drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
+    end
     drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))
 end

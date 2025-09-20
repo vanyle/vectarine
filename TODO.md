@@ -4,7 +4,7 @@
   - [x] Move loading state management out of the individual resources
   - [x] Scripts are resources
   - [x] Prevent loading twice the same resource
-  - [ ] Check resource status from Lua (Loaded, Error, Loading, ...)
+  - [x] Check resource status from Lua (Loaded, Error, Loading, ...)
   - [ ] Allow loading a script from Lua
   - [ ] Event system
   - [ ] Add a resource loaded/reloaded event

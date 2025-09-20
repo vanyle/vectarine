@@ -38,5 +38,10 @@ pub fn setup_resource_api(
         }
     });
 
+    add_global_fn(lua, "isResourceReady", {
+        let resources = resources.clone();
+        move |_, id: ResourceId| Ok(resources.get_holder_by_id(id).is_loaded())
+    });
+
     Ok(())
 }
