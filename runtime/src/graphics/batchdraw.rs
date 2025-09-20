@@ -14,7 +14,7 @@ use crate::{
             FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
         },
     },
-    lua_env::vec2::Vec2,
+    lua_env::lua_vec2::Vec2,
 };
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

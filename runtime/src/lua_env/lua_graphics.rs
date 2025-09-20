@@ -5,7 +5,7 @@ use mlua::Table;
 use crate::{
     game_resource::ResourceId,
     graphics::draw_instruction::DrawInstruction,
-    lua_env::{add_global_fn, vec2::Vec2},
+    lua_env::{add_global_fn, lua_vec2::Vec2},
 };
 
 pub fn setup_graphics_api(
