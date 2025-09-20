@@ -31,6 +31,11 @@ impl LuaEnvironment {
 
         let lua =
             Rc::new(mlua::Lua::new_with(lua_libs, lua_options).expect("Failed to create Lua"));
+        lua.set_compiler(
+            mlua::Compiler::new()
+                .set_optimization_level(2)
+                .set_type_info_level(1),
+        );
         let _ = lua.sandbox(false);
 
         let draw_instructions = Rc::new(RefCell::new(VecDeque::new()));

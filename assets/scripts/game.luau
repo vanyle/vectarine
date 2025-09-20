@@ -7,15 +7,17 @@ local Vec = require('@vectarine/vec')
 local V2 = Vec.V2
 
 local t = 0
+local spaceWasDown = false
+local spacePressed: Event.Event<string> = Event.newEvent("custom")
+spacePressed:on(function(data: string)
+    Io.print("Received event with data: " .. data)
+end)
 
-Io.print("Reloaded")
 Global.logo = Resources.loadImage("textures/logo.png")
 Global.font = Resources.loadFont("fonts/arial.ttf")
 Global.other_script = Resources.loadScript("scripts/other_script.lua")
 
-
 Graphics.clear({r=1, g=0, b=0, a=1})
-
 
 Global.fullscreen = false
 if Global.fullscreen then
@@ -23,9 +25,6 @@ if Global.fullscreen then
     Io.print("Screen: ", screen)
     Io.setFullscreen(true)
     Io.setWindowSize(screen.x, screen.y)
-
-    local myEvent: Event.Event<string> = Event.newEvent("custom")
-    myEvent:dispatch("hello!!")
 
     local v = V2(1, 2)
     local w = V2(1, 2)
@@ -39,6 +38,9 @@ end
 
 function Load()
     Io.print("Loading ...")
+
+    -- subId:unsubscribe()
+
     Global.fullscreen = false
     Global.frame_times = {}
 end
@@ -56,6 +58,15 @@ function Update(time_delta)
 
     if Io.isKeyDown("space") then
         rect_color = { r = 1, g = 0, b = 1, a = 1 }
+    end
+
+    if Io.isKeyDown("space") then
+        if not spaceWasDown then
+            spacePressed:dispatch("Hello from space!")
+        end
+        spaceWasDown = true
+    else
+        spaceWasDown = false
     end
 
     t = t + 1

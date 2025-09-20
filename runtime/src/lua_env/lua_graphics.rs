@@ -4,7 +4,7 @@ use mlua::Table;
 
 use crate::{
     game_resource::{ResourceId, font_resource::FontResource},
-    graphics::draw_instruction::{self, DrawInstruction},
+    graphics::draw_instruction::DrawInstruction,
     lua_env::{add_fn_to_table, lua_vec2::Vec2},
 };
 

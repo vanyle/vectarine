@@ -1,7 +1,8 @@
 # TODO
 
 - [ ] Event system
-  - [ ] Add an event system to Lua
+  - [x] Add an event system to Lua
+  - [x] Auto-unsubscribe on module reload.
   - [ ] Add a resource loaded/reloaded event
   - [ ] Add a mouse click / key down event
 - [ ] Console improvements
