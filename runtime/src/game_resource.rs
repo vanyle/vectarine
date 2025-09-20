@@ -8,7 +8,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::helpers::file;
+use crate::io::file;
 
 pub mod font_resource;
 pub mod image_resource;

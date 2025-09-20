@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
+    game_resource::font_resource::FontRenderingData,
     graphics::{
         glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
         gldraw::DrawingTarget,
@@ -13,7 +14,7 @@ use crate::{
             FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
         },
     },
-    helpers::{game_resource::font_resource::FontRenderingData, lua_env::vec2::Vec2},
+    lua_env::vec2::Vec2,
 };
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

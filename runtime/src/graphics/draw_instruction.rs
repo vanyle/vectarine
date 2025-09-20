@@ -1,4 +1,4 @@
-use crate::helpers::{game_resource::ResourceId, lua_env::vec2::Vec2};
+use crate::{game_resource::ResourceId, lua_env::vec2::Vec2};
 
 #[derive(Debug, Clone)]
 pub enum DrawInstruction {

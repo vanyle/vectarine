@@ -1,6 +1,6 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use crate::helpers::{
+use crate::{
     game_resource::{Resource, ResourceId, ResourceManager, Status},
     lua_env::{
         LuaEnvironment, run_file_and_display_error, run_file_and_display_error_from_lua_handle,

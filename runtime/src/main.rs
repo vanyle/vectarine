@@ -2,10 +2,10 @@
 use std::path::Path;
 use std::time::Instant;
 
+use runtime::game::Game;
+use runtime::game_resource::script_resource::ScriptResource;
 use runtime::graphics::batchdraw::BatchDraw2d;
-use runtime::helpers::game::Game;
-use runtime::helpers::game_resource::script_resource::ScriptResource;
-use runtime::helpers::lua_env::{self};
+use runtime::lua_env::{self};
 use runtime::{RenderingBlock, init_sdl};
 
 pub fn main() {

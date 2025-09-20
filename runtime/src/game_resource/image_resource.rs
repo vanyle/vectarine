@@ -3,8 +3,8 @@ use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 use image::metadata::Orientation;
 
 use crate::{
+    game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::gltexture::{self, Texture},
-    helpers::game_resource::{DependencyReporter, Resource, ResourceId, Status},
 };
 
 pub struct ImageResource {

@@ -1,5 +1,8 @@
+pub mod game;
+pub mod game_resource;
 pub mod graphics;
-pub mod helpers;
+pub mod io;
+pub mod lua_env;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 

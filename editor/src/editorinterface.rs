@@ -3,10 +3,10 @@ use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 use egui::RichText;
 use egui_extras::Column;
 use egui_sdl2_platform::sdl2;
-use runtime::helpers::{
-    file,
+use runtime::{
     game::Game,
     game_resource::{ResourceId, get_absolute_path},
+    io::file,
 };
 use serde::{Deserialize, Serialize};
 

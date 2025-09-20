@@ -1,7 +1,7 @@
 use std::{fs, rc::Rc, sync::Arc};
 
 use notify_debouncer_full::DebouncedEvent;
-use runtime::helpers::{
+use runtime::{
     game_resource::{ResourceManager, Status},
     lua_env::{LuaEnvironment, run_file_and_display_error},
 };

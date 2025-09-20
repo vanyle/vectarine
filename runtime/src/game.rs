@@ -4,15 +4,12 @@ use glow::HasContext;
 use sdl2::{EventPump, video::FullscreenType};
 
 use crate::{
-    graphics::batchdraw::BatchDraw2d,
-    helpers::{
-        draw_instruction,
-        game_resource::{
-            ResourceId, Status, font_resource::FontResource, image_resource::ImageResource,
-        },
-        io::process_events,
-        lua_env::LuaEnvironment,
+    game_resource::{
+        Resource, ResourceId, Status, font_resource::FontResource, image_resource::ImageResource,
     },
+    graphics::{batchdraw::BatchDraw2d, draw_instruction},
+    io::process_events,
+    lua_env::LuaEnvironment,
 };
 
 pub struct Game {
@@ -75,7 +72,7 @@ impl Game {
 
     pub fn get_resource_or_print_error<T>(&self, id: ResourceId) -> Option<Rc<T>>
     where
-        T: crate::helpers::game_resource::Resource,
+        T: Resource,
     {
         let resource_manager = &self.lua_env.resources;
         let resource = resource_manager.get_by_id::<T>(id);

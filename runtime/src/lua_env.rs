@@ -6,14 +6,12 @@ use sdl2::keyboard::Keycode;
 pub mod graphics;
 pub mod vec2;
 
-use crate::helpers::{
-    draw_instruction::{self},
-    game_resource::{
-        ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
-    },
-    io::IoEnvState,
-    lua_env::vec2::Vec2,
+use crate::game_resource::{
+    ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
 };
+use crate::graphics::draw_instruction;
+use crate::io::IoEnvState;
+use crate::lua_env::vec2::Vec2;
 
 #[derive(Debug, Clone)]
 pub struct LuaEnvironment {

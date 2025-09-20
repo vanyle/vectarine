@@ -5,11 +5,8 @@ use std::{
 };
 
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::{RenderingBlock, helpers::game_resource::script_resource::ScriptResource, init_sdl};
-use runtime::{
-    graphics::batchdraw::BatchDraw2d,
-    helpers::{game::Game, lua_env::LuaEnvironment},
-};
+use runtime::{RenderingBlock, game_resource::script_resource::ScriptResource, init_sdl};
+use runtime::{game::Game, graphics::batchdraw::BatchDraw2d, lua_env::LuaEnvironment};
 
 use crate::{editorinterface::EditorState, reload::reload_assets_if_needed};
 

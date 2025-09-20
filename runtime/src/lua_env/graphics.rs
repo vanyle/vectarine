@@ -2,9 +2,9 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use mlua::Table;
 
-use crate::helpers::{
-    draw_instruction::DrawInstruction,
+use crate::{
     game_resource::ResourceId,
+    graphics::draw_instruction::DrawInstruction,
     lua_env::{add_global_fn, vec2::Vec2},
 };
 

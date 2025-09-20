@@ -1,8 +1,8 @@
 use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc, sync::Arc};
 
 use crate::{
+    game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::gltexture,
-    helpers::game_resource::{DependencyReporter, Resource, ResourceId, Status},
 };
 
 #[derive(Debug, Clone)]
