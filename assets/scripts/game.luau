@@ -4,6 +4,10 @@ local Io = require('@vectarine/io')
 local Resources = require('@vectarine/resources')
 local Vec = require('@vectarine/vec')
 
+local helper= require('helper.luau')
+
+Io.print("Other script: ", helper)
+
 local V2 = Vec.V2
 
 local t = 0
@@ -13,9 +17,15 @@ spacePressed:on(function(data: string)
     Io.print("Received event with data: " .. data)
 end)
 
-Global.logo = Resources.loadImage("textures/logo.png")
-Global.font = Resources.loadFont("fonts/arial.ttf")
-Global.other_script = Resources.loadScript("scripts/other_script.lua")
+-- ...
+local CONSOLE_COMMAND = Event.getConsoleCommandEvent()
+CONSOLE_COMMAND:on(function(command: string)
+    Io.print("Console command received: " .. command)
+end)
+
+local logoResource = Resources.loadImage("textures/logo.png")
+local fontResource = Resources.loadFont("fonts/arial.ttf")
+local helperResource = Resources.loadScript("scripts/helper.luau", helper)
 
 Graphics.clear({r=1, g=0, b=0, a=1})
 
@@ -34,8 +44,6 @@ else
     Io.setWindowSize(800, 600)
 end
 
-
-
 function Load()
     Io.print("Loading ...")
 
@@ -46,8 +54,33 @@ function Load()
 end
 
 function Update(time_delta)
+
     local bg_color: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
     Graphics.clear(bg_color)
+
+    Io.fprint(150*150)
+
+    local slow = true
+    if slow then
+        local slow_factor = 150
+        local s = V2(0.1, 0.1)
+        for i = 0, slow_factor do
+            for j = 0, slow_factor do
+                local ratio = slow_factor / 2
+                local n1 = math.noise(i / slow_factor * 10, j / slow_factor * 10, t / 100)
+                local n2 = math.noise(j / slow_factor * 10, i / slow_factor * 10, t / 100)
+                local n3 = math.noise(i / slow_factor * 10, t / 100, j / slow_factor * 10)
+                local p = V2(-1 + i / ratio, -1 + j / ratio)
+                local noise_color: Graphics.Color = { r = n1, g = n2, b = n3, a = 1 }
+                Graphics.drawRect(p, s, noise_color)
+            end
+        end
+    end
+
+    if Resources.isResourceReady(helperResource) then
+        Io.fprint(helper.add_things(1, 2)) -- prints 1+2+3 = 6
+    end
+
 
     local rect_color: Graphics.Color = { r = 0, g = 0, b = 1, a = 1 }
 
@@ -89,36 +122,22 @@ function Update(time_delta)
 
     Graphics.drawCircle(m, 0.1, rect_color)
 
-    local slow = false
-    if slow then
-        local slow_factor = 150
-        local s = V2(0.1, 0.1)
-        for i = 0, slow_factor do
-            for j = 0, slow_factor do
-                local ratio = slow_factor / 2
-                rect_color.g = (i + t * 3) % 255 / 255
-                rect_color.b = (j + t) % 255 / 255
-                local p = V2(-1 + i / ratio, -1 + j / ratio)
-                Graphics.drawRect(p, s, rect_color)
-            end
-        end
-    end
     -- drawImage(Global.logo, -0.2, -0.2, 0.4, 0.4)
     local text = "HY$@llo World!  ..."
     local textSize = 0.1
 
     -- Technique for drawing a box around text.
-    local mesurement = Graphics.measureText(text, Global.font, textSize)
+    local mesurement = Graphics.measureText(text, fontResource, textSize)
     local toBaseline = mesurement.height - mesurement.bearingY
     Graphics.drawRect(V2(-0.5, 0.5 + toBaseline), V2(mesurement.width, mesurement.height), { r = 0, g = 1, b = 0, a = 0.5 })
 
     -- Center of the screen
-    if Resources.isResourceReady(Global.logo) then
-        Io.fprint("read: ", Resources.isResourceReady(Global.logo))
-        Graphics.drawImagePart(Global.logo, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
+    if Resources.isResourceReady(logoResource) then
+        Io.fprint("read: ", Resources.isResourceReady(logoResource))
+        Graphics.drawImagePart(logoResource, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
     end
-    if Resources.isResourceReady(Global.font) then
-        Graphics.drawText(text, Global.font, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
+    if Resources.isResourceReady(fontResource) then
+        Graphics.drawText(text, fontResource, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
     end
 
     Graphics.drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))

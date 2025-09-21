@@ -18,6 +18,10 @@ pub struct LuaEnvironment {
     pub draw_instructions: Rc<RefCell<VecDeque<draw_instruction::DrawInstruction>>>,
     pub env_state: Rc<RefCell<IoEnvState>>,
 
+    // Maybe add an Rc? No Refcell needed, that's for sure.
+    // DefaultEvents is just a few u32 in a coat, so clone is super cheap.
+    pub default_events: lua_event::DefaultEvents,
+
     pub frame_messages: Rc<RefCell<Vec<String>>>,
     pub messages: Rc<RefCell<VecDeque<String>>>,
 
@@ -49,7 +53,7 @@ impl LuaEnvironment {
             .unwrap();
 
         lua.globals()
-            .set("VectarineUnsafeInternal", lua.create_table().unwrap())
+            .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
             .unwrap(); // Table used to store unsafe function that we need to access from Rust inside Rust.
 
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
@@ -68,9 +72,22 @@ impl LuaEnvironment {
         lua.register_module("@vectarine/resources", resources_module)
             .unwrap();
 
-        let event_module = lua_event::setup_event_api(&lua).unwrap();
+        let (event_module, default_events) = lua_event::setup_event_api(&lua).unwrap();
         lua.register_module("@vectarine/event", event_module)
             .unwrap();
+
+        let original_require = lua.globals().get::<mlua::Function>("require").unwrap();
+        add_global_fn(&lua, "require", move |lua, module_name: String| {
+            // We provide a custom require with the following features:
+            // - Can require @vectarine/* modules (like @vectarine/vec)
+            // - Can require files in the script folder by their names.
+            if module_name.starts_with("@vectarine/") {
+                return original_require.call(module_name);
+            }
+            let module = lua.create_table()?;
+            module.raw_set("@vectarine/filename", module_name.clone())?;
+            Ok(module) // We require an empty table as this is just for the types.
+        });
 
         // Add this to utils module?
         add_global_fn(&lua, "toString", move |_, (arg,): (mlua::Value,)| {
@@ -83,6 +100,7 @@ impl LuaEnvironment {
             draw_instructions,
             env_state,
             frame_messages,
+            default_events,
             messages,
             resources,
         }
@@ -116,37 +134,77 @@ where
 }
 
 pub fn run_file_and_display_error(lua: &LuaEnvironment, file_content: &[u8], file_path: &Path) {
-    run_file_and_display_error_from_lua_handle(&lua.lua, file_content, file_path);
+    run_file_and_display_error_from_lua_handle(&lua.lua, file_content, file_path, None);
 }
 
+/// Run the given Lua file content assuming it is at the given path.
+/// If the file returns a table, and a target_table is provided, the table will be merged into the target_table.
 pub fn run_file_and_display_error_from_lua_handle(
     lua: &Rc<mlua::Lua>,
     file_content: &[u8],
     file_path: &Path,
+    target_table: Option<&mlua::Table>,
 ) {
     let lua_chunk = lua.load(file_content);
     // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
     let result = lua_chunk
         .set_name("@".to_owned() + file_path.to_str().unwrap())
-        .exec();
-    if result.is_err() {
-        let error = result.err().unwrap();
-        let error_msg = error.to_string();
-        println!("Error: {error_msg} in {}", file_path.to_string_lossy());
+        .eval::<mlua::Value>();
+
+    match result {
+        Err(error) => {
+            let error_msg = error.to_string();
+            println!("Lua Error in {}: {error_msg}", file_path.to_string_lossy());
+        }
+        Ok(value) => {
+            // Merge the table with the argument table if provided.
+            let Some(target_table) = target_table else {
+                return;
+            };
+            let table = value.as_table();
+            let Some(table) = table else {
+                println!(
+                    "Script {} did not return a table, so we cannot put its exports into the table provided.",
+                    file_path.to_string_lossy()
+                );
+                return;
+            };
+
+            for pair in table.pairs::<mlua::Value, mlua::Value>() {
+                let Ok((key, value)) = pair else { continue };
+                let _ = target_table.raw_set(key, value);
+            }
+        }
     }
 }
 
 pub fn stringify_lua_value(value: &mlua::Value) -> String {
-    let seen = Vec::new();
-    stringify_lua_value_helper(value, seen)
+    let mut seen = Vec::new();
+    stringify_lua_value_helper(value, &mut seen)
 }
+
+const UNSAFE_INTERNALS_KEY: &str = "VectarineUnsafeInternal";
 
 pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
     let globals = lua.globals();
-    globals.get("VectarineUnsafeInternal").unwrap()
+    globals.raw_get(UNSAFE_INTERNALS_KEY).unwrap()
 }
 
-fn stringify_lua_value_helper(value: &mlua::Value, mut seen: Vec<mlua::Value>) -> String {
+pub fn to_lua<T>(lua: &mlua::Lua, value: T) -> mlua::Result<mlua::Value>
+where
+    T: mlua::IntoLua,
+{
+    value.into_lua(lua)
+}
+
+pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
+    for pair in source.pairs::<mlua::Value, mlua::Value>().flatten() {
+        let (key, value) = pair;
+        let _ = target.raw_set(key, value);
+    }
+}
+
+fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {
     if seen.contains(value) {
         return "[circular]".to_string();
     }
@@ -164,8 +222,8 @@ fn stringify_lua_value_helper(value: &mlua::Value, mut seen: Vec<mlua::Value>) -
                 .pairs::<mlua::Value, mlua::Value>()
                 .map(|pair| {
                     if let Ok((key, value)) = pair {
-                        let key_str = stringify_lua_value(&key);
-                        let value_str = stringify_lua_value(&value);
+                        let key_str = stringify_lua_value_helper(&key, seen);
+                        let value_str = stringify_lua_value_helper(&value, seen);
                         format!("[{key_str}] = {value_str}")
                     } else {
                         "[error]".to_string()

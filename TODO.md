@@ -1,10 +1,14 @@
 # TODO
 
-- [ ] Event system
+- [ ] Event system, part I
   - [x] Add an event system to Lua
   - [x] Auto-unsubscribe on module reload.
+  - [x] Add a console command event
+  - [x] Add a results variable to `loadScript` to make it convinient to access module exports with types.
   - [ ] Add a resource loaded/reloaded event
   - [ ] Add a mouse click / key down event
+- [ ] Event system, part II
+  - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
 - [ ] Console improvements
   - [ ] Clear logs
   - [ ] Verbosity (info/warn/error)

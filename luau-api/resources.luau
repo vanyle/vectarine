@@ -1,5 +1,6 @@
 
-export type ResourceId = number
+local ResourceId = {}
+export type ResourceId = typeof(setmetatable({}, ResourceId))
 
 local module = {}
 
@@ -21,17 +22,19 @@ end
 
 ---MARK: Script
 
-export type ScriptResource = ResourceId
+export type ScriptResource = {type: "script"} & ResourceId
 
---- Loads and runs a Lua file at the given path
+--- Loads and runs a Lua file at the given path.
+--- If the script returns a table, it will be merged with the `results` table if provided.
+--- The return value is a ScriptResource
 --- @param path string For example scripts/monster.lua
-function module.loadScript(path: string): ScriptResource
+function module.loadScript(path: string, results: {[any]: any}?): ScriptResource
     error("Not implemented")
 end
 
 ---MARK: Image
 
-export type ImageResource = ResourceId
+export type ImageResource = {type: "image"} & ResourceId
 
 --- Load an image from a path inside assets
 --- @param path string
@@ -42,7 +45,7 @@ end
 
 ---MARK: Font
 
-export type FontResource = ResourceId
+export type FontResource = {type: "font"} & ResourceId
 
 --- Load a font from a path inside assets
 --- @param path string

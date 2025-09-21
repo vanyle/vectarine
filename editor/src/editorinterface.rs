@@ -7,6 +7,7 @@ use runtime::{
     game::Game,
     game_resource::{ResourceId, get_absolute_path},
     io::file,
+    lua_env::to_lua,
 };
 use serde::{Deserialize, Serialize};
 
@@ -141,7 +142,10 @@ impl EditorState {
                 ui.separator();
                 let response = ui.text_edit_singleline(&mut self.text_command);
                 if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                    println!("Running command: {}", self.text_command);
+                    let _ = game.lua_env.default_events.console_command_event.trigger(
+                        game.lua_env.lua.as_ref(),
+                        to_lua(game.lua_env.lua.as_ref(), self.text_command.clone()).unwrap(),
+                    );
                     self.text_command.clear();
                     response.request_focus();
                 }

@@ -2,6 +2,12 @@
 resolver = "3"
 members = ["editor", "runtime"]
 
+[profile.dev]
+opt-level = 2
+debug = true
+debug-assertions = true
+overflow-checks = true
+
 [profile.release]
 # Extra 
 lto = "fat"

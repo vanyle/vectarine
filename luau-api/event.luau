@@ -14,19 +14,7 @@ export type Event<T> = typeof(setmetatable({}, EventTypeImpl)) & {__data_type: T
 function newEvent<T>(name: string): Event<T>
     error("Not implemented")
 end
-module.newEvent = newEvent  
-
---- Represents the type of all events
----
---- Subscribing to this event type will receive all events
-local AnyEvent: Event<unknown>  = newEvent("any")
-module.AnyEvent = AnyEvent 
-
---- Represents the type of no events
----
---- Subscribing to this event type never receives any events
-local NeverEvent: Event<never>  = newEvent("any")
-module.NeverEvent = NeverEvent 
+module.newEvent = newEvent
 
 --- Dispatch an event to the bus
 --- @param event EventType<T> The type of event
@@ -61,5 +49,13 @@ end
 function SubIDImpl.unsubscribe(id: SubID)
     error("Not implemented")
 end
+
+-- #MARK: Default events
+
+--- Clear all previous subscriptions to the console command event and return it.
+function module.getConsoleCommandEvent(): Event<string>
+    error("Not implemented")
+end
+
 
 return module

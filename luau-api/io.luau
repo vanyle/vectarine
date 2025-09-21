@@ -14,7 +14,8 @@ function module.getKeysDown(): {string}
     error("Not implemented")
 end
 
---- Print something to the editor console
+--- Print something to the editor console.
+---
 --- Prints to the browser console on the web for when using debug builds.
 --- If you are printing inside Update(), consider using fprint.
 function module.print(...: any): ()
@@ -22,8 +23,9 @@ function module.print(...: any): ()
 end
 
 --- Print something to the editor console
---- Does nothing when used in the runtime
---- The message is cleared on the next frame
+----
+--- Does nothing when used in the runtime.
+--- The message is cleared on the next frame.
 function module.fprint(...: any): ()
     error("Not implemented")
 end

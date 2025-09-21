@@ -7,6 +7,8 @@ use crate::{
 
 pub struct ScriptResource {
     pub script: RefCell<Option<Vec<u8>>>,
+    /// If provided when the script is created, the return table of the script will be merged into this table.
+    pub target_table: Option<mlua::Table>,
 }
 
 impl Resource for ScriptResource {
@@ -19,7 +21,7 @@ impl Resource for ScriptResource {
         path: &Path,
         data: &[u8],
     ) -> Status {
-        run_file_and_display_error_from_lua_handle(&lua, data, path);
+        run_file_and_display_error_from_lua_handle(&lua, data, path, self.target_table.as_ref());
         self.script.replace(Some(data.to_vec()));
         Status::Loaded
     }
@@ -39,6 +41,20 @@ impl Resource for ScriptResource {
     {
         Self {
             script: RefCell::new(None),
+            target_table: None,
         }
+    }
+}
+
+impl ScriptResource {
+    pub fn make_with_target_table(target_table: mlua::Table) -> Self {
+        Self {
+            script: RefCell::new(None),
+            target_table: Some(target_table),
+        }
+    }
+
+    pub fn get_exports(&self) -> Option<&mlua::Table> {
+        self.target_table.as_ref()
     }
 }
