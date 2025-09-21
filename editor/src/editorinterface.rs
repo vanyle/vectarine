@@ -165,7 +165,7 @@ impl EditorState {
                                     ui.label(text.monospace());
                                 }
                             }
-                            messages.truncate(100);
+                            messages.truncate(500);
                         });
                     ui.separator();
                     egui::ScrollArea::vertical()
