@@ -1,4 +1,5 @@
 use crate::game::Game;
+use mlua::IntoLua;
 use sdl2::{event::Event, keyboard::Keycode};
 use std::collections::HashMap;
 
@@ -65,6 +66,11 @@ pub fn process_events(
                 };
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 env_state.keyboard_state.insert(*keycode, false);
+
+                let _ = game.lua_env.default_events.keyup_event.trigger(
+                    &game.lua_env.lua,
+                    keycode.name().into_lua(&game.lua_env.lua).unwrap(),
+                );
             }
             Event::KeyDown { keycode, .. } => {
                 let Some(keycode) = keycode else {
@@ -72,6 +78,43 @@ pub fn process_events(
                 };
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 env_state.keyboard_state.insert(*keycode, true);
+
+                let _ = game.lua_env.default_events.keydown_event.trigger(
+                    &game.lua_env.lua,
+                    keycode.name().into_lua(&game.lua_env.lua).unwrap(),
+                );
+            }
+            Event::MouseButtonUp { mouse_btn, .. } => {
+                {
+                    let mut env_state = game.lua_env.env_state.borrow_mut();
+                    let mouse_state = &mut env_state.mouse_state;
+                    if *mouse_btn == sdl2::mouse::MouseButton::Left {
+                        mouse_state.is_left_down = false;
+                    } else if *mouse_btn == sdl2::mouse::MouseButton::Right {
+                        mouse_state.is_right_down = false;
+                    }
+                }
+                let mouse_button = mouse_button_to_str(*mouse_btn);
+                let _ = game.lua_env.default_events.mouse_up_event.trigger(
+                    &game.lua_env.lua,
+                    mouse_button.into_lua(&game.lua_env.lua).unwrap(),
+                );
+            }
+            Event::MouseButtonDown { mouse_btn, .. } => {
+                {
+                    let mut env_state = game.lua_env.env_state.borrow_mut();
+                    let mouse_state = &mut env_state.mouse_state;
+                    if *mouse_btn == sdl2::mouse::MouseButton::Left {
+                        mouse_state.is_left_down = true;
+                    } else if *mouse_btn == sdl2::mouse::MouseButton::Right {
+                        mouse_state.is_right_down = true;
+                    }
+                }
+                let mouse_button = mouse_button_to_str(*mouse_btn);
+                let _ = game.lua_env.default_events.mouse_down_event.trigger(
+                    &game.lua_env.lua,
+                    mouse_button.into_lua(&game.lua_env.lua).unwrap(),
+                );
             }
             Event::MouseMotion {
                 timestamp: _,
@@ -95,5 +138,17 @@ pub fn process_events(
             }
             _ => {}
         }
+    }
+}
+
+fn mouse_button_to_str(mouse_btn: sdl2::mouse::MouseButton) -> &'static str {
+    if mouse_btn == sdl2::mouse::MouseButton::Left {
+        "left"
+    } else if mouse_btn == sdl2::mouse::MouseButton::Right {
+        "right"
+    } else if mouse_btn == sdl2::mouse::MouseButton::Middle {
+        "middle"
+    } else {
+        "???"
     }
 }

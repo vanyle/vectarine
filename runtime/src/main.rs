@@ -19,9 +19,12 @@ pub fn main() {
     let lua_env = lua_env::LuaEnvironment::new();
 
     let path = Path::new("scripts/game.luau");
-    lua_env
-        .resources
-        .load_resource::<ScriptResource>(path, lua_env.lua.clone(), gl.clone());
+    lua_env.resources.load_resource::<ScriptResource>(
+        path,
+        gl.clone(),
+        lua_env.lua.clone(),
+        lua_env.default_events.resource_loaded_event,
+    );
 
     let batch = BatchDraw2d::new(&gl).unwrap();
     let mut game = Game::new(&gl, batch, event_pump, lua_env.clone());

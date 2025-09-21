@@ -44,9 +44,12 @@ fn gui_main() {
     let lua_env = LuaEnvironment::new();
 
     let path = Path::new("scripts/game.luau");
-    lua_env
-        .resources
-        .load_resource::<ScriptResource>(path, lua_env.lua.clone(), gl.clone());
+    lua_env.resources.load_resource::<ScriptResource>(
+        path,
+        gl.clone(),
+        lua_env.lua.clone(),
+        lua_env.default_events.resource_loaded_event,
+    );
     let lua_env_for_reload = lua_env.clone();
 
     debouncer

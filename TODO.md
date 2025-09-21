@@ -1,14 +1,5 @@
 # TODO
 
-- [ ] Event system, part I
-  - [x] Add an event system to Lua
-  - [x] Auto-unsubscribe on module reload.
-  - [x] Add a console command event
-  - [x] Add a results variable to `loadScript` to make it convinient to access module exports with types.
-  - [ ] Add a resource loaded/reloaded event
-  - [ ] Add a mouse click / key down event
-- [ ] Event system, part II
-  - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
 - [ ] Console improvements
   - [ ] Clear logs
   - [ ] Verbosity (info/warn/error)
@@ -44,15 +35,24 @@
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
 - [ ] Make a game with it !!!
+- [ ] Event system, part II
+  - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
 
 # Done
 
+- [x] Event system, part I
+  - [x] Add an event system to Lua
+  - [x] Auto-unsubscribe on module reload.
+  - [x] Add a console command event
+  - [x] Add a resource loaded/reloaded event
+  - [x] Add a mouse click / key down event
 - [x] Lua API Reorg
   - [x] Organize functions in namespace better and use metamethods
   - [x] Compatible luau types and requires
+  - [x] Add a results variable to `loadScript` to make it convinient to access module exports with types.
 - [x] Resource update
   - [x] Move loading state management out of the individual resources
   - [x] Scripts are resources

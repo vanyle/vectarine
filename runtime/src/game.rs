@@ -292,8 +292,9 @@ impl Game {
         for resource_id in to_reload {
             self.lua_env.resources.clone().reload(
                 resource_id,
-                self.lua_env.lua.clone(),
                 gl.clone(),
+                self.lua_env.lua.clone(),
+                self.lua_env.default_events.resource_loaded_event,
             );
         }
     }

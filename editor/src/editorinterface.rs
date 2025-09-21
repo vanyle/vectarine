@@ -209,7 +209,12 @@ impl EditorState {
                                 row.col(|ui| {
                                     if ui.button("Reload").clicked() {
                                         let gl: Arc<glow::Context> = self.gl.clone();
-                                        resources.reload(id, game.lua_env.lua.clone(), gl);
+                                        resources.reload(
+                                            id,
+                                            gl,
+                                            game.lua_env.lua.clone(),
+                                            game.lua_env.default_events.resource_loaded_event,
+                                        );
                                     }
                                     let mut config = self.config.borrow_mut();
                                     let shown = config.debug_resource_shown == Some(id);

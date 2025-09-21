@@ -201,7 +201,6 @@ pub fn create_event_constant_in_event_module(
 pub struct DefaultEvents {
     pub keydown_event: EventType,
     pub keyup_event: EventType,
-    pub keypress_event: EventType,
 
     pub mouse_down_event: EventType,
     pub mouse_up_event: EventType,
@@ -224,9 +223,6 @@ pub fn setup_event_api(lua: &Rc<mlua::Lua>) -> mlua::Result<(mlua::Table, Defaul
     let keydown_event =
         create_event_constant_in_event_module(lua, "keyDown", &event_module).unwrap();
     let keyup_event = create_event_constant_in_event_module(lua, "keyUp", &event_module).unwrap();
-    create_event_constant_in_event_module(lua, "keyUp", &event_module).unwrap();
-    let keypress_event =
-        create_event_constant_in_event_module(lua, "keyPress", &event_module).unwrap();
 
     let mouse_down_event =
         create_event_constant_in_event_module(lua, "mouseDown", &event_module).unwrap();
@@ -243,7 +239,6 @@ pub fn setup_event_api(lua: &Rc<mlua::Lua>) -> mlua::Result<(mlua::Table, Defaul
     let default_events = DefaultEvents {
         keydown_event,
         keyup_event,
-        keypress_event,
         mouse_down_event,
         mouse_up_event,
         mouse_click_event,

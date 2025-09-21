@@ -6,9 +6,14 @@ use std::{
     sync::Arc,
 };
 
+use mlua::IntoLua;
 use serde::{Deserialize, Serialize};
 
-use crate::{game_resource::script_resource::ScriptResource, io::file, lua_env};
+use crate::{
+    game_resource::script_resource::ScriptResource,
+    io::file,
+    lua_env::{self, lua_event::EventType},
+};
 
 pub mod font_resource;
 pub mod image_resource;
@@ -82,8 +87,9 @@ impl ResourceHolder {
         self: Rc<Self>,
         assigned_id: ResourceId,
         resource_manager: Rc<ResourceManager>,
-        lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
+        lua: Rc<mlua::Lua>,
+        resource_event: EventType,
     ) {
         if self.is_loading() {
             return;
@@ -124,6 +130,7 @@ impl ResourceHolder {
                     &data,
                 );
                 self.status.replace(resulting_status);
+                let _ = resource_event.trigger(&lua, assigned_id.into_lua(&lua).unwrap());
             }),
         );
     }
@@ -297,14 +304,15 @@ impl ResourceManager {
     pub fn load_resource<T: Resource + 'static>(
         self: &Rc<Self>,
         path: &Path,
-        lua: Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
+        lua: Rc<mlua::Lua>,
+        loaded_event: EventType,
     ) -> ResourceId {
         if let Some(id) = self.get_id_by_path(path) {
             return id;
         }
         let id = self.schedule_load_resource::<T>(path);
-        self.reload(id, lua, gl);
+        self.reload(id, gl, lua, loaded_event);
         id
     }
 
@@ -329,9 +337,15 @@ impl ResourceManager {
         self.schedule_load_resource::<T>(path);
     }
 
-    pub fn reload(self: &Rc<Self>, id: ResourceId, lua: Rc<mlua::Lua>, gl: Arc<glow::Context>) {
+    pub fn reload(
+        self: &Rc<Self>,
+        id: ResourceId,
+        gl: Arc<glow::Context>,
+        lua: Rc<mlua::Lua>,
+        loaded_event: EventType,
+    ) {
         let resource = self.get_holder_by_id(id);
-        resource.reload(id, self.clone(), lua, gl);
+        resource.reload(id, self.clone(), gl, lua, loaded_event);
     }
 
     /// Performance: O(n) for now. Store the ID and use instead get_by_id if you already have the id.

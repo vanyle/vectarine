@@ -1,3 +1,4 @@
+local Resources = require("@vectarine/resources")
 
 local module = {}
 
@@ -57,5 +58,30 @@ function module.getConsoleCommandEvent(): Event<string>
     error("Not implemented")
 end
 
+--- Clear all previous subscriptions to the resource loaded event and return it.
+--- This event is triggered when a resource finishes loading and is ready to be used or if it failed to load.
+function module.getResourceLoadedEvent(): Event<Resources.ResourceId>
+    error("Not implemented")
+end
+
+--- Clear all previous subscriptions to the key up event and return it.
+function module.getKeyUpEvent(): Event<string>
+    error("Not implemented")
+end
+
+--- Clear all previous subscriptions to the key press event and return it.
+function module.getKeyDownEvent(): Event<string>
+    error("Not implemented")
+end
+
+--- Clear all previous subscriptions to the key press event and return it.
+function module.getMouseDownEvent(): Event<string>
+    error("Not implemented")
+end
+
+--- Clear all previous subscriptions to the key press event and return it.
+function module.getMouseUpEvent(): Event<string>
+    error("Not implemented")
+end
 
 return module

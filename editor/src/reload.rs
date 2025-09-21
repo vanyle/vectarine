@@ -36,7 +36,12 @@ pub fn reload_assets_if_needed(
                     res_status,
                     Status::Unloaded | Status::Loaded | Status::Error(_)
                 ) {
-                    resources.reload(res_id, lua_for_reload.lua.clone(), gl.clone());
+                    resources.reload(
+                        res_id,
+                        gl.clone(),
+                        lua_for_reload.lua.clone(),
+                        lua_for_reload.default_events.resource_loaded_event,
+                    );
                 }
             }
         }

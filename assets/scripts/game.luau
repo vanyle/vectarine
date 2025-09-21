@@ -6,7 +6,7 @@ local Vec = require('@vectarine/vec')
 
 local helper= require('helper.luau')
 
-Io.print("Other script: ", helper)
+-- Io.print("Other script: ", helper)
 
 local V2 = Vec.V2
 
@@ -17,10 +17,19 @@ spacePressed:on(function(data: string)
     Io.print("Received event with data: " .. data)
 end)
 
--- ...
+local KEY_DOWN = Event.getKeyDownEvent()
+KEY_DOWN:on(function(key: string)
+    Io.print("Key down: " .. key)
+end)
+
 local CONSOLE_COMMAND = Event.getConsoleCommandEvent()
 CONSOLE_COMMAND:on(function(command: string)
     Io.print("Console command received: " .. command)
+end)
+
+local RESOURCE_LOADED = Event.getResourceLoadedEvent()
+RESOURCE_LOADED:on(function(id: Resources.ResourceId)
+    Io.print("Resource loaded: ", id)
 end)
 
 local logoResource = Resources.loadImage("textures/logo.png")
@@ -53,14 +62,14 @@ function Load()
     Global.frame_times = {}
 end
 
-function Update(time_delta)
+function Update(time_delta: number)
 
     local bg_color: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
     Graphics.clear(bg_color)
 
     Io.fprint(150*150)
 
-    local slow = true
+    local slow = false
     if slow then
         local slow_factor = 150
         local s = V2(0.1, 0.1)
@@ -77,12 +86,15 @@ function Update(time_delta)
         end
     end
 
+    local rect_color = {r = 0, g = 0, b = 1, a = 1}
+    Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rect_color)
+
     if Resources.isResourceReady(helperResource) then
         Io.fprint(helper.add_things(1, 2)) -- prints 1+2+3 = 6
     end
 
 
-    local rect_color: Graphics.Color = { r = 0, g = 0, b = 1, a = 1 }
+    rect_color = { r = 0, g = 0, b = 1, a = 1 }
 
     local v = V2(1, 2)
     local w = V2(1, 2)
