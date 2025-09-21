@@ -28,7 +28,7 @@ export type ScriptResource = {type: "script"} & ResourceId
 --- If the script returns a table, it will be merged with the `results` table if provided.
 --- The return value is a ScriptResource
 --- @param path string For example scripts/monster.lua
-function module.loadScript(path: string, results: {[any]: any}?): ScriptResource
+function module.loadScript<T>(path: string, type_hint: T): (ScriptResource, T)
     error("Not implemented")
 end
 

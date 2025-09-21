@@ -4,8 +4,6 @@ local Io = require('@vectarine/io')
 local Resources = require('@vectarine/resources')
 local Vec = require('@vectarine/vec')
 
-local helper= require('helper.luau')
-
 -- Io.print("Other script: ", helper)
 
 local V2 = Vec.V2
@@ -29,12 +27,12 @@ end)
 
 local RESOURCE_LOADED = Event.getResourceLoadedEvent()
 RESOURCE_LOADED:on(function(id: Resources.ResourceId)
-    Io.print("Resource loaded: ", id)
+    -- Io.print("Resource loaded: ", id)
 end)
 
 local logoResource = Resources.loadImage("textures/logo.png")
 local fontResource = Resources.loadFont("fonts/arial.ttf")
-local helperResource = Resources.loadScript("scripts/helper.luau", helper)
+local helperResource, helper = Resources.loadScript("scripts/helper.luau", require('helper.luau'))
 
 Graphics.clear({r=1, g=0, b=0, a=1})
 
@@ -90,12 +88,11 @@ function Update(time_delta: number)
     Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rect_color)
 
     if Resources.isResourceReady(helperResource) then
-        Io.fprint(helper.add_things(1, 2)) -- prints 1+2+3 = 6
+        Io.fprint("Adding: ",helper.add_things(3, 2)) -- prints 1+2+3 = 6
     end
-
-
+    
     rect_color = { r = 0, g = 0, b = 1, a = 1 }
-
+    
     local v = V2(1, 2)
     local w = V2(1, 2)
     local r = v * w

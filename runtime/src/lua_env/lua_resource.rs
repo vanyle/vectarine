@@ -35,13 +35,16 @@ pub fn setup_resource_api(
 
     add_fn_to_table(lua, &resources_module, "loadScript", {
         let resources = resources.clone();
-        move |_, (path, results): (String, Option<mlua::Table>)| {
+        move |lua, (path, results): (String, Option<mlua::Table>)| {
             if let Some(target_table) = results {
-                let id = resources.schedule_load_script_resource(Path::new(&path), target_table);
-                return Ok(id);
+                let (id, table) =
+                    resources.schedule_load_script_resource(Path::new(&path), target_table);
+                return Ok((id, mlua::Value::Table(table)));
             }
-            let id = resources.schedule_load_resource::<ScriptResource>(Path::new(&path));
-            Ok(id)
+            let dummy_table = lua.create_table().unwrap();
+            let (id, table) =
+                resources.schedule_load_script_resource(Path::new(&path), dummy_table);
+            Ok((id, mlua::Value::Table(table)))
         }
     });
 

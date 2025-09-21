@@ -1,5 +1,5 @@
 local module = {} -- This is where all our exports will go
-local my_value = 4
+local my_value = 1
 
 -- add_things is inside module, it gets exported
 function module.add_things(a: number, b: number): number

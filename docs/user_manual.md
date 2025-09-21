@@ -129,6 +129,8 @@ if Resources.isResourceReady(other_script_resource) then
 end
 ```
 
+Once a script is loaded, all future calls to `loadScript` with the same path will return a handle to the same resource and are instant.
+
 By default all non-local variables and functions are shared between files.
 This has pros and cons:
 
@@ -142,7 +144,7 @@ Because of that, we recommend doing the following (this is just a recommendation
 - Keep functions local whenever possible using the `local function(...) function_content() end` syntax.
 - Use the `Global.aa = bb` syntax to be explicit when defining globals.
 - Use `require` to import types between modules
-- When calling `loadScript`, pass a table as the second argument to gather the exports of the script.
+- When calling `loadScript`, pass the require call as the second argument to gather the exports of the script with proper types
 
 There is a simple example with 2 files: `helper.luau` and `main.luau`.
 
@@ -168,18 +170,22 @@ return module -- return for the module for typing
 local Resources = require('@vectarine/resources')
 local Io = require('@vectarine/io')
 
--- import the types defined inside helper, this has no runtime effect
--- helper only contains an empty table, but has type information.
-local helper = require("helper.luau")
-
 -- We can still use the types defined inside helper!
 local s: helper.myType = "abc"
 
---- loadScript is what actually executes `helper.luau`.
---- Note that `helper.luau` is only executed once. If you rerun loadScript, you'll get a handle to the same resource.
---- loadScript has as an optional argument a table where the values returned by the script will be stored.
+--- We use the import 'technique'
+local helperResource, helper = Resources.loadScript("scripts/helper.luau", require("helper.luau"))
+
+--- Resources.loadScript is what actually executes `helper.luau`.
+--- require() returns an empty table, but is properly typed.
+--- When a table is passed as the second argument to loadScript, it is filled with the exports of the script.
+--- This gives the impression that require() returns the exports of the script, but it does not.
+
+--- Note that the helper variable is still empty until the resource is ready.
+
+--- Also, note that `helper.luau` is only executed once. If you rerun loadScript, you'll get a handle to the same resource.
+--- However, helper will always be filled with the latest exports of the script, even if it is reloaded.
 --- This only works if the script returns a table, otherwise, this is ignored.
-local helperResource = Resources.loadScript("scripts/helper.luau", helper)
 
 function Update()
     if Resources.isResourceReady(helperResource) then
@@ -187,7 +193,7 @@ function Update()
         --- local add_things: typeof(helper.add_things) = Global.helper.add_things
         --- Alternatively, you can access `helper` directly because you put `helper` as an argument to `loadScript`.
 
-        Io.fprint(helper.add_things.add_things(1, 2)) -- prints 1+2+3 = 6
+        Io.fprint(helper.add_things(1, 2)) -- prints 1+2+3 = 6
     end
 end
 ```

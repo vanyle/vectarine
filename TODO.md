@@ -1,6 +1,9 @@
 # TODO
 
 - [ ] Canvas API 'framebuffer'
+  - [ ] Write the luau functions for the API
+  - [ ] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)
+  - [ ] Connect the two
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
   - [ ] 'assets' should be 'gamedata'
@@ -29,6 +32,7 @@
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
 - [ ] Make a game with it !!!
+- [ ] Audio API
 - [ ] Event system, part II
   - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
 - [ ] Make errors inside Update spam less the console
@@ -39,6 +43,7 @@
 
 # Done
 
+- [x] Implement the require typing technique
 - [x] Console improvements
   - [x] Make it easy to print to the console from anywhere in the code
   - [x] Clear logs

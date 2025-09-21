@@ -255,31 +255,25 @@ impl ResourceManager {
         &self,
         path: &Path,
         target_table: mlua::Table,
-    ) -> ResourceId {
+    ) -> (ResourceId, mlua::Table) {
         if let Some(id) = self.get_id_by_path(path) {
             let script_resource = self.get_by_id::<ScriptResource>(id);
             let Ok(script_resource) = script_resource else {
-                return id;
+                // The resource type changes. This is rare, but it can happen.
+                return (id, target_table);
             };
             let exports = script_resource.get_exports();
             let Some(exports) = exports else {
-                return id; // The script did not export things, so nothing to merge.
+                // The script does not have an export table. This means it was created without one. This is happens
+                // when creating a script using schedule_load_resource instead of schedule_load_script_resource.
+                // This cannot happen because of Lua.
+                return (id, target_table);
             };
-            // This causes a bug. We'd need to turn the target_table into exports instead of doing a copy.
-            lua_env::merge_lua_tables(exports, &target_table);
-            // Because once target_table is just a copy, when we reload the script making exports, the current script is not updated!!
-            // We could change the syntax to this:
-            /*
-            local helper = require(...) # Get the types right.
-            local id = nil
-            id, helper = loadScript("path/to/script.lua", helper)
-            -- helper is now the table exported by the script and not helper.
-            */
-            // This syntax is verbose, I need to think of something better.
-            return id;
+            // We return a reference to the exports of the script which is dynamically updated when reloading.
+            return (id, exports.clone());
         }
         let id = self.resources.borrow().len();
-        let resource = Rc::new(ScriptResource::make_with_target_table(target_table));
+        let resource = Rc::new(ScriptResource::make_with_target_table(target_table.clone()));
         let name = path
             .file_stem()
             .unwrap_or_default()
@@ -293,7 +287,7 @@ impl ResourceManager {
             dependent: RefCell::new(HashSet::new()),
             resource,
         }));
-        ResourceId(id)
+        (ResourceId(id), target_table)
     }
 
     /// Create a new resource from a file and start loading it immediately.
