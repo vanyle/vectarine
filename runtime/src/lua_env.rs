@@ -8,6 +8,7 @@ pub mod lua_io;
 pub mod lua_resource;
 pub mod lua_vec2;
 
+use crate::console::{ConsoleMessage, Verbosity};
 use crate::game_resource::ResourceManager;
 use crate::graphics::draw_instruction;
 use crate::io::IoEnvState;
@@ -22,8 +23,8 @@ pub struct LuaEnvironment {
     // DefaultEvents is just a few u32 in a coat, so clone is super cheap.
     pub default_events: lua_event::DefaultEvents,
 
-    pub frame_messages: Rc<RefCell<Vec<String>>>,
-    pub messages: Rc<RefCell<VecDeque<String>>>,
+    pub frame_messages: Rc<RefCell<Vec<ConsoleMessage>>>,
+    pub messages: Rc<RefCell<VecDeque<ConsoleMessage>>>,
 
     pub resources: Rc<ResourceManager>,
 }
@@ -105,6 +106,14 @@ impl LuaEnvironment {
             resources,
         }
     }
+
+    pub fn run_file_and_display_error(&self, file_content: &[u8], file_path: &Path) {
+        run_file_and_display_error_from_lua_handle(&self.lua, file_content, file_path, None);
+    }
+
+    pub fn print(&self, msg: &str, verbosity: Verbosity) {
+        print(&self.lua, verbosity, msg);
+    }
 }
 
 impl Default for LuaEnvironment {
@@ -133,10 +142,6 @@ where
     table.set(name, lua.create_function(func).unwrap()).unwrap();
 }
 
-pub fn run_file_and_display_error(lua: &LuaEnvironment, file_content: &[u8], file_path: &Path) {
-    run_file_and_display_error_from_lua_handle(&lua.lua, file_content, file_path, None);
-}
-
 /// Run the given Lua file content assuming it is at the given path.
 /// If the file returns a table, and a target_table is provided, the table will be merged into the target_table.
 pub fn run_file_and_display_error_from_lua_handle(
@@ -154,7 +159,7 @@ pub fn run_file_and_display_error_from_lua_handle(
     match result {
         Err(error) => {
             let error_msg = error.to_string();
-            println!("Lua Error in {}: {error_msg}", file_path.to_string_lossy());
+            print(lua, Verbosity::Error, &error_msg);
         }
         Ok(value) => {
             // Merge the table with the argument table if provided.
@@ -163,9 +168,13 @@ pub fn run_file_and_display_error_from_lua_handle(
             };
             let table = value.as_table();
             let Some(table) = table else {
-                println!(
-                    "Script {} did not return a table, so we cannot put its exports into the table provided.",
-                    file_path.to_string_lossy()
+                print(
+                    lua,
+                    Verbosity::Warn,
+                    &format!(
+                        "Script {} did not return a table, so we cannot put its exports into the table provided when calling LoadScript.",
+                        file_path.to_string_lossy()
+                    ),
                 );
                 return;
             };
@@ -202,6 +211,13 @@ pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
         let (key, value) = pair;
         let _ = target.raw_set(key, value);
     }
+}
+
+/// Helper function to allow printing messages from anywhere in Rust as long as you have access to a lua handle.
+pub fn print(lua: &Rc<mlua::Lua>, verbosity: Verbosity, msg: &str) {
+    let internals = get_internals(lua);
+    let print_fn: mlua::Function = internals.raw_get("print").unwrap();
+    let _ = print_fn.call::<()>((msg.to_string(), verbosity));
 }
 
 fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {

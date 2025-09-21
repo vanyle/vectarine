@@ -4,6 +4,7 @@ use glow::HasContext;
 use sdl2::{EventPump, video::FullscreenType};
 
 use crate::{
+    console::Verbosity,
     game_resource::{
         Resource, ResourceId, Status, font_resource::FontResource, image_resource::ImageResource,
     },
@@ -66,8 +67,7 @@ impl Game {
     }
 
     pub fn print_to_editor_console(&self, message: &str) {
-        let mut messages = self.lua_env.messages.borrow_mut();
-        messages.push_back(message.to_string());
+        self.lua_env.print(message, Verbosity::Info);
     }
 
     pub fn get_resource_or_print_error<T>(&self, id: ResourceId) -> Option<Rc<T>>
@@ -100,12 +100,15 @@ impl Game {
             if let Ok(load_fn) = load_fn {
                 let err = load_fn.call::<()>(());
                 if let Err(err) = err {
-                    self.lua_env
-                        .messages
-                        .borrow_mut()
-                        .push_back(format!("Lua error while calling Load():\n{err}"));
+                    self.lua_env.print(
+                        &format!("Lua error while calling Load():\n{err}"),
+                        Verbosity::Error,
+                    );
                 }
                 self.was_load_called = true;
+            } else {
+                self.lua_env
+                    .print("Load() function not found", Verbosity::Warn);
             }
         }
 
@@ -171,13 +174,11 @@ impl Game {
             if let Ok(update_fn) = update_fn {
                 let err = update_fn.call::<()>((delta_time.as_secs_f64(),));
                 if let Err(err) = err {
-                    self.lua_env
-                        .messages
-                        .borrow_mut()
-                        .push_back(format!("Lua error while calling Update():\n{err}"));
+                    self.lua_env.print(&err.to_string(), Verbosity::Error);
                 }
             } else {
-                //println!("Update is not defined.");
+                self.lua_env
+                    .print("Update() function not found", Verbosity::Warn);
             }
         }
 

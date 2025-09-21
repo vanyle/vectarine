@@ -271,11 +271,9 @@ impl ResourceManager {
             // We could change the syntax to this:
             /*
             local helper = require(...) # Get the types right.
-
-            local m = {module=helper}
-            local id = loadScript("path/to/script.lua", m)
-            -- m.module is now the table exported by the script and not helper.
-            helper = m.module
+            local id = nil
+            id, helper = loadScript("path/to/script.lua", helper)
+            -- helper is now the table exported by the script and not helper.
             */
             // This syntax is verbose, I need to think of something better.
             return id;

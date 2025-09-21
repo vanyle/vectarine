@@ -1,3 +1,4 @@
+pub mod console;
 pub mod game;
 pub mod game_resource;
 pub mod graphics;

@@ -44,7 +44,7 @@ pub fn main() {
         {
             #![cfg(debug_assertions)]
             for m in game.lua_env.messages.borrow_mut().drain(..) {
-                println!("{m}");
+                println!("{}", m.msg);
             }
         }
         game.lua_env.messages.borrow_mut().clear();

@@ -154,3 +154,4 @@ function Update(time_delta: number)
 
     Graphics.drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))
 end
+

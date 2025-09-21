@@ -1,11 +1,5 @@
 # TODO
 
-- [ ] Console improvements
-  - [ ] Clear logs
-  - [ ] Verbosity (info/warn/error)
-  - [ ] Make it easy to print to the console from anywhere in the code
-  - [ ] Log search
-  - [ ] Better scrolling
 - [ ] Canvas API 'framebuffer'
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
@@ -37,12 +31,19 @@
 - [ ] Make a game with it !!!
 - [ ] Event system, part II
   - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
+- [ ] Make errors inside Update spam less the console
+  - [ ] When the same error happens in a row inside update, only print it once (same behavior as browsers)
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
 
 # Done
 
+- [x] Console improvements
+  - [x] Make it easy to print to the console from anywhere in the code
+  - [x] Clear logs
+  - [x] Better scrolling
+  - [x] Verbosity (info/warn/error)
 - [x] Event system, part I
   - [x] Add an event system to Lua
   - [x] Auto-unsubscribe on module reload.

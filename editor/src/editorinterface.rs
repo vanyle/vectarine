@@ -1,9 +1,16 @@
-use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
+use std::{
+    cell::RefCell,
+    ops::Deref,
+    rc::Rc,
+    sync::{Arc, LazyLock, Mutex},
+    time::Instant,
+};
 
-use egui::RichText;
+use egui::{RichText, Widget};
 use egui_extras::Column;
 use egui_sdl2_platform::sdl2;
 use runtime::{
+    console::Verbosity,
     game::Game,
     game_resource::{ResourceId, get_absolute_path},
     io::file,
@@ -114,42 +121,84 @@ impl EditorState {
             // sdl2_sys::SDL_SetWindowHitTest(window_handle, callback, callback_data)
         });
 
+        static ARE_LOGS_ERROR_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
+        static ARE_LOGS_WARN_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
+        static ARE_LOGS_INFO_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
+
         if self.config.borrow().is_console_shown {
-            egui::Window::new("Console").show(&ctx, |ui| {
-                egui::ScrollArea::vertical()
-                    .id_salt("console")
-                    .max_height(300.0)
-                    .stick_to_bottom(true)
-                    .show(ui, |ui| {
-                        let messages = &mut game.lua_env.messages.borrow_mut();
-                        for line in messages.iter().rev() {
-                            ui.label(RichText::new(line).monospace());
-                        }
-                        messages.truncate(100);
+            egui::Window::new("Console")
+                .max_height(200.0)
+                .resizable([true, false])
+                .vscroll(false)
+                .show(&ctx, |ui| {
+                    ui.horizontal(|ui: &mut egui::Ui| {
+                        ui.checkbox(&mut ARE_LOGS_INFO_SHOWN.lock().unwrap(), "Infos");
+                        ui.checkbox(&mut ARE_LOGS_WARN_SHOWN.lock().unwrap(), "Warnings");
+                        ui.checkbox(&mut ARE_LOGS_ERROR_SHOWN.lock().unwrap(), "Errors");
                     });
-                ui.separator();
-                egui::ScrollArea::vertical()
-                    .id_salt("frame console")
-                    .max_height(300.0)
-                    .stick_to_bottom(true)
-                    .show(ui, |ui| {
-                        let messages = &mut game.lua_env.frame_messages.borrow_mut();
-                        for line in messages.iter() {
-                            ui.label(RichText::new(line).monospace());
+                    egui::ScrollArea::vertical()
+                        .id_salt("console")
+                        .auto_shrink([false, false])
+                        .stick_to_bottom(true)
+                        .show(ui, |ui| {
+                            let show_errors = *ARE_LOGS_ERROR_SHOWN.lock().unwrap();
+                            let show_warnings = *ARE_LOGS_WARN_SHOWN.lock().unwrap();
+                            let show_infos = *ARE_LOGS_INFO_SHOWN.lock().unwrap();
+
+                            let messages = &mut game.lua_env.messages.borrow_mut();
+                            for line in messages.iter().rev() {
+                                let msg = &line.msg;
+                                let is_error = line.verbosity == Verbosity::Error;
+                                let is_warning = line.verbosity == Verbosity::Warn;
+                                let is_info = line.verbosity == Verbosity::Info;
+                                if (show_errors && is_error)
+                                    || (show_warnings && is_warning)
+                                    || (show_infos && is_info)
+                                {
+                                    let text = if is_error {
+                                        RichText::new(msg).color(egui::Color32::RED)
+                                    } else if is_warning {
+                                        RichText::new(msg).color(egui::Color32::YELLOW)
+                                    } else {
+                                        RichText::new(msg).color(egui::Color32::WHITE)
+                                    };
+                                    ui.label(text.monospace());
+                                }
+                            }
+                            messages.truncate(100);
+                        });
+                    ui.separator();
+                    egui::ScrollArea::vertical()
+                        .id_salt("frame console")
+                        .auto_shrink([false, false])
+                        .stick_to_bottom(true)
+                        .show(ui, |ui| {
+                            let messages = &mut game.lua_env.frame_messages.borrow_mut();
+                            for line in messages.iter() {
+                                let msg = &line.msg;
+                                ui.label(
+                                    RichText::new(msg).color(egui::Color32::WHITE).monospace(),
+                                );
+                            }
+                            messages.clear();
+                        });
+                    ui.separator();
+                    ui.horizontal(|ui| {
+                        let response = egui::TextEdit::singleline(&mut self.text_command).ui(ui);
+                        if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                            let _ = game.lua_env.default_events.console_command_event.trigger(
+                                game.lua_env.lua.as_ref(),
+                                to_lua(game.lua_env.lua.as_ref(), self.text_command.clone())
+                                    .unwrap(),
+                            );
+                            self.text_command.clear();
+                            response.request_focus();
                         }
-                        messages.clear();
+                        if egui::Button::new("Clear").ui(ui).clicked() {
+                            game.lua_env.messages.borrow_mut().clear();
+                        }
                     });
-                ui.separator();
-                let response = ui.text_edit_singleline(&mut self.text_command);
-                if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                    let _ = game.lua_env.default_events.console_command_event.trigger(
-                        game.lua_env.lua.as_ref(),
-                        to_lua(game.lua_env.lua.as_ref(), self.text_command.clone()).unwrap(),
-                    );
-                    self.text_command.clear();
-                    response.request_focus();
-                }
-            });
+                });
         }
 
         if self.config.borrow().is_resources_window_shown {
