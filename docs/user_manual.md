@@ -61,6 +61,37 @@ end
 
 ## Drawing things on the screen
 
+Drawing functions are inside the `graphics` module. Most function take a `V2` from the `vec` module to define positions and sizes.
+The first argument to `V2` (called x) is the horizontal position, the second argument (called y) is the vertical position.
+
+- `(0,0)` is the center of the screen.
+- `(-1,1)` is the top left of the screen.
+- `(1,-1)` is the bottom right of the screen.
+
+The screen is always 2 units wide and 2 units tall, regardless of the window size or aspect ratio.
+
+Example:
+
+```lua
+local Graphics = require('@vectarine/graphics')
+
+function Update(time_delta: number)
+    -- Draw a white background.
+    local bg_color: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
+    Graphics.clear(bg_color)
+
+    -- Draw a red circle at the center of the screen with radius 0.1 (2 is the width of the screen)
+    local circle_color = {r = 1, g = 0, b = 0, a = 1}
+    Graphics.drawCircle(V2(0.0, 0.0), 0.1, circle_color)
+
+    -- Draw a blue rectangle at the bottom right of the screen
+    local rect_color = {r = 0, g = 0, b = 1, a = 1}
+    Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rect_color)
+end
+```
+
+`Graphics` contains a lot of other functions to draw images, text, arrows or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
+
 ## Interacting with the user
 
 ## Using sprites
