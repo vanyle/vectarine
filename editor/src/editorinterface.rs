@@ -99,6 +99,9 @@ impl EditorState {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Vectarine Editor").size(18.0));
                 egui::MenuBar::new().ui(ui, |ui| {
+                    static ALWAYS_ON_TOP: LazyLock<Mutex<bool>> =
+                        LazyLock::new(|| Mutex::new(false));
+
                     ui.menu_button("File", |ui| {
                         if ui.button("Toggle console (Ctrl+Shift+I)").clicked() {
                             let mut config = self.config.borrow_mut();
@@ -111,6 +114,14 @@ impl EditorState {
                         if ui.button("Save config").clicked() {
                             self.save_config();
                         }
+                        if ui
+                            .checkbox(&mut ALWAYS_ON_TOP.lock().unwrap(), "Always on top")
+                            .clicked()
+                        {
+                            let always_on_top = *ALWAYS_ON_TOP.lock().unwrap();
+                            self.window.borrow_mut().set_always_on_top(always_on_top);
+                        }
+
                         if ui.button("Exit (Alt+F4)").clicked() {
                             std::process::exit(0);
                         }

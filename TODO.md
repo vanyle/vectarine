@@ -5,7 +5,6 @@
   - [ ] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)
   - [ ] Connect the two
 - [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
-- [ ] Allow 'always on top' in the editor using a menu checkbox.
 - [ ] Fix image orientation issue
 - [ ] Add debugger tab to inspect values of Lua Constants
 - [ ] Add a unit API with proper coordinate management instead of V2.
@@ -48,6 +47,7 @@
 
 # Done
 
+- [x] Allow 'always on top' in the editor using a menu checkbox.
 - [x] Always enable vsync
 - [x] Implement the require typing technique
 - [x] Console improvements
