@@ -10,7 +10,8 @@ use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 use glow::HasContext;
 use sdl2::{
     EventPump, Sdl, VideoSubsystem,
-    video::{Window, gl_attr::GLAttr},
+    sys::SDL_WindowFlags,
+    video::{SwapInterval, Window, gl_attr::GLAttr},
 };
 
 pub struct RenderingBlock {
@@ -78,6 +79,8 @@ pub fn init_sdl() -> RenderingBlock {
     };
 
     let gl: Arc<glow::Context> = Arc::new(gl);
+
+    let _ = video_subsystem.gl_set_swap_interval(SwapInterval::VSync);
 
     unsafe {
         gl.enable(glow::BLEND);

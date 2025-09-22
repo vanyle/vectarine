@@ -4,6 +4,8 @@
   - [ ] Write the luau functions for the API
   - [ ] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)
   - [ ] Connect the two
+- [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
+- [ ] Allow 'always on top' in the editor using a menu checkbox.
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
   - [ ] 'assets' should be 'gamedata'
@@ -43,6 +45,7 @@
 
 # Done
 
+- [x] Always enable vsync
 - [x] Implement the require typing technique
 - [x] Console improvements
   - [x] Make it easy to print to the console from anywhere in the code
