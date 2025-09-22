@@ -303,7 +303,14 @@ impl EditorState {
         // Render the editor interface on top of the game.
         let size = self.window.borrow().drawable_size();
 
-        painter.paint_and_update_textures([size.0, size.1], 2.0, pj, &full_output.textures_delta);
+        let pixel_per_point = size.0 as f32 / self.window.borrow().size().0 as f32;
+
+        painter.paint_and_update_textures(
+            [size.0, size.1],
+            pixel_per_point,
+            pj,
+            &full_output.textures_delta,
+        );
         for event in latest_events {
             // Convert mouse position.
             platform.handle_event(event, sdl, &self.video.borrow());
