@@ -6,6 +6,9 @@
   - [ ] Connect the two
 - [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
 - [ ] Allow 'always on top' in the editor using a menu checkbox.
+- [ ] Fix image orientation issue
+- [ ] Add debugger tab to inspect values of Lua Constants
+- [ ] Add a unit API with proper coordinate management instead of V2.
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
   - [ ] 'assets' should be 'gamedata'
