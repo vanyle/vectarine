@@ -16,6 +16,7 @@ use crate::{
 pub mod font_resource;
 pub mod image_resource;
 pub mod script_resource;
+pub mod shader_resource;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Status {

@@ -3,7 +3,8 @@
 - [ ] Canvas API 'framebuffer'
   - [x] Write the luau functions for the API
   - [x] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)
-  - [ ] Add a shader resource (instead of create canvas)
+  - [ ] Add a shader resource
+  - [ ] Find a way to pass the canvas object to lua? Need to check for leaks.
   - [ ] Connect the two
 - [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
 - [ ] Fix image orientation issue
