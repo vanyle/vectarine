@@ -143,8 +143,12 @@ impl Framebuffer {
         }
     }
 
-    pub fn id(&self) -> u32 {
-        u32::from(self.id.0)
+    pub fn id(&self) -> glow::NativeFramebuffer {
+        self.id
+    }
+
+    pub fn color_texture_id(&self) -> glow::NativeTexture {
+        self.color_tex
     }
 }
 

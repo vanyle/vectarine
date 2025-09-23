@@ -10,3 +10,4 @@ pub mod gluniforms;
 
 pub mod draw_instruction;
 pub mod shadersources;
+pub mod shape;

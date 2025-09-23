@@ -5,6 +5,7 @@ use crate::{
     graphics::{
         glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
         gldraw::DrawingTarget,
+        glframebuffer::Framebuffer,
         glprogram::GLProgram,
         gltexture::Texture,
         gltypes::{DataLayout, GLTypes, UsageHint},
@@ -13,6 +14,7 @@ use crate::{
             COLOR_FRAG_SHADER_SOURCE, COLOR_VERTEX_SHADER_SOURCE, FONT_FRAG_SHADER_SOURCE,
             FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
         },
+        shape::Quad,
     },
     lua_env::lua_vec2::Vec2,
 };
@@ -185,14 +187,9 @@ impl BatchDraw2d {
             x, y + height, 0.0, color[0], color[1], color[2], color[3], // top left
         ];
 
-        let indices: [u32; 6] = [
-            0, 1, 2, // first triangle
-            2, 3, 0, // second triangle
-        ];
-
         self.add_to_batch_by_trying_to_merge(
             &vertices,
-            &indices,
+            &INDICES_FOR_QUAD,
             Uniforms::new(),
             DefaultShader::Color,
         );
@@ -234,20 +231,14 @@ impl BatchDraw2d {
     }
 
     pub fn draw_image(&mut self, x: f32, y: f32, width: f32, height: f32, texture: &Arc<Texture>) {
-        let p1 = Vec2::new(x, y);
-        let p2 = Vec2::new(x + width, y);
-        let p3 = Vec2::new(x + width, y + height);
-        let p4 = Vec2::new(x, y + height);
         let uv_pos = Vec2::new(0.0, 0.0);
         let uv_size = Vec2::new(1.0, 1.0);
-        self.draw_image_part(p1, p2, p3, p4, texture, uv_pos, uv_size);
+        self.draw_image_part(make_rect(x, y, width, height), texture, uv_pos, uv_size);
     }
 
     #[rustfmt::skip]
     pub fn draw_image_part(
-        &mut self, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2,
-        texture: &Arc<Texture>,
-        uv_pos: Vec2, uv_size: Vec2,
+        &mut self, pos_size: Quad, texture: &Arc<Texture>, uv_pos: Vec2, uv_size: Vec2,
     ) {
         let uv_x1 = uv_pos.x;
         let uv_y1 = uv_pos.y;
@@ -257,20 +248,54 @@ impl BatchDraw2d {
         #[rustfmt::skip]
         let vertices: [f32; 4 * 5] = [
             // positions       // tex coords
-            p1.x, p1.y, 0.0, uv_x1, uv_y2, // bottom left
-            p2.x, p2.y, 0.0, uv_x2, uv_y2, // bottom right
-            p3.x, p3.y, 0.0, uv_x2, uv_y1, // top right
-            p4.x, p4.y, 0.0, uv_x1, uv_y1, // top left
-        ];
-
-        let indices: [u32; 6] = [
-            0, 1, 2, // first triangle
-            2, 3, 0, // second triangle
+            pos_size.p1.x, pos_size.p1.y, 0.0, uv_x1, uv_y2, // bottom left
+            pos_size.p2.x, pos_size.p2.y, 0.0, uv_x2, uv_y2, // bottom right
+            pos_size.p3.x, pos_size.p3.y, 0.0, uv_x2, uv_y1, // top right
+            pos_size.p4.x, pos_size.p4.y, 0.0, uv_x1, uv_y1, // top left
         ];
 
         let mut uniforms = Uniforms::new();
         uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
-        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, DefaultShader::Texture);
+        self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, DefaultShader::Texture);
+    }
+
+    pub fn draw_canvas(
+        &mut self,
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        canvas: &Arc<Framebuffer>,
+    ) {
+        self.draw_canvas_part(
+            make_rect(x, y, width, height),
+            canvas,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+        );
+    }
+
+    #[rustfmt::skip]
+    pub fn draw_canvas_part(
+        &mut self, pos_size: Quad, canvas: &Arc<Framebuffer>, uv_pos: Vec2, uv_size: Vec2,
+    ) {
+        let uv_x1 = uv_pos.x;
+        let uv_y1 = uv_pos.y;
+        let uv_x2 = uv_pos.x + uv_size.x;
+        let uv_y2 = uv_pos.y + uv_size.y;
+
+        #[rustfmt::skip]
+        let vertices: [f32; 4 * 5] = [
+            // positions       // tex coords
+            pos_size.p1.x, pos_size.p1.y, 0.0, uv_x1, uv_y2, // bottom left
+            pos_size.p2.x, pos_size.p2.y, 0.0, uv_x2, uv_y2, // bottom right
+            pos_size.p3.x, pos_size.p3.y, 0.0, uv_x2, uv_y1, // top right
+            pos_size.p4.x, pos_size.p4.y, 0.0, uv_x1, uv_y1, // top left
+        ];
+
+        let mut uniforms = Uniforms::new();
+        uniforms.add("tex", UniformValue::Sampler2D(canvas.color_texture_id()));
+        self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, DefaultShader::Texture);
     }
 
     pub fn draw_text(
@@ -343,5 +368,19 @@ impl BatchDraw2d {
 
     pub fn clear(&self, r: f32, g: f32, b: f32, a: f32) {
         self.drawing_target.clear(r, g, b, a);
+    }
+}
+
+const INDICES_FOR_QUAD: [u32; 6] = [
+    0, 1, 2, // first triangle
+    2, 3, 0, // second triangle
+];
+
+pub fn make_rect(x: f32, y: f32, width: f32, height: f32) -> Quad {
+    Quad {
+        p1: Vec2::new(x, y),
+        p2: Vec2::new(x + width, y),
+        p3: Vec2::new(x + width, y + height),
+        p4: Vec2::new(x, y + height),
     }
 }
