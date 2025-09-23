@@ -6,7 +6,6 @@ use sdl2::{EventPump, video::FullscreenType};
 use crate::{
     console::Verbosity,
     game_resource::{Resource, ResourceId, Status},
-    graphics::{batchdraw::BatchDraw2d, draw_instruction},
     io::process_events,
     lua_env::LuaEnvironment,
 };
@@ -115,7 +114,10 @@ impl Game {
             // On the web, this is different, the aspect ratio needs to be squared??
             //self.batch.set_aspect_ratio(aspect_ratio * aspect_ratio);
 
-            self.lua_env.batch.set_aspect_ratio(aspect_ratio);
+            self.lua_env
+                .batch
+                .borrow_mut()
+                .set_aspect_ratio(aspect_ratio);
 
             framebuffer_width = width;
             framebuffer_height = height;
@@ -175,12 +177,7 @@ impl Game {
         }
 
         {
-            let instructions = self.lua_env.draw_instructions.clone();
-            let mut instructions = instructions.borrow_mut();
-            while let Some(instruction) = instructions.pop_front() {
-                draw_instruction::render_instruction(instruction, &mut self.lua_env);
-            }
-            self.lua_env.batch.draw(true);
+            self.lua_env.batch.borrow_mut().draw(true);
         }
     }
 

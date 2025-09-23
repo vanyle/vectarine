@@ -33,7 +33,7 @@ impl Resource for FontResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: Rc<mlua::Lua>,
+        _lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: &[u8],

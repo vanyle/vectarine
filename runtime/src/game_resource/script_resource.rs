@@ -16,7 +16,7 @@ impl Resource for ScriptResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        lua: Rc<mlua::Lua>,
+        lua: &Rc<mlua::Lua>,
         _gl: std::sync::Arc<glow::Context>,
         path: &Path,
         data: &[u8],

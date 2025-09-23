@@ -122,7 +122,7 @@ impl ResourceHolder {
                 let resulting_status = self.resource.clone().load_from_data(
                     assigned_id,
                     &dr,
-                    lua.clone(),
+                    &lua,
                     gl.clone(),
                     &self.path,
                     &data,
@@ -432,7 +432,7 @@ pub trait Resource: ResourceToAny {
         self: Rc<Self>,
         assigned_id: ResourceId,
         dependency_reporter: &DependencyReporter,
-        lua: Rc<mlua::Lua>,
+        lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         path: &Path,
         data: &[u8],
