@@ -1,9 +1,7 @@
 use crate::{
     console::Verbosity,
-    game_resource::{
-        ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
-    },
-    graphics::{batchdraw::BatchDraw2d, shape::Quad},
+    game_resource::{ResourceId, font_resource::FontResource, image_resource::ImageResource},
+    graphics::shape::Quad,
     lua_env::{self, lua_vec2::Vec2},
 };
 
@@ -51,10 +49,11 @@ pub enum DrawInstruction {
 
 pub fn render_instruction(
     instruction: DrawInstruction,
-    batch: &mut BatchDraw2d,
-    resource_manager: &ResourceManager,
-    lua_env: &lua_env::LuaEnvironment, // for printing errors to the console
+    lua_env: &mut lua_env::LuaEnvironment, // for printing errors to the console
 ) {
+    let batch = &mut lua_env.batch;
+    let resource_manager = &lua_env.resources;
+
     match instruction {
         DrawInstruction::Rectangle { pos, size, color } => {
             batch.draw_rect(pos.x, pos.y, size.x, size.y, color);

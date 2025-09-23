@@ -13,22 +13,15 @@ use crate::{
 
 pub struct Game {
     pub gl: Arc<glow::Context>,
-    pub batch: BatchDraw2d,
     pub event_pump: EventPump,
     pub lua_env: LuaEnvironment,
     pub was_load_called: bool,
 }
 
 impl Game {
-    pub fn new(
-        gl: &Arc<glow::Context>,
-        batch: BatchDraw2d,
-        event_pump: EventPump,
-        lua_env: LuaEnvironment,
-    ) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, event_pump: EventPump, lua_env: LuaEnvironment) -> Self {
         Game {
             gl: gl.clone(),
-            batch,
             event_pump,
             lua_env,
             was_load_called: false,
@@ -121,7 +114,8 @@ impl Game {
             // This works in the editor, but not the runtime.
             // On the web, this is different, the aspect ratio needs to be squared??
             //self.batch.set_aspect_ratio(aspect_ratio * aspect_ratio);
-            self.batch.set_aspect_ratio(aspect_ratio);
+
+            self.lua_env.batch.set_aspect_ratio(aspect_ratio);
 
             framebuffer_width = width;
             framebuffer_height = height;
@@ -181,18 +175,13 @@ impl Game {
         }
 
         {
-            let mut instructions = self.lua_env.draw_instructions.borrow_mut();
+            let instructions = self.lua_env.draw_instructions.clone();
+            let mut instructions = instructions.borrow_mut();
             while let Some(instruction) = instructions.pop_front() {
-                draw_instruction::render_instruction(
-                    instruction,
-                    &mut self.batch,
-                    &self.lua_env.resources,
-                    &self.lua_env,
-                );
+                draw_instruction::render_instruction(instruction, &mut self.lua_env);
             }
+            self.lua_env.batch.draw(true);
         }
-
-        self.batch.draw(true);
     }
 
     /// Calls reload on all unloaded resource inside the manager.

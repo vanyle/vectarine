@@ -41,7 +41,8 @@ fn gui_main() {
     )
     .unwrap();
 
-    let lua_env = LuaEnvironment::new();
+    let batch = BatchDraw2d::new(&gl).unwrap();
+    let lua_env = LuaEnvironment::new(batch);
 
     let path = Path::new("scripts/game.luau");
     lua_env.resources.load_resource::<ScriptResource>(
@@ -50,7 +51,6 @@ fn gui_main() {
         lua_env.lua.clone(),
         lua_env.default_events.resource_loaded_event,
     );
-    let lua_env_for_reload = lua_env.clone();
 
     debouncer
         .watch("./assets", RecursiveMode::Recursive)
@@ -61,8 +61,7 @@ fn gui_main() {
     // Create the egui + sdl2 platform
     let mut platform = egui_sdl2_platform::Platform::new(window.borrow().drawable_size()).unwrap();
 
-    let batch = BatchDraw2d::new(&gl).unwrap();
-    let mut game = Game::new(&gl, batch, event_pump, lua_env);
+    let mut game = Game::new(&gl, event_pump, lua_env);
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
     editor_state.load_config();
 
@@ -78,7 +77,7 @@ fn gui_main() {
         reload_assets_if_needed(
             &gl,
             &game.lua_env.resources,
-            &lua_env_for_reload,
+            &game.lua_env,
             &debounce_receiver,
         );
 

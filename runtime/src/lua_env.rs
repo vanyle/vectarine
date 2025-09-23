@@ -10,17 +10,17 @@ pub mod lua_vec2;
 
 use crate::console::{ConsoleMessage, Verbosity};
 use crate::game_resource::ResourceManager;
+use crate::graphics::batchdraw::BatchDraw2d;
 use crate::graphics::draw_instruction;
 use crate::io::IoEnvState;
 
-#[derive(Debug, Clone)]
 pub struct LuaEnvironment {
     pub lua: Rc<mlua::Lua>,
     pub draw_instructions: Rc<RefCell<VecDeque<draw_instruction::DrawInstruction>>>,
     pub env_state: Rc<RefCell<IoEnvState>>,
 
-    // Maybe add an Rc? No Refcell needed, that's for sure.
-    // DefaultEvents is just a few u32 in a coat, so clone is super cheap.
+    pub batch: BatchDraw2d,
+
     pub default_events: lua_event::DefaultEvents,
 
     pub frame_messages: Rc<RefCell<Vec<ConsoleMessage>>>,
@@ -30,7 +30,7 @@ pub struct LuaEnvironment {
 }
 
 impl LuaEnvironment {
-    pub fn new() -> Self {
+    pub fn new(batch: BatchDraw2d) -> Self {
         let lua_options = mlua::LuaOptions::default();
         let lua_libs = mlua::StdLib::MATH | mlua::StdLib::TABLE | mlua::StdLib::STRING;
 
@@ -100,6 +100,7 @@ impl LuaEnvironment {
             lua,
             draw_instructions,
             env_state,
+            batch,
             frame_messages,
             default_events,
             messages,
@@ -113,12 +114,6 @@ impl LuaEnvironment {
 
     pub fn print(&self, msg: &str, verbosity: Verbosity) {
         print(&self.lua, verbosity, msg);
-    }
-}
-
-impl Default for LuaEnvironment {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
