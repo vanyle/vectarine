@@ -2,6 +2,7 @@ use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
 
+pub mod lua_canvas;
 pub mod lua_event;
 pub mod lua_graphics;
 pub mod lua_io;
@@ -61,6 +62,11 @@ impl LuaEnvironment {
         let graphics_module =
             lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/graphics", graphics_module)
+            .unwrap();
+
+        let canvas_module =
+            lua_canvas::setup_canvas_api(&lua, &batch, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/canvas", canvas_module)
             .unwrap();
 
         let io_module = lua_io::setup_io_api(&lua, &env_state, &messages, &frame_messages).unwrap();
