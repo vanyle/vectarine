@@ -1,7 +1,3 @@
-use std::sync::Arc;
-
-use crate::graphics::gltexture::Texture;
-
 #[derive(Debug, Clone)]
 pub enum UniformValue {
     Float(f32),
@@ -12,7 +8,7 @@ pub enum UniformValue {
     Mat4([[f32; 4]; 4]),
     Int(i32),
     Bool(bool),
-    Sampler2D(Arc<Texture>), // texture ID
+    Sampler2D(glow::NativeTexture), // texture ID
     SamplerCube(u32),
 }
 
@@ -28,7 +24,7 @@ impl PartialEq for UniformValue {
             (UniformValue::Int(a), UniformValue::Int(b)) => a == b,
             (UniformValue::Bool(a), UniformValue::Bool(b)) => a == b,
             // Textures are compared by reference, not value
-            (UniformValue::Sampler2D(a), UniformValue::Sampler2D(b)) => Arc::ptr_eq(a, b),
+            (UniformValue::Sampler2D(a), UniformValue::Sampler2D(b)) => a == b,
             (UniformValue::SamplerCube(a), UniformValue::SamplerCube(b)) => a == b,
             _ => false,
         }

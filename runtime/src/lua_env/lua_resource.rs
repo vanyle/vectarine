@@ -3,7 +3,6 @@ use std::{path::Path, rc::Rc};
 use crate::{
     game_resource::{
         ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
-        script_resource::ScriptResource,
     },
     lua_env::add_fn_to_table,
 };

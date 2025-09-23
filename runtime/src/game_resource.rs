@@ -10,9 +10,7 @@ use mlua::IntoLua;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game_resource::script_resource::ScriptResource,
-    io::file,
-    lua_env::{self, lua_event::EventType},
+    game_resource::script_resource::ScriptResource, io::file, lua_env::lua_event::EventType,
 };
 
 pub mod font_resource;

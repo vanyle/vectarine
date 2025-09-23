@@ -13,8 +13,16 @@ pub struct Texture {
 
 impl Texture {
     /// Create a new RGBA texture
-    pub fn new_rgba(gl: &Arc<glow::Context>, data: &[u8], width: u32, height: u32) -> Arc<Self> {
-        assert!(data.len() as u32 == width * height * 4);
+    pub fn new_rgba(
+        gl: &Arc<glow::Context>,
+        data: Option<&[u8]>,
+        width: u32,
+        height: u32,
+        filter: ImageAntialiasing,
+    ) -> Arc<Self> {
+        if let Some(data) = data {
+            assert!(data.len() as u32 == width * height * 4);
+        }
 
         unsafe {
             let glref = gl.as_ref();
@@ -27,17 +35,11 @@ impl Texture {
 
             glref.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
             glref.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+
             // set texture filtering parameters
-            glref.tex_parameter_i32(
-                glow::TEXTURE_2D,
-                glow::TEXTURE_MIN_FILTER,
-                glow::LINEAR_MIPMAP_LINEAR as i32,
-            );
-            glref.tex_parameter_i32(
-                glow::TEXTURE_2D,
-                glow::TEXTURE_MAG_FILTER,
-                glow::LINEAR as i32,
-            );
+            let gl_filter = filter.to_tex_parameter();
+            glref.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, gl_filter);
+            glref.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, gl_filter);
 
             glref.tex_image_2d(
                 glow::TEXTURE_2D,
@@ -48,10 +50,12 @@ impl Texture {
                 0,
                 glow::RGBA,
                 glow::UNSIGNED_BYTE,
-                PixelUnpackData::Slice(Some(data)),
+                PixelUnpackData::Slice(data),
             );
 
-            glref.generate_mipmap(glow::TEXTURE_2D);
+            if filter.has_mipmaps() {
+                glref.generate_mipmap(glow::TEXTURE_2D);
+            }
 
             Arc::new(Self {
                 tex,
@@ -90,7 +94,7 @@ impl Texture {
                 glow::TEXTURE_WRAP_T,
                 glow::CLAMP_TO_EDGE as i32,
             );
-            // set texture filtering parameters
+
             glref.tex_parameter_i32(
                 glow::TEXTURE_2D,
                 glow::TEXTURE_MIN_FILTER,
@@ -123,7 +127,7 @@ impl Texture {
         }
     }
 
-    pub fn bind(self: &Arc<Self>, slot: u32) {
+    pub fn bind(&self, slot: u32) {
         unsafe {
             let gl = self.gl.as_ref();
             gl.active_texture(glow::TEXTURE0 + slot);
@@ -131,16 +135,16 @@ impl Texture {
         }
     }
 
-    pub fn width(self: &Arc<Self>) -> u32 {
+    pub fn width(&self) -> u32 {
         self.width
     }
 
-    pub fn height(self: &Arc<Self>) -> u32 {
+    pub fn height(&self) -> u32 {
         self.height
     }
 
-    pub fn id(self: &Arc<Self>) -> u32 {
-        u32::from(self.tex.0)
+    pub fn id(&self) -> glow::NativeTexture {
+        self.tex
     }
 }
 
@@ -149,5 +153,24 @@ impl Drop for Texture {
         unsafe {
             self.gl.delete_texture(self.tex);
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImageAntialiasing {
+    Nearest,
+    Linear,
+    LinearWithMipmaps,
+}
+
+impl ImageAntialiasing {
+    pub fn to_tex_parameter(&self) -> i32 {
+        (match self {
+            ImageAntialiasing::Nearest => glow::NEAREST,
+            ImageAntialiasing::Linear | ImageAntialiasing::LinearWithMipmaps => glow::LINEAR,
+        }) as i32
+    }
+    pub fn has_mipmaps(&self) -> bool {
+        matches!(self, ImageAntialiasing::LinearWithMipmaps)
     }
 }

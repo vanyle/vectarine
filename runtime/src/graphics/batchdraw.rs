@@ -269,7 +269,7 @@ impl BatchDraw2d {
         ];
 
         let mut uniforms = Uniforms::new();
-        uniforms.add("tex", UniformValue::Sampler2D(texture.clone()));
+        uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
         self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, DefaultShader::Texture);
     }
 
@@ -331,7 +331,7 @@ impl BatchDraw2d {
         let mut uniforms = Uniforms::new();
         uniforms.add(
             "tex",
-            UniformValue::Sampler2D(font_resource.font_atlas.clone()),
+            UniformValue::Sampler2D(font_resource.font_atlas.id()),
         );
         uniforms.add("text_color", UniformValue::Vec4(color));
         self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, DefaultShader::Font);

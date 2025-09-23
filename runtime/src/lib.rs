@@ -10,7 +10,6 @@ use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 use glow::HasContext;
 use sdl2::{
     EventPump, Sdl, VideoSubsystem,
-    sys::SDL_WindowFlags,
     video::{SwapInterval, Window, gl_attr::GLAttr},
 };
 
