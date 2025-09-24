@@ -3,8 +3,8 @@ use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::{
-        glframebuffer, glprogram,
-        gltexture::{self},
+        glprogram,
+        gltypes::{DataLayout, GLTypes, UsageHint},
     },
 };
 
@@ -35,7 +35,7 @@ impl Resource for ShaderResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
         _lua: &Rc<mlua::Lua>,
-        _gl: Arc<glow::Context>,
+        gl: Arc<glow::Context>,
         _path: &Path,
         data: &[u8],
     ) -> Status {
@@ -43,7 +43,24 @@ impl Resource for ShaderResource {
             return Status::Error("File is empty or does not exist.".to_string());
         }
 
-        // TODO: we want to same format as shadertoy for data, so we need to do some parsing and glsl transformation.
+        let frag_src = match std::str::from_utf8(data) {
+            Ok(src) => src,
+            Err(e) => {
+                return Status::Error(format!("Shader is not valid UTF-8: {e}"));
+            }
+        };
+        let program = glprogram::GLProgram::from_source(&gl, BASE_VERTEX_SHADER, frag_src);
+        let mut program = match program {
+            Ok(p) => p,
+            Err(e) => {
+                return Status::Error(format!("Failed to compile shader: {e}"));
+            }
+        };
+        let mut layout = DataLayout::new();
+        layout.add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position));
+        layout.add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
+        program.vertex_layout = layout;
+        self.shader.replace(Some(Shader { shader: program }));
 
         Status::Loaded
     }
@@ -55,7 +72,7 @@ impl Resource for ShaderResource {
             ui.label("No texture loaded.");
             return;
         };
-        ui.label(format!("Layout: {}", shader.shader.uniform_layout));
+        ui.label(format!("Layout: {}", shader.shader.vertex_layout));
     }
 
     fn default() -> Self

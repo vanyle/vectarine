@@ -132,10 +132,36 @@ pub fn setup_graphics_api(
     add_fn_to_table(lua, &graphics_module, "drawCanvas", {
         let batch = batch.clone();
         move |_, (canvas, pos, size): (lua_canvas::RcFramebuffer, Vec2, Vec2)| {
-            let canvas = canvas.gl();
+            let framebuffer = canvas.gl();
+            let shader = canvas.current_shader();
             batch
                 .borrow_mut()
-                .draw_canvas(pos.x, pos.y, size.x, size.y, canvas);
+                .draw_canvas(pos.x, pos.y, size.x, size.y, framebuffer, shader);
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "drawCanvasPart", {
+        let batch = batch.clone();
+        move |_,
+              (canvas, p1, p2, p3, p4, src_pos, src_size): (
+            lua_canvas::RcFramebuffer,
+            Vec2,
+            Vec2,
+            Vec2,
+            Vec2,
+            Vec2,
+            Vec2,
+        )| {
+            let framebuffer = canvas.gl();
+            let shader = canvas.current_shader();
+            batch.borrow_mut().draw_canvas_part(
+                Quad { p1, p2, p3, p4 },
+                framebuffer,
+                src_pos,
+                src_size,
+                shader,
+            );
             Ok(())
         }
     });

@@ -177,7 +177,10 @@ impl Game {
         }
 
         {
-            self.lua_env.batch.borrow_mut().draw(true);
+            self.lua_env
+                .batch
+                .borrow_mut()
+                .draw(&self.lua_env.resources, true);
         }
     }
 

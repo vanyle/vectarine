@@ -29,7 +29,7 @@ end
 --- you provide. The output of the shader is what will be drawn. This can be used for post-processing effects, outlines, recoloring, etc.
 --- To disable the shader, call `setShader(nil)`.
 --- You can see examples of shaders on [ShaderToy](https://www.shadertoy.com/)
-function Canvas.setShader(self: Canvas, shader: Resources.ShaderResource): ()
+function Canvas.setShader(self: Canvas, shader: Resources.ShaderResource?): ()
     error("Not implemented")
 end
 

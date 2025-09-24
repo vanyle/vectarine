@@ -1,27 +1,46 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, ops::Deref, rc::Rc};
 
 use mlua::UserData;
 
 use crate::{
-    game_resource::{self},
+    game_resource::{self, ResourceId},
     graphics::{batchdraw, glframebuffer, gltexture::ImageAntialiasing},
     io,
     lua_env::add_fn_to_table,
 };
 
 #[derive(Clone)]
-pub struct RcFramebuffer(Rc<glframebuffer::Framebuffer>);
+pub struct RcFramebuffer {
+    buffer: Rc<glframebuffer::Framebuffer>,
+    shader: RefCell<Option<ResourceId>>,
+}
 
 impl RcFramebuffer {
     fn new(fb: glframebuffer::Framebuffer) -> Self {
-        RcFramebuffer(Rc::new(fb))
+        RcFramebuffer {
+            buffer: Rc::new(fb),
+            shader: RefCell::new(None),
+        }
     }
     pub fn gl(&self) -> &glframebuffer::Framebuffer {
-        self.0.as_ref()
+        self.buffer.deref()
+    }
+    pub fn current_shader(&self) -> Option<ResourceId> {
+        *self.shader.borrow()
     }
 }
 
-impl UserData for RcFramebuffer {}
+impl UserData for RcFramebuffer {
+    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method(
+            "setShader",
+            |_, canvas, (shader,): (Option<ResourceId>,)| {
+                canvas.shader.replace(shader);
+                Ok(())
+            },
+        );
+    }
+}
 
 impl mlua::FromLua for RcFramebuffer {
     fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
@@ -40,7 +59,7 @@ pub fn setup_canvas_api(
     lua: &Rc<mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     _env_state: &Rc<RefCell<io::IoEnvState>>,
-    _resources: &Rc<game_resource::ResourceManager>,
+    resources: &Rc<game_resource::ResourceManager>,
 ) -> mlua::Result<mlua::Table> {
     let canvas_module = lua.create_table()?;
 
@@ -59,11 +78,13 @@ pub fn setup_canvas_api(
 
     add_fn_to_table(lua, &canvas_module, "paint", {
         let batch = batch.clone();
+        let resources = resources.clone();
         move |_lua, (canvas, func): (RcFramebuffer, mlua::Function)| {
             let mut result = Ok(());
-            canvas.0.using(|| {
+            batch.borrow_mut().draw(&resources, true); // flush before changing framebuffer
+            canvas.gl().using(|| {
                 result = func.call::<()>(());
-                batch.borrow_mut().draw(true);
+                batch.borrow_mut().draw(&resources, true);
             });
             result
         }
