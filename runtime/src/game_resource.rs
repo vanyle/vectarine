@@ -227,11 +227,23 @@ impl ResourceManager {
     /// If the resource already exists at that path, do nothing.
     /// Return the id of the resource.
     pub fn schedule_load_resource<T: Resource + 'static>(&self, path: &Path) -> ResourceId {
+        self.schedule_load_resource_with_builder::<T, _>(path, T::default)
+    }
+
+    /// Create a new resource from a file and schedule it for loading.
+    /// If the resource already exists at that path, do nothing.
+    /// Return the id of the resource.
+    /// The builder function is called to create the unloaded resource instance.
+    pub fn schedule_load_resource_with_builder<T: Resource + 'static, F: FnOnce() -> T>(
+        &self,
+        path: &Path,
+        builder: F,
+    ) -> ResourceId {
         if let Some(id) = self.get_id_by_path(path) {
             return id;
         }
         let id = self.resources.borrow().len();
-        let resource = Rc::new(T::default());
+        let resource = Rc::new(builder());
         let name = path
             .file_stem()
             .unwrap_or_default()
@@ -271,22 +283,10 @@ impl ResourceManager {
             // We return a reference to the exports of the script which is dynamically updated when reloading.
             return (id, exports.clone());
         }
-        let id = self.resources.borrow().len();
-        let resource = Rc::new(ScriptResource::make_with_target_table(target_table.clone()));
-        let name = path
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string();
-        self.resources.borrow_mut().push(Rc::new(ResourceHolder {
-            status: RefCell::new(Status::Unloaded),
-            path: path.to_path_buf(),
-            name,
-            dependencies: RefCell::new(HashSet::new()),
-            dependent: RefCell::new(HashSet::new()),
-            resource,
-        }));
-        (ResourceId(id), target_table)
+        let rid = self.schedule_load_resource_with_builder(path, || {
+            ScriptResource::make_with_target_table(target_table.clone())
+        });
+        (rid, target_table)
     }
 
     /// Create a new resource from a file and start loading it immediately.
