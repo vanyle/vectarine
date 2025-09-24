@@ -25,24 +25,16 @@ impl Framebuffer {
             let id = gl.create_framebuffer().expect("Cannot create framebuffer");
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(id));
 
-            gl.framebuffer_texture_2d(
-                glow::FRAMEBUFFER,
-                glow::COLOR_ATTACHMENT0,
-                glow::TEXTURE_2D,
-                None,
-                0,
-            );
-
             let color_tex = gl.create_texture().expect("Cannot create texture");
             gl.bind_texture(glow::TEXTURE_2D, Some(color_tex));
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
-                glow::RGBA as i32,
+                glow::RGB as i32,
                 width as i32,
                 height as i32,
                 0,
-                glow::RGBA,
+                glow::RGB,
                 glow::UNSIGNED_BYTE,
                 glow::PixelUnpackData::Slice(None),
             );
@@ -58,10 +50,9 @@ impl Framebuffer {
                 0,
             );
 
-            // Depth and stencil buffer attachments
+            // Depth+Stencil attachment
             let depth_stencil_tex = gl.create_texture().expect("Cannot create texture");
             gl.bind_texture(glow::TEXTURE_2D, Some(depth_stencil_tex));
-
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
@@ -69,21 +60,28 @@ impl Framebuffer {
                 width as i32,
                 height as i32,
                 0,
-                glow::DEPTH_STENCIL,
-                glow::UNSIGNED_INT_24_8,
+                glow::DEPTH_COMPONENT,
+                glow::UNSIGNED_INT,
                 glow::PixelUnpackData::Slice(None),
             );
-
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, gl_filter);
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, gl_filter);
             gl.framebuffer_texture_2d(
                 glow::FRAMEBUFFER,
-                glow::DEPTH_STENCIL_ATTACHMENT,
+                glow::DEPTH_ATTACHMENT,
                 glow::TEXTURE_2D,
                 Some(depth_stencil_tex),
                 0,
             );
 
-            let status = gl.check_framebuffer_status(id.0.get());
+            let status = gl.check_framebuffer_status(glow::FRAMEBUFFER);
             if status != glow::FRAMEBUFFER_COMPLETE {
+                if status == glow::FRAMEBUFFER_INCOMPLETE_ATTACHMENT {
+                    panic!("Framebuffer is not complete: incomplete attachment");
+                }
+                if status == glow::FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT {
+                    panic!("Framebuffer is not complete: missing attachment");
+                }
                 panic!("Framebuffer is not complete: {status}");
             }
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
@@ -133,13 +131,6 @@ impl Framebuffer {
             let gl = self.gl.as_ref();
             gl.active_texture(glow::TEXTURE0 + slot);
             gl.bind_texture(glow::TEXTURE_2D, Some(self.color_tex));
-        }
-    }
-    pub fn bind_depth_stencil_texture(&self, slot: u32) {
-        unsafe {
-            let gl = self.gl.as_ref();
-            gl.active_texture(glow::TEXTURE0 + slot);
-            gl.bind_texture(glow::TEXTURE_2D, Some(self.depth_stencil_tex));
         }
     }
 

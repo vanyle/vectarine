@@ -259,14 +259,7 @@ impl BatchDraw2d {
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, DefaultShader::Texture);
     }
 
-    pub fn draw_canvas(
-        &mut self,
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-        canvas: &Arc<Framebuffer>,
-    ) {
+    pub fn draw_canvas(&mut self, x: f32, y: f32, width: f32, height: f32, canvas: &Framebuffer) {
         self.draw_canvas_part(
             make_rect(x, y, width, height),
             canvas,
@@ -277,7 +270,7 @@ impl BatchDraw2d {
 
     #[rustfmt::skip]
     pub fn draw_canvas_part(
-        &mut self, pos_size: Quad, canvas: &Arc<Framebuffer>, uv_pos: Vec2, uv_size: Vec2,
+        &mut self, pos_size: Quad, canvas: &Framebuffer, uv_pos: Vec2, uv_size: Vec2,
     ) {
         let uv_x1 = uv_pos.x;
         let uv_y1 = uv_pos.y;

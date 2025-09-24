@@ -6,7 +6,7 @@ use crate::{
     game_resource::{self, ResourceId, font_resource::FontResource, image_resource::ImageResource},
     graphics::{batchdraw, shape::Quad},
     io,
-    lua_env::{add_fn_to_table, lua_vec2::Vec2},
+    lua_env::{add_fn_to_table, lua_canvas, lua_vec2::Vec2},
 };
 
 pub fn setup_graphics_api(
@@ -125,6 +125,17 @@ pub fn setup_graphics_api(
             batch
                 .borrow_mut()
                 .draw_image_part(quad, tex, src_pos, src_size);
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "drawCanvas", {
+        let batch = batch.clone();
+        move |_, (canvas, pos, size): (lua_canvas::RcFramebuffer, Vec2, Vec2)| {
+            let canvas = canvas.gl();
+            batch
+                .borrow_mut()
+                .draw_canvas(pos.x, pos.y, size.x, size.y, canvas);
             Ok(())
         }
     });
