@@ -2,6 +2,7 @@ use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
 
+pub mod lua_canvas;
 pub mod lua_event;
 pub mod lua_graphics;
 pub mod lua_io;
@@ -10,17 +11,15 @@ pub mod lua_vec2;
 
 use crate::console::{ConsoleMessage, Verbosity};
 use crate::game_resource::ResourceManager;
-use crate::graphics::draw_instruction;
+use crate::graphics::batchdraw::BatchDraw2d;
 use crate::io::IoEnvState;
 
-#[derive(Debug, Clone)]
 pub struct LuaEnvironment {
     pub lua: Rc<mlua::Lua>,
-    pub draw_instructions: Rc<RefCell<VecDeque<draw_instruction::DrawInstruction>>>,
     pub env_state: Rc<RefCell<IoEnvState>>,
 
-    // Maybe add an Rc? No Refcell needed, that's for sure.
-    // DefaultEvents is just a few u32 in a coat, so clone is super cheap.
+    pub batch: Rc<RefCell<BatchDraw2d>>,
+
     pub default_events: lua_event::DefaultEvents,
 
     pub frame_messages: Rc<RefCell<Vec<ConsoleMessage>>>,
@@ -30,7 +29,8 @@ pub struct LuaEnvironment {
 }
 
 impl LuaEnvironment {
-    pub fn new() -> Self {
+    pub fn new(batch: BatchDraw2d) -> Self {
+        let batch = Rc::new(RefCell::new(batch));
         let lua_options = mlua::LuaOptions::default();
         let lua_libs = mlua::StdLib::MATH | mlua::StdLib::TABLE | mlua::StdLib::STRING;
 
@@ -43,7 +43,6 @@ impl LuaEnvironment {
         );
         let _ = lua.sandbox(false);
 
-        let draw_instructions = Rc::new(RefCell::new(VecDeque::new()));
         let resources = Rc::new(ResourceManager::default());
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
         let frame_messages = Rc::new(RefCell::new(Vec::new()));
@@ -61,9 +60,13 @@ impl LuaEnvironment {
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
 
         let graphics_module =
-            lua_graphics::setup_graphics_api(&lua, &draw_instructions, &env_state, &resources)
-                .unwrap();
+            lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/graphics", graphics_module)
+            .unwrap();
+
+        let canvas_module =
+            lua_canvas::setup_canvas_api(&lua, &batch, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/canvas", canvas_module)
             .unwrap();
 
         let io_module = lua_io::setup_io_api(&lua, &env_state, &messages, &frame_messages).unwrap();
@@ -98,8 +101,8 @@ impl LuaEnvironment {
 
         LuaEnvironment {
             lua,
-            draw_instructions,
             env_state,
+            batch,
             frame_messages,
             default_events,
             messages,
@@ -113,12 +116,6 @@ impl LuaEnvironment {
 
     pub fn print(&self, msg: &str, verbosity: Verbosity) {
         print(&self.lua, verbosity, msg);
-    }
-}
-
-impl Default for LuaEnvironment {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

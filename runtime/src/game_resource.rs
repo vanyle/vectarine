@@ -10,14 +10,13 @@ use mlua::IntoLua;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game_resource::script_resource::ScriptResource,
-    io::file,
-    lua_env::{self, lua_event::EventType},
+    game_resource::script_resource::ScriptResource, io::file, lua_env::lua_event::EventType,
 };
 
 pub mod font_resource;
 pub mod image_resource;
 pub mod script_resource;
+pub mod shader_resource;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Status {
@@ -124,7 +123,7 @@ impl ResourceHolder {
                 let resulting_status = self.resource.clone().load_from_data(
                     assigned_id,
                     &dr,
-                    lua.clone(),
+                    &lua,
                     gl.clone(),
                     &self.path,
                     &data,
@@ -434,7 +433,7 @@ pub trait Resource: ResourceToAny {
         self: Rc<Self>,
         assigned_id: ResourceId,
         dependency_reporter: &DependencyReporter,
-        lua: Rc<mlua::Lua>,
+        lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         path: &Path,
         data: &[u8],

@@ -1,10 +1,7 @@
 # TODO
 
-- [ ] Canvas API 'framebuffer'
-  - [ ] Write the luau functions for the API
-  - [ ] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)
-  - [ ] Connect the two
 - [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
+- [ ] Add more room in the debug ui to show loading errors
 - [ ] Fix image orientation issue
 - [ ] Add debugger tab to inspect values of Lua Constants
 - [ ] Add a unit API with proper coordinate management instead of V2.
@@ -44,9 +41,25 @@
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
+- [ ] The 3D API!!
+  - [ ] See how Three.js does things.
+  - [ ] Camera
+  - [ ] Scene??
+  - [ ] Geometries + Materials = Mesh
+  - [ ] Lights and shadows (set a max number of lights to 20 in the API)
+  - [ ] Drawing a depth buffer
 
 # Done
 
+- [x] Shader API
+  - [x] Write the luau functions for the API
+  - [x] Add a shader resource
+  - [x] Set shader to canvas
+- [x] Canvas API 'framebuffer'
+  - [x] Write the luau functions for the API
+  - [x] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)
+  - [x] Find a way to pass the canvas object to lua?
+  - [x] Check for memory leaks when reloading.
 - [x] Allow 'always on top' in the editor using a menu checkbox.
 - [x] Always enable vsync
 - [x] Implement the require typing technique

@@ -55,4 +55,16 @@ function module.loadFont(path: string): FontResource
     error("Not implemented")
 end
 
+---MARK: Shader
+
+export type ShaderResource = {type: "shader"} & ResourceId
+
+--- Load a shader from a path inside assets
+--- @param path string
+--- @return ShaderResource
+--- @nodiscard
+function module.loadShader(path: string): ShaderResource
+    error("Not implemented")
+end
+
 return module

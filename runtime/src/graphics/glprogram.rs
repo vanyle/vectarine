@@ -129,7 +129,8 @@ impl GLProgram {
                         gl.uniform_1_i32(Some(&location), *v as i32);
                     }
                     UniformValue::Sampler2D(tex) => {
-                        tex.bind(0);
+                        gl.active_texture(glow::TEXTURE0); // We assume the texture is bound to slot 0
+                        gl.bind_texture(glow::TEXTURE_2D, Some(*tex));
                     }
                     UniformValue::SamplerCube(tex_id) => {
                         todo!("Implement cubemap texture binding. Tried to bind {tex_id}");

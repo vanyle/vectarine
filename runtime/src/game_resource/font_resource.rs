@@ -33,7 +33,7 @@ impl Resource for FontResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: Rc<mlua::Lua>,
+        _lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: &[u8],
@@ -119,7 +119,18 @@ impl Resource for FontResource {
     }
 
     fn draw_debug_gui(&self, ui: &mut egui::Ui) {
-        ui.label("TODO: FontResource debug GUI");
+        let font_data = self.font_rendering.borrow();
+        let font_data = font_data.as_ref();
+        let Some(font_data) = font_data else {
+            ui.label("Font not loaded");
+            return;
+        };
+        ui.label(format!(
+            "Underlying texture atlas: {:?}",
+            font_data.font_atlas.id()
+        ));
+
+        ui.label(format!("Font size: {:?}", font_data.font_size));
     }
 
     fn get_type_name(&self) -> &'static str {

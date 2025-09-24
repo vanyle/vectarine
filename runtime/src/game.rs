@@ -5,32 +5,22 @@ use sdl2::{EventPump, video::FullscreenType};
 
 use crate::{
     console::Verbosity,
-    game_resource::{
-        Resource, ResourceId, Status, font_resource::FontResource, image_resource::ImageResource,
-    },
-    graphics::{batchdraw::BatchDraw2d, draw_instruction},
+    game_resource::{Resource, ResourceId, Status},
     io::process_events,
     lua_env::LuaEnvironment,
 };
 
 pub struct Game {
     pub gl: Arc<glow::Context>,
-    pub batch: BatchDraw2d,
     pub event_pump: EventPump,
     pub lua_env: LuaEnvironment,
     pub was_load_called: bool,
 }
 
 impl Game {
-    pub fn new(
-        gl: &Arc<glow::Context>,
-        batch: BatchDraw2d,
-        event_pump: EventPump,
-        lua_env: LuaEnvironment,
-    ) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, event_pump: EventPump, lua_env: LuaEnvironment) -> Self {
         Game {
             gl: gl.clone(),
-            batch,
             event_pump,
             lua_env,
             was_load_called: false,
@@ -123,7 +113,11 @@ impl Game {
             // This works in the editor, but not the runtime.
             // On the web, this is different, the aspect ratio needs to be squared??
             //self.batch.set_aspect_ratio(aspect_ratio * aspect_ratio);
-            self.batch.set_aspect_ratio(aspect_ratio);
+
+            self.lua_env
+                .batch
+                .borrow_mut()
+                .set_aspect_ratio(aspect_ratio);
 
             framebuffer_width = width;
             framebuffer_height = height;
@@ -183,99 +177,11 @@ impl Game {
         }
 
         {
-            let mut instructions = self.lua_env.draw_instructions.borrow_mut();
-            while let Some(instruction) = instructions.pop_front() {
-                match instruction {
-                    draw_instruction::DrawInstruction::Rectangle { pos, size, color } => {
-                        self.batch.draw_rect(pos.x, pos.y, size.x, size.y, color);
-                    }
-                    draw_instruction::DrawInstruction::Polygon { points, color } => {
-                        self.batch.draw_polygon(points, color);
-                    }
-                    draw_instruction::DrawInstruction::Circle { pos, radius, color } => {
-                        self.batch.draw_circle(pos.x, pos.y, radius, color);
-                    }
-                    draw_instruction::DrawInstruction::Image { pos, size, id } => {
-                        let resource = self.get_resource_or_print_error::<ImageResource>(id);
-                        let Some(image_resource) = resource else {
-                            continue;
-                        };
-                        let texture = image_resource.texture.borrow();
-                        let texture = texture.as_ref();
-                        let Some(texture) = texture else {
-                            debug_assert!(
-                                false,
-                                "Resource said it was loaded but the texture is None"
-                            );
-                            continue; // texture is not loaded. This probably breaks an invariant.
-                        };
-                        self.batch.draw_image(pos.x, pos.y, size.x, size.y, texture);
-                    }
-                    draw_instruction::DrawInstruction::ImagePart {
-                        p1,
-                        p2,
-                        p3,
-                        p4,
-                        id,
-                        uv_pos,
-                        uv_size,
-                    } => {
-                        let resource = self.get_resource_or_print_error::<ImageResource>(id);
-                        let Some(image_resource) = resource else {
-                            continue;
-                        };
-                        let texture = image_resource.texture.borrow();
-                        let texture = texture.as_ref();
-                        let Some(texture) = texture else {
-                            debug_assert!(
-                                false,
-                                "Resource said it was loaded but the texture is None"
-                            );
-                            continue;
-                        };
-                        self.batch
-                            .draw_image_part(p1, p2, p3, p4, texture, uv_pos, uv_size);
-                    }
-                    draw_instruction::DrawInstruction::Text {
-                        pos,
-                        text,
-                        color,
-                        font_size,
-                        font_id,
-                    } => {
-                        let resources = &self.lua_env.resources;
-                        let resource = resources.get_by_id::<FontResource>(font_id);
-                        let res = match resource {
-                            Ok(res) => res,
-                            Err(cause) => {
-                                self.print_to_editor_console(&format!(
-                                    "Warning: Failed to draw text with '{font_id}': {cause}",
-                                ));
-                                continue;
-                            }
-                        };
-
-                        let font_rendering_data = res.font_rendering.borrow();
-                        let font_rendering_data = font_rendering_data.as_ref();
-                        let Some(font_rendering_data) = font_rendering_data else {
-                            debug_assert!(
-                                false,
-                                "Resource said it was loaded but the texture is None"
-                            );
-                            continue; // texture is not loaded. This probably breaks an invariant.
-                        };
-                        let (x, y) = (pos.x, pos.y);
-                        self.batch
-                            .draw_text(x, y, &text, color, font_size, font_rendering_data);
-                    }
-                    draw_instruction::DrawInstruction::Clear { color } => {
-                        self.batch.clear(color[0], color[1], color[2], color[3]);
-                    }
-                }
-            }
+            self.lua_env
+                .batch
+                .borrow_mut()
+                .draw(&self.lua_env.resources, true);
         }
-
-        self.batch.draw(true);
     }
 
     /// Calls reload on all unloaded resource inside the manager.

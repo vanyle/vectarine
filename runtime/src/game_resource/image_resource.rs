@@ -4,7 +4,7 @@ use image::metadata::Orientation;
 
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
-    graphics::gltexture::{self, Texture},
+    graphics::gltexture::{self, ImageAntialiasing, Texture},
 };
 
 pub struct ImageResource {
@@ -19,7 +19,7 @@ impl Resource for ImageResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: Rc<mlua::Lua>,
+        _lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: &[u8],
@@ -36,9 +36,10 @@ impl Resource for ImageResource {
 
         self.texture.replace(Some(Texture::new_rgba(
             &gl,
-            image.to_rgba8().as_raw().as_slice(),
+            Some(image.to_rgba8().as_raw().as_slice()),
             image.width(),
             image.height(),
+            ImageAntialiasing::Linear,
         )));
         Status::Loaded
     }
@@ -52,7 +53,7 @@ impl Resource for ImageResource {
         };
         ui.label(format!("Width: {}", tex.width()));
         ui.label(format!("Height: {}", tex.height()));
-        ui.label(format!("OpenGL ID: {}", tex.id()));
+        ui.label(format!("OpenGL ID: {}", tex.id().0));
     }
 
     fn default() -> Self

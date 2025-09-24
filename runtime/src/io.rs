@@ -25,6 +25,8 @@ pub struct IoEnvState {
     pub mouse_state: MouseState,
     pub keyboard_state: HashMap<Keycode, bool>,
 
+    pub start_time: std::time::Instant,
+
     // Outputs
     pub is_window_resizeable: bool,
     pub fullscreen_state_request: Option<bool>,
@@ -42,6 +44,9 @@ impl Default for IoEnvState {
             px_ratio_y: 1.0,
             mouse_state: MouseState::default(),
             keyboard_state: HashMap::new(),
+
+            start_time: std::time::Instant::now(),
+
             is_window_resizeable: false,
             window_target_size: None,
             fullscreen_state_request: None,

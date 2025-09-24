@@ -3,7 +3,7 @@ use std::{path::Path, rc::Rc};
 use crate::{
     game_resource::{
         ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
-        script_resource::ScriptResource,
+        shader_resource,
     },
     lua_env::add_fn_to_table,
 };
@@ -29,6 +29,15 @@ pub fn setup_resource_api(
         let resources = resources.clone();
         move |_, path: String| {
             let id = resources.schedule_load_resource::<FontResource>(Path::new(&path));
+            Ok(id)
+        }
+    });
+
+    add_fn_to_table(lua, &resources_module, "loadShader", {
+        let resources = resources.clone();
+        move |_, path: String| {
+            let id = resources
+                .schedule_load_resource::<shader_resource::ShaderResource>(Path::new(&path));
             Ok(id)
         }
     });

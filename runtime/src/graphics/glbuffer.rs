@@ -57,14 +57,14 @@ impl GpuVertexData {
         vertex_data: &[T],
         index_data: &[u32],
     ) -> Result<(), String> {
-        self.set_data_with_usage(vertex_data, index_data, BufferUsageHint::StaticDraw)
+        self.set_data_with_usage(vertex_data, index_data, &BufferUsageHint::StaticDraw)
     }
 
     pub fn set_data_with_usage<T: Copy>(
         &mut self,
         vertex_data: &[T],
         index_data: &[u32],
-        usage: BufferUsageHint,
+        usage: &BufferUsageHint,
     ) -> Result<(), String> {
         if self.layout.fields.is_empty() {
             return Err("You must apply a layout before setting data!".to_string());
@@ -256,13 +256,13 @@ impl SharedGPUCPUBuffer {
     }
 
     pub fn send_to_gpu(&mut self, gl: &Arc<glow::Context>) -> &GpuVertexData {
-        self.send_to_gpu_with_usage(gl, BufferUsageHint::StaticDraw)
+        self.send_to_gpu_with_usage(gl, &BufferUsageHint::StaticDraw)
     }
 
     pub fn send_to_gpu_with_usage(
         &mut self,
         gl: &Arc<glow::Context>,
-        usage_hint: BufferUsageHint,
+        usage_hint: &BufferUsageHint,
     ) -> &GpuVertexData {
         if self.gpu_up_to_date {
             return self.gpu_buffer.as_ref().unwrap();

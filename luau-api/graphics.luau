@@ -1,3 +1,4 @@
+local Canvas = require('@vectarine/canvas')
 local Res = require('@vectarine/resources')
 local Vec = require('@vectarine/vec')
 
@@ -38,6 +39,17 @@ function module.drawText(text: string, font: Res.FontResource, pos: Vec.Vec2, si
 --- height will always be less than size.
 --- bearingY will always be less than height. This is the distance from the top of the text to the baseline.
 function module.measureText(text: string, font: Res.FontResource, size: number): {width: number, height: number, bearingY: number}
+    error("Not implemented")
+end
+
+--- Draws a canvas at given position and size
+function module.drawCanvas(canvas: Canvas.Canvas, pos: Vec.Vec2, size: Vec.Vec2): ()
+    error("Not implemented")
+end
+
+--- Draws a part canvas stretched to fit the quadrilateral delimited by the 4 destination points
+--- This is the same as `drawImagePart` but for canvases
+function module.drawCanvasPart(canvas: Canvas.Canvas, dest_p1: Vec.Vec2, dest_p2: Vec.Vec2, dest_p3: Vec.Vec2, dest_p4: Vec.Vec2, src_pos: Vec.Vec2, src_size: Vec.Vec2): ()
     error("Not implemented")
 end
 

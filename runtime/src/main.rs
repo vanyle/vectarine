@@ -16,7 +16,9 @@ pub fn main() {
         event_pump,
         gl,
     } = init_sdl();
-    let lua_env = lua_env::LuaEnvironment::new();
+
+    let batch = BatchDraw2d::new(&gl).unwrap();
+    let lua_env = lua_env::LuaEnvironment::new(batch);
 
     let path = Path::new("scripts/game.luau");
     lua_env.resources.load_resource::<ScriptResource>(
@@ -26,8 +28,7 @@ pub fn main() {
         lua_env.default_events.resource_loaded_event,
     );
 
-    let batch = BatchDraw2d::new(&gl).unwrap();
-    let mut game = Game::new(&gl, batch, event_pump, lua_env.clone());
+    let mut game = Game::new(&gl, event_pump, lua_env);
 
     game.load(&video, &window);
 
