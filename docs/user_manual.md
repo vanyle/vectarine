@@ -65,8 +65,10 @@ Drawing functions are inside the `graphics` module. Most function take a `V2` fr
 The first argument to `V2` (called x) is the horizontal position, the second argument (called y) is the vertical position.
 
 - `(0,0)` is the center of the screen.
+- `(-1,-1)` is the bottom left of the screen.
 - `(-1,1)` is the top left of the screen.
 - `(1,-1)` is the bottom right of the screen.
+- `(1,1)` is the top right of the screen.
 
 The screen is always 2 units wide and 2 units tall, regardless of the window size or aspect ratio.
 
