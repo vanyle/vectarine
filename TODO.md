@@ -1,10 +1,7 @@
 # TODO
 
-- [ ] Shader API
-  - [ ] Write the luau functions for the API
-  - [ ] Add a shader resource
-  - [ ] Set shader to canvas
 - [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
+- [ ] Add more room in the debug ui to show loading errors
 - [ ] Fix image orientation issue
 - [ ] Add debugger tab to inspect values of Lua Constants
 - [ ] Add a unit API with proper coordinate management instead of V2.
@@ -54,6 +51,10 @@
 
 # Done
 
+- [x] Shader API
+  - [x] Write the luau functions for the API
+  - [x] Add a shader resource
+  - [x] Set shader to canvas
 - [x] Canvas API 'framebuffer'
   - [x] Write the luau functions for the API
   - [x] Write a framebuffer in glframebuffer (inspiration from glium / vectarine 1)

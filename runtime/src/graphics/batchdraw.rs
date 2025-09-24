@@ -1,11 +1,9 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use crate::{
     game_resource::{
-        ResourceId, ResourceManager, font_resource::FontRenderingData,
-        shader_resource::ShaderResource,
-    },
-    graphics::{
+        font_resource::FontRenderingData, shader_resource::ShaderResource, ResourceId, ResourceManager
+    }, graphics::{
         glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
         gldraw::DrawingTarget,
         glframebuffer::Framebuffer,
@@ -18,8 +16,7 @@ use crate::{
             FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
         },
         shape::Quad,
-    },
-    lua_env::lua_vec2::Vec2,
+    }, io::IoEnvState, lua_env::lua_vec2::Vec2
 };
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -277,7 +274,9 @@ impl BatchDraw2d {
         ];
 
         let mut uniforms = Uniforms::new();
+        
         uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
+
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, BatchShader::Texture);
     }
 
@@ -289,6 +288,7 @@ impl BatchDraw2d {
         height: f32,
         canvas: &Framebuffer,
         custom_shader: Option<ResourceId>,
+        env: &IoEnvState,
     ) {
         self.draw_canvas_part(
             make_rect(x, y, width, height),
@@ -296,13 +296,14 @@ impl BatchDraw2d {
             Vec2::new(0.0, 0.0),
             Vec2::new(1.0, 1.0),
             custom_shader,
+            env,
         );
     }
 
     #[rustfmt::skip]
     pub fn draw_canvas_part(
         &mut self, pos_size: Quad, canvas: &Framebuffer, uv_pos: Vec2, uv_size: Vec2,
-        custom_shader: Option<ResourceId>
+        custom_shader: Option<ResourceId>, env: &IoEnvState
     ) {
         let uv_x1 = uv_pos.x;
         let uv_y1 = uv_pos.y;
@@ -321,6 +322,8 @@ impl BatchDraw2d {
         let mut uniforms = Uniforms::new();
         // Add uniforms to replicate shader toy style
         uniforms.add("tex", UniformValue::Sampler2D(canvas.color_texture_id()));
+        let elapsed = Instant::now() - env.start_time;
+        uniforms.add("iTime", UniformValue::Float(elapsed.as_secs_f32()));
 
         let shader_to_use = if let Some(id) = custom_shader {
             BatchShader::Custom(id)
