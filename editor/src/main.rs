@@ -64,6 +64,9 @@ fn gui_main() {
     let mut game = Game::new(&gl, event_pump, lua_env);
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
     editor_state.load_config();
+    window
+        .borrow_mut()
+        .set_always_on_top(editor_state.config.borrow().is_always_on_top);
 
     window.borrow_mut().set_resizable(true);
 

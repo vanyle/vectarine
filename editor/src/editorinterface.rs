@@ -20,9 +20,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct EditorConfig {
-    is_console_shown: bool,
-    is_resources_window_shown: bool,
-    debug_resource_shown: Option<ResourceId>,
+    pub is_console_shown: bool,
+    pub is_resources_window_shown: bool,
+    pub is_always_on_top: bool,
+    pub debug_resource_shown: Option<ResourceId>,
 }
 
 pub struct EditorState {
@@ -99,9 +100,6 @@ impl EditorState {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Vectarine Editor").size(18.0));
                 egui::MenuBar::new().ui(ui, |ui| {
-                    static ALWAYS_ON_TOP: LazyLock<Mutex<bool>> =
-                        LazyLock::new(|| Mutex::new(false));
-
                     ui.menu_button("File", |ui| {
                         if ui.button("Toggle console (Ctrl+Shift+I)").clicked() {
                             let mut config = self.config.borrow_mut();
@@ -114,12 +112,16 @@ impl EditorState {
                         if ui.button("Save config").clicked() {
                             self.save_config();
                         }
-                        if ui
-                            .checkbox(&mut ALWAYS_ON_TOP.lock().unwrap(), "Always on top")
-                            .clicked()
                         {
-                            let always_on_top = *ALWAYS_ON_TOP.lock().unwrap();
-                            self.window.borrow_mut().set_always_on_top(always_on_top);
+                            let mut config = self.config.borrow_mut();
+                            if ui
+                                .checkbox(&mut config.is_always_on_top, "Always on top")
+                                .clicked()
+                            {
+                                self.window
+                                    .borrow_mut()
+                                    .set_always_on_top(config.is_always_on_top);
+                            }
                         }
 
                         if ui.button("Exit (Alt+F4)").clicked() {
