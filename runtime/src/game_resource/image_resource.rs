@@ -9,6 +9,7 @@ use crate::{
 
 pub struct ImageResource {
     pub texture: RefCell<Option<Arc<gltexture::Texture>>>,
+    pub antialiasing: Option<ImageAntialiasing>,
 }
 
 impl Resource for ImageResource {
@@ -39,7 +40,7 @@ impl Resource for ImageResource {
             Some(image.to_rgba8().as_raw().as_slice()),
             image.width(),
             image.height(),
-            ImageAntialiasing::Linear,
+            self.antialiasing.unwrap_or(ImageAntialiasing::Linear),
         )));
         Status::Loaded
     }
@@ -53,6 +54,7 @@ impl Resource for ImageResource {
         };
         ui.label(format!("Width: {}", tex.width()));
         ui.label(format!("Height: {}", tex.height()));
+        ui.label(format!("Antialiasing: {:?}", self.antialiasing));
         ui.label(format!("OpenGL ID: {}", tex.id().0));
     }
 
@@ -62,6 +64,7 @@ impl Resource for ImageResource {
     {
         Self {
             texture: RefCell::new(None),
+            antialiasing: None,
         }
     }
 }

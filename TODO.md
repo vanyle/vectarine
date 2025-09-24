@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] From lua, enable/disable gl_linear/gl_nearest when drawing images
 - [ ] Add more room in the debug ui to show loading errors
 - [ ] Fix image orientation issue
 - [ ] Add debugger tab to inspect values of Lua Constants
@@ -33,6 +32,7 @@
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
 - [ ] Make a game with it !!!
+
 - [ ] Audio API
 - [ ] Event system, part II
   - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
@@ -51,6 +51,7 @@
 
 # Done
 
+- [x] From lua, enable/disable gl_linear/gl_nearest when drawing images
 - [x] Shader API
   - [x] Write the luau functions for the API
   - [x] Add a shader resource

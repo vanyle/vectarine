@@ -37,9 +37,10 @@ end
 export type ImageResource = {type: "image"} & ResourceId
 
 --- Load an image from a path inside assets
+--- If antialiasing is true, the image will be drawn with linear filtering, otherwise with nearest filtering.
 --- @param path string
 --- @return ImageResource
-function module.loadImage(path: string): ImageResource
+function module.loadImage(path: string, antialiasing: boolean?): ImageResource
     error("Not implemented")
 end
 

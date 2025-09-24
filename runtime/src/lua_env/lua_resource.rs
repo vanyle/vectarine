@@ -1,10 +1,11 @@
-use std::{path::Path, rc::Rc};
+use std::{cell::RefCell, path::Path, rc::Rc};
 
 use crate::{
     game_resource::{
         ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
         shader_resource,
     },
+    graphics::gltexture::ImageAntialiasing,
     lua_env::add_fn_to_table,
 };
 
@@ -19,8 +20,20 @@ pub fn setup_resource_api(
 
     add_fn_to_table(lua, &resources_module, "loadImage", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<ImageResource>(Path::new(&path));
+        move |_, (path, antialiasing): (String, Option<bool>)| {
+            let id = resources.schedule_load_resource_with_builder::<ImageResource, _>(
+                Path::new(&path),
+                || ImageResource {
+                    texture: RefCell::new(None),
+                    antialiasing: antialiasing.map(|is_antialiasing| {
+                        if is_antialiasing {
+                            ImageAntialiasing::Linear
+                        } else {
+                            ImageAntialiasing::Nearest
+                        }
+                    }),
+                },
+            );
             Ok(id)
         }
     });
