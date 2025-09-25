@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Add more room in the debug ui to show loading errors
 - [ ] Add debugger tab to inspect values of Lua Constants
 - [ ] Add warning when calling some methods (like screenSize) outside of Load.
 - [ ] Add a unit API with proper coordinate management instead of V2.
@@ -34,6 +33,7 @@
 - [ ] Make a game with it !!!
 
 - [ ] Audio API
+- [ ] Timer event?
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
@@ -57,6 +57,7 @@
 
 # Done
 
+- [x] Add more room in the debug ui to show loading errors
 - [x] Fix image orientation issue
 - [x] From lua, enable/disable gl_linear/gl_nearest when drawing images
 - [x] Shader API

@@ -87,25 +87,25 @@ impl EditorState {
         // Get the egui context and begin drawing the frame
         let ctx = platform.context();
 
-        if ctx.input_mut(|i| {
-            i.consume_key(
-                egui::Modifiers::COMMAND | egui::Modifiers::NONE,
-                egui::Key::I,
-            )
-        }) {
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
             let mut config = self.config.borrow_mut();
             config.is_console_shown = !config.is_console_shown;
         }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num2)) {
+            let mut config = self.config.borrow_mut();
+            config.is_resources_window_shown = !config.is_resources_window_shown;
+        }
+
         egui::TopBottomPanel::top("toppanel").show(&ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Vectarine Editor").size(18.0));
                 egui::MenuBar::new().ui(ui, |ui| {
                     ui.menu_button("File", |ui| {
-                        if ui.button("Toggle console (Ctrl+Shift+I)").clicked() {
+                        if ui.button("Console (Ctrl+1)").clicked() {
                             let mut config = self.config.borrow_mut();
                             config.is_console_shown = !config.is_console_shown;
                         }
-                        if ui.button("Resources").clicked() {
+                        if ui.button("Resources (Ctrl+2)").clicked() {
                             let mut config = self.config.borrow_mut();
                             config.is_resources_window_shown = !config.is_resources_window_shown;
                         }
@@ -123,8 +123,12 @@ impl EditorState {
                                     .set_always_on_top(config.is_always_on_top);
                             }
                         }
-
-                        if ui.button("Exit (Alt+F4)").clicked() {
+                        let exit_text = if cfg!(target_os = "macos") {
+                            "Exit (Cmd+Q)"
+                        } else {
+                            "Exit (Alt+F4)"
+                        };
+                        if ui.button(exit_text).clicked() {
                             std::process::exit(0);
                         }
                     });
@@ -140,159 +144,202 @@ impl EditorState {
 
         if self.config.borrow().is_console_shown {
             egui::Window::new("Console")
-                .max_height(200.0)
-                .resizable([true, false])
-                .vscroll(false)
+                .default_height(200.0)
                 .show(&ctx, |ui| {
-                    ui.horizontal(|ui: &mut egui::Ui| {
-                        ui.checkbox(&mut ARE_LOGS_INFO_SHOWN.lock().unwrap(), "Infos");
-                        ui.checkbox(&mut ARE_LOGS_WARN_SHOWN.lock().unwrap(), "Warnings");
-                        ui.checkbox(&mut ARE_LOGS_ERROR_SHOWN.lock().unwrap(), "Errors");
-                    });
-                    egui::ScrollArea::vertical()
-                        .id_salt("console")
-                        .auto_shrink([false, false])
-                        .stick_to_bottom(true)
-                        .show(ui, |ui| {
-                            let show_errors = *ARE_LOGS_ERROR_SHOWN.lock().unwrap();
-                            let show_warnings = *ARE_LOGS_WARN_SHOWN.lock().unwrap();
-                            let show_infos = *ARE_LOGS_INFO_SHOWN.lock().unwrap();
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui: &mut egui::Ui| {
+                            ui.checkbox(&mut ARE_LOGS_INFO_SHOWN.lock().unwrap(), "Infos");
+                            ui.checkbox(&mut ARE_LOGS_WARN_SHOWN.lock().unwrap(), "Warnings");
+                            ui.checkbox(&mut ARE_LOGS_ERROR_SHOWN.lock().unwrap(), "Errors");
+                        });
+                        let scroll_height = ui.available_height() - 60.0;
+                        egui::ScrollArea::vertical()
+                            .id_salt("console")
+                            .auto_shrink(false)
+                            .max_height(scroll_height)
+                            .stick_to_bottom(true)
+                            .show(ui, |ui| {
+                                let show_errors = *ARE_LOGS_ERROR_SHOWN.lock().unwrap();
+                                let show_warnings = *ARE_LOGS_WARN_SHOWN.lock().unwrap();
+                                let show_infos = *ARE_LOGS_INFO_SHOWN.lock().unwrap();
 
-                            let messages = &mut game.lua_env.messages.borrow_mut();
-                            for line in messages.iter().rev() {
-                                let msg = &line.msg;
-                                let is_error = line.verbosity == Verbosity::Error;
-                                let is_warning = line.verbosity == Verbosity::Warn;
-                                let is_info = line.verbosity == Verbosity::Info;
-                                if (show_errors && is_error)
-                                    || (show_warnings && is_warning)
-                                    || (show_infos && is_info)
-                                {
-                                    let text = if is_error {
-                                        RichText::new(msg).color(egui::Color32::RED)
-                                    } else if is_warning {
-                                        RichText::new(msg).color(egui::Color32::YELLOW)
-                                    } else {
-                                        RichText::new(msg).color(egui::Color32::WHITE)
-                                    };
-                                    ui.label(text.monospace());
+                                let messages = &mut game.lua_env.messages.borrow_mut();
+                                for line in messages.iter().rev() {
+                                    let msg = &line.msg;
+                                    let is_error = line.verbosity == Verbosity::Error;
+                                    let is_warning = line.verbosity == Verbosity::Warn;
+                                    let is_info = line.verbosity == Verbosity::Info;
+                                    if (show_errors && is_error)
+                                        || (show_warnings && is_warning)
+                                        || (show_infos && is_info)
+                                    {
+                                        let text = if is_error {
+                                            RichText::new(msg).color(egui::Color32::RED)
+                                        } else if is_warning {
+                                            RichText::new(msg).color(egui::Color32::YELLOW)
+                                        } else {
+                                            RichText::new(msg).color(egui::Color32::WHITE)
+                                        };
+                                        ui.label(text.monospace());
+                                    }
                                 }
-                            }
-                            messages.truncate(500);
-                        });
-                    ui.separator();
-                    egui::ScrollArea::vertical()
-                        .id_salt("frame console")
-                        .auto_shrink([false, false])
-                        .stick_to_bottom(true)
-                        .show(ui, |ui| {
-                            let messages = &mut game.lua_env.frame_messages.borrow_mut();
-                            for line in messages.iter() {
-                                let msg = &line.msg;
-                                ui.label(
-                                    RichText::new(msg).color(egui::Color32::WHITE).monospace(),
+                                messages.truncate(500);
+                            });
+                        ui.horizontal(|ui| {
+                            let response =
+                                egui::TextEdit::singleline(&mut self.text_command).ui(ui);
+                            if response.lost_focus()
+                                && ui.input(|i| i.key_pressed(egui::Key::Enter))
+                            {
+                                let _ = game.lua_env.default_events.console_command_event.trigger(
+                                    game.lua_env.lua.as_ref(),
+                                    to_lua(game.lua_env.lua.as_ref(), self.text_command.clone())
+                                        .unwrap(),
                                 );
+                                self.text_command.clear();
+                                response.request_focus();
                             }
-                            messages.clear();
+                            if egui::Button::new("Clear").ui(ui).clicked() {
+                                game.lua_env.messages.borrow_mut().clear();
+                            }
                         });
-                    ui.separator();
-                    ui.horizontal(|ui| {
-                        let response = egui::TextEdit::singleline(&mut self.text_command).ui(ui);
-                        if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            let _ = game.lua_env.default_events.console_command_event.trigger(
-                                game.lua_env.lua.as_ref(),
-                                to_lua(game.lua_env.lua.as_ref(), self.text_command.clone())
-                                    .unwrap(),
-                            );
-                            self.text_command.clear();
-                            response.request_focus();
-                        }
-                        if egui::Button::new("Clear").ui(ui).clicked() {
-                            game.lua_env.messages.borrow_mut().clear();
-                        }
                     });
+                    /*egui::ScrollArea::vertical()
+                    .id_salt("frame console")
+                    .auto_shrink(false)
+                    .max_height(30.0)
+                    .stick_to_bottom(true)
+                    .show(ui, |ui| {
+                        let messages = &mut game.lua_env.frame_messages.borrow_mut();
+                        for line in messages.iter() {
+                            let msg = &line.msg;
+                            ui.label(
+                                RichText::new(msg).color(egui::Color32::WHITE).monospace(),
+                            );
+                        }
+                        messages.clear();
+                    });*/
                 });
         }
 
         if self.config.borrow().is_resources_window_shown {
-            egui::Window::new("Resources").show(&ctx, |ui| {
-                let available_height = ui.available_height();
-                let table = egui_extras::TableBuilder::new(ui)
-                    .striped(true)
-                    .resizable(true)
-                    .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-                    .column(Column::auto())
-                    .column(Column::auto())
-                    .column(Column::auto())
-                    .column(Column::auto())
-                    .column(Column::auto())
-                    .max_scroll_height(available_height);
-                table
-                    .header(20.0, |mut header| {
-                        header.col(|ui| {
-                            ui.label("ID");
-                        });
-                        header.col(|ui| {
-                            ui.label("Path");
-                        });
-                        header.col(|ui| {
-                            ui.label("Type");
-                        });
-                        header.col(|ui| {
-                            ui.label("Status");
-                        });
-                        header.col(|ui| {
-                            ui.label("Actions");
-                        });
-                    })
-                    .body(|mut body| {
-                        for (id, res) in game.lua_env.resources.enumerate() {
-                            let resources = game.lua_env.resources.clone();
-                            body.row(20.0, |mut row| {
-                                row.col(|ui| {
-                                    ui.label(id.to_string());
-                                });
-                                row.col(|ui| {
-                                    if ui
-                                        .link(res.get_path().to_string_lossy().to_string())
-                                        .clicked()
-                                    {
-                                        // Open the file
-                                        let absolute_path = get_absolute_path(res.get_path());
-                                        open::that(absolute_path).ok();
-                                    }
-                                });
-                                row.col(|ui| {
-                                    ui.label(res.get_type_name().to_string());
-                                });
-                                row.col(|ui| {
-                                    ui.label(format!("{}", res.get_status()));
-                                });
-                                row.col(|ui| {
-                                    if ui.button("Reload").clicked() {
-                                        let gl: Arc<glow::Context> = self.gl.clone();
-                                        resources.reload(
-                                            id,
-                                            gl,
-                                            game.lua_env.lua.clone(),
-                                            game.lua_env.default_events.resource_loaded_event,
-                                        );
-                                    }
-                                    let mut config = self.config.borrow_mut();
-                                    let shown = config.debug_resource_shown == Some(id);
-                                    let text = if shown { "Hide" } else { "Show" };
-                                    ui.button(text).clicked().then(|| {
-                                        if shown {
-                                            config.debug_resource_shown = None;
-                                        } else {
-                                            config.debug_resource_shown = Some(id);
-                                        }
-                                    });
+            egui::Window::new("Resources")
+                .default_width(400.0)
+                .default_height(200.0)
+                .show(&ctx, |ui| {
+                    use egui_extras::{Size, StripBuilder};
+                    StripBuilder::new(ui)
+                        .size(Size::remainder().at_least(100.0)) // for the table
+                        .vertical(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.vertical(|ui| {
+                                    let available_height = ui.available_height();
+                                    let table = egui_extras::TableBuilder::new(ui)
+                                        .striped(true)
+                                        .resizable(true)
+                                        .cell_layout(egui::Layout::left_to_right(
+                                            egui::Align::Center,
+                                        ))
+                                        .column(Column::auto()) // id
+                                        .column(Column::auto()) // path
+                                        .column(Column::auto()) // type
+                                        .column(
+                                            Column::remainder()
+                                                .at_least(40.0)
+                                                .clip(true)
+                                                .resizable(true),
+                                        ) // status
+                                        .column(Column::auto())
+                                        .min_scrolled_height(0.0)
+                                        .max_scroll_height(available_height);
+                                    table
+                                        .header(20.0, |mut header| {
+                                            header.col(|ui| {
+                                                ui.label("ID");
+                                            });
+                                            header.col(|ui| {
+                                                ui.label("Path");
+                                            });
+                                            header.col(|ui| {
+                                                ui.label("Type");
+                                            });
+                                            header.col(|ui| {
+                                                ui.label("Status");
+                                            });
+                                            header.col(|ui| {
+                                                ui.label("Actions");
+                                            });
+                                        })
+                                        .body(|mut body| {
+                                            for (id, res) in game.lua_env.resources.enumerate() {
+                                                let resources = game.lua_env.resources.clone();
+                                                let status_string = res.get_status().to_string();
+                                                let status_length = status_string.len();
+                                                let row_height =
+                                                    f32::max(20.0, status_length as f32 / 2.0);
+
+                                                body.row(row_height, |mut row| {
+                                                    row.col(|ui| {
+                                                        ui.label(id.to_string());
+                                                    });
+                                                    row.col(|ui| {
+                                                        if ui
+                                                            .link(
+                                                                res.get_path()
+                                                                    .to_string_lossy()
+                                                                    .to_string(),
+                                                            )
+                                                            .clicked()
+                                                        {
+                                                            // Open the file
+                                                            let absolute_path =
+                                                                get_absolute_path(res.get_path());
+                                                            open::that(absolute_path).ok();
+                                                        }
+                                                    });
+                                                    row.col(|ui| {
+                                                        ui.label(res.get_type_name().to_string());
+                                                    });
+                                                    row.col(|ui| {
+                                                        // wrapping
+                                                        ui.style_mut().wrap_mode =
+                                                            Some(egui::TextWrapMode::Wrap);
+                                                        ui.label(status_string);
+                                                    });
+                                                    row.col(|ui| {
+                                                        if ui.button("Reload").clicked() {
+                                                            let gl: Arc<glow::Context> =
+                                                                self.gl.clone();
+                                                            resources.reload(
+                                                                id,
+                                                                gl,
+                                                                game.lua_env.lua.clone(),
+                                                                game.lua_env
+                                                                    .default_events
+                                                                    .resource_loaded_event,
+                                                            );
+                                                        }
+                                                        let mut config = self.config.borrow_mut();
+                                                        let shown =
+                                                            config.debug_resource_shown == Some(id);
+                                                        let text =
+                                                            if shown { "Hide" } else { "Show" };
+                                                        ui.button(text).clicked().then(|| {
+                                                            if shown {
+                                                                config.debug_resource_shown = None;
+                                                            } else {
+                                                                config.debug_resource_shown =
+                                                                    Some(id);
+                                                            }
+                                                        });
+                                                    });
+                                                });
+                                            }
+                                        })
                                 });
                             });
-                        }
-                    })
-            });
+                        });
+                });
         }
 
         if let Some(id) = self.config.borrow().debug_resource_shown {
