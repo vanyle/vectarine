@@ -1,11 +1,10 @@
-use std::{cell::RefCell, collections::VecDeque, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use sdl2::keyboard::Keycode;
 
 use crate::{
-    console::{ConsoleMessage, Verbosity},
     io::IoEnvState,
-    lua_env::{add_fn_to_table, get_internals, lua_vec2::Vec2, stringify_lua_value},
+    lua_env::{add_fn_to_table, lua_vec2::Vec2},
 };
 
 /// Adds to the Lua environment functions to interact with the outside environment
@@ -14,8 +13,6 @@ use crate::{
 pub fn setup_io_api(
     lua: &Rc<mlua::Lua>,
     env_state: &Rc<RefCell<IoEnvState>>,
-    messages: &Rc<RefCell<VecDeque<ConsoleMessage>>>,
-    frame_messages: &Rc<RefCell<Vec<ConsoleMessage>>>,
 ) -> mlua::Result<mlua::Table> {
     let io_module = lua.create_table()?;
 
@@ -123,53 +120,6 @@ pub fn setup_io_api(
             Ok(())
         }
     });
-
-    add_fn_to_table(lua, &io_module, "fprint", {
-        let frame_messages = frame_messages.clone();
-        move |_, args: mlua::Variadic<mlua::Value>| {
-            let msg = args
-                .iter()
-                .map(stringify_lua_value)
-                .collect::<Vec<_>>()
-                .join("");
-            frame_messages.borrow_mut().push(ConsoleMessage {
-                msg,
-                verbosity: Verbosity::Info,
-            });
-            Ok(())
-        }
-    });
-
-    add_fn_to_table(lua, &io_module, "print", {
-        let messages = messages.clone();
-        move |_, args: mlua::Variadic<mlua::Value>| {
-            let msg = args
-                .iter()
-                .map(stringify_lua_value)
-                .collect::<Vec<_>>()
-                .join("");
-            messages.borrow_mut().push_front(ConsoleMessage {
-                msg,
-                verbosity: Verbosity::Info,
-            });
-            Ok(())
-        }
-    });
-
-    let internals = get_internals(lua);
-    internals.raw_set(
-        "print",
-        lua.create_function({
-            let messages = messages.clone();
-            move |_, (msg, verbosity): (String, Verbosity)| {
-                messages
-                    .borrow_mut()
-                    .push_front(ConsoleMessage { msg, verbosity });
-                Ok(())
-            }
-        })
-        .unwrap(),
-    )?;
 
     Ok(io_module)
 }
