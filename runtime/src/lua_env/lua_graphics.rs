@@ -135,15 +135,9 @@ pub fn setup_graphics_api(
         move |_, (canvas, pos, size): (lua_canvas::RcFramebuffer, Vec2, Vec2)| {
             let framebuffer = canvas.gl();
             let shader = canvas.current_shader();
-            batch.borrow_mut().draw_canvas(
-                pos.x,
-                pos.y,
-                size.x,
-                size.y,
-                framebuffer,
-                shader,
-                &env.borrow(),
-            );
+            batch
+                .borrow_mut()
+                .draw_canvas(pos, size, framebuffer, shader, &env.borrow());
             Ok(())
         }
     });

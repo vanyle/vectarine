@@ -282,16 +282,14 @@ impl BatchDraw2d {
 
     pub fn draw_canvas(
         &mut self,
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
+        pos: Vec2,
+        size: Vec2,
         canvas: &Framebuffer,
         custom_shader: Option<ResourceId>,
         env: &IoEnvState,
     ) {
         self.draw_canvas_part(
-            make_rect(x, y, width, height),
+            make_rect(pos.x, pos.y, size.x, size.y),
             canvas,
             Vec2::new(0.0, 0.0),
             Vec2::new(1.0, 1.0),

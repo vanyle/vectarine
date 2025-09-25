@@ -1,8 +1,8 @@
 # TODO
 
 - [ ] Add more room in the debug ui to show loading errors
-- [ ] Fix image orientation issue
 - [ ] Add debugger tab to inspect values of Lua Constants
+- [ ] Add warning when calling some methods (like screenSize) outside of Load.
 - [ ] Add a unit API with proper coordinate management instead of V2.
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
@@ -34,10 +34,16 @@
 - [ ] Make a game with it !!!
 
 - [ ] Audio API
+- [ ] Bug fixes
+  - [ ] Investigate special characters in text rendering (like å, ç, ...)
+  - [ ] Antialiasing needs to work with hot reloading
 - [ ] Event system, part II
-  - [ ] Add event channels (for you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
-- [ ] Make errors inside Update spam less the console
+  - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
+- [ ] Make errors/warnings inside Update spam less the console
   - [ ] When the same error happens in a row inside update, only print it once (same behavior as browsers)
+- [ ] Better errors:
+  - [ ] Show the line that produced the error instead of just the line number. Make the text clickable to open the file
+  - [ ] Print errors to the terminal too as the terminal is also convenient
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
@@ -51,6 +57,7 @@
 
 # Done
 
+- [x] Fix image orientation issue
 - [x] From lua, enable/disable gl_linear/gl_nearest when drawing images
 - [x] Shader API
   - [x] Write the luau functions for the API

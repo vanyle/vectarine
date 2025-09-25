@@ -1,7 +1,5 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
-use image::metadata::Orientation;
-
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::gltexture::{self, ImageAntialiasing, Texture},
@@ -29,11 +27,9 @@ impl Resource for ImageResource {
             return Status::Error("File is empty or does not exist.".to_string());
         }
         let result = image::load_from_memory(data);
-        let Ok(mut image) = result else {
+        let Ok(image) = result else {
             return Status::Error(format!("{}", result.err().unwrap()));
         };
-        // We could do this in the shader instead. I don't really know which option is better.
-        image.apply_orientation(Orientation::FlipVertical);
 
         self.texture.replace(Some(Texture::new_rgba(
             &gl,
