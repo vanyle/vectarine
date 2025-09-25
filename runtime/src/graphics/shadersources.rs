@@ -48,5 +48,8 @@ pub const FONT_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
     out vec4 frag_color;
     void main() {
         float r = texture(tex, uv).r;
+        if (r < 0.01) {
+            discard;
+        }
         frag_color = vec4(text_color.rgb, r * text_color.a);
     }"#;

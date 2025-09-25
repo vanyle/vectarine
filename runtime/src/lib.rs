@@ -85,7 +85,7 @@ pub fn init_sdl() -> RenderingBlock {
         gl.enable(glow::BLEND);
         gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
         //gl.blend_func(glow::SRC_ALPHA_SATURATE, glow::ONE);
-        //gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE);
+        gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE);
         //gl.enable(glow::POLYGON_SMOOTH);
         gl.enable(glow::MULTISAMPLE);
     }
