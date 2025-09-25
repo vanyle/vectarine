@@ -11,6 +11,7 @@ use runtime::{game::Game, graphics::batchdraw::BatchDraw2d, lua_env::LuaEnvironm
 use crate::{editorinterface::EditorState, reload::reload_assets_if_needed};
 
 pub mod editorinterface;
+pub mod editormenu;
 pub mod reload;
 
 fn main() {

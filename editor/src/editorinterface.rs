@@ -18,10 +18,13 @@ use runtime::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::editormenu::draw_editor_menu;
+
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct EditorConfig {
     pub is_console_shown: bool,
     pub is_resources_window_shown: bool,
+    pub is_watcher_window_shown: bool,
     pub is_always_on_top: bool,
     pub debug_resource_shown: Option<ResourceId>,
 }
@@ -32,7 +35,7 @@ pub struct EditorState {
 
     start_time: std::time::Instant,
     video: Rc<RefCell<sdl2::VideoSubsystem>>,
-    window: Rc<RefCell<sdl2::video::Window>>,
+    pub window: Rc<RefCell<sdl2::video::Window>>,
     gl: Arc<glow::Context>,
 }
 
@@ -96,47 +99,7 @@ impl EditorState {
             config.is_resources_window_shown = !config.is_resources_window_shown;
         }
 
-        egui::TopBottomPanel::top("toppanel").show(&ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(RichText::new("Vectarine Editor").size(18.0));
-                egui::MenuBar::new().ui(ui, |ui| {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Console (Ctrl+1)").clicked() {
-                            let mut config = self.config.borrow_mut();
-                            config.is_console_shown = !config.is_console_shown;
-                        }
-                        if ui.button("Resources (Ctrl+2)").clicked() {
-                            let mut config = self.config.borrow_mut();
-                            config.is_resources_window_shown = !config.is_resources_window_shown;
-                        }
-                        if ui.button("Save config").clicked() {
-                            self.save_config();
-                        }
-                        {
-                            let mut config = self.config.borrow_mut();
-                            if ui
-                                .checkbox(&mut config.is_always_on_top, "Always on top")
-                                .clicked()
-                            {
-                                self.window
-                                    .borrow_mut()
-                                    .set_always_on_top(config.is_always_on_top);
-                            }
-                        }
-                        let exit_text = if cfg!(target_os = "macos") {
-                            "Exit (Cmd+Q)"
-                        } else {
-                            "Exit (Alt+F4)"
-                        };
-                        if ui.button(exit_text).clicked() {
-                            std::process::exit(0);
-                        }
-                    });
-                });
-            });
-            // let window_handle = self.window.borrow().raw();
-            // sdl2_sys::SDL_SetWindowHitTest(window_handle, callback, callback_data)
-        });
+        draw_editor_menu(self, &ctx);
 
         static ARE_LOGS_ERROR_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
         static ARE_LOGS_WARN_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
