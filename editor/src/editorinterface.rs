@@ -1,17 +1,12 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 
-use egui_extras::{Column, StripBuilder};
 use egui_sdl2_platform::sdl2;
-use runtime::{
-    game::Game,
-    game_resource::{ResourceId, get_absolute_path},
-    io::file,
-};
+use runtime::{game::Game, game_resource::ResourceId, io::file};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     editorconsole::draw_editor_console, editormenu::draw_editor_menu,
-    editorresources::draw_editor_resources,
+    editorresources::draw_editor_resources, editorwatcher::draw_editor_watcher,
 };
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -84,30 +79,10 @@ impl EditorState {
         // Get the egui context and begin drawing the frame
         let ctx = platform.context();
 
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
-            let mut config = self.config.borrow_mut();
-            config.is_console_shown = !config.is_console_shown;
-        }
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num2)) {
-            let mut config = self.config.borrow_mut();
-            config.is_resources_window_shown = !config.is_resources_window_shown;
-        }
-
         draw_editor_menu(self, &ctx);
         draw_editor_console(self, game, &ctx);
         draw_editor_resources(self, game, &ctx);
-
-        if let Some(id) = self.config.borrow().debug_resource_shown {
-            let res = game.lua_env.resources.get_holder_by_id(id);
-            egui::Window::new(format!(
-                "Resource debug - {}",
-                res.get_path().to_string_lossy()
-            ))
-            .resizable(true)
-            .show(&ctx, |ui| {
-                res.draw_debug_gui(ui);
-            });
-        }
+        draw_editor_watcher(self, game, &ctx);
 
         // Stop drawing the egui frame and get the full output
         let full_output = platform.end_frame(&mut self.video.borrow_mut()).unwrap();

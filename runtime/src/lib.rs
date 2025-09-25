@@ -5,6 +5,8 @@ pub mod graphics;
 pub mod io;
 pub mod lua_env;
 
+pub use mlua; // Re-export mlua for access in the editor
+
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
 use glow::HasContext;

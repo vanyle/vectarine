@@ -14,6 +14,7 @@ pub mod editorconsole;
 pub mod editorinterface;
 pub mod editormenu;
 pub mod editorresources;
+pub mod editorwatcher;
 pub mod reload;
 
 fn main() {

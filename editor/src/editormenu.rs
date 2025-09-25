@@ -3,6 +3,20 @@ use egui::RichText;
 use crate::editorinterface::EditorState;
 
 pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
+    if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
+        let mut config = editor.config.borrow_mut();
+        config.is_console_shown = !config.is_console_shown;
+    }
+    if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num2)) {
+        let mut config = editor.config.borrow_mut();
+        config.is_resources_window_shown = !config.is_resources_window_shown;
+    }
+
+    if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num3)) {
+        let mut config = editor.config.borrow_mut();
+        config.is_watcher_window_shown = !config.is_watcher_window_shown;
+    }
+
     egui::TopBottomPanel::top("toppanel").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.label(RichText::new("Vectarine Editor").size(18.0));
