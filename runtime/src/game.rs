@@ -1,7 +1,10 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use glow::HasContext;
-use sdl2::{EventPump, video::FullscreenType};
+use sdl2::{
+    EventPump,
+    video::{FullscreenType, WindowPos},
+};
 
 use crate::{
     console::Verbosity,
@@ -153,6 +156,13 @@ impl Game {
                     let _ = window.borrow_mut().set_fullscreen(FullscreenType::Off);
                 }
                 env_state.fullscreen_state_request = None;
+            }
+
+            if env_state.center_window_request {
+                window
+                    .borrow_mut()
+                    .set_position(WindowPos::Centered, WindowPos::Centered);
+                env_state.center_window_request = false;
             }
         }
 

@@ -108,6 +108,14 @@ pub fn setup_io_api(
         }
     });
 
+    add_fn_to_table(lua, &io_module, "centerWindow", {
+        let env_state = env_state.clone();
+        move |_, ()| {
+            env_state.borrow_mut().center_window_request = true;
+            Ok(())
+        }
+    });
+
     add_fn_to_table(lua, &io_module, "setFullscreen", {
         let env_state = env_state.clone();
         move |_, (fullscreen,): (bool,)| {

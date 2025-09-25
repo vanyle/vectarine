@@ -29,6 +29,7 @@ pub struct IoEnvState {
 
     // Outputs
     pub is_window_resizeable: bool,
+    pub center_window_request: bool,
     pub fullscreen_state_request: Option<bool>,
     pub window_target_size: Option<(u32, u32)>,
 }
@@ -50,6 +51,7 @@ impl Default for IoEnvState {
             is_window_resizeable: false,
             window_target_size: None,
             fullscreen_state_request: None,
+            center_window_request: false,
         }
     }
 }

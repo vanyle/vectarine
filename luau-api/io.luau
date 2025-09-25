@@ -46,6 +46,12 @@ function module.getWindowSize(): Vec.Vec2
     error("Not implemented")
 end
 
+--- Center the window on the screen
+--- Does nothing on the web
+function module.centerWindow(): ()
+    error("Not implemented")
+end
+
 --- Get the current screen size (in px)
 function module.getScreenSize(): Vec.Vec2
     error("Not implemented")
