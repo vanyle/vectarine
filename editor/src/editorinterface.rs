@@ -7,7 +7,7 @@ use std::{
 };
 
 use egui::{RichText, Widget};
-use egui_extras::Column;
+use egui_extras::{Column, StripBuilder};
 use egui_sdl2_platform::sdl2;
 use runtime::{
     console::Verbosity,
@@ -145,18 +145,65 @@ impl EditorState {
         if self.config.borrow().is_console_shown {
             egui::Window::new("Console")
                 .default_height(200.0)
+                .default_width(300.0)
+                .vscroll(false)
                 .show(&ctx, |ui| {
-                    ui.vertical(|ui| {
+                    egui::TopBottomPanel::bottom("bottom_panel")
+                        .resizable(true)
+                        .show_inside(ui, |ui| {
+                            ui.label(
+                                RichText::new("Frame messages")
+                                    .underline()
+                                    .size(14.0)
+                                    .color(egui::Color32::LIGHT_BLUE),
+                            );
+                            egui::ScrollArea::vertical()
+                                .id_salt("frame console")
+                                .auto_shrink(false)
+                                .stick_to_bottom(true)
+                                .show(ui, |ui| {
+                                    let messages = &mut game.lua_env.frame_messages.borrow_mut();
+                                    for line in messages.iter() {
+                                        let msg = &line.msg;
+                                        ui.label(
+                                            RichText::new(msg)
+                                                .color(egui::Color32::WHITE)
+                                                .monospace(),
+                                        );
+                                    }
+                                    messages.clear();
+                                });
+                        });
+
+                    egui::CentralPanel::default().show_inside(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            let response = egui::TextEdit::singleline(&mut self.text_command)
+                                .hint_text("Enter command...")
+                                .ui(ui);
+                            if response.lost_focus()
+                                && ui.input(|i| i.key_pressed(egui::Key::Enter))
+                            {
+                                let _ = game.lua_env.default_events.console_command_event.trigger(
+                                    game.lua_env.lua.as_ref(),
+                                    to_lua(game.lua_env.lua.as_ref(), self.text_command.clone())
+                                        .unwrap(),
+                                );
+                                self.text_command.clear();
+                                response.request_focus();
+                            }
+                            if egui::Button::new("Clear").ui(ui).clicked() {
+                                game.lua_env.messages.borrow_mut().clear();
+                            }
+                        });
+
                         ui.horizontal(|ui: &mut egui::Ui| {
                             ui.checkbox(&mut ARE_LOGS_INFO_SHOWN.lock().unwrap(), "Infos");
                             ui.checkbox(&mut ARE_LOGS_WARN_SHOWN.lock().unwrap(), "Warnings");
                             ui.checkbox(&mut ARE_LOGS_ERROR_SHOWN.lock().unwrap(), "Errors");
                         });
-                        let scroll_height = ui.available_height() - 60.0;
                         egui::ScrollArea::vertical()
                             .id_salt("console")
                             .auto_shrink(false)
-                            .max_height(scroll_height)
                             .stick_to_bottom(true)
                             .show(ui, |ui| {
                                 let show_errors = *ARE_LOGS_ERROR_SHOWN.lock().unwrap();
@@ -185,40 +232,7 @@ impl EditorState {
                                 }
                                 messages.truncate(500);
                             });
-                        ui.horizontal(|ui| {
-                            let response =
-                                egui::TextEdit::singleline(&mut self.text_command).ui(ui);
-                            if response.lost_focus()
-                                && ui.input(|i| i.key_pressed(egui::Key::Enter))
-                            {
-                                let _ = game.lua_env.default_events.console_command_event.trigger(
-                                    game.lua_env.lua.as_ref(),
-                                    to_lua(game.lua_env.lua.as_ref(), self.text_command.clone())
-                                        .unwrap(),
-                                );
-                                self.text_command.clear();
-                                response.request_focus();
-                            }
-                            if egui::Button::new("Clear").ui(ui).clicked() {
-                                game.lua_env.messages.borrow_mut().clear();
-                            }
-                        });
                     });
-                    /*egui::ScrollArea::vertical()
-                    .id_salt("frame console")
-                    .auto_shrink(false)
-                    .max_height(30.0)
-                    .stick_to_bottom(true)
-                    .show(ui, |ui| {
-                        let messages = &mut game.lua_env.frame_messages.borrow_mut();
-                        for line in messages.iter() {
-                            let msg = &line.msg;
-                            ui.label(
-                                RichText::new(msg).color(egui::Color32::WHITE).monospace(),
-                            );
-                        }
-                        messages.clear();
-                    });*/
                 });
         }
 
@@ -227,9 +241,8 @@ impl EditorState {
                 .default_width(400.0)
                 .default_height(200.0)
                 .show(&ctx, |ui| {
-                    use egui_extras::{Size, StripBuilder};
                     StripBuilder::new(ui)
-                        .size(Size::remainder().at_least(100.0)) // for the table
+                        .size(egui_extras::Size::remainder().at_least(100.0)) // for the table
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                 ui.vertical(|ui| {

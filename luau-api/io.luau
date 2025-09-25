@@ -22,7 +22,7 @@ function module.print(...: any): ()
     error("Not implemented")
 end
 
---- Print something to the editor console
+--- Print something to the editor frame message console
 ----
 --- Does nothing when used in the runtime.
 --- The message is cleared on the next frame.
