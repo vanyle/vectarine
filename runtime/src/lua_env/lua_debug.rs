@@ -2,13 +2,11 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use crate::{
     console::{ConsoleMessage, Verbosity},
-    io::IoEnvState,
     lua_env::{add_fn_to_table, get_internals, stringify_lua_value},
 };
 
 pub fn setup_debug_api(
     lua: &Rc<mlua::Lua>,
-    env_state: &Rc<RefCell<IoEnvState>>,
     messages: &Rc<RefCell<VecDeque<ConsoleMessage>>>,
     frame_messages: &Rc<RefCell<Vec<ConsoleMessage>>>,
 ) -> mlua::Result<mlua::Table> {

@@ -308,13 +308,14 @@ impl BatchDraw2d {
         let uv_x2 = uv_pos.x + uv_size.x;
         let uv_y2 = uv_pos.y + uv_size.y;
 
+        // Weird that we need to flip the y coordinates in canvas, but not image.
         #[rustfmt::skip]
         let vertices: [f32; 4 * 5] = [
             // positions       // tex coords
-            pos_size.p1.x, pos_size.p1.y, 0.0, uv_x1, uv_y2, // bottom left
-            pos_size.p2.x, pos_size.p2.y, 0.0, uv_x2, uv_y2, // bottom right
-            pos_size.p3.x, pos_size.p3.y, 0.0, uv_x2, uv_y1, // top right
-            pos_size.p4.x, pos_size.p4.y, 0.0, uv_x1, uv_y1, // top left
+            pos_size.p4.x, pos_size.p4.y, 0.0, uv_x1, uv_y2, // bottom left
+            pos_size.p3.x, pos_size.p3.y, 0.0, uv_x2, uv_y2, // bottom right
+            pos_size.p2.x, pos_size.p2.y, 0.0, uv_x2, uv_y1, // top right
+            pos_size.p1.x, pos_size.p1.y, 0.0, uv_x1, uv_y1, // top left
         ];
 
         let mut uniforms = Uniforms::new();

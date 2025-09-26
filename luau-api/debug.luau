@@ -1,3 +1,7 @@
+--- Debugging utilities
+---
+--- This module contains functions that help with debugging your game.
+--- Most of these functions do nothing in a production build.
 local module = {}
 
 --- Add a value to the watcher in the editor

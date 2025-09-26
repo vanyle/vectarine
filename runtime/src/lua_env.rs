@@ -73,8 +73,7 @@ impl LuaEnvironment {
         let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();
         lua.register_module("@vectarine/io", io_module).unwrap();
 
-        let debug_module =
-            lua_debug::setup_debug_api(&lua, &env_state, &messages, &frame_messages).unwrap();
+        let debug_module = lua_debug::setup_debug_api(&lua, &messages, &frame_messages).unwrap();
         lua.register_module("@vectarine/debug", debug_module)
             .unwrap();
 
