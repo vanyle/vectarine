@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Add warning when calling some methods (like screenSize) outside of Load.
 - [ ] Add a unit API with proper coordinate management instead of V2.
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
 - [ ] Project System in the editor
@@ -57,6 +56,7 @@
 
 # Done
 
+- [x] Make the environment ready before loading lua scripts
 - [x] Add debugger tab to inspect values of Lua Constants
 - [x] Add more room in the debug ui to show loading errors
 - [x] Fix image orientation issue

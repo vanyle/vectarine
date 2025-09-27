@@ -20,17 +20,17 @@ pub fn main() {
     let batch = BatchDraw2d::new(&gl).unwrap();
     let lua_env = lua_env::LuaEnvironment::new(batch);
 
-    let path = Path::new("scripts/game.luau");
-    lua_env.resources.load_resource::<ScriptResource>(
-        path,
-        gl.clone(),
-        lua_env.lua.clone(),
-        lua_env.default_events.resource_loaded_event,
-    );
-
     let mut game = Game::new(&gl, event_pump, lua_env);
 
     game.load(&video, &window);
+
+    let path = Path::new("scripts/game.luau");
+    game.lua_env.resources.load_resource::<ScriptResource>(
+        path,
+        gl.clone(),
+        game.lua_env.lua.clone(),
+        game.lua_env.default_events.resource_loaded_event,
+    );
 
     let mut now = Instant::now();
 
