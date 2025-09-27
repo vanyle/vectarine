@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Add debugger tab to inspect values of Lua Constants
 - [ ] Add warning when calling some methods (like screenSize) outside of Load.
 - [ ] Add a unit API with proper coordinate management instead of V2.
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
@@ -10,6 +9,7 @@
     - [ ] Manifest contains name of the game, logo and root source.
     - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
   - [ ] Open manifest in the editor from the file menu
+  - [ ] Allow reopening aka 'reset' of games
   - [ ] Allow opening zips that are "compiled projects" (from the runtime)
   - [ ] Have an export feature in the editor to make zips
 - [ ] Investigate how to have true interactive web documentation

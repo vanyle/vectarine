@@ -15,6 +15,27 @@ pub fn draw_editor_console(editor: &mut EditorState, game: &mut Game, ctx: &egui
             .default_width(300.0)
             .vscroll(false)
             .show(ctx, |ui| {
+
+                ui.horizontal(|ui| {
+                    let response = egui::TextEdit::singleline(&mut editor.text_command)
+                        .hint_text("Enter command...")
+                        .ui(ui);
+
+                    if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        let _ = game.lua_env.default_events.console_command_event.trigger(
+                            game.lua_env.lua.as_ref(),
+                            to_lua(game.lua_env.lua.as_ref(), editor.text_command.clone())
+                                .unwrap(),
+                        );
+                        editor.text_command.clear();
+                        response.request_focus();
+                    }
+                    if egui::Button::new("Clear").ui(ui).clicked() {
+                        game.lua_env.messages.borrow_mut().clear();
+                    }
+
+                });
+
                 egui::TopBottomPanel::bottom("bottom_panel")
                     .resizable(true)
                     .show_inside(ui, |ui| {
@@ -41,24 +62,6 @@ pub fn draw_editor_console(editor: &mut EditorState, game: &mut Game, ctx: &egui
                     });
 
                 egui::CentralPanel::default().show_inside(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        let response = egui::TextEdit::singleline(&mut editor.text_command)
-                            .hint_text("Enter command...")
-                            .ui(ui);
-                        if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            let _ = game.lua_env.default_events.console_command_event.trigger(
-                                game.lua_env.lua.as_ref(),
-                                to_lua(game.lua_env.lua.as_ref(), editor.text_command.clone())
-                                    .unwrap(),
-                            );
-                            editor.text_command.clear();
-                            response.request_focus();
-                        }
-                        if egui::Button::new("Clear").ui(ui).clicked() {
-                            game.lua_env.messages.borrow_mut().clear();
-                        }
-                    });
-
                     draw_console_content(ui, game);
                 });
             });

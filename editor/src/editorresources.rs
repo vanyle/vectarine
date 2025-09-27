@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use egui_extras::{Column, StripBuilder};
+use egui::ScrollArea;
+use egui_extras::{Column, Size, StripBuilder, TableBuilder};
 use runtime::{game::Game, game_resource::get_absolute_path};
 
 use crate::editorinterface::EditorState;
@@ -13,10 +14,10 @@ pub fn draw_editor_resources(editor: &mut EditorState, game: &mut Game, ctx: &eg
         .open(&mut is_shown)
         .show(ctx, |ui| {
             StripBuilder::new(ui)
-                .size(egui_extras::Size::remainder().at_least(100.0)) // for the table
+                .size(Size::remainder().at_least(100.0)) // for the table
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
-                        ui.vertical(|ui| {
+                        ScrollArea::horizontal().show(ui, |ui| {
                             draw_resource_table(editor, ui, game);
                         });
                     });
@@ -40,14 +41,19 @@ pub fn draw_editor_resources(editor: &mut EditorState, game: &mut Game, ctx: &eg
 
 fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut Game) {
     let available_height = ui.available_height();
-    let table = egui_extras::TableBuilder::new(ui)
+    let table = TableBuilder::new(ui)
         .striped(true)
         .resizable(true)
         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
         .column(Column::auto()) // id
         .column(Column::auto()) // path
         .column(Column::auto()) // type
-        .column(Column::auto().at_least(60.0).clip(true).resizable(true)) // status
+        .column(
+            Column::remainder()
+                .at_least(60.0)
+                .clip(true)
+                .resizable(true),
+        ) // status
         .column(Column::auto())
         .min_scrolled_height(0.0)
         .max_scroll_height(available_height);
