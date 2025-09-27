@@ -9,5 +9,4 @@ end
 
 export type myType = "abc" | "def"
 
-Global.helper = module -- export the module table to Global
 return module -- return for the module for typing

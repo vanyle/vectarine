@@ -48,14 +48,14 @@ Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` second
 A minimal example:
 
 ```lua
-local Io = require('@vectarine/io')
+local Debug = require('@vectarine/Debug')
 
 function Load()
-    Io.print("Game loaded")
+    Debug.print("Game loaded")
 end
 
 function Update(time_delta)
-    Io.print("Frame update, time since last frame: ", time_delta, " seconds")
+    Debug.print("Frame update, time since last frame: ", time_delta, " seconds")
 end
 ```
 
@@ -144,7 +144,7 @@ This has pros and cons:
 Because of that, we recommend doing the following (this is just a recommendation, you do you!):
 
 - Keep functions local whenever possible using the `local function(...) function_content() end` syntax.
-- Use the `Global.aa = bb` syntax to be explicit when defining globals.
+- Use the `_G.aa = bb` syntax to be explicit when defining globals.
 - Use `require` to import types between modules
 - When calling `loadScript`, pass the require call as the second argument to gather the exports of the script with proper types
 
@@ -163,17 +163,13 @@ end
 
 export type myType = "abc" | "def"
 
--- Global.helper = module -- optional: export the module table to Global
+-- _G.helper = module -- optional: export the module table to the global namespace '_G'
 return module -- return for the module for typing
 ```
 
 ```lua
 -- main.luau
 local Resources = require('@vectarine/resources')
-local Io = require('@vectarine/io')
-
--- We can still use the types defined inside helper!
-local s: helper.myType = "abc"
 
 --- We use the import 'technique'
 local helperResource, helper = Resources.loadScript("scripts/helper.luau", require("helper.luau"))
@@ -189,13 +185,16 @@ local helperResource, helper = Resources.loadScript("scripts/helper.luau", requi
 --- However, helper will always be filled with the latest exports of the script, even if it is reloaded.
 --- This only works if the script returns a table, otherwise, this is ignored.
 
+-- We can still use the types defined inside helper!
+local s: helper.myType = "abc"
+
 function Update()
     if Resources.isResourceReady(helperResource) then
-        --- You can retrieve functions from Global.helper with the proper type using this syntax:
-        --- local add_things: typeof(helper.add_things) = Global.helper.add_things
+        --- You can retrieve functions from _G.helper with the proper type using this syntax:
+        --- local add_things: typeof(helper.add_things) = _G.helper.add_things
         --- Alternatively, you can access `helper` directly because you put `helper` as an argument to `loadScript`.
 
-        Io.fprint(helper.add_things(1, 2)) -- prints 1+2+3 = 6
+        fprint(helper.add_things(1, 2)) -- prints 1+2+3 = 6
     end
 end
 ```

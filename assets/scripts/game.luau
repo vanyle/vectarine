@@ -1,10 +1,13 @@
+local Debug = require('@vectarine/debug')
 local Event = require('@vectarine/event')
 local Graphics = require('@vectarine/graphics')
 local Io = require('@vectarine/io')
 local Resources = require('@vectarine/resources')
 local Vec = require('@vectarine/vec')
+local print = Debug.print
+local fprint = Debug.fprint
 
--- Io.print("Other script: ", helper)
+-- print("Other script: ", helper)
 
 local V2 = Vec.V2
 
@@ -12,22 +15,22 @@ local t = 0
 local spaceWasDown = false
 local spacePressed: Event.Event<string> = Event.newEvent("custom")
 spacePressed:on(function(data: string)
-    Io.print("Received event with data: " .. data)
+    print("Received event with data: " .. data)
 end)
 
 local KEY_DOWN = Event.getKeyDownEvent()
 KEY_DOWN:on(function(key: string)
-    Io.print("Key down: " .. key)
+    print("Key down: " .. key)
 end)
 
 local CONSOLE_COMMAND = Event.getConsoleCommandEvent()
 CONSOLE_COMMAND:on(function(command: string)
-    Io.print("Console command received: " .. command)
+    print("Console command received: " .. command)
 end)
 
 local RESOURCE_LOADED = Event.getResourceLoadedEvent()
 RESOURCE_LOADED:on(function(id: Resources.ResourceId)
-    -- Io.print("Resource loaded: ", id)
+    -- print("Resource loaded: ", id)
 end)
 
 local logoResource = Resources.loadImage("textures/logo.png")
@@ -36,10 +39,12 @@ local helperResource, helper = Resources.loadScript("scripts/helper.luau", requi
 
 Graphics.clear({r=1, g=0, b=0, a=1})
 
-Global.fullscreen = false
-if Global.fullscreen then
+_G.fullscreen = false
+_G.frame_times = {}
+
+if _G.fullscreen then
     local screen = Io.getScreenSize()
-    Io.print("Screen: ", screen)
+    print("Screen: ", screen)
     Io.setFullscreen(true)
     Io.setWindowSize(screen.x, screen.y)
 
@@ -52,12 +57,12 @@ else
 end
 
 function Load()
-    Io.print("Loading ...")
+    print("Loading ...")
 
     -- subId:unsubscribe()
 
-    Global.fullscreen = false
-    Global.frame_times = {}
+    _G.fullscreen = false
+    _G.frame_times = {}
 end
 
 function Update(time_delta: number)
@@ -65,7 +70,7 @@ function Update(time_delta: number)
     local bg_color: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
     Graphics.clear(bg_color)
 
-    Io.fprint(150*150)
+    fprint(150*150)
 
     local slow = false
     if slow then
@@ -88,7 +93,7 @@ function Update(time_delta: number)
     Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rect_color)
 
     if Resources.isResourceReady(helperResource) then
-        Io.fprint("Adding: ",helper.add_things(3, 2)) -- prints 1+2+3 = 6
+        fprint("Adding: ",helper.add_things(3, 2)) -- prints 1+2+3 = 6
     end
     
     rect_color = { r = 0, g = 0, b = 1, a = 1 }
@@ -96,7 +101,7 @@ function Update(time_delta: number)
     local v = V2(1, 2)
     local w = V2(1, 2)
     local r = v * w
-    Io.fprint("hello", r.x, r.y)
+    fprint("hello", r.x, r.y)
 
     if Io.isKeyDown("space") then
         rect_color = { r = 1, g = 0, b = 1, a = 1 }
@@ -116,22 +121,22 @@ function Update(time_delta: number)
     -- fprint("Hello: " .. x .. "," .. y)
 
     local time_sum = 0
-    for i, val in ipairs(Global.frame_times) do
+    for i, val in ipairs(_G.frame_times) do
         time_sum = time_sum + val
     end
-    local avg_time = time_sum / #Global.frame_times
+    local avg_time = time_sum / #_G.frame_times
 
-    table.insert(Global.frame_times, time_delta)
-    if #Global.frame_times > 10 then
-        table.remove(Global.frame_times, 1)
+    table.insert(_G.frame_times, time_delta)
+    if #_G.frame_times > 10 then
+        table.remove(_G.frame_times, 1)
     end
 
-    Io.fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
-    Io.fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
+    fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
+    fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
 
     Graphics.drawCircle(m, 0.1, rect_color)
 
-    -- drawImage(Global.logo, -0.2, -0.2, 0.4, 0.4)
+    -- drawImage(_G.logo, -0.2, -0.2, 0.4, 0.4)
     local text = "HY$@llo World!  ..."
     local textSize = 0.1
 
@@ -142,8 +147,8 @@ function Update(time_delta: number)
 
     -- Center of the screen
     if Resources.isResourceReady(logoResource) then
-        Io.fprint("read: ", Resources.isResourceReady(logoResource))
-        Graphics.drawImagePart(logoResource, V2(0.1, 0.1), V2(-0.1, 0.1), V2(-0.1, -0.1), V2(0.1, -0.1), V2(0, 0), V2(1, 1))
+        fprint("read: ", Resources.isResourceReady(logoResource))
+        Graphics.drawImage(logoResource, V2(-0.1, -0.1), V2(0.2, 0.2))
     end
     if Resources.isResourceReady(fontResource) then
         Graphics.drawText(text, fontResource, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })

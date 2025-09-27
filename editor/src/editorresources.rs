@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use egui::ScrollArea;
-use egui_extras::{Column, Size, StripBuilder, TableBuilder};
+use egui_extras::{Column, TableBuilder};
 use runtime::{game::Game, game_resource::get_absolute_path};
 
 use crate::editorinterface::EditorState;

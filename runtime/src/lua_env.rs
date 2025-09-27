@@ -50,10 +50,6 @@ impl LuaEnvironment {
         let messages = Rc::new(RefCell::new(VecDeque::new()));
 
         lua.globals()
-            .set("Global", lua.create_table().unwrap())
-            .unwrap();
-
-        lua.globals()
             .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
             .unwrap(); // Table used to store unsafe function that we need to access from Rust inside Rust.
 
