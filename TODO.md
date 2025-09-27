@@ -57,6 +57,7 @@
 
 # Done
 
+- [x] Add debugger tab to inspect values of Lua Constants
 - [x] Add more room in the debug ui to show loading errors
 - [x] Fix image orientation issue
 - [x] From lua, enable/disable gl_linear/gl_nearest when drawing images
