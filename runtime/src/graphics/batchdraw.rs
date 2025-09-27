@@ -2,8 +2,10 @@ use std::{sync::Arc, time::Instant};
 
 use crate::{
     game_resource::{
-        font_resource::FontRenderingData, shader_resource::ShaderResource, ResourceId, ResourceManager
-    }, graphics::{
+        ResourceId, ResourceManager, font_resource::FontRenderingData,
+        shader_resource::ShaderResource,
+    },
+    graphics::{
         glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
         gldraw::DrawingTarget,
         glframebuffer::Framebuffer,
@@ -16,7 +18,9 @@ use crate::{
             FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
         },
         shape::Quad,
-    }, io::IoEnvState, lua_env::lua_vec2::Vec2
+    },
+    io::IoEnvState,
+    lua_env::lua_vec2::Vec2,
 };
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -274,7 +278,7 @@ impl BatchDraw2d {
         ];
 
         let mut uniforms = Uniforms::new();
-        
+
         uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
 
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, BatchShader::Texture);

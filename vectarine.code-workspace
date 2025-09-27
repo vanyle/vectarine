@@ -49,6 +49,17 @@
 			"editor.defaultFormatter": "tamasfe.even-better-toml",
 			"editor.formatOnSave": true
 		},
+		"[markdown]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"prettier.tabWidth": 2,
+			"prettier.useTabs": false,
+			"editor.wordWrap": "on",
+			"editor.quickSuggestions": {
+				"comments": "off",
+				"strings": "off",
+				"other": "off"
+			}
+		},
 		"luau-lsp.server.crashReporting.enabled": true,
 		"luau-lsp.platform.type": "standard",
 		"luau-lsp.sourcemap.enabled": false,
