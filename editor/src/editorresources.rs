@@ -13,14 +13,10 @@ pub fn draw_editor_resources(editor: &mut EditorState, game: &mut Game, ctx: &eg
         .default_height(200.0)
         .open(&mut is_shown)
         .show(ctx, |ui| {
-            StripBuilder::new(ui)
-                .size(Size::remainder().at_least(100.0)) // for the table
-                .vertical(|mut strip| {
-                    strip.cell(|ui| {
-                        ScrollArea::horizontal().show(ui, |ui| {
-                            draw_resource_table(editor, ui, game);
-                        });
-                    });
+            ScrollArea::vertical()
+                .auto_shrink([true, false])
+                .show(ui, |ui| {
+                    draw_resource_table(editor, ui, game);
                 });
         });
 
@@ -44,17 +40,16 @@ fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut G
     let table = TableBuilder::new(ui)
         .striped(true)
         .resizable(true)
+        .auto_shrink(false)
         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
         .column(Column::auto()) // id
-        .column(Column::auto()) // path
+        .column(Column::auto().clip(true)) // path
         .column(Column::auto()) // type
+        .column(Column::auto()) // action
         .column(
-            Column::remainder()
-                .at_least(60.0)
-                .clip(true)
-                .resizable(true),
+            // status
+            Column::remainder().at_least(60.0).at_most(300.0).clip(true),
         ) // status
-        .column(Column::auto())
         .min_scrolled_height(0.0)
         .max_scroll_height(available_height);
 
@@ -70,10 +65,10 @@ fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut G
                 ui.label("Type");
             });
             header.col(|ui| {
-                ui.label("Status");
+                ui.label("Actions");
             });
             header.col(|ui| {
-                ui.label("Actions");
+                ui.label("Status");
             });
         })
         .body(|mut body| {
@@ -101,11 +96,6 @@ fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut G
                         ui.label(res.get_type_name().to_string());
                     });
                     row.col(|ui| {
-                        // wrapping
-                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
-                        ui.label(status_string);
-                    });
-                    row.col(|ui| {
                         if ui.button("Reload").clicked() {
                             let gl: Arc<glow::Context> = editor.gl.clone();
                             resources.reload(
@@ -125,6 +115,11 @@ fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut G
                                 config.debug_resource_shown = Some(id);
                             }
                         });
+                    });
+                    row.col(|ui| {
+                        // wrapping
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
+                        ui.label(status_string);
                     });
                 });
             }
