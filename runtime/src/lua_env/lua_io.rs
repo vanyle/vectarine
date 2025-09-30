@@ -4,8 +4,25 @@ use sdl2::keyboard::Keycode;
 
 use crate::{
     io::IoEnvState,
-    lua_env::{add_fn_to_table, lua_vec2::Vec2},
+    lua_env::{add_fn_to_table, get_internals, lua_vec2::Vec2},
 };
+
+pub struct RcEnvState(pub Rc<RefCell<IoEnvState>>);
+impl mlua::UserData for RcEnvState {}
+impl mlua::FromLua for RcEnvState {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        match value {
+            mlua::Value::UserData(ud) => Ok(RcEnvState(ud.borrow::<Self>()?.0.clone())),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "RcEnvState".to_string(),
+                message: Some("Expected RcEnvState userdata".to_string()),
+            }),
+        }
+    }
+}
+
+const ENV_STATE_KEY: &str = "__env_state";
 
 /// Adds to the Lua environment functions to interact with the outside environment
 /// For example, the keyboard, the mouse, the window, etc...
@@ -15,6 +32,10 @@ pub fn setup_io_api(
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> mlua::Result<mlua::Table> {
     let io_module = lua.create_table()?;
+
+    get_internals(lua)
+        .raw_set(ENV_STATE_KEY, RcEnvState(env_state.clone()))
+        .unwrap();
 
     add_fn_to_table(lua, &io_module, "isKeyDown", {
         let env_state = env_state.clone();
@@ -122,4 +143,10 @@ pub fn setup_io_api(
     });
 
     Ok(io_module)
+}
+
+pub fn get_env_state(lua: &mlua::Lua) -> Rc<RefCell<IoEnvState>> {
+    let internals = get_internals(lua);
+    let rc_env_state: RcEnvState = internals.raw_get(ENV_STATE_KEY).unwrap();
+    rc_env_state.0.clone()
 }

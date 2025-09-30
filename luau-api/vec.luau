@@ -12,7 +12,8 @@ Vec2Impl.__mul = function(a: Vec2, b: Vec2): Vec2
     error("Not implemented")
 end
 
-type Vec2Data = {x: number, y: number}
+--- The type of 2d things
+export type Vec2Data = {x: number, y: number}
 
 --- Implementation of a 2D vector
 export type Vec2 = typeof(setmetatable({} :: Vec2Data, Vec2Impl))

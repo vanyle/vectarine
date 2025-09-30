@@ -3,6 +3,7 @@ use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 use mlua::ObjectLike;
 
 pub mod lua_canvas;
+pub mod lua_coords;
 pub mod lua_debug;
 pub mod lua_event;
 pub mod lua_graphics;
@@ -55,6 +56,10 @@ impl LuaEnvironment {
 
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
+
+        let coords_module = lua_coords::setup_coords_api(&lua, &env_state).unwrap();
+        lua.register_module("@vectarine/coords", coords_module)
+            .unwrap();
 
         let graphics_module =
             lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();

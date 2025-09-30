@@ -1,20 +1,32 @@
 # TODO
 
 - [ ] Add a unit API with proper coordinate management instead of V2.
+  - [x] Define a simple to understand and to use API
+  - [x] Implement the types on the Rust side
+  - [ ] Make the graphics functions accept these types in addition to Vec2
+  - [ ] Update the user manual
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
+  - [ ] Design an API for the screen system
+  - [ ] Implement the types of the Rust side
+  - [ ] Update the user manual with usage infos
 - [ ] Project System in the editor
   - [ ] 'assets' should be 'gamedata'
   - [ ] Have a game.toml inside 'gamedata'. It is loaded first instead of game.lua
-    - [ ] Manifest contains name of the game, logo and root source.
+    - [ ] Manifest contains name of the game, logo, tags and root source.
     - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
   - [ ] Open manifest in the editor from the file menu
   - [ ] Allow reopening aka 'reset' of games
   - [ ] Allow opening zips that are "compiled projects" (from the runtime)
   - [ ] Have an export feature in the editor to make zips
-- [ ] Investigate how to have true interactive web documentation
-  - [ ] Add a 'docs' emscripten target.
-  - [ ] JavaScript API to interact with the runtime (in this 'docs' project)
-  - [ ] Ability to switch projects and load resources from the JS
+- [ ] Add a gallery
+  - [ ] Create a gallery folder with a sample game
+  - [ ] Show the gallery by default in the editor
+  - [ ] Allow creating a game using a piece of the gallery as an example
+  - [ ] Show off parts of the API in various gallery games
+- [ ] Allow fake fullscreen as an option
+- [ ] Save system
+  - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
+  - [ ] Implement the API in Rust
 - [ ] Tiled parsing
   - [ ] Sprites as an asset class
   - [ ] Reading tiled files
@@ -32,6 +44,8 @@
 - [ ] Make a game with it !!!
 
 - [ ] Audio API
+- [ ] Open-source the project
+- [ ] Add a CI
 - [ ] Timer event?
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
@@ -49,9 +63,11 @@
 - [ ] The 3D API!!
   - [ ] See how Three.js does things.
   - [ ] Camera
-  - [ ] Scene??
+  - [ ] Scene
   - [ ] Geometries + Materials = Mesh
+  - [ ] Allow 2d meshs "paper style"
   - [ ] Lights and shadows (set a max number of lights to 20 in the API)
+  - [ ] Reflective objects like water
   - [ ] Drawing a depth buffer
 
 # Done
