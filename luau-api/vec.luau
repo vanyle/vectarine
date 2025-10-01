@@ -1,6 +1,6 @@
 local module = {}
 
-local Vec2Impl = {}
+local Vec2Impl = {vec2 = true}
 Vec2Impl.__index = Vec2Impl
 Vec2Impl.__add = function(a: Vec2, b: Vec2): Vec2
     error("Not implemented")

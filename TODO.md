@@ -3,8 +3,9 @@
 - [ ] Add a unit API with proper coordinate management instead of V2.
   - [x] Define a simple to understand and to use API
   - [x] Implement the types on the Rust side
-  - [ ] Make the graphics functions accept these types in addition to Vec2
-  - [ ] Update the user manual
+  - [x] Make the graphics functions accept these types in addition to Vec2
+  - [x] Update the user manual
+  - [ ] Proper coordinate computation when drawing on a canvas
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
   - [ ] Design an API for the screen system
   - [ ] Implement the types of the Rust side

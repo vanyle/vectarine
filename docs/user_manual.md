@@ -61,7 +61,14 @@ end
 
 ## Drawing things on the screen
 
-Drawing functions are inside the `graphics` module. Most function take a `V2` from the `vec` module to define positions and sizes.
+Drawing functions are inside the `graphics` module.
+
+When drawing things on the screen, you need to tell Vectarine where to put them.
+To do so, you have two options, you can either use **Vec** or **Coord**.
+
+### Using Vec
+
+Most functions can take a `V2` from the `vec` module to define positions and sizes.
 The first argument to `V2` (called x) is the horizontal position, the second argument (called y) is the vertical position.
 
 - `(0,0)` is the center of the screen.
@@ -75,6 +82,8 @@ The screen is always 2 units wide and 2 units tall, regardless of the window siz
 Example:
 
 ```lua
+local Vec = require('@vectarine/vec')
+local V2 = Vec.V2 -- alias the V2 function as it is used very often
 local Graphics = require('@vectarine/graphics')
 
 function Update(time_delta: number)
@@ -92,7 +101,43 @@ function Update(time_delta: number)
 end
 ```
 
+### Using Coord
+
+Drawing with `Vec` is convenient, however, often, you want to draw squares, or shapes where the width to height ratio needs to say constant.
+When using `Vec`, this means manually multiplying your position by `screen_height/screen_width` to normalize everything.
+
+As this is something that all games need, Vectarine provides a shortcut: Coordinates!
+Coordinates come from the `@vectarine/coord` module and allow you to refer to position and distance on the screen in the way you like.
+
+```lua
+local Coord = require('@vectarine/coord')
+local Debug = require('@vectarine/debug')
+local Graphics = require('@vectarine/graphics')
+
+function Update(time_delta)
+    Graphics.Clear({ r = 1, g = 1, b = 1, a = 1 })
+    local rect_color = { r = 1, g = 0, b = 0, a = 1 } -- red
+
+    local pos = Coord.gl(0, 0) -- refer to the center of the screen
+    local size = Coord.pxDelta(200, 200) -- refers to the direction +200,+200, in pixels
+
+    Debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
+
+    -- Draw a square with its corner at the center of the screen, with size 200px
+    Graphics.drawRect(pos, size, rect_color)
+
+    local pos2 = Coord.px(100, 100) -- refer to a position in pixels
+    local size2 = Coord.glDelta(1, 1) -- a quarter of the screen
+    Graphics.drawRect(pos2, size2, rect_color)
+end
+```
+
+You can use `px`, `gl`, `vw` and `vh` to define position on the screen using the coordinate system you prefer.
+Same for screen vectors. You can add a screen position to a screen vector and perform the usual operations you'd expect with them.
+You can think of them as vectors with a unit.
+
 `Graphics` contains a lot of other functions to draw images, text, arrows or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
+All functions can use `Vec` or `ScreenPosition` to define position. Use the style you prefer!
 
 ## Interacting with the user
 

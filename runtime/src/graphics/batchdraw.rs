@@ -175,9 +175,11 @@ impl BatchDraw2d {
         ));
     }
 
-    pub fn draw_polygon(&mut self, points: Vec<Vec2>, color: [f32; 4]) {
+    pub fn draw_polygon(&mut self, points: impl Iterator<Item = Vec2>, color: [f32; 4]) {
+        let mut points_len = 0;
         #[rustfmt::skip]
-        let vertices: Vec<f32> = points.iter().flat_map(|p| {
+        let vertices: Vec<f32> = points.flat_map(|p| {
+            points_len += 1;
             vec![
                 p.x, p.y, 0.0, // position
                 color[0], color[1], color[2], color[3], // color
@@ -185,8 +187,8 @@ impl BatchDraw2d {
         }).collect();
 
         // Triangulate the polygon using a triangle fan
-        let mut indices: Vec<u32> = Vec::with_capacity((points.len() - 2) * 3);
-        for i in 1..(points.len() - 1) {
+        let mut indices: Vec<u32> = Vec::with_capacity((points_len - 2) * 3);
+        for i in 1..(points_len - 1) {
             indices.push(0);
             indices.push(i as u32);
             indices.push((i + 1) as u32);

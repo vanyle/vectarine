@@ -1,12 +1,16 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::Table;
+use mlua::{AnyUserData, Table};
 
 use crate::{
     game_resource::{self, ResourceId, font_resource::FontResource, image_resource::ImageResource},
     graphics::{batchdraw, shape::Quad},
     io,
-    lua_env::{add_fn_to_table, lua_canvas, lua_vec2::Vec2},
+    lua_env::{
+        add_fn_to_table, lua_canvas,
+        lua_coord::{get_pos_as_vec2, get_size_as_vec2},
+        lua_vec2::Vec2,
+    },
 };
 
 pub fn setup_graphics_api(
@@ -19,7 +23,9 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "drawRect", {
         let batch = batch.clone();
-        move |_, (pos, size, color): (Vec2, Vec2, Table)| {
+        move |_, (mpos, msize, color): (AnyUserData, AnyUserData, Table)| {
+            let pos = get_pos_as_vec2(mpos)?;
+            let size = get_size_as_vec2(msize)?;
             let color = [
                 color.get::<f32>("r").unwrap_or(0.0),
                 color.get::<f32>("g").unwrap_or(0.0),
@@ -35,7 +41,10 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "drawPolygon", {
         let batch = batch.clone();
-        move |_, (points, color): (Vec<Vec2>, Table)| {
+        move |_, (points, color): (Vec<AnyUserData>, Table)| {
+            let points = points
+                .into_iter()
+                .map(|p| get_pos_as_vec2(p).unwrap_or_default());
             batch
                 .borrow_mut()
                 .draw_polygon(points, table_to_color(color));
@@ -45,7 +54,9 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "drawArrow", {
         let batch = batch.clone();
-        move |lua, (pos, dir, color, size): (Vec2, Vec2, Option<Table>, Option<f32>)| {
+        move |lua, (mpos, mdir, color, size): (AnyUserData, AnyUserData, Option<Table>, Option<f32>)| {
+            let pos = get_pos_as_vec2(mpos)?;
+            let dir = get_size_as_vec2(mdir)?;
             let color = table_to_color(color.unwrap_or(get_default_color(lua).unwrap()));
             let dir_len = (dir.x * dir.x + dir.y * dir.y).sqrt();
             if dir_len == 0.0 {
@@ -60,20 +71,21 @@ pub fn setup_graphics_api(
             let p2 = pos + dir + perp.scale(arrow_head_size / 1.5);
             let p3 = pos + dir + dir_norm.scale(arrow_head_size);
             let mut batch = batch.borrow_mut();
-            batch.draw_polygon(Vec::from([p1, p2, p3]), color);
+            batch.draw_polygon([p1, p2, p3].into_iter(), color);
 
             let p1 = pos - perp.scale(arrow_width / 2.0);
             let p2 = pos + dir - perp.scale(arrow_width / 2.0);
             let p3 = pos + dir + perp.scale(arrow_width / 2.0);
             let p4 = pos + perp.scale(arrow_width / 2.0);
-            batch.draw_polygon(Vec::from([p1, p2, p3, p4]), color);
+            batch.draw_polygon([p1, p2, p3, p4].into_iter(), color);
             Ok(())
         }
     });
 
     add_fn_to_table(lua, &graphics_module, "drawCircle", {
         let batch = batch.clone();
-        move |_, (pos, radius, color): (Vec2, f32, Table)| {
+        move |_, (mpos, radius, color): (AnyUserData, f32, Table)| {
+            let pos = get_pos_as_vec2(mpos)?;
             batch
                 .borrow_mut()
                 .draw_circle(pos.x, pos.y, radius, table_to_color(color));
@@ -84,7 +96,9 @@ pub fn setup_graphics_api(
     add_fn_to_table(lua, &graphics_module, "drawImage", {
         let batch = batch.clone();
         let resources = resources.clone();
-        move |_, (id, pos, size): (ResourceId, Vec2, Vec2)| {
+        move |_, (id, mpos, msize): (ResourceId, AnyUserData, AnyUserData)| {
+            let pos = get_pos_as_vec2(mpos)?;
+            let size = get_size_as_vec2(msize)?;
             let tex = resources.get_by_id::<ImageResource>(id);
             let Ok(tex) = tex else {
                 return Ok(());
@@ -104,15 +118,19 @@ pub fn setup_graphics_api(
         let batch = batch.clone();
         let resources = resources.clone();
         move |_,
-              (id, p1, p2, p3, p4, src_pos, src_size): (
+              (id, mp1, mp2, mp3, mp4, src_pos, src_size): (
             ResourceId,
-            Vec2,
-            Vec2,
-            Vec2,
-            Vec2,
+            AnyUserData,
+            AnyUserData,
+            AnyUserData,
+            AnyUserData,
             Vec2,
             Vec2,
         )| {
+            let p1 = get_pos_as_vec2(mp1)?;
+            let p2 = get_pos_as_vec2(mp2)?;
+            let p3 = get_pos_as_vec2(mp3)?;
+            let p4 = get_pos_as_vec2(mp4)?;
             let tex = resources.get_by_id::<ImageResource>(id);
             let Ok(tex) = tex else {
                 return Ok(());
@@ -132,7 +150,9 @@ pub fn setup_graphics_api(
     add_fn_to_table(lua, &graphics_module, "drawCanvas", {
         let batch = batch.clone();
         let env = env_state.clone();
-        move |_, (canvas, pos, size): (lua_canvas::RcFramebuffer, Vec2, Vec2)| {
+        move |_, (canvas, mpos, msize): (lua_canvas::RcFramebuffer, AnyUserData, AnyUserData)| {
+            let pos = get_pos_as_vec2(mpos)?;
+            let size = get_size_as_vec2(msize)?;
             let framebuffer = canvas.gl();
             let shader = canvas.current_shader();
             batch
@@ -146,15 +166,19 @@ pub fn setup_graphics_api(
         let batch = batch.clone();
         let env_state = env_state.clone();
         move |_,
-              (canvas, p1, p2, p3, p4, src_pos, src_size): (
+              (canvas, mp1, mp2, mp3, mp4, src_pos, src_size): (
             lua_canvas::RcFramebuffer,
-            Vec2,
-            Vec2,
-            Vec2,
-            Vec2,
+            AnyUserData,
+            AnyUserData,
+            AnyUserData,
+            AnyUserData,
             Vec2,
             Vec2,
         )| {
+            let p1 = get_pos_as_vec2(mp1)?;
+            let p2 = get_pos_as_vec2(mp2)?;
+            let p3 = get_pos_as_vec2(mp3)?;
+            let p4 = get_pos_as_vec2(mp4)?;
             let framebuffer = canvas.gl();
             let shader = canvas.current_shader();
             batch.borrow_mut().draw_canvas_part(
@@ -172,7 +196,8 @@ pub fn setup_graphics_api(
     add_fn_to_table(lua, &graphics_module, "drawText", {
         let batch = batch.clone();
         let resources = resources.clone();
-        move |_, (text, font, pos, size, color): (String, ResourceId, Vec2, f32, Table)| {
+        move |_, (text, font, mpos, size, color): (String, ResourceId, AnyUserData, f32, Table)| {
+            let pos = get_pos_as_vec2(mpos)?;
             let color = table_to_color(color);
             let font_resource = resources.get_by_id::<FontResource>(font);
             let Ok(font_resource) = font_resource else {
