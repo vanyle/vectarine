@@ -160,6 +160,10 @@ function Update(time_delta: number)
         Graphics.drawText(text, fontResource, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
     end
 
-    Graphics.drawArrow(V2(0, 0), m:scale(1/m:length()/3))
+    local as_px = (Coord.gl(m.x, m.y) - Coord.gl(0, 0)):px()
+    fprint("Mouse in px: ", as_px)
+    as_px = as_px:scale(1/as_px:length()):scale(100)
+
+    Graphics.drawArrow(V2(0, 0), Coord.pxDelta(as_px.x, as_px.y))
 end
 

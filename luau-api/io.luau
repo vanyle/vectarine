@@ -14,7 +14,7 @@ function module.getKeysDown(): {string}
     error("Not implemented")
 end
 
---- Get the current mouse position
+--- Get the current mouse position in OpenGL coordinates
 function module.getMouse(): Vec.Vec2
     error("Not implemented")
 end

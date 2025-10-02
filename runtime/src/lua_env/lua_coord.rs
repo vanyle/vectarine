@@ -61,6 +61,12 @@ impl ScreenVec {
             -v.y * 2.0 / screen_height,
         ))
     }
+    pub fn as_px(self, screen_width: f32, screen_height: f32) -> Vec2 {
+        Vec2::new(
+            self.0.x * screen_width * 0.5,
+            -self.0.y * screen_height * 0.5,
+        )
+    }
 }
 
 impl FromLua for ScreenPosition {
@@ -117,6 +123,13 @@ impl UserData for ScreenVec {
             mlua::MetaMethod::Sub,
             |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 - other.0)),
         );
+
+        methods.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
+        methods.add_method("px", |lua, this, ()| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
+            Ok(this.as_px(viewport.width as f32, viewport.height as f32))
+        });
     }
 }
 

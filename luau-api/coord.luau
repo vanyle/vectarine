@@ -3,9 +3,21 @@ local Vec = require("@vectarine/vec")
 --- A module for dealing with coordinate systems and switching between them.
 local module = {}
 
-local ScreenDeltaImpl = {screen_delta=true}
-ScreenDeltaImpl.__index = ScreenDeltaImpl
-export type ScreenVec = typeof(setmetatable({} :: Vec.Vec2Data, ScreenDeltaImpl))
+local ScreenVecImpl = {screen_vec=true}
+ScreenVecImpl.__index = ScreenVecImpl
+export type ScreenVec = typeof(setmetatable({} :: Vec.Vec2Data, ScreenVecImpl))
+
+function ScreenVecImpl.gl(self: ScreenVec): Vec.Vec2
+    error("Not implemented")
+end
+
+--- Returns the position as a Vec2 in the pixel coordinate system
+function ScreenVecImpl.px(self: ScreenVec): Vec.Vec2
+    error("Not implemented")
+end
+
+
+--------------------------------------
 
 local ScreenPositionImpl = {screen_position=true}
 ScreenPositionImpl.__index = ScreenPositionImpl
