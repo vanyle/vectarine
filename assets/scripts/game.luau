@@ -1,3 +1,4 @@
+local Coord = require('@vectarine/coord')
 local Debug = require('@vectarine/debug')
 local Event = require('@vectarine/event')
 local Graphics = require('@vectarine/graphics')
@@ -39,7 +40,9 @@ local helperResource, helper = Resources.loadScript("scripts/helper.luau", requi
 
 Graphics.clear({r=1, g=0, b=0, a=1})
 
-_G.fullscreen = false
+if _G.fullscreen == nil then
+    _G.fullscreen = false
+end
 _G.frame_times = {}
 
 if _G.fullscreen then
@@ -90,7 +93,10 @@ function Update(time_delta: number)
     end
 
     local rect_color = {r = 0, g = 0, b = 1, a = 1}
-    Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rect_color)
+    
+    fprint(Coord.pxDelta(100, 100))
+
+    Graphics.drawRect(Coord.gl(0, 0), Coord.pxDelta(100, 100), rect_color)
 
     if Resources.isResourceReady(helperResource) then
         fprint("Adding: ",helper.add_things(3, 2)) -- prints 1+2+3 = 6
@@ -101,7 +107,7 @@ function Update(time_delta: number)
     local v = V2(1, 2)
     local w = V2(1, 2)
     local r = v * w
-    fprint("hello", r.x, r.y)
+    fprint("hello", r.x, r.y, Coord.gl(0, 0):px())
 
     if Io.isKeyDown("space") then
         rect_color = { r = 1, g = 0, b = 1, a = 1 }
@@ -148,12 +154,12 @@ function Update(time_delta: number)
     -- Center of the screen
     if Resources.isResourceReady(logoResource) then
         fprint("read: ", Resources.isResourceReady(logoResource))
-        Graphics.drawImage(logoResource, V2(-0.1, -0.1), V2(0.2, 0.2))
+        Graphics.drawImage(logoResource, Coord.gl(0, 0) - Coord.pxDelta(100, 100), Coord.pxDelta(200, 200))
     end
     if Resources.isResourceReady(fontResource) then
         Graphics.drawText(text, fontResource, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
     end
 
-    Graphics.drawArrow(V2(0, 0), V2(m.x, m.y):scale(0.5))
+    Graphics.drawArrow(V2(0, 0), m:scale(1/m:length()/3))
 end
 

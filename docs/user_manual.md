@@ -103,6 +103,8 @@ end
 
 ### Using Coord
 
+> TLDR; Coordinates are like vectors with a unit.
+
 Drawing with `Vec` is convenient, however, often, you want to draw squares, or shapes where the width to height ratio needs to say constant.
 When using `Vec`, this means manually multiplying your position by `screen_height/screen_width` to normalize everything.
 
@@ -119,12 +121,11 @@ function Update(time_delta)
     local rect_color = { r = 1, g = 0, b = 0, a = 1 } -- red
 
     local pos = Coord.gl(0, 0) -- refer to the center of the screen
-    local size = Coord.pxDelta(200, 200) -- refers to the direction +200,+200, in pixels
-
+    local size = Coord.px(200, 200) -- refers to position (200,200), in pixels, from the top-left
     Debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
 
-    -- Draw a square with its corner at the center of the screen, with size 200px
-    Graphics.drawRect(pos, size, rect_color)
+    -- Draw a square at the center of the screen, with size 200px
+    Graphics.drawRect(Coord.gl(0, 0) - Coord.pxDelta(100, 100), Coord.pxDelta(100, 100), rect_color)
 
     local pos2 = Coord.px(100, 100) -- refer to a position in pixels
     local size2 = Coord.glDelta(1, 1) -- a quarter of the screen
@@ -133,11 +134,11 @@ end
 ```
 
 You can use `px`, `gl`, `vw` and `vh` to define position on the screen using the coordinate system you prefer.
-Same for screen vectors. You can add a screen position to a screen vector and perform the usual operations you'd expect with them.
-You can think of them as vectors with a unit.
+Same for screen vectors, just use `pxDelta`, `glDelta`, etc...
+You can add or remove a screen vector to a screen position to get another position. In general, you can perform the usual operations you'd expect with them.
 
 `Graphics` contains a lot of other functions to draw images, text, arrows or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
-All functions can use `Vec` or `ScreenPosition` to define position. Use the style you prefer!
+All functions can use `Vec` or `ScreenPosition` to draw things. Use the style you prefer!
 
 ## Interacting with the user
 
