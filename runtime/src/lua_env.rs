@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
@@ -45,19 +46,24 @@ impl LuaEnvironment {
         );
         let _ = lua.sandbox(false);
 
+        lua.globals()
+            .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
+            .unwrap(); // Table used to store unsafe function that we need to access from Rust inside Rust.
+
+        // Put gl into internals
+        let gl = batch.borrow().drawing_target.gl().clone();
+        let internals = get_internals(&lua);
+        internals.set(GL_USERDATA_KEY, LuaGLContext(gl)).unwrap();
+
         let resources = Rc::new(ResourceManager::default());
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
         let frame_messages = Rc::new(RefCell::new(Vec::new()));
         let messages = Rc::new(RefCell::new(VecDeque::new()));
 
-        lua.globals()
-            .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
-            .unwrap(); // Table used to store unsafe function that we need to access from Rust inside Rust.
-
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
 
-        let coords_module = lua_coord::setup_coords_api(&lua, &env_state).unwrap();
+        let coords_module = lua_coord::setup_coords_api(&lua).unwrap();
         lua.register_module("@vectarine/coord", coords_module)
             .unwrap();
 
@@ -273,4 +279,16 @@ fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) 
         }
         _ => "[unknown]".to_string(),
     }
+}
+
+struct LuaGLContext(Arc<glow::Context>);
+impl mlua::UserData for LuaGLContext {}
+
+const GL_USERDATA_KEY: &str = "__gl_context";
+pub fn get_gl_handle(lua: &mlua::Lua) -> Arc<glow::Context> {
+    let internals = get_internals(lua);
+    let gl_value: mlua::Value = internals.raw_get(GL_USERDATA_KEY).unwrap();
+    let gl_userdata = gl_value.as_userdata().unwrap();
+    let gl = gl_userdata.borrow::<LuaGLContext>().unwrap();
+    gl.0.clone()
 }

@@ -417,10 +417,15 @@ const INDICES_FOR_QUAD: [u32; 6] = [
 ];
 
 pub fn make_rect(x: f32, y: f32, width: f32, height: f32) -> Quad {
+    let x_μ = f32::min(x, x + width);
+    let x_ω = f32::max(x, x + width);
+    let y_μ = f32::min(y, y + height);
+    let y_ω = f32::max(y, y + height);
+
     Quad {
-        p1: Vec2::new(x, y),
-        p2: Vec2::new(x + width, y),
-        p3: Vec2::new(x + width, y + height),
-        p4: Vec2::new(x, y + height),
+        p1: Vec2::new(x_μ, y_μ),
+        p2: Vec2::new(x_ω, y_μ),
+        p3: Vec2::new(x_ω, y_ω),
+        p4: Vec2::new(x_μ, y_ω),
     }
 }

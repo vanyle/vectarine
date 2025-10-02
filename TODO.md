@@ -1,11 +1,5 @@
 # TODO
 
-- [ ] Add a unit API with proper coordinate management instead of V2.
-  - [x] Define a simple to understand and to use API
-  - [x] Implement the types on the Rust side
-  - [x] Make the graphics functions accept these types in addition to Vec2
-  - [x] Update the user manual
-  - [ ] Proper coordinate computation when drawing on a canvas
 - [ ] 'Screen' system (Menu, Settings, Game, Pause...)
   - [ ] Design an API for the screen system
   - [ ] Implement the types of the Rust side
@@ -73,6 +67,12 @@
 
 # Done
 
+- [x] Add a unit API with proper coordinate management instead of V2.
+  - [x] Define a simple to understand and to use API
+  - [x] Implement the types on the Rust side
+  - [x] Make the graphics functions accept these types in addition to Vec2
+  - [x] Update the user manual
+  - [x] Proper coordinate computation when drawing on a canvas
 - [x] Make the environment ready before loading lua scripts
 - [x] Add debugger tab to inspect values of Lua Constants
 - [x] Add more room in the debug ui to show loading errors

@@ -9,18 +9,6 @@ use crate::{
 
 pub struct RcEnvState(pub Rc<RefCell<IoEnvState>>);
 impl mlua::UserData for RcEnvState {}
-impl mlua::FromLua for RcEnvState {
-    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(RcEnvState(ud.borrow::<Self>()?.0.clone())),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "RcEnvState".to_string(),
-                message: Some("Expected RcEnvState userdata".to_string()),
-            }),
-        }
-    }
-}
 
 const ENV_STATE_KEY: &str = "__env_state";
 
@@ -147,6 +135,8 @@ pub fn setup_io_api(
 
 pub fn get_env_state(lua: &mlua::Lua) -> Rc<RefCell<IoEnvState>> {
     let internals = get_internals(lua);
-    let rc_env_state: RcEnvState = internals.raw_get(ENV_STATE_KEY).unwrap();
+    let value: mlua::Value = internals.raw_get(ENV_STATE_KEY).unwrap();
+    let rc_env_state = value.as_userdata().unwrap();
+    let rc_env_state = rc_env_state.borrow::<RcEnvState>().unwrap();
     rc_env_state.0.clone()
 }

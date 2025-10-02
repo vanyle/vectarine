@@ -104,15 +104,17 @@ impl Framebuffer {
         self.height
     }
 
+    pub fn get_viewport(&self) -> Viewport {
+        get_viewport(&self.gl)
+    }
+
     /// Bind the framebuffer, execute the closure, then unbind the framebuffer.
     /// The viewport is adjusted to match the framebuffer size during the execution of the closure.
     /// This means that any rendering done in the closure will be rendered to the framebuffer.
     pub fn using(&self, f: impl FnOnce()) {
-        let mut viewport = [0, 0, 0, 0];
+        // Store current viewport
+        let viewport = self.get_viewport();
         unsafe {
-            // Store current viewport
-            self.gl
-                .get_parameter_i32_slice(glow::VIEWPORT, &mut viewport);
             let gl = self.gl.as_ref();
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.id));
             gl.viewport(0, 0, self.width as i32, self.height as i32);
@@ -122,7 +124,7 @@ impl Framebuffer {
             self.gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             // Restore previous viewport
             self.gl
-                .viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+                .viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         }
     }
 
@@ -150,5 +152,26 @@ impl Drop for Framebuffer {
             self.gl.delete_texture(self.depth_stencil_tex);
             self.gl.delete_framebuffer(self.id);
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Viewport {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+pub fn get_viewport(gl: &Arc<glow::Context>) -> Viewport {
+    let mut viewport = [0, 0, 0, 0];
+    unsafe {
+        gl.get_parameter_i32_slice(glow::VIEWPORT, &mut viewport);
+    }
+    Viewport {
+        x: viewport[0],
+        y: viewport[1],
+        width: viewport[2],
+        height: viewport[3],
     }
 }

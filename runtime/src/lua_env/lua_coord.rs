@@ -1,10 +1,10 @@
-use std::{cell::RefCell, ops, rc::Rc};
+use std::{ops, rc::Rc};
 
-use mlua::{AnyUserData, FromLua, UserData};
+use mlua::{AnyUserData, FromLua, IntoLua, UserData};
 
 use crate::{
-    io::IoEnvState,
-    lua_env::{add_fn_to_table, lua_io::get_env_state, lua_vec2::Vec2},
+    graphics::glframebuffer::get_viewport,
+    lua_env::{add_fn_to_table, get_gl_handle, lua_vec2::Vec2},
 };
 
 // MARK: Type Def
@@ -111,10 +111,11 @@ impl UserData for ScreenVec {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_meta_function(
             mlua::MetaMethod::Add,
-            |_, (this, other): (ScreenVec, AnyUserData)| {
-                let other = other.borrow::<ScreenVec>()?;
-                Ok(ScreenVec(this.0 + other.0))
-            },
+            |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 + other.0)),
+        );
+        methods.add_meta_function(
+            mlua::MetaMethod::Sub,
+            |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 - other.0)),
         );
     }
 }
@@ -123,10 +124,9 @@ impl UserData for ScreenPosition {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
         methods.add_method("px", |lua, this, ()| {
-            let env_state = get_env_state(lua);
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
-            Ok(this.as_px(screen_width, screen_height))
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
+            Ok(this.as_px(viewport.width as f32, viewport.height as f32))
         });
 
         methods.add_meta_function(
@@ -144,11 +144,19 @@ impl UserData for ScreenPosition {
             },
         );
 
-        methods.add_meta_method(
+        methods.add_meta_function(
             mlua::MetaMethod::Sub,
-            |_, this: &ScreenPosition, (other,): (AnyUserData,)| {
-                let other = other.borrow::<ScreenPosition>().unwrap();
-                Ok(*this - *other)
+            |lua, (this, other): (ScreenPosition, AnyUserData)| {
+                let as_screen_pos = other.borrow::<ScreenPosition>();
+                if let Ok(as_screen_pos) = as_screen_pos {
+                    return ScreenVec(this.0 - as_screen_pos.0).into_lua(lua);
+                }
+                let as_screen_vec = other.borrow::<ScreenVec>();
+                if let Ok(as_screen_vec) = as_screen_vec {
+                    return (ScreenPosition(this.0 - as_screen_vec.0)).into_lua(lua);
+                }
+                let as_vec = other.borrow::<Vec2>()?;
+                (ScreenPosition(this.0 - *as_vec)).into_lua(lua)
             },
         );
 
@@ -158,34 +166,29 @@ impl UserData for ScreenPosition {
     }
 }
 
-pub fn setup_coords_api(
-    lua: &Rc<mlua::Lua>,
-    env_state: &Rc<RefCell<IoEnvState>>,
-) -> mlua::Result<mlua::Table> {
+pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     let coords_module = lua.create_table()?;
 
     add_fn_to_table(lua, &coords_module, "px", {
-        let env_state = env_state.clone();
-        move |_, (x, y): (f32, f32)| {
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
+        move |lua, (x, y): (f32, f32)| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
             Ok(ScreenPosition::from_px(
                 Vec2::new(x, y),
-                screen_width,
-                screen_height,
+                viewport.width as f32,
+                viewport.height as f32,
             ))
         }
     });
 
     add_fn_to_table(lua, &coords_module, "pxDelta", {
-        let env_state = env_state.clone();
-        move |_, (x, y): (f32, f32)| {
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
+        move |lua, (x, y): (f32, f32)| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
             Ok(ScreenVec::from_px(
                 Vec2::new(x, y),
-                screen_width,
-                screen_height,
+                viewport.width as f32,
+                viewport.height as f32,
             ))
         }
     });
@@ -202,50 +205,46 @@ pub fn setup_coords_api(
     );
 
     add_fn_to_table(lua, &coords_module, "vw", {
-        let env_state = env_state.clone();
-        move |_, (x, y): (f32, f32)| {
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
+        move |lua, (x, y): (f32, f32)| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
             Ok(ScreenPosition::from_vw(
                 Vec2::new(x, y),
-                screen_width,
-                screen_height,
+                viewport.width as f32,
+                viewport.height as f32,
             ))
         }
     });
 
     add_fn_to_table(lua, &coords_module, "vwDelta", {
-        let env_state = env_state.clone();
-        move |_, (x, y): (f32, f32)| {
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
+        move |lua, (x, y): (f32, f32)| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
             Ok(ScreenVec(Vec2::new(
                 x * 2.0 / 100.0,
-                y * 2.0 / 100.0 * screen_width / screen_height,
+                y * 2.0 / 100.0 * viewport.width as f32 / viewport.height as f32,
             )))
         }
     });
 
     add_fn_to_table(lua, &coords_module, "vh", {
-        let env_state = env_state.clone();
-        move |_, (x, y): (f32, f32)| {
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
+        move |lua, (x, y): (f32, f32)| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
             Ok(ScreenPosition::from_vh(
                 Vec2::new(x, y),
-                screen_width,
-                screen_height,
+                viewport.width as f32,
+                viewport.height as f32,
             ))
         }
     });
 
     add_fn_to_table(lua, &coords_module, "vhDelta", {
-        let env_state = env_state.clone();
-        move |_, (x, y): (f32, f32)| {
-            let screen_width = env_state.borrow().screen_width as f32;
-            let screen_height = env_state.borrow().screen_height as f32;
+        move |lua, (x, y): (f32, f32)| {
+            let gl = get_gl_handle(lua);
+            let viewport = get_viewport(&gl);
             Ok(ScreenVec(Vec2::new(
-                x * 2.0 / 100.0 * screen_height / screen_width,
+                x * 2.0 / 100.0 * viewport.height as f32 / viewport.width as f32,
                 y * 2.0 / 100.0,
             )))
         }

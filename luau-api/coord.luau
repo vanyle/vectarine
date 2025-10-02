@@ -14,7 +14,7 @@ ScreenPositionImpl.__add = function(a: ScreenPosition, b: ScreenVec): ScreenPosi
     error("Not implemented")
 end
 
-ScreenPositionImpl.__sub = function(a: ScreenPosition, b: ScreenPosition): ScreenVec
+ScreenPositionImpl.__sub = function<T>(a: ScreenPosition, b: ScreenPosition | ScreenVec): ScreenPosition | ScreenVec
     error("Not implemented")
 end
 
