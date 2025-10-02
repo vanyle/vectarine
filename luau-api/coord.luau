@@ -14,9 +14,10 @@ ScreenPositionImpl.__add = function(a: ScreenPosition, b: ScreenVec): ScreenPosi
     error("Not implemented")
 end
 
-ScreenPositionImpl.__sub = function<T>(a: ScreenPosition, b: ScreenPosition | ScreenVec): ScreenPosition | ScreenVec
+local sub_function: ((ScreenPosition, ScreenPosition) -> ScreenVec) & ((ScreenPosition, ScreenVec) -> ScreenPosition)  = function(a: any, b: any): any
     error("Not implemented")
 end
+ScreenPositionImpl.__sub = sub_function
 
 --- Returns the position as a Vec2 in the OpenGL coordinate system
 function ScreenPositionImpl.gl(self: ScreenPosition): Vec.Vec2
