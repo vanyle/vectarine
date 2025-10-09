@@ -33,7 +33,8 @@ dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "s
 git = "https://github.com/microsoft/vcpkg"
 
 # to check for a new release, check https://github.com/microsoft/vcpkg/releases
-rev = "2024.05.24"
+# https://github.com/microsoft/vcpkg/commit/50c0cb48a0cf2f6fc5c7b2c0d2bafbe26d0a7ca2
+rev = "50c0cb4"
 
 [package.metadata.vcpkg.target]
 x86_64-pc-windows-msvc = { triplet = "x64-windows-static" }
