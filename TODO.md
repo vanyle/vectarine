@@ -1,13 +1,9 @@
-# TODO
+# TO-DO
 
-- [ ] 'Screen' system (Menu, Settings, Game, Pause...)
-  - [ ] Design an API for the screen system
-  - [ ] Implement the types of the Rust side
-  - [ ] Update the user manual with usage infos
 - [ ] Project System in the editor
   - [ ] 'assets' should be 'gamedata'
   - [ ] Have a game.toml inside 'gamedata'. It is loaded first instead of game.lua
-    - [ ] Manifest contains name of the game, logo, tags and root source.
+    - [ ] Manifest contains name of the game, logo, tags, and root source.
     - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
   - [ ] Open manifest in the editor from the file menu
   - [ ] Allow reopening aka 'reset' of games
@@ -36,9 +32,14 @@
   - [ ] V4 is a color
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
-- [ ] Make a game with it !!!
-
 - [ ] Audio API
+  - [ ] Create an Audio resource
+  - [ ] Play a sound
+- [ ] Make a game with it!!!
+
+- [ ] Expose Stencil API to Lua
+  - [ ] Define in Luau types: drawWithMask(drawFunction, maskFunction)
+  - [ ] Implement in Rust
 - [ ] Open-source the project
 - [ ] Add a CI
 - [ ] Timer event?
@@ -46,7 +47,7 @@
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
 - [ ] Event system, part II
-  - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, they are cheap)
+  - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
 - [ ] Make errors/warnings inside Update spam less the console
   - [ ] When the same error happens in a row inside update, only print it once (same behavior as browsers)
 - [ ] Better errors:
@@ -60,13 +61,16 @@
   - [ ] Camera
   - [ ] Scene
   - [ ] Geometries + Materials = Mesh
-  - [ ] Allow 2d meshs "paper style"
+  - [ ] Allow 2d meshs with 'paper style'
   - [ ] Lights and shadows (set a max number of lights to 20 in the API)
   - [ ] Reflective objects like water
   - [ ] Drawing a depth buffer
 
 # Done
 
+- [x] 'Screen' system (Menu, Settings, Game, Pause...)
+  - [x] Design an API for the screen system
+  - [x] Implement the types of the Rust side
 - [x] Add a unit API with proper coordinate management instead of V2.
   - [x] Define a simple to understand and to use API
   - [x] Implement the types on the Rust side

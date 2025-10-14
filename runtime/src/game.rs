@@ -10,7 +10,7 @@ use crate::{
     console::Verbosity,
     game_resource::{Resource, ResourceId, Status},
     io::process_events,
-    lua_env::LuaEnvironment,
+    lua_env::{LuaEnvironment, lua_screen},
 };
 
 pub struct Game {
@@ -173,10 +173,13 @@ impl Game {
             framebuffer_height as f32,
         );
 
+        // Update screen transitions
+        lua_screen::update_screen_transition(&self.lua_env.lua, delta_time.as_secs_f32());
+
         {
             let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
-                let err = update_fn.call::<()>((delta_time.as_secs_f64(),));
+                let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
                 if let Err(err) = err {
                     self.lua_env.print(&err.to_string(), Verbosity::Error);
                 }

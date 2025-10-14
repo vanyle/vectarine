@@ -10,6 +10,7 @@ pub mod lua_event;
 pub mod lua_graphics;
 pub mod lua_io;
 pub mod lua_resource;
+pub mod lua_screen;
 pub mod lua_vec2;
 
 use crate::console::{ConsoleMessage, Verbosity};
@@ -75,6 +76,11 @@ impl LuaEnvironment {
         let canvas_module =
             lua_canvas::setup_canvas_api(&lua, &batch, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/canvas", canvas_module)
+            .unwrap();
+
+        let screen_module =
+            lua_screen::setup_screen_api(&lua, &batch, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/screen", screen_module)
             .unwrap();
 
         let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();

@@ -4,6 +4,7 @@ local Event = require('@vectarine/event')
 local Graphics = require('@vectarine/graphics')
 local Io = require('@vectarine/io')
 local Resources = require('@vectarine/resources')
+local Screen = require('@vectarine/screen')
 local Vec = require('@vectarine/vec')
 local print = Debug.print
 local fprint = Debug.fprint
@@ -40,6 +41,24 @@ local helperResource, helper = Resources.loadScript("scripts/helper.luau", requi
 
 Graphics.clear({r=1, g=0, b=0, a=1})
 
+local menuScreen = Screen.newScreen("Menu", function()
+    Graphics.drawRect(Coord.gl(-1, -1), Coord.glDelta(2,2), {r=0.2, g=0, b=0, a=1})
+    Graphics.drawText("Main Menu", fontResource, Coord.gl(-0.5, 0), 0.32, {r=1, g=1, b=1, a=1})
+    Graphics.drawText("Press SPACE to start", fontResource, Coord.gl(-0.5, -0.3), 0.16, {r=0.7, g=0.7, b=0.7, a=1})
+end)
+local gameScreen = Screen.newScreen("Game", function()
+    Graphics.drawRect(Coord.gl(-1, -1), Coord.glDelta(2,2), {r=0, g=0.2, b=0, a=1})
+    Graphics.drawText("Playing Game", fontResource, Coord.gl(-0.5, 0), 0.32, {r=1, g=1, b=1, a=1})
+    Graphics.drawText("Press ESC for menu", fontResource, Coord.gl(-0.5, -0.3), 0.16, {r=0.7, g=0.7, b=0.7, a=1})
+
+    if Resources.isResourceReady(logoResource) then
+        fprint("read: ", Resources.isResourceReady(logoResource))
+        Graphics.drawImage(logoResource, Coord.gl(0, 0.5) - Coord.pxDelta(100, 100), Coord.pxDelta(200, 200))
+    end
+end)
+Screen.setCurrentScreen(menuScreen)
+
+
 if _G.fullscreen == nil then
     _G.fullscreen = false
 end
@@ -70,100 +89,27 @@ end
 
 function Update(time_delta: number)
 
-    local bg_color: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
+    local bg_color: Graphics.Color = { r = 0, g = 0, b = 0.2, a = 1 }
     Graphics.clear(bg_color)
 
-    fprint(150*150)
-
-    local slow = false
-    if slow then
-        local slow_factor = 150
-        local s = V2(0.1, 0.1)
-        for i = 0, slow_factor do
-            for j = 0, slow_factor do
-                local ratio = slow_factor / 2
-                local n1 = math.noise(i / slow_factor * 10, j / slow_factor * 10, t / 100)
-                local n2 = math.noise(j / slow_factor * 10, i / slow_factor * 10, t / 100)
-                local n3 = math.noise(i / slow_factor * 10, t / 100, j / slow_factor * 10)
-                local p = V2(-1 + i / ratio, -1 + j / ratio)
-                local noise_color: Graphics.Color = { r = n1, g = n2, b = n3, a = 1 }
-                Graphics.drawRect(p, s, noise_color)
-            end
-        end
+    local screen = Screen.getCurrentScreen()
+    if screen ~= nil then
+    if screen:name() == "Menu" and Io.isKeyDown("Space") then
+        -- Transition to game screen with fade effect
+        Screen.setCurrentScreen(gameScreen, {
+            duration = 1.0,
+            transition_style = "slide_up"
+        })
+    elseif screen:name() == "Game" and Io.isKeyDown("Escape") then
+        -- Transition back to menu with slide effect
+        Screen.setCurrentScreen(menuScreen, {
+            duration = 1.0,
+            transition_style = "toon"
+        })
     end
+end
 
-    local rect_color = {r = 0, g = 0, b = 1, a = 1}
-    
-    fprint(Coord.pxDelta(100, 100))
-
-    Graphics.drawRect(Coord.gl(0, 0), Coord.pxDelta(100, 100), rect_color)
-
-    if Resources.isResourceReady(helperResource) then
-        fprint("Adding: ",helper.add_things(3, 2)) -- prints 1+2+3 = 6
-    end
-    
-    rect_color = { r = 0, g = 0, b = 1, a = 1 }
-    
-    local v = V2(1, 2)
-    local w = V2(1, 2)
-    local r = v * w
-    fprint("hello", r.x, r.y, Coord.gl(0, 0):px())
-
-    if Io.isKeyDown("space") then
-        rect_color = { r = 1, g = 0, b = 1, a = 1 }
-    end
-
-    if Io.isKeyDown("space") then
-        if not spaceWasDown then
-            spacePressed:dispatch("Hello from space!")
-        end
-        spaceWasDown = true
-    else
-        spaceWasDown = false
-    end
-
-    t = t + 1
-    local m: Vec.Vec2 = Io.getMouse()
-    -- fprint("Hello: " .. x .. "," .. y)
-
-    local time_sum = 0
-    for i, val in ipairs(_G.frame_times) do
-        time_sum = time_sum + val
-    end
-    local avg_time = time_sum / #_G.frame_times
-
-    table.insert(_G.frame_times, time_delta)
-    if #_G.frame_times > 10 then
-        table.remove(_G.frame_times, 1)
-    end
-
-    fprint("AVG Frame time = " .. math.floor(10000 * avg_time) / 10 .. "ms")
-    fprint("AVG FPS = " .. math.floor(10 / avg_time) / 10)
-
-    Graphics.drawCircle(m, 0.1, rect_color)
-
-    -- drawImage(_G.logo, -0.2, -0.2, 0.4, 0.4)
-    local text = "HY$@llo World!  ..."
-    local textSize = 0.1
-
-    -- Technique for drawing a box around text.
-    local mesurement = Graphics.measureText(text, fontResource, textSize)
-    local toBaseline = mesurement.height - mesurement.bearingY
-    Graphics.drawRect(V2(-0.5, 0.5 + toBaseline), V2(mesurement.width, mesurement.height), { r = 0, g = 1, b = 0, a = 0.5 })
-
-    -- Center of the screen
-    if Resources.isResourceReady(logoResource) then
-        fprint("read: ", Resources.isResourceReady(logoResource))
-        Graphics.drawImage(logoResource, Coord.gl(0, 0) - Coord.pxDelta(100, 100), Coord.pxDelta(200, 200))
-    end
-    if Resources.isResourceReady(fontResource) then
-        Graphics.drawText(text, fontResource, V2(-0.5, 0.5), textSize, { r = 0, g = 0, b = 0, a = 1 })
-    end
-
-    local as_px = (Coord.gl(m.x, m.y) - Coord.gl(0, 0)):px()
-    fprint("Mouse in px: ", as_px)
-    as_px = as_px:scale(1/as_px:length()):scale(100)
-
-    Graphics.drawArrow(V2(0, 0), Coord.pxDelta(as_px.x, as_px.y))
+    -- Draw the current screen (handles transitions automatically)
+    Screen.drawCurrentScreen()
 end
 

@@ -41,12 +41,16 @@ pub fn set_opengl_attributes(gl_attr: GLAttr) {
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_multisample_buffers(1);
     gl_attr.set_multisample_samples(4);
+    gl_attr.set_stencil_size(8); // Request 8-bit stencil buffer
     gl_attr.set_context_flags().forward_compatible().set(); // for macOS
 }
 
 #[cfg(not(target_os = "macos"))]
 pub fn set_opengl_attributes(gl_attr: GLAttr) {
     gl_attr.set_context_version(3, 0);
+    gl_attr.set_multisample_buffers(1);
+    gl_attr.set_multisample_samples(4);
+    gl_attr.set_stencil_size(8); // Request 8-bit stencil buffer
     // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
 }
 

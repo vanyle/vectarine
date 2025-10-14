@@ -1,12 +1,12 @@
 local Canvas = require('@vectarine/canvas')
-local Coords = require('@vectarine/coords')
+local Coord = require('@vectarine/coord')
 local Res = require('@vectarine/resources')
 local Vec = require('@vectarine/vec')
 
 local module = {}
 
-type Pos = Coords.ScreenPosition | Vec.Vec2
-type Direction = Coords.ScreenDelta | Vec.Vec2
+type Pos = Coord.ScreenPosition | Vec.Vec2
+type Direction = Coord.ScreenVec | Vec.Vec2
 
 export type Color = { r: number; g: number; b: number; a: number }
 

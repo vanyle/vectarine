@@ -5,6 +5,7 @@ pub mod glprogram;
 pub mod gltypes;
 
 pub mod batchdraw;
+pub mod glstencil;
 pub mod gltexture;
 pub mod gluniforms;
 
