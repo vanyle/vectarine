@@ -35,8 +35,8 @@ Below are information on how to work and improve the engine.
 
 ## Requirements for working on the engine
 
-All setup commands in this README need to be ran in a bash/zsh shell if you are on Unix and on a Powershell shell if you are on Windows.
-Commands are prefixed with `both>`, `wind>`, `unix>`, depending on the target where they need to be ran, `unix` meaning Linux or Mac.
+All setup commands in this README need to be run in a bash/zsh shell if you are on Unix and on a Powershell shell if you are on Windows.
+Commands are prefixed with `both>`, `wind>`, `unix>`, depending on the target where they need to be run, `unix` meaning Linux or Mac.
 
 You'll need to get started:
 
@@ -68,7 +68,7 @@ See [Targeting the web](./docs/targeting-the-web.md) for more details on how to 
 ## Getting started on the engine
 
 Once you have everything installed, we need to setup SDL2.
-SDL2 is the library we use for windowing, input and OpenGL context creation.
+SDL2 is the library we use for windowing, input, and OpenGL context creation.
 You can use the [following reference](https://github.com/Rust-SDL2/rust-sdl2) for more details.
 
 If you are on linux and want to only compile for linux or the web, you can simply install the following packages:
@@ -102,7 +102,7 @@ unix> export VCPKG_ROOT=$(pwd)
 wind> $env:VCPKG=(Get-Item .).FullName
 
 # Finally, you can setup the integration between vcpkg and cargo
-both> cd path/to/the/location/of/vectarine
+both> cd path/to/the/location/of/vectarine/runtime
 both> cargo install cargo-vcpkg
 both> cd runtime
 both> cargo vcpkg build
@@ -132,7 +132,7 @@ both> uv run serve.py # Start this in another terminal.
 
 ### Runtime
 
-The main package (with code inside `runtime`) is an hybrid lib/bin package that can compile to the web without all the editor features like debugging, etc...
+The main package (with code inside `runtime`) is a hybrid lib/bin package that can compile to the web without all the editor features like debugging.
 It provides the run time code for stuff like asset loading with multiple implementations per target.
 
 ### Editor

@@ -36,7 +36,7 @@ To distribute your game, put the `runtime` executable and the `assets` folder in
 To distribute your game for the web, put together `index.html`, `runtime.js`, `runtime.wasm` and the `assets` folder.
 You can serve these files with any static file server, for example by doing `python -m http.server` and going to [http://localhost:8000](http://localhost:8000).
 
-If you see: "Error loading runtime", it means that you opened `index.html` directly from the file system instead of starting a server.
+If you see: "Error loading runtime", it means that you opened `index.html` directly from the filesystem instead of starting a server.
 It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`.
 
 ## Using Vectarine and Luau
@@ -121,7 +121,7 @@ function Update(time_delta)
     local rect_color = { r = 1, g = 0, b = 0, a = 1 } -- red
 
     local pos = Coord.gl(0, 0) -- refer to the center of the screen
-    local size = Coord.px(200, 200) -- refers to position (200,200), in pixels, from the top-left
+    local other_pos = Coord.px(200, 200) -- refers to position (200,200), in pixels, from the top-left
     Debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
 
     -- Draw a square at the center of the screen, with size 200px
@@ -137,7 +137,7 @@ You can use `px`, `gl`, `vw` and `vh` to define position on the screen using the
 Same for screen vectors, just use `pxDelta`, `glDelta`, etc...
 You can add or remove a screen vector to a screen position to get another position. In general, you can perform the usual operations you'd expect with them.
 
-`Graphics` contains a lot of other functions to draw images, text, arrows or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
+`Graphics` contains a lot of other functions to draw images, text, arrows, or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
 All functions can use `Vec` or `ScreenPosition` to draw things. Use the style you prefer!
 
 ## Interacting with the user
