@@ -21,7 +21,7 @@ impl Resource for ScriptResource {
         path: &Path,
         data: &[u8],
     ) -> Status {
-        run_file_and_display_error_from_lua_handle(&lua, data, path, self.target_table.as_ref());
+        run_file_and_display_error_from_lua_handle(lua, data, path, self.target_table.as_ref());
         self.script.replace(Some(data.to_vec()));
         Status::Loaded
     }

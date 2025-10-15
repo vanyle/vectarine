@@ -45,9 +45,9 @@ pub fn read_file(filename: &str, callback: Box<dyn FnOnce(Option<Vec<u8>>)>) {
         &Val::from_fn1(move |content: &Val| {
             // callback is FnOnce, we turn it into FnMut using this Option.
             if let Some(callback) = callback_option.take() {
-                if (content.is_false()) {
+                if content.is_false() {
                     callback(None);
-                    return;
+                    return ().into();
                 }
                 let s = content.as_string();
                 let decoded = BASE64_STANDARD.decode(&s).unwrap_or_default();

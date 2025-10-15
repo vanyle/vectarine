@@ -182,14 +182,14 @@ impl DataLayout {
             }
         }
         // Row is incomplete
-        if vertices.len() % stride != 0 {
+        if !vertices.len().is_multiple_of(stride) {
             return Some(format!(
                 "A row is incomplete, the row is made of {stride} bytes but the vertex buffer has {} bytes",
                 vertices.len()
             ));
         }
         // We assume that triangles are drawn
-        if indices.len() % 3 != 0 {
+        if !indices.len().is_multiple_of(3) {
             return Some(
                 "Index buffer is not a multiple of 3, but we are drawing triangles".to_string(),
             );
