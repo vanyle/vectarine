@@ -1,0 +1,42 @@
+[tools]
+uv = "0.9.0"
+emsdk = "4.0.13"
+rust = "1.90.0"
+git-lfs = "latest"
+
+[tasks.build-editor]
+alias = ["be"]
+description = "Build the editor in release mode"
+run = "cargo build --release -p editor"
+
+[tasks.run-editor]
+alias = ["re"]
+description = "Run the editor"
+run = "cargo run -p editor"
+
+[tasks.build-runtime]
+alias = ["br"]
+description = "Build the runtime in release mode"
+run = "cargo build --release -p runtime"
+
+[tasks.run-runtime]
+alias = ["rr"]
+description = "Run the runtime"
+run = "cargo run -p runtime"
+
+[tasks.build-web]
+description = "Build the web runtime in release mode"
+run = "cargo build --release -p runtime --target wasm32-unknown-emscripten"
+
+[tasks.tests]
+description = "Run all tests"
+run = "cargo test -- --nocapture --show-output"
+
+[tasks.clippy]
+description = "Run clippy on all packages and try to fix problems"
+run = ["cargo fix -p runtime --all-targets --all-features --allow-dirty", "cargo fix -p editor --all-targets --all-features --allow-dirty"]
+
+[tasks.release]
+description = "Create a new release"
+depends = ["clippy", "build-editor", "build-web", "build-runtime"]
+run = ["uv run scripts/release-engine.py"]

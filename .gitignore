@@ -7,3 +7,4 @@
 .DS_Store
 node_modules
 vectarine_config.toml
+mise.local.toml

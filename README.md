@@ -42,28 +42,26 @@ You'll need to get started:
 
 - A working `git` installation
 
-- A working `uv` installation (uv is a python manager). See how to [install `uv`](https://docs.astral.sh/uv/getting-started/installation/).
+- A working `mise` installation (mise is a package manager). See how to [install `mise`](https://mise.jdx.dev/getting-started.html).
 
-- A working `rust` (and cargo!) installation. You can install `rust` with [`rustup`](https://www.rust-lang.org/tools/install)
-
-- (Optional but needed for web builds) A working [`emscripten`](https://emscripten.org/docs/getting_started/downloads.html) installation
-
-You can install `emscripten` using:
+Mise will install all the dependencies for you, including Rust, Python, Emscripten, and uv.
+To make commands shorter, it'd recommend [activating mise in your shell](https://mise.jdx.dev/getting-started.html#activate-mise)
 
 ```bash
-# Run this inside the vectarine folder
-both> git clone https://github.com/emscripten-core/emsdk.git
-# Depending on your OS, run one of the following commands:
-wind> .\emsdk\emsdk.ps1 install 4.0.13
-unix> ./emsdk/emsdk install 4.0.13
-# Activate it
-wind> .\emsdk\emsdk.ps1 activate 4.0.13
-unix> ./emsdk/emsdk activate 4.0.13
+# Clone this repository
+git clone ...
+cd vectarine-enhanced
+# Install all dependencies
+mise install
 # Add the emscripten target to the rust compiler
-both> rustup target add wasm32-unknown-emscripten
+rustup target add wasm32-unknown-emscripten
 ```
 
-See [Targeting the web](./docs/targeting-the-web.md) for more details on how to install emscripten and setup the web build.
+> ℹ️ Getting familiar with mise
+>
+> You can list available mise tasks with `mise tasks`.
+> You can run a task with `mise run <task-name>`.
+> Mise is configured through the `mise.toml` file at the root of the repository.
 
 ## Getting started on the engine
 
@@ -76,7 +74,6 @@ If you are on linux and want to only compile for linux or the web, you can simpl
 ```bash
 # Replace apt with your package manager of choice
 sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev
-
 # You might also need this, but it can already be installed
 sudo apt-get install libmp3lame-dev
 ```

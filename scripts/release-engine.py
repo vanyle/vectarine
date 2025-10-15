@@ -87,43 +87,7 @@ def main() -> None:
     root_path = str(Path(__file__).parent.parent)
 
     console = Console()
-    console.print("[green]Building a release build of the engine.")
-    console.print("[green]Get a cup of coffee, tea or hot chocolate, this might take a while!")
-
-    console.print("[blue]Desktop build (runtime)")
-    subprocess.run(
-        ["cargo", "build", "-p", "runtime", "--release"],
-        shell=False,
-        cwd=root_path,
-        stdout=None,
-    )
-
-    console.print("[blue]Desktop build (editor)")
-    subprocess.run(
-        ["cargo", "build", "-p", "editor", "--release"],
-        shell=False,
-        cwd=root_path,
-        stdout=None,
-    )
-
-    # Note that the editor does not have a web build.
-    console.print("[blue]Web build")
-    subprocess.run(
-        [
-            "cargo",
-            "build",
-            "-p",
-            "runtime",
-            "--target",
-            "wasm32-unknown-emscripten",
-            "--release",
-        ],
-        shell=False,
-        cwd=root_path,
-        stdout=None,
-    )
-
-    console.print("[blue]Packaging")
+    console.print("[blue]Packaging the engine...")
     release_path = os.path.join(root_path, "engine-release")
     shutil.rmtree(release_path, ignore_errors=True)
     Path(release_path).mkdir(parents=True, exist_ok=True)
