@@ -2,8 +2,8 @@
 	"folders": [
 		{
 			"path": ".",
-			"name": "Vectarine"
-		}
+			"name": "Vectarine",
+		},
 	],
 	"extensions": {
 		"recommendations": [
@@ -11,8 +11,8 @@
 			"vadimcn.vscode-lldb",
 			"JohnnyMorganz.luau-lsp",
 			"esbenp.prettier-vscode",
-			"tamasfe.even-better-toml"
-		]
+			"tamasfe.even-better-toml",
+		],
 	},
 	"settings": {
 		"rust-analyzer.completion.autoimport.enable": true,
@@ -20,34 +20,38 @@
 		// "rust-analyzer.cargo.target": "wasm32-unknown-emscripten",
 		"rust-analyzer.check.command": "clippy",
 		"editor.codeActionsOnSave": {
-			"source.organizeImports": "always"
+			"source.organizeImports": "always",
 		},
 		"search.useIgnoreFiles": false,
 		"[rust]": {
 			"editor.formatOnSave": true,
-			"editor.defaultFormatter": "rust-lang.rust-analyzer"
+			"editor.defaultFormatter": "rust-lang.rust-analyzer",
+		},
+		"[python]": {
+			"editor.defaultFormatter": "charliermarsh.ruff",
+			"editor.formatOnSave": true,
 		},
 		"[json]": {
 			"editor.defaultFormatter": "esbenp.prettier-vscode",
 			"editor.formatOnSave": true,
 			"prettier.tabWidth": 4,
-			"prettier.useTabs": true
+			"prettier.useTabs": true,
 		},
 		"[jsonc]": {
 			"editor.defaultFormatter": "esbenp.prettier-vscode",
 			"editor.formatOnSave": true,
 			"prettier.tabWidth": 4,
-			"prettier.useTabs": true
+			"prettier.useTabs": true,
 		},
 		"[html]": {
 			"editor.defaultFormatter": "esbenp.prettier-vscode",
 			"editor.formatOnSave": true,
 			"prettier.tabWidth": 4,
-			"prettier.useTabs": true
+			"prettier.useTabs": true,
 		},
 		"[toml]": {
 			"editor.defaultFormatter": "tamasfe.even-better-toml",
-			"editor.formatOnSave": true
+			"editor.formatOnSave": true,
 		},
 		"[markdown]": {
 			"editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -57,8 +61,8 @@
 			"editor.quickSuggestions": {
 				"comments": "off",
 				"strings": "off",
-				"other": "off"
-			}
+				"other": "off",
+			},
 		},
 		"luau-lsp.server.crashReporting.enabled": true,
 		"luau-lsp.platform.type": "standard",
@@ -79,11 +83,11 @@
 			"emsdk/node/**": true,
 			"emsdk/python/**": true,
 			"emsdk/bazel/**": true,
-			"**/.venv/**": true
+			"**/.venv/**": true,
 		},
 		"workbench.colorCustomizations": {
 			"titleBar.activeBackground": "#ffaa00c7",
-			"titleBar.activeForeground": "#541c29"
-		}
-	}
+			"titleBar.activeForeground": "#541c29",
+		},
+	},
 }

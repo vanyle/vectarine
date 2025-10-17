@@ -42,7 +42,12 @@ def copy_from_root(root_path: str, src: str, dst: str, chmodx=False) -> None:
             os.chmod(os.path.join(root_path, dst), st.st_mode | 0o111)
 
 
-def make_macos_app(root_path: str, executable_path: str, executable_dest_folder: str, friendly_name: str) -> None:
+def make_macos_app(
+    root_path: str,
+    executable_path: str,
+    executable_dest_folder: str,
+    friendly_name: str,
+) -> None:
     """
     Example:
     ```
@@ -56,9 +61,13 @@ def make_macos_app(root_path: str, executable_path: str, executable_dest_folder:
     """
     if not os.path.exists(executable_path):
         return
-    dest_executable_path = os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/MacOS/{friendly_name}")
+    dest_executable_path = os.path.join(
+        executable_dest_folder, f"{friendly_name}.app/Contents/MacOS/{friendly_name}"
+    )
 
-    Path(os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/MacOS")).mkdir(parents=True, exist_ok=True)
+    Path(
+        os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/MacOS")
+    ).mkdir(parents=True, exist_ok=True)
     shutil.copyfile(
         executable_path,
         dest_executable_path,
@@ -68,7 +77,12 @@ def make_macos_app(root_path: str, executable_path: str, executable_dest_folder:
         os.chmod(dest_executable_path, st.st_mode | 0o111)
 
     # Write Info.plist
-    with open(os.path.join(executable_dest_folder, f"{friendly_name}.app/Contents/Info.plist"), "w") as f:
+    with open(
+        os.path.join(
+            executable_dest_folder, f"{friendly_name}.app/Contents/Info.plist"
+        ),
+        "w",
+    ) as f:
         f.write(f"""
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -93,11 +107,25 @@ def main() -> None:
     Path(release_path).mkdir(parents=True, exist_ok=True)
 
     if is_windows:
-        copy_from_root(root_path, "target/release/vecta.exe", "engine-release/vecta.exe")
-        copy_from_root(root_path, "target/release/runtime.exe", "engine-release/runtime.exe")
+        copy_from_root(
+            root_path, "target/release/vecta.exe", "engine-release/vecta.exe"
+        )
+        copy_from_root(
+            root_path, "target/release/runtime.exe", "engine-release/runtime.exe"
+        )
     else:
-        copy_from_root(root_path, "target/release/vecta", f"engine-release/vecta-{os_friendly_name}", chmodx=True)
-        copy_from_root(root_path, "target/release/runtime", f"engine-release/runtime-{os_friendly_name}", chmodx=True)
+        copy_from_root(
+            root_path,
+            "target/release/vecta",
+            f"engine-release/vecta-{os_friendly_name}",
+            chmodx=True,
+        )
+        copy_from_root(
+            root_path,
+            "target/release/runtime",
+            f"engine-release/runtime-{os_friendly_name}",
+            chmodx=True,
+        )
 
     # If there is a linux release in the target, we ship it too.
     copy_from_root(
@@ -138,7 +166,9 @@ def main() -> None:
         "engine-release/runtime.exe",
     )
 
-    copy_from_root(root_path, "docs/user_manual.md", "engine-release/vectarine_guide.md")
+    copy_from_root(
+        root_path, "docs/user-manual.md", "engine-release/vectarine-guide.md"
+    )
 
     copy_from_root(
         root_path,
