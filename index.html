@@ -114,10 +114,16 @@
 			const canvas = document.getElementById("canvas");
 			window.vectarine = {
 				read_file_for_rust: read_file_for_rust,
-				getCanvasSizeInPx: function () {
+				getScreenSize: function () {
 					return {
 						width: canvas.clientWidth,
 						height: canvas.clientHeight,
+					};
+				},
+				getDrawableScreenSize: function () {
+					return {
+						width: canvas.width,
+						height: canvas.height,
 					};
 				},
 			};

@@ -5,7 +5,7 @@ use std::{
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
 use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::{RenderingBlock, init_sdl};
+use runtime::{RenderingBlock, game::drawable_screen_size, init_sdl};
 
 use crate::{
     editorinterface::{EditorState, process_events_when_no_game},
@@ -39,7 +39,8 @@ fn gui_main() {
     let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
 
     // Create the egui + sdl2 platform
-    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().drawable_size()).unwrap();
+    let mut platform =
+        egui_sdl2_platform::Platform::new(drawable_screen_size(&window.borrow())).unwrap();
 
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
     editor_state.load_config(true);

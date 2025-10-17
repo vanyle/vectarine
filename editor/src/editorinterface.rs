@@ -13,6 +13,7 @@ use egui_sdl2_platform::sdl2;
 use glow::HasContext;
 use runtime::{
     anyhow::{self},
+    game::drawable_screen_size,
     game_resource::ResourceId,
     io::file,
 };
@@ -156,7 +157,7 @@ impl EditorState {
         let pj = paint_jobs.as_slice();
 
         // Render the editor interface on top of the game.
-        let size = self.window.borrow().drawable_size();
+        let size = drawable_screen_size(&self.window.borrow());
 
         let pixel_per_point = size.0 as f32 / self.window.borrow().size().0 as f32;
 

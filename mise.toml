@@ -10,8 +10,8 @@ description = "Build the editor in release mode"
 run = "cargo build --release -p editor"
 
 [tasks.run-editor]
-alias = ["re"]
-description = "Run the editor"
+alias = ["de"]
+description = "Run the editor in debug mode"
 run = "cargo run -p editor"
 
 [tasks.build-runtime]
@@ -20,11 +20,17 @@ description = "Build the runtime in release mode"
 run = "cargo build --release -p runtime"
 
 [tasks.run-runtime]
-alias = ["rr"]
-description = "Run the runtime"
+alias = ["dr"]
+description = "Run the runtime in debug mode"
 run = "cargo run -p runtime"
 
+[tasks.build-web-debug]
+alias = ["dw"]
+description = "Build the web runtime in debug mode"
+run = "cargo build -p runtime --target wasm32-unknown-emscripten"
+
 [tasks.build-web]
+alias = ["bw"]
 description = "Build the web runtime in release mode"
 run = "cargo build --release -p runtime --target wasm32-unknown-emscripten"
 

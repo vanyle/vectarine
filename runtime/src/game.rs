@@ -37,8 +37,8 @@ impl Game {
             self.lua_env.env_state.borrow_mut().screen_width = display_size.width();
             self.lua_env.env_state.borrow_mut().screen_height = display_size.height();
 
-            let size = window.borrow().size();
-            let drawable_size = window.borrow().drawable_size();
+            let size = screen_size(&window.borrow());
+            let drawable_size = drawable_screen_size(&window.borrow());
             let (px_ratio_x, px_ratio_y) = (
                 drawable_size.0 as f32 / size.0 as f32,
                 drawable_size.1 as f32 / size.1 as f32,
@@ -49,7 +49,7 @@ impl Game {
         }
 
         {
-            let (width, height) = window.borrow().size();
+            let (width, height) = screen_size(&window.borrow());
             self.lua_env.env_state.borrow_mut().window_width = width;
             self.lua_env.env_state.borrow_mut().window_height = height;
         }
@@ -105,7 +105,7 @@ impl Game {
         let framebuffer_height;
         {
             let mut env_state = self.lua_env.env_state.borrow_mut();
-            let (width, height) = screen_size(&window.borrow());
+            let (width, height) = drawable_screen_size(&window.borrow());
             env_state.window_width = width;
             env_state.window_height = height;
             let aspect_ratio = width as f32 / height as f32;
@@ -125,9 +125,7 @@ impl Game {
         {
             // This is incorrect on the web.
             let gl = &self.gl;
-            unsafe {
-                gl.viewport(0, 0, framebuffer_width as i32, framebuffer_height as i32);
-            }
+            set_viewport(gl, framebuffer_width, framebuffer_height);
         }
 
         {
@@ -217,15 +215,44 @@ impl Game {
 }
 
 #[cfg(not(target_os = "emscripten"))]
-pub fn screen_size(window: &sdl2::video::Window) -> (u32, u32) {
+pub fn drawable_screen_size(window: &sdl2::video::Window) -> (u32, u32) {
     window.drawable_size()
+}
+
+#[cfg(target_os = "emscripten")]
+pub fn drawable_screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
+    use emscripten_val::Val;
+    // On the web, the drawable size and the screen size are the same.
+    let size = Val::global("vectarine").call("getDrawableScreenSize", &[]);
+    let width = size.get(&Val::from_str("width")).as_i32();
+    let height = size.get(&Val::from_str("height")).as_i32();
+    (width as u32, height as u32)
+}
+
+#[cfg(not(target_os = "emscripten"))]
+pub fn screen_size(window: &sdl2::video::Window) -> (u32, u32) {
+    window.size()
 }
 
 #[cfg(target_os = "emscripten")]
 pub fn screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
     use emscripten_val::Val;
-    let size = Val::global("vectarine").call("getCanvasSizeInPx", &[]);
+    let size = Val::global("vectarine").call("getScreenSize", &[]);
     let width = size.get(&Val::from_str("width")).as_i32();
     let height = size.get(&Val::from_str("height")).as_i32();
     (width as u32, height as u32)
+}
+
+#[cfg(not(target_os = "emscripten"))]
+pub fn set_viewport(gl: &glow::Context, width: u32, height: u32) {
+    unsafe {
+        gl.viewport(0, 0, width as i32, height as i32);
+    }
+}
+
+#[cfg(target_os = "emscripten")]
+pub fn set_viewport(gl: &glow::Context, width: u32, height: u32) {
+    unsafe {
+        gl.viewport(0, 0, width as i32, height as i32);
+    }
 }
