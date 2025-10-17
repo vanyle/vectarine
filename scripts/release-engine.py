@@ -159,8 +159,8 @@ def main() -> None:
         dirs_exist_ok=True,
     )
     shutil.copytree(
-        os.path.join(root_path, "assets"),
-        os.path.join(root_path, "engine-release/assets"),
+        os.path.join(root_path, "gallery"),
+        os.path.join(root_path, "engine-release/gallery"),
     )
 
     console.print("[blue]Patching")
