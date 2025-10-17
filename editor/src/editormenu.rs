@@ -40,6 +40,11 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                         if ui.button("Close project").clicked() {
                             editor.close_project();
                         }
+
+                        if ui.button("Export...").clicked() {
+                            // TO-DO: implement export dialog
+                            println!("Export not implemented yet. You can manually zip the game data together with the executable for now.");
+                        }
                     });
 
                     if ui.button(exit_text).clicked() {
