@@ -118,7 +118,7 @@ Start the editor (with hot recompile): `bacon editor`
 Build the game for the web:
 
 ```bash
-# On Mac/Linux, mise can install emscripten for you. On Windows, you clone the repository yourself
+# On Mac/Linux/WSL, mise can install emscripten for you. On Windows, you clone the repository yourself
 wind> git clone https://github.com/emscripten-core/emsdk
 wind> ./emsdk/emsdk install 4.0.13
 wind> ./emsdk/emsdk activate 4.0.13

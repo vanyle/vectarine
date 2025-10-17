@@ -11,11 +11,11 @@
   - [x] Allow closing the current project
   - [x] Allow reopening aka 'reset' of games
   - [x] Fix live-reload as we need to only live-reload the current opened project
-  - [ ] Open manifest in the editor from the file menu
+  - [x] Open manifest in the editor from the file menu
   - [ ] Allow opening zips that are "compiled projects" (from the runtime)
   - [ ] Have an export feature in the editor to make zips
 - [ ] Add a gallery
-  - [ ] Create a gallery folder with a sample game
+  - [x] Create a gallery folder with a sample game
   - [ ] Show the gallery by default in the editor
   - [ ] Allow creating a game using a piece of the gallery as an example
   - [ ] Show off parts of the API in various gallery games

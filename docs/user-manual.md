@@ -20,7 +20,7 @@ Start the engine by running the `vecta` executable. A window should open.
 > You need to run this command to allow the execution:
 > `xattr -d com.apple.quarantine vecta-macos`
 
-Write your game inside `assets/scripts/game.luau`. As you save, the window updates. See the `luau-api` folder for a list of available functions.
+Write your game inside `gamedata/scripts/game.luau`. As you save, the window updates. See the `luau-api` folder for a list of available functions.
 Your text editor should autocomplete from them.
 
 ## Release and distribute your game
