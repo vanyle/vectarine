@@ -24,9 +24,11 @@
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
 - [ ] Tiled parsing
-  - [ ] Sprites as an asset class
+  - [ ] Sprites/Tilesets as an asset class
   - [ ] Reading tiled files
 - [ ] Aseprite support
+  - [ ] Load Aseprite files as images
+  - [ ] Load Aseprite files as tilesets
 - [ ] Potential performance improvements
   - [ ] No base64 for loading data on the web
   - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.

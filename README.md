@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="./assets/textures/logo.png" alt="Vectarine logo" width="200" align="center"/>
+    <img src="./gamedata/textures/logo.png" alt="Vectarine logo" width="200" align="center"/>
 </p>
 
 <h1 align="center"> 🍊 Vectarine Evolved</h1>
