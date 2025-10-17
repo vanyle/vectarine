@@ -236,7 +236,7 @@ pub fn print(lua: &Rc<mlua::Lua>, verbosity: Verbosity, msg: &str) {
 }
 
 fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {
-    if seen.contains(value) {
+    if seen.contains(value) && matches!(value, mlua::Value::Table(_)) {
         return "[circular]".to_string();
     }
     seen.push(value.clone());
