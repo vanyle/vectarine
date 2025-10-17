@@ -53,6 +53,7 @@ impl Resource for ShaderResource {
         let mut program = match program {
             Ok(p) => p,
             Err(e) => {
+                println!("Shader compilation error: {}", e);
                 return Status::Error(format!("Failed to compile shader: {e}"));
             }
         };

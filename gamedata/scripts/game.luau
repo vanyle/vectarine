@@ -166,7 +166,6 @@ function Update(timeDelta: number)
     Graphics.clear(_G.BG_COLOR)
 
     drawEnvironment()
-    fprint(Io.getScreenSize())
 
     -- Draw Snake
     local Snake = _G.Snake

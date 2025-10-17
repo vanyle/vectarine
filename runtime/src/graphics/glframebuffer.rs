@@ -60,15 +60,15 @@ impl Framebuffer {
                 width as i32,
                 height as i32,
                 0,
-                glow::DEPTH_COMPONENT,
-                glow::UNSIGNED_INT,
+                glow::DEPTH_STENCIL,     // Changed from DEPTH_COMPONENT
+                glow::UNSIGNED_INT_24_8, // Changed from UNSIGNED_INT
                 glow::PixelUnpackData::Slice(None),
             );
             gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, gl_filter);
             gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, gl_filter);
             gl.framebuffer_texture_2d(
                 glow::FRAMEBUFFER,
-                glow::DEPTH_ATTACHMENT,
+                glow::DEPTH_STENCIL_ATTACHMENT, // Changed from DEPTH_ATTACHMENT
                 glow::TEXTURE_2D,
                 Some(depth_stencil_tex),
                 0,
