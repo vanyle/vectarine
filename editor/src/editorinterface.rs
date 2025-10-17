@@ -62,6 +62,8 @@ impl EditorState {
         let config_store = self.config.clone();
         let project = self.project.clone();
         let gl = self.gl.clone();
+        let video = self.video.clone();
+        let window = self.window.clone();
 
         file::read_file(
             EDITOR_CONFIG_FILE,
@@ -75,7 +77,7 @@ impl EditorState {
                         && let Some(project_path_str) = &config_store.borrow().opened_project_path
                     {
                         let project_path = PathBuf::from(project_path_str);
-                        let loaded_project = ProjectState::new(&project_path, gl);
+                        let loaded_project = ProjectState::new(&project_path, gl, video, window);
                         if let Ok(loaded_project) = loaded_project {
                             project.replace(Some(loaded_project));
                         }
@@ -102,7 +104,12 @@ impl EditorState {
     }
 
     pub fn load_project(&self, project_path: &Path) -> anyhow::Result<()> {
-        let project = ProjectState::new(project_path, self.gl.clone());
+        let project = ProjectState::new(
+            project_path,
+            self.gl.clone(),
+            self.video.clone(),
+            self.window.clone(),
+        );
         match project {
             Ok(p) => self.project.borrow_mut().replace(p),
             Err(e) => {

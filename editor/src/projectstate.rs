@@ -1,8 +1,11 @@
 use std::{
+    cell::RefCell,
     path::{Path, PathBuf},
+    rc::Rc,
     sync::Arc,
 };
 
+use egui_sdl2_platform::sdl2;
 use runtime::{
     anyhow::{self, Result},
     game::Game,
@@ -17,14 +20,20 @@ pub struct ProjectState {
 }
 
 impl ProjectState {
-    pub fn new(project_path: &Path, gl: Arc<glow::Context>) -> Result<Self> {
+    pub fn new(
+        project_path: &Path,
+        gl: Arc<glow::Context>,
+        video: Rc<RefCell<sdl2::VideoSubsystem>>,
+        window: Rc<RefCell<sdl2::video::Window>>,
+    ) -> Result<Self> {
         let project_dir = project_path
             .parent()
             .ok_or_else(|| anyhow::anyhow!("Invalid project path"))?;
 
         let batch = BatchDraw2d::new(&gl).unwrap();
         let lua_env = LuaEnvironment::new(batch, project_dir);
-        let game = Game::new(&gl, lua_env);
+        let mut game = Game::new(&gl, lua_env);
+        game.load(&video, &window);
 
         let path = Path::new("scripts/game.luau");
         game.lua_env.resources.load_resource::<ScriptResource>(

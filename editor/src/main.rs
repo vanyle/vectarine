@@ -4,7 +4,7 @@ use std::{
 };
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
-use notify_debouncer_full::{DebounceEventResult, new_debouncer};
+use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
 use runtime::{RenderingBlock, init_sdl};
 
 use crate::{
@@ -61,7 +61,7 @@ fn gui_main() {
 
     // ...
     let (debounce_event_sender, debounce_receiver) = channel();
-    let debouncer = new_debouncer(
+    let mut debouncer = new_debouncer(
         Duration::from_millis(10),
         None,
         move |result: DebounceEventResult| match result {
@@ -72,9 +72,9 @@ fn gui_main() {
         },
     )
     .unwrap();
-    // debouncer.unwatch(path);
-    //     .watch("./assets", RecursiveMode::RecConfig::)
-    //     .unwrap();
+    debouncer
+        .watch("./gallery/snake", RecursiveMode::Recursive)
+        .unwrap();
 
     // The main loop
     let mut start_of_frame = Instant::now();

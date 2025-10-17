@@ -25,7 +25,8 @@ impl Game {
         }
     }
 
-    /// Initializes the game and then calls the Load function in Lua, if it exists.
+    /// Initializes the game environment with the current video and window information.
+    /// This needs to be called before loading Lua scripts.
     pub fn load(
         &mut self,
         video: &Rc<RefCell<sdl2::VideoSubsystem>>,
