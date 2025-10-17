@@ -33,14 +33,8 @@ impl DrawingTarget {
         &self.gl
     }
 
-    pub fn draw(
-        &self,
-        vertex_buffer: &GpuVertexData,
-        program: &GLProgram,
-        uniforms: &Uniforms,
-        // draw_params: &DrawParams,
-    ) {
-        // ...
+    pub fn draw(&self, vertex_buffer: &GpuVertexData, program: &GLProgram, uniforms: &Uniforms) {
+        // Note: We don't handle DrawParams (glEnable(something)) here for now.
         let gl = self.gl.as_ref();
         program.use_program();
         program.set_uniforms(uniforms);

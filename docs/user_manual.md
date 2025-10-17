@@ -245,6 +245,8 @@ function Update()
 end
 ```
 
+## Organising rendering using Screens
+
 ## Performance Tips
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.

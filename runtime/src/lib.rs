@@ -5,7 +5,9 @@ pub mod graphics;
 pub mod io;
 pub mod lua_env;
 
-pub use mlua; // Re-export mlua for access in the editor
+// Re-export commonly used crates for the editor
+pub use anyhow;
+pub use mlua;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 

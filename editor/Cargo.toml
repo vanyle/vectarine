@@ -11,6 +11,7 @@ egui_sdl2_platform = "0.4.0"
 glow = "0.16.0"
 notify-debouncer-full = "0.6.0"
 open = "5.3.2"
+rfd = "0.15.4"
 runtime = { path = "../runtime", version = "0.1.0" }
 sdl2-sys = "0.38.0"
 serde = { version = "1.0.221", features = ["derive"] }

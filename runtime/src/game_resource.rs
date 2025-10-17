@@ -106,7 +106,7 @@ impl ResourceHolder {
         };
 
         self.status.replace(Status::Loading);
-        let abs_path = get_absolute_path(&self.path);
+        let abs_path = get_absolute_path(&resource_manager.base_path, &self.path);
 
         // We pass data to the resource into the closure.
         // As this data needs to be kept alive, every piece of state pass inside needs Rc or Arc.
@@ -175,9 +175,9 @@ impl ResourceHolder {
     }
 }
 
-#[derive(Default)]
 pub struct ResourceManager {
     resources: RefCell<Vec<Rc<ResourceHolder>>>,
+    base_path: PathBuf,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -223,6 +223,13 @@ impl DependencyReporter {
 }
 
 impl ResourceManager {
+    pub fn new(base_path: &Path) -> Self {
+        Self {
+            resources: RefCell::new(Vec::new()),
+            base_path: base_path.to_path_buf(),
+        }
+    }
+
     /// Create a new resource from a file and schedule it for loading.
     /// If the resource already exists at that path, do nothing.
     /// Return the id of the resource.
@@ -342,9 +349,9 @@ impl ResourceManager {
     /// Performance: O(n) for now. Store the ID and use instead get_by_id if you already have the id.
     /// instead of get_by_path.
     pub fn get_id_by_path(&self, path: &Path) -> Option<ResourceId> {
-        let to_match = get_absolute_path(path);
+        let to_match = get_absolute_path(&self.base_path, path);
         for (i, res) in self.resources.borrow().iter().enumerate() {
-            let p = get_absolute_path(&res.path);
+            let p = get_absolute_path(&self.base_path, &res.path);
             if to_match == p {
                 return Some(ResourceId(i));
             }
@@ -407,15 +414,19 @@ impl ResourceManager {
         note = "Use get_id_by_path + get_by_id instead and cache the ID. This function is O(n)."
     )]
     pub fn get_by_path(&self, path: &Path) -> Option<Rc<dyn Resource>> {
-        let to_match = get_absolute_path(path);
+        let to_match = get_absolute_path(&self.base_path, path);
 
         for res in self.resources.borrow().iter() {
-            let p1 = get_absolute_path(&res.path);
+            let p1 = get_absolute_path(&self.base_path, &res.path);
             if to_match == p1 {
                 return Some(res.resource.clone());
             }
         }
         None
+    }
+
+    pub fn get_absolute_path(&self, resource_path: &Path) -> String {
+        get_absolute_path(&self.base_path, resource_path)
     }
 }
 
@@ -452,8 +463,9 @@ pub trait Resource: ResourceToAny {
         Self: Sized;
 }
 
-pub fn get_absolute_path(resource_path: &Path) -> String {
-    let abs_path = PathBuf::from("assets").join(resource_path);
+pub fn get_absolute_path(current_base_path: &Path, resource_path: &Path) -> String {
+    // TODO: need to access the path of the project currently opened.
+    let abs_path = current_base_path.join(resource_path);
     let abs_path = abs_path.canonicalize().unwrap_or(abs_path);
     let as_str = abs_path.to_string_lossy();
     as_str.into_owned()

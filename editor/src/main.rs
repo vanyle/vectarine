@@ -1,20 +1,23 @@
 use std::{
-    path::Path,
     sync::mpsc::channel,
     time::{Duration, Instant},
 };
 
-use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
-use runtime::{RenderingBlock, game_resource::script_resource::ScriptResource, init_sdl};
-use runtime::{game::Game, graphics::batchdraw::BatchDraw2d, lua_env::LuaEnvironment};
+use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
+use notify_debouncer_full::{DebounceEventResult, new_debouncer};
+use runtime::{RenderingBlock, init_sdl};
 
-use crate::{editorinterface::EditorState, reload::reload_assets_if_needed};
+use crate::{
+    editorinterface::{EditorState, process_events_when_no_game},
+    reload::reload_assets_if_needed,
+};
 
 pub mod editorconsole;
 pub mod editorinterface;
 pub mod editormenu;
 pub mod editorresources;
 pub mod editorwatcher;
+pub mod projectstate;
 pub mod reload;
 
 fn main() {
@@ -26,14 +29,14 @@ fn gui_main() {
         sdl,
         video,
         window,
-        event_pump,
+        mut event_pump,
         gl,
     } = init_sdl();
 
     // window.borrow_mut().set_bordered(false);
 
     let (debounce_event_sender, debounce_receiver) = channel();
-    let mut debouncer = new_debouncer(
+    let debouncer = new_debouncer(
         Duration::from_millis(10),
         None,
         move |result: DebounceEventResult| match result {
@@ -45,19 +48,15 @@ fn gui_main() {
     )
     .unwrap();
 
-    let batch = BatchDraw2d::new(&gl).unwrap();
-    let lua_env = LuaEnvironment::new(batch);
-
-    debouncer
-        .watch("./assets", RecursiveMode::Recursive)
-        .unwrap();
+    // debouncer.unwatch(path);
+    //     .watch("./assets", RecursiveMode::RecConfig::)
+    //     .unwrap();
 
     let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
 
     // Create the egui + sdl2 platform
     let mut platform = egui_sdl2_platform::Platform::new(window.borrow().drawable_size()).unwrap();
 
-    let mut game = Game::new(&gl, event_pump, lua_env);
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
     editor_state.load_config();
     window
@@ -66,40 +65,43 @@ fn gui_main() {
 
     window.borrow_mut().set_resizable(true);
 
-    game.load(&video, &window);
-
-    let path = Path::new("scripts/game.luau");
-    game.lua_env.resources.load_resource::<ScriptResource>(
-        path,
-        gl.clone(),
-        game.lua_env.lua.clone(),
-        game.lua_env.default_events.resource_loaded_event,
-    );
+    // Send a fake resize event to egui to initialize drawable area size
+    // This is needed on high-DPI screen where the drawable size is greater than window size
+    let (width, height) = window.borrow().size();
+    let event: Event = Event::Window {
+        timestamp: 0,
+        window_id: 0,
+        win_event: WindowEvent::Resized(width as i32, height as i32),
+    };
+    platform.handle_event(&event, &sdl, &video.borrow());
 
     // The main loop
     let mut start_of_frame = Instant::now();
     loop {
-        let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
-        game.load_resource_as_needed(gl.clone());
-        reload_assets_if_needed(
-            &gl,
-            &game.lua_env.resources,
-            &game.lua_env,
-            &debounce_receiver,
-        );
+        let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
 
-        // Render the game
         let new_start_of_frame = Instant::now();
-        game.main_loop(&latest_events, &window, start_of_frame.elapsed(), true);
-        start_of_frame = new_start_of_frame;
-        editor_state.draw_editor_interface(
-            &mut platform,
-            &sdl,
-            &mut game,
-            &latest_events,
-            &mut painter,
-        );
+        if let Some(project) = &mut editor_state.project {
+            let mut project_ref = project.borrow_mut();
+            let game = &mut project_ref.game;
 
+            game.load_resource_as_needed(gl.clone());
+            reload_assets_if_needed(
+                &gl,
+                &game.lua_env.resources,
+                &game.lua_env,
+                &debounce_receiver,
+            );
+
+            // Render the game
+            game.main_loop(&latest_events, &window, start_of_frame.elapsed(), true);
+        } else {
+            // Draw the 'no project loaded' screen
+            process_events_when_no_game(&latest_events, &gl);
+        }
+        start_of_frame = new_start_of_frame;
+
+        editor_state.draw_editor_interface(&mut platform, &sdl, &latest_events, &mut painter);
         window.borrow().gl_swap_window();
     }
 }

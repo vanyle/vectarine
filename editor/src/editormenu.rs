@@ -2,7 +2,7 @@ use egui::RichText;
 
 use crate::editorinterface::EditorState;
 
-pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_menu(editor: &EditorState, ctx: &egui::Context) {
     if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
         let mut config = editor.config.borrow_mut();
         config.is_console_shown = !config.is_console_shown;

@@ -1,9 +1,10 @@
 # TO-DO
 
 - [ ] Project System in the editor
-  - [ ] 'assets' should be 'gamedata'
+  - [x] 'assets' should be 'gamedata'
+  - [x] Refactor to make the project path a variable
   - [ ] Have a game.toml inside 'gamedata'. It is loaded first instead of game.lua
-    - [ ] Manifest contains name of the game, logo, tags, and root source.
+    - [x] Manifest contains name of the game, logo, tags, and root source.
     - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
   - [ ] Open manifest in the editor from the file menu
   - [ ] Allow reopening aka 'reset' of games

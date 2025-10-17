@@ -2,11 +2,17 @@ use std::sync::Arc;
 
 use egui::ScrollArea;
 use egui_extras::{Column, TableBuilder};
-use runtime::{game::Game, game_resource::get_absolute_path};
+use runtime::game::Game;
 
 use crate::editorinterface::EditorState;
 
-pub fn draw_editor_resources(editor: &mut EditorState, game: &mut Game, ctx: &egui::Context) {
+pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
+    #[allow(clippy::manual_map)]
+    let game = match editor.project.as_ref() {
+        Some(proj) => Some(&mut proj.borrow_mut().game),
+        None => None,
+    };
+
     let mut is_shown = editor.config.borrow().is_resources_window_shown;
     egui::Window::new("Resources")
         .default_width(400.0)
@@ -16,13 +22,15 @@ pub fn draw_editor_resources(editor: &mut EditorState, game: &mut Game, ctx: &eg
             ScrollArea::vertical()
                 .auto_shrink([true, false])
                 .show(ui, |ui| {
-                    draw_resource_table(editor, ui, game);
+                    draw_resource_table(editor, ui, &game);
                 });
         });
 
     editor.config.borrow_mut().is_resources_window_shown = is_shown;
 
-    if let Some(id) = editor.config.borrow().debug_resource_shown {
+    if let Some(id) = editor.config.borrow().debug_resource_shown
+        && let Some(game) = game
+    {
         let res = game.lua_env.resources.get_holder_by_id(id);
         egui::Window::new(format!(
             "Resource debug - {}",
@@ -32,10 +40,10 @@ pub fn draw_editor_resources(editor: &mut EditorState, game: &mut Game, ctx: &eg
         .show(ctx, |ui| {
             res.draw_debug_gui(ui);
         });
-    }
+    };
 }
 
-fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut Game) {
+fn draw_resource_table(editor: &EditorState, ui: &mut egui::Ui, game: &Option<&mut Game>) {
     let available_height = ui.available_height();
     let table = TableBuilder::new(ui)
         .striped(true)
@@ -72,6 +80,9 @@ fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut G
             });
         })
         .body(|mut body| {
+            let Some(game) = game else {
+                return;
+            };
             for (id, res) in game.lua_env.resources.enumerate() {
                 let resources = game.lua_env.resources.clone();
                 let status_string = res.get_status().to_string();
@@ -88,7 +99,7 @@ fn draw_resource_table(editor: &mut EditorState, ui: &mut egui::Ui, game: &mut G
                             .clicked()
                         {
                             // Open the file
-                            let absolute_path = get_absolute_path(res.get_path());
+                            let absolute_path = resources.get_absolute_path(res.get_path());
                             open::that(absolute_path).ok();
                         }
                     });

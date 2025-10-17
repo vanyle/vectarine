@@ -1,12 +1,16 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc, sync::Arc, time::Instant};
 
+use egui::RichText;
+use egui_extras::{Size, StripBuilder};
 use egui_sdl2_platform::sdl2;
-use runtime::{game::Game, game_resource::ResourceId, io::file};
+use glow::HasContext;
+use runtime::{game_resource::ResourceId, io::file};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     editorconsole::draw_editor_console, editormenu::draw_editor_menu,
     editorresources::draw_editor_resources, editorwatcher::draw_editor_watcher,
+    projectstate::ProjectState,
 };
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -21,6 +25,8 @@ pub struct EditorConfig {
 pub struct EditorState {
     pub config: Rc<RefCell<EditorConfig>>,
     pub text_command: String,
+
+    pub project: Option<Rc<RefCell<ProjectState>>>,
 
     pub start_time: std::time::Instant,
     pub video: Rc<RefCell<sdl2::VideoSubsystem>>,
@@ -60,6 +66,7 @@ impl EditorState {
             config: Rc::new(RefCell::new(EditorConfig::default())),
             text_command: String::new(),
             start_time: Instant::now(),
+            project: None,
             video,
             window,
             gl,
@@ -70,7 +77,6 @@ impl EditorState {
         &mut self,
         platform: &mut egui_sdl2_platform::Platform,
         sdl: &sdl2::Sdl,
-        game: &mut Game,
         latest_events: &Vec<sdl2::event::Event>,
         painter: &mut egui_glow::Painter,
     ) {
@@ -80,9 +86,13 @@ impl EditorState {
         let ctx = platform.context();
 
         draw_editor_menu(self, &ctx);
-        draw_editor_console(self, game, &ctx);
-        draw_editor_resources(self, game, &ctx);
-        draw_editor_watcher(self, game, &ctx);
+        draw_editor_console(self, &ctx);
+        draw_editor_resources(self, &ctx);
+        draw_editor_watcher(self, &ctx);
+
+        if self.project.is_none() {
+            draw_empty_screen(self, &ctx);
+        }
 
         // Stop drawing the egui frame and get the full output
         let full_output = platform.end_frame(&mut self.video.borrow_mut()).unwrap();
@@ -104,6 +114,68 @@ impl EditorState {
         for event in latest_events {
             // Convert mouse position.
             platform.handle_event(event, sdl, &self.video.borrow());
+        }
+    }
+}
+
+pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
+    let Some(path) = rfd::FileDialog::new()
+        .add_filter("Vectarine Project", &["toml"])
+        .set_title("Open Vectarine Project")
+        .pick_file()
+    else {
+        return;
+    };
+    // Load the project from the file
+    let project = ProjectState::new(path.as_path(), state.gl.clone());
+    state.project = match project {
+        Ok(p) => Some(Rc::new(RefCell::new(p))),
+        Err(e) => {
+            // TO-DO: show error in GUI
+            println!("Failed to load project: {e}");
+            None
+        }
+    };
+}
+
+pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
+    egui::Window::new("No project loaded")
+        .default_width(300.0)
+        .default_height(100.0)
+        .title_bar(false)
+        .collapsible(false)
+        .resizable(false)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .show(ctx, |ui| {
+            StripBuilder::new(ui)
+                .size(Size::remainder().at_most(100.0))
+                .vertical(|mut strip| {
+                    strip.cell(|ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.label(RichText::new("No project loaded").heading());
+                            ui.centered_and_justified(|ui| {
+                                if ui
+                                    .button(RichText::new("Open Project").size(18.0))
+                                    .clicked()
+                                {
+                                    open_file_dialog_and_load_project(state);
+                                }
+                            });
+                        });
+                    });
+                });
+        });
+}
+
+pub fn process_events_when_no_game(latest_events: &Vec<sdl2::event::Event>, gl: &glow::Context) {
+    unsafe {
+        gl.clear_color(0.1, 0.1, 0.1, 1.0);
+        gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+    }
+
+    for event in latest_events {
+        if let sdl2::event::Event::Quit { .. } = event {
+            std::process::exit(0);
         }
     }
 }

@@ -3,7 +3,6 @@ use std::{cell::RefCell, thread::LocalKey};
 use egui::RichText;
 use egui_extras::{Size, StripBuilder};
 use runtime::{
-    game::Game,
     lua_env::{lua_vec2::Vec2, stringify_lua_value},
     mlua,
 };
@@ -12,7 +11,7 @@ use crate::editorinterface::EditorState;
 
 const MAX_WATCHED_VARIABLES: usize = 20;
 
-pub fn draw_editor_watcher(editor: &mut EditorState, game: &mut Game, ctx: &egui::Context) {
+pub fn draw_editor_watcher(editor: &mut EditorState, ctx: &egui::Context) {
     let mut is_shown = editor.config.borrow().is_watcher_window_shown;
 
     egui::Window::new("Watcher")
@@ -20,12 +19,23 @@ pub fn draw_editor_watcher(editor: &mut EditorState, game: &mut Game, ctx: &egui
         .default_height(200.0)
         .open(&mut is_shown)
         .show(ctx, |ui| {
-            draw_editor_watcher_window(ui, game);
+            draw_editor_watcher_window(ui, editor);
         });
     editor.config.borrow_mut().is_watcher_window_shown = is_shown;
 }
 
-fn draw_editor_watcher_window(ui: &mut egui::Ui, game: &mut Game) {
+fn draw_editor_watcher_window(ui: &mut egui::Ui, editor: &mut EditorState) {
+    #[allow(clippy::manual_map)]
+    let game = match editor.project.as_ref() {
+        Some(proj) => Some(&mut proj.borrow_mut().game),
+        None => None,
+    };
+
+    let Some(game) = game else {
+        ui.label("No project loaded");
+        return;
+    };
+
     let globals = game.lua_env.lua.globals();
 
     thread_local! {

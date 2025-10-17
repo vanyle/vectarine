@@ -1,10 +1,7 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use glow::HasContext;
-use sdl2::{
-    EventPump,
-    video::{FullscreenType, WindowPos},
-};
+use sdl2::video::{FullscreenType, WindowPos};
 
 use crate::{
     console::Verbosity,
@@ -15,16 +12,14 @@ use crate::{
 
 pub struct Game {
     pub gl: Arc<glow::Context>,
-    pub event_pump: EventPump,
     pub lua_env: LuaEnvironment,
     pub was_load_called: bool,
 }
 
 impl Game {
-    pub fn new(gl: &Arc<glow::Context>, event_pump: EventPump, lua_env: LuaEnvironment) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, lua_env: LuaEnvironment) -> Self {
         Game {
             gl: gl.clone(),
-            event_pump,
             lua_env,
             was_load_called: false,
         }

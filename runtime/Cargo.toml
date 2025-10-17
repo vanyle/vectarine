@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.100"
 egui = "0.32.2"
 egui_glow = "0.32.2"
 egui_sdl2_platform = "0.4.0"

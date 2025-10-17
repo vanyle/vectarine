@@ -1,4 +1,3 @@
-
 # Lua code organisation
 
 At first, `game.lua` is loaded.
@@ -13,18 +12,16 @@ exported_function = require(filename.lua)
 We will provide the following organisational primitives:
 
 ### Resources
+
 A resource is an external file with a name and some dependencies.
 We do not allow dependency cycles for resources.
-
-### Screen
-A screen is a resource. It depends on a lua script file for rendering.
-Screens allow for a bit of organisation as you put the code for the menu / settings in another place.
 
 ### Store
 
 A store is a global piece of state.
 Store uses keys which are strings. Values can be arbitrary data.
 There can be metadata associated with the keys:
+
 - Is the key persisted (saved?)
 - You can subscribe to changes of the state.
 
@@ -51,4 +48,3 @@ The upside is that the hot reloading is super elegant as the modules can be load
 Player character = one module
 Obstacle = one module
 In general, there is one module per entity type.
-

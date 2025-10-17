@@ -13,14 +13,14 @@ pub fn main() {
         sdl: _sdl,
         video,
         window,
-        event_pump,
+        mut event_pump,
         gl,
     } = init_sdl();
 
+    let project_path = Path::new("gamedata"); // by default, load "gamedata".
     let batch = BatchDraw2d::new(&gl).unwrap();
-    let lua_env = lua_env::LuaEnvironment::new(batch);
-
-    let mut game = Game::new(&gl, event_pump, lua_env);
+    let lua_env = lua_env::LuaEnvironment::new(batch, project_path);
+    let mut game = Game::new(&gl, lua_env);
 
     game.load(&video, &window);
 
@@ -35,7 +35,7 @@ pub fn main() {
     let mut now = Instant::now();
 
     set_main_loop_wrapper(move || {
-        let latest_events = game.event_pump.poll_iter().collect::<Vec<_>>();
+        let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
         game.load_resource_as_needed(gl.clone());
         game.main_loop(&latest_events, &window, now.elapsed(), false);
         now = Instant::now();

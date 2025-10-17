@@ -33,7 +33,7 @@ pub struct LuaEnvironment {
 }
 
 impl LuaEnvironment {
-    pub fn new(batch: BatchDraw2d) -> Self {
+    pub fn new(batch: BatchDraw2d, base_path: &Path) -> Self {
         let batch = Rc::new(RefCell::new(batch));
         let lua_options = mlua::LuaOptions::default();
         let lua_libs = mlua::StdLib::MATH | mlua::StdLib::TABLE | mlua::StdLib::STRING;
@@ -56,7 +56,7 @@ impl LuaEnvironment {
         let internals = get_internals(&lua);
         internals.set(GL_USERDATA_KEY, LuaGLContext(gl)).unwrap();
 
-        let resources = Rc::new(ResourceManager::default());
+        let resources = Rc::new(ResourceManager::new(base_path));
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
         let frame_messages = Rc::new(RefCell::new(Vec::new()));
         let messages = Rc::new(RefCell::new(VecDeque::new()));

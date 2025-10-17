@@ -8,7 +8,13 @@ use runtime::lua_env::to_lua;
 
 use crate::editorinterface::EditorState;
 
-pub fn draw_editor_console(editor: &mut EditorState, game: &mut Game, ctx: &egui::Context) {
+pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
+    #[allow(clippy::manual_map)]
+    let game = match editor.project.as_ref() {
+        Some(proj) => Some(&mut proj.borrow_mut().game),
+        None => None,
+    };
+
     if editor.config.borrow().is_console_shown {
         egui::Window::new("Console")
             .default_height(200.0)
@@ -22,18 +28,14 @@ pub fn draw_editor_console(editor: &mut EditorState, game: &mut Game, ctx: &egui
                         .ui(ui);
 
                     if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                        let _ = game.lua_env.default_events.console_command_event.trigger(
-                            game.lua_env.lua.as_ref(),
-                            to_lua(game.lua_env.lua.as_ref(), editor.text_command.clone())
-                                .unwrap(),
-                        );
+                        try_send_command_to_game(&game, &editor.text_command);
                         editor.text_command.clear();
                         response.request_focus();
                     }
-                    if egui::Button::new("Clear").ui(ui).clicked() {
-                        game.lua_env.messages.borrow_mut().clear();
-                    }
-
+                    if egui::Button::new("Clear").ui(ui).clicked()
+                        && let Some(game) = &game {
+                            game.lua_env.messages.borrow_mut().clear();
+                        }
                 });
 
                 egui::TopBottomPanel::bottom("bottom_panel")
@@ -50,6 +52,9 @@ pub fn draw_editor_console(editor: &mut EditorState, game: &mut Game, ctx: &egui
                             .auto_shrink(false)
                             .stick_to_bottom(true)
                             .show(ui, |ui| {
+                                let Some(game) = &game else {
+                                    return;
+                                };
                                 let messages = &mut game.lua_env.frame_messages.borrow_mut();
                                 for line in messages.iter() {
                                     let msg = &line.msg;
@@ -62,13 +67,23 @@ pub fn draw_editor_console(editor: &mut EditorState, game: &mut Game, ctx: &egui
                     });
 
                 egui::CentralPanel::default().show_inside(ui, |ui| {
-                    draw_console_content(ui, game);
+                    draw_console_content(ui, &game);
                 });
             });
     }
 }
 
-fn draw_console_content(ui: &mut egui::Ui, game: &mut Game) {
+pub fn try_send_command_to_game(game: &Option<&mut Game>, command: &str) {
+    let Some(game) = game else {
+        return;
+    };
+    let _ = game.lua_env.default_events.console_command_event.trigger(
+        game.lua_env.lua.as_ref(),
+        to_lua(game.lua_env.lua.as_ref(), command).unwrap(),
+    );
+}
+
+fn draw_console_content(ui: &mut egui::Ui, game: &Option<&mut Game>) {
     static ARE_LOGS_ERROR_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
     static ARE_LOGS_WARN_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
     static ARE_LOGS_INFO_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
@@ -87,6 +102,10 @@ fn draw_console_content(ui: &mut egui::Ui, game: &mut Game) {
             let show_warnings = *ARE_LOGS_WARN_SHOWN.lock().unwrap();
             let show_infos = *ARE_LOGS_INFO_SHOWN.lock().unwrap();
 
+            let Some(game) = game else {
+                ui.label("No game loaded");
+                return;
+            };
             let messages = &mut game.lua_env.messages.borrow_mut();
             for line in messages.iter().rev() {
                 let msg = &line.msg;

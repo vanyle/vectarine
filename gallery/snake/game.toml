@@ -1,0 +1,8 @@
+title = "Snake"
+entry = "scripts/main.luau"
+logo = "textures/logo.png"
+tags = ["2d", "arcade", "tutorial", "pixelart"]
+description = """A simple snake game made with Vectarine."""
+loader = "pixel"
+screen_width = 800
+screen_height = 600
