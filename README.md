@@ -115,11 +115,14 @@ Start the editor: `cargo run -p editor`
 
 Start the editor (with hot recompile): `bacon editor`
 
-Build the game for the web
+Build the game for the web:
 
 ```bash
+# On Mac/Linux, mise can install emscripten for you. On Windows, you clone the repository yourself
+wind> git clone https://github.com/emscripten-core/emsdk
+wind> ./emsdk/emsdk install 4.0.13
+wind> ./emsdk/emsdk activate 4.0.13
 wind> ./emsdk/emsdk_env.ps1
-unix> source "./emsdk/emsdk_env.sh"
 both> cargo build -p runtime --target wasm32-unknown-emscripten
 both> uv run serve.py # Start this in another terminal.
 # Open http://localhost:8000 in your browser
