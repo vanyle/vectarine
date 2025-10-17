@@ -3,14 +3,17 @@ use std::{
     ops::Deref,
     path::{Path, PathBuf},
     rc::Rc,
-    sync::Arc,
-    time::Instant,
+    sync::{Arc, mpsc},
+    time::{Duration, Instant},
 };
 
 use egui::RichText;
 use egui_extras::{Size, StripBuilder};
 use egui_sdl2_platform::sdl2;
 use glow::HasContext;
+use notify_debouncer_full::{
+    DebounceEventResult, DebouncedEvent, Debouncer, RecommendedCache, new_debouncer, notify,
+};
 use runtime::{
     anyhow::{self},
     game::drawable_screen_size,
@@ -48,6 +51,8 @@ pub struct EditorState {
     pub video: Rc<RefCell<sdl2::VideoSubsystem>>,
     pub window: Rc<RefCell<sdl2::video::Window>>,
     pub gl: Arc<glow::Context>,
+
+    debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 }
 
 impl EditorState {
@@ -65,6 +70,7 @@ impl EditorState {
         let gl = self.gl.clone();
         let video = self.video.clone();
         let window = self.window.clone();
+        let debouncer = self.debouncer.clone();
 
         file::read_file(
             EDITOR_CONFIG_FILE,
@@ -73,11 +79,27 @@ impl EditorState {
                     return; // no config file
                 };
                 if let Ok(config) = toml::from_slice::<EditorConfig>(data.as_slice()) {
+                    let previous_project_path = config.opened_project_path.clone();
+                    if let Some(project_path_str) = &previous_project_path {
+                        let previous_project_path = PathBuf::from(project_path_str);
+                        let parent = previous_project_path.parent();
+                        if let Some(parent) = parent {
+                            let _ = debouncer.borrow_mut().unwatch(parent);
+                        }
+                    }
+
                     *config_store.borrow_mut() = config;
                     if auto_start_project
                         && let Some(project_path_str) = &config_store.borrow().opened_project_path
                     {
                         let project_path = PathBuf::from(project_path_str);
+                        let parent = project_path.parent();
+                        if let Some(parent) = parent {
+                            let _ = debouncer
+                                .borrow_mut()
+                                .watch(parent, notify::RecursiveMode::Recursive);
+                        }
+
                         let loaded_project = ProjectState::new(&project_path, gl, video, window);
                         if let Ok(loaded_project) = loaded_project {
                             project.replace(Some(loaded_project));
@@ -92,6 +114,7 @@ impl EditorState {
         video: Rc<RefCell<sdl2::VideoSubsystem>>,
         window: Rc<RefCell<sdl2::video::Window>>,
         gl: Arc<glow::Context>,
+        debounce_event_sender: mpsc::Sender<DebouncedEvent>,
     ) -> Self {
         Self {
             config: Rc::new(RefCell::new(EditorConfig::default())),
@@ -101,6 +124,19 @@ impl EditorState {
             video,
             window,
             gl,
+            debouncer: Rc::new(RefCell::new(
+                new_debouncer(
+                    Duration::from_millis(10),
+                    None,
+                    move |result: DebounceEventResult| match result {
+                        Ok(events) => events.iter().for_each(|event| {
+                            let _ = debounce_event_sender.send(event.clone());
+                        }),
+                        Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
+                    },
+                )
+                .unwrap(),
+            )),
         }
     }
 
@@ -119,11 +155,28 @@ impl EditorState {
         };
         self.config.borrow_mut().opened_project_path =
             Some(project_path.to_string_lossy().to_string());
+
+        let parent = project_path.parent();
+        if let Some(parent) = parent {
+            let _ = self
+                .debouncer
+                .borrow_mut()
+                .watch(parent, notify::RecursiveMode::Recursive);
+        }
+
         self.save_config();
         Ok(())
     }
 
     pub fn close_project(&mut self) {
+        if let Some(proj) = &*self.project.borrow() {
+            let project_path = &proj.project_path;
+            let parent = project_path.parent();
+            if let Some(parent) = parent {
+                let _ = self.debouncer.borrow_mut().unwatch(parent);
+            }
+        }
+
         self.project.borrow_mut().take();
         self.config.borrow_mut().opened_project_path = None;
         self.save_config();

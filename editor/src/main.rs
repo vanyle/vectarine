@@ -1,10 +1,6 @@
-use std::{
-    sync::mpsc::channel,
-    time::{Duration, Instant},
-};
+use std::{sync::mpsc::channel, time::Instant};
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
-use notify_debouncer_full::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
 use runtime::{RenderingBlock, game::drawable_screen_size, init_sdl};
 
 use crate::{
@@ -33,6 +29,8 @@ fn gui_main() {
         gl,
     } = init_sdl();
 
+    let (debounce_event_sender, debounce_receiver) = channel();
+
     // window.borrow_mut().set_bordered(false);
 
     // Setup the editor interface
@@ -42,7 +40,12 @@ fn gui_main() {
     let mut platform =
         egui_sdl2_platform::Platform::new(drawable_screen_size(&window.borrow())).unwrap();
 
-    let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
+    let mut editor_state = EditorState::new(
+        video.clone(),
+        window.clone(),
+        gl.clone(),
+        debounce_event_sender,
+    );
     editor_state.load_config(true);
     window
         .borrow_mut()
@@ -59,23 +62,6 @@ fn gui_main() {
         win_event: WindowEvent::Resized(width as i32, height as i32),
     };
     platform.handle_event(&event, &sdl, &video.borrow());
-
-    // ...
-    let (debounce_event_sender, debounce_receiver) = channel();
-    let mut debouncer = new_debouncer(
-        Duration::from_millis(10),
-        None,
-        move |result: DebounceEventResult| match result {
-            Ok(events) => events.iter().for_each(|event| {
-                let _ = debounce_event_sender.send(event.clone());
-            }),
-            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
-        },
-    )
-    .unwrap();
-    debouncer
-        .watch("./gallery/snake", RecursiveMode::Recursive)
-        .unwrap();
 
     // The main loop
     let mut start_of_frame = Instant::now();

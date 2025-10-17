@@ -10,7 +10,7 @@
   - [x] Remember the last opened project and open it at startup
   - [x] Allow closing the current project
   - [x] Allow reopening aka 'reset' of games
-  - [ ] Fix live-reload as we need to only live-reload the current opened project
+  - [x] Fix live-reload as we need to only live-reload the current opened project
   - [ ] Open manifest in the editor from the file menu
   - [ ] Allow opening zips that are "compiled projects" (from the runtime)
   - [ ] Have an export feature in the editor to make zips

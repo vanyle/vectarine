@@ -13,8 +13,6 @@ local fprint = Debug.fprint
 
 local V2 = Vec.V2
 
-local t = 0
-local spaceWasDown = false
 local spacePressed: Event.Event<string> = Event.newEvent("custom")
 spacePressed:on(function(data: string)
     print("Received event with data: " .. data)
@@ -48,7 +46,7 @@ local menuScreen = Screen.newScreen("Menu", function()
 end)
 local gameScreen = Screen.newScreen("Game", function()
     Graphics.drawRect(Coord.gl(-1, -1), Coord.glDelta(2,2), {r=0, g=0.2, b=0, a=1})
-    Graphics.drawText("Playing Game", fontResource, Coord.gl(-0.5, 0), 0.32, {r=1, g=1, b=1, a=1})
+    Graphics.drawText("Playing G", fontResource, Coord.gl(-0.5, 0), 0.32, {r=1, g=1, b=1, a=1})
     Graphics.drawText("Press ESC for menu", fontResource, Coord.gl(-0.5, -0.3), 0.16, {r=0.7, g=0.7, b=0.7, a=1})
 
     if Resources.isResourceReady(logoResource) then
@@ -57,7 +55,6 @@ local gameScreen = Screen.newScreen("Game", function()
     end
 end)
 Screen.setCurrentScreen(menuScreen)
-
 
 if _G.fullscreen == nil then
     _G.fullscreen = false
@@ -91,6 +88,10 @@ function Update(time_delta: number)
 
     local bg_color: Graphics.Color = { r = 0, g = 0, b = 0.2, a = 1 }
     Graphics.clear(bg_color)
+
+    if Resources.isResourceReady(helperResource) then
+        fprint(helper.add_things(1, 2))
+    end
 
     local screen = Screen.getCurrentScreen()
     if screen ~= nil then
