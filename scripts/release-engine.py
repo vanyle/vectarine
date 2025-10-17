@@ -14,7 +14,6 @@ Tool to generate an engine-release aka a distributable zip with the engine and r
 
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 

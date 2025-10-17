@@ -22,7 +22,7 @@ pub fn reload_assets_if_needed(
             continue;
         };
         // We only care about data modifications, not metadata.
-        if !matches!(modify, ModifyKind::Data(_)) {
+        if !matches!(modify, ModifyKind::Data(_) | ModifyKind::Any) {
             continue;
         }
 
