@@ -162,6 +162,10 @@ def main() -> None:
         os.path.join(root_path, "gallery"),
         os.path.join(root_path, "engine-release/gallery"),
     )
+    shutil.copytree(
+        os.path.join(root_path, "gamedata"),
+        os.path.join(root_path, "engine-release/gamedata"),
+    )
 
     console.print("[blue]Patching")
     index_html = ""
