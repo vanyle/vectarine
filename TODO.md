@@ -5,9 +5,12 @@
   - [x] Refactor to make the project path a variable
   - [ ] Have a game.toml inside 'gamedata'. It is loaded first instead of game.lua
     - [x] Manifest contains name of the game, logo, tags, and root source.
+    - [ ] Load the manifest and store its data
     - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
   - [ ] Open manifest in the editor from the file menu
-  - [ ] Allow reopening aka 'reset' of games
+  - [x] Remember the last opened project and open it at startup
+  - [x] Allow closing the current project
+  - [x] Allow reopening aka 'reset' of games
   - [ ] Allow opening zips that are "compiled projects" (from the runtime)
   - [ ] Have an export feature in the editor to make zips
 - [ ] Add a gallery

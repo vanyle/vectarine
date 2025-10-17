@@ -6,5 +6,5 @@
 *.zip
 .DS_Store
 node_modules
-vectarine_config.toml
+vectarine-config.toml
 mise.local.toml

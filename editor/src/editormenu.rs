@@ -1,8 +1,8 @@
-use egui::RichText;
+use egui::{RichText, UiBuilder};
 
-use crate::editorinterface::EditorState;
+use crate::editorinterface::{EditorState, open_file_dialog_and_load_project};
 
-pub fn draw_editor_menu(editor: &EditorState, ctx: &egui::Context) {
+pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
     if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
         let mut config = editor.config.borrow_mut();
         config.is_console_shown = !config.is_console_shown;
@@ -27,6 +27,21 @@ pub fn draw_editor_menu(editor: &EditorState, ctx: &egui::Context) {
                     } else {
                         "Exit (Alt+F4)"
                     };
+                    if ui.button("Open project").clicked() {
+                        open_file_dialog_and_load_project(editor);
+                    }
+
+                    let is_project_loaded = editor.project.borrow().is_some();
+                    let mut ui_builder = UiBuilder::new();
+                    if !is_project_loaded {
+                        ui_builder = ui_builder.disabled();
+                    }
+                    ui.scope_builder(ui_builder, |ui| {
+                        if ui.button("Close project").clicked() {
+                            editor.close_project();
+                        }
+                    });
+
                     if ui.button(exit_text).clicked() {
                         std::process::exit(0);
                     }

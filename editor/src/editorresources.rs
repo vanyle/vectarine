@@ -7,9 +7,9 @@ use runtime::game::Game;
 use crate::editorinterface::EditorState;
 
 pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
-    #[allow(clippy::manual_map)]
-    let game = match editor.project.as_ref() {
-        Some(proj) => Some(&mut proj.borrow_mut().game),
+    let mut project = editor.project.borrow_mut();
+    let game = match project.as_mut() {
+        Some(proj) => Some(&mut proj.game),
         None => None,
     };
 

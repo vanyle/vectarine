@@ -35,30 +35,14 @@ fn gui_main() {
 
     // window.borrow_mut().set_bordered(false);
 
-    let (debounce_event_sender, debounce_receiver) = channel();
-    let debouncer = new_debouncer(
-        Duration::from_millis(10),
-        None,
-        move |result: DebounceEventResult| match result {
-            Ok(events) => events.iter().for_each(|event| {
-                let _ = debounce_event_sender.send(event.clone());
-            }),
-            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
-        },
-    )
-    .unwrap();
-
-    // debouncer.unwatch(path);
-    //     .watch("./assets", RecursiveMode::RecConfig::)
-    //     .unwrap();
-
+    // Setup the editor interface
     let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
 
     // Create the egui + sdl2 platform
     let mut platform = egui_sdl2_platform::Platform::new(window.borrow().drawable_size()).unwrap();
 
     let mut editor_state = EditorState::new(video.clone(), window.clone(), gl.clone());
-    editor_state.load_config();
+    editor_state.load_config(true);
     window
         .borrow_mut()
         .set_always_on_top(editor_state.config.borrow().is_always_on_top);
@@ -75,15 +59,31 @@ fn gui_main() {
     };
     platform.handle_event(&event, &sdl, &video.borrow());
 
+    // ...
+    let (debounce_event_sender, debounce_receiver) = channel();
+    let debouncer = new_debouncer(
+        Duration::from_millis(10),
+        None,
+        move |result: DebounceEventResult| match result {
+            Ok(events) => events.iter().for_each(|event| {
+                let _ = debounce_event_sender.send(event.clone());
+            }),
+            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
+        },
+    )
+    .unwrap();
+    // debouncer.unwatch(path);
+    //     .watch("./assets", RecursiveMode::RecConfig::)
+    //     .unwrap();
+
     // The main loop
     let mut start_of_frame = Instant::now();
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
 
         let new_start_of_frame = Instant::now();
-        if let Some(project) = &mut editor_state.project {
-            let mut project_ref = project.borrow_mut();
-            let game = &mut project_ref.game;
+        if let Some(project) = editor_state.project.borrow_mut().as_mut() {
+            let game = &mut project.game;
 
             game.load_resource_as_needed(gl.clone());
             reload_assets_if_needed(
@@ -96,7 +96,7 @@ fn gui_main() {
             // Render the game
             game.main_loop(&latest_events, &window, start_of_frame.elapsed(), true);
         } else {
-            // Draw the 'no project loaded' screen
+            // Clear the screen when no project is loaded
             process_events_when_no_game(&latest_events, &gl);
         }
         start_of_frame = new_start_of_frame;
