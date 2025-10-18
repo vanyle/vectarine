@@ -8,3 +8,4 @@
 node_modules
 vectarine-config.toml
 mise.local.toml
+hooks
