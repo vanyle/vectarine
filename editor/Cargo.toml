@@ -20,3 +20,6 @@ toml = "0.9.5"
 [[bin]]
 name = "vecta"
 path = "src/main.rs"
+
+[build-dependencies]
+winresource = "0.1.23"
