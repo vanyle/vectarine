@@ -142,6 +142,72 @@ All functions can use `Vec` or `ScreenPosition` to draw things. Use the style yo
 
 ## Interacting with the user
 
+The functions to get user input are inside the `Io` module.
+There are many functions inside `Io`, which won't all get
+listed as they have explicit names, but we'll show the main
+ones and how to use them.
+
+**Getting the position of the mouse**
+
+```lua
+local Io = require("@vectarine/io")
+local Vec = require("@vectarine/vec")
+local Debug = require("@vectarine/debug")
+
+function Update()
+    local m: Vec.Vec2 = Io.getMouse()
+    Debug.fprint(m) -- Print the position of the mouse on every frame
+    -- Draw a green circle at the position of the cursor.
+    Graphics.drawCircle(m, 0.1, { r = 0, g = 1, b = 0, a = 1 })
+end
+```
+
+**Checking if a key is pressed**
+
+```lua
+local Io = require("@vectarine/io")
+local Vec = require("@vectarine/vec")
+local Debug = require("@vectarine/debug")
+
+function Update()
+    local isSpacePressed = Io.isKeyDown("space")
+    -- Draw a rectangle when space is pressed
+    if isSpacePressed then
+        Graphics.drawRect(Vec.V2(0, 0), Vec.V2(0.1, 0.2), { r = 1, g = 0, b = 0, a = 1 })
+    end
+    -- Print pressed keys
+    Debug.fprint(Io.getKeysDown())
+    -- Print which mouse buttons are pressed
+    Debug.fprint(Io.getMouseState())
+end
+```
+
+Sometimes, instead of checking every frame is a button is pressed, you want to perform something only once it
+is pressed. To do this, you can use _events_.
+
+```lua
+local Event = require("@vectarine/event")
+local Debug = require("@vectarine/debug")
+
+-- Notice that we subscribe to the event only once, not on every frame!
+local counter = 0
+Event.getKeyDownEvent():on(function(key: string)
+    -- This is called once per press.
+	Debug.print("Key down: ", key)
+    counter = counter + 1
+end)
+
+function Update()
+    Debug.fprint("Count: ", counter)
+end
+
+```
+
+The _Event_ module has multiple useful events you can subscribe to.
+You can also create your own events using `Event.newEvent("name")` if you need to.
+
+## Global and Local variables
+
 ## Using sprites
 
 ## Making levels
@@ -196,7 +262,7 @@ Because of that, we recommend doing the following (this is just a recommendation
 
 There is a simple example with 2 files: `helper.luau` and `main.luau`.
 
-```luau
+```lua
 -- helper.luau
 local module = {} -- This is where all our exports will go
 local my_value = 3
