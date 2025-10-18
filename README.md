@@ -29,7 +29,7 @@ You'll need:
 - A text editor like [Visual Studio Code](https://code.visualstudio.com/)
 - (Optional) Installing a Luau extension for your editor
 
-See [the manual](./docs/user_manual.md) for how to make games with vectarine
+See [the manual](./docs/user-manual.md) for how to make games with vectarine
 
 Below are information on how to work and improve the engine.
 
