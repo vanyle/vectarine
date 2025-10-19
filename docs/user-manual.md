@@ -31,15 +31,17 @@ Files ending with `.exe` are windows executables. Files with the same name, but 
 
 **Desktop release**
 
-To distribute your game, put the `runtime` executable and the `assets` folder in a zip. You can share the zip.
+To distribute your game, put the `runtime` executable and the `gamedata` folder in a zip. You can share the zip.
 
 **Web release**
 
-To distribute your game for the web, put together `index.html`, `runtime.js`, `runtime.wasm` and the `assets` folder.
+To distribute your game for the web, put together `index.html`, `runtime.js`, `runtime.wasm` and the `gamedata` folder.
 You can serve these files with any static file server, for example by doing `python -m http.server` and going to [http://localhost:8000](http://localhost:8000).
 
 If you see: "Error loading runtime", it means that you opened `index.html` directly from the filesystem instead of starting a server.
 It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`.
+
+You put these files in a zip and upload it to [itch.io](https://itch.io) if you want.
 
 ## Using Vectarine and Luau
 
@@ -50,7 +52,7 @@ Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` second
 A minimal example:
 
 ```lua
-local Debug = require('@vectarine/Debug')
+local Debug = require('@vectarine/debug')
 
 function Load()
     Debug.print("Game loaded")
@@ -214,6 +216,56 @@ You can also create your own events using `Event.newEvent("name")` if you need t
 > and trigger specific helpful behavior.
 
 ## Global and Local variables
+
+In luau, variables and functions are global by default. You can make them local by adding the `local` keyword before defining them.
+
+```lua
+local Debug = require("@vectarine/debug")
+
+myGlobalVar = 3
+local someLocalNumber = 10
+
+-- To be explicit when defining globals, we usually use the syntax _G.variableName = value
+-- _G is the global object
+someLocalNumber = 11 -- Changing the value of an existing variable
+_G.globalValue = "abc" -- Setting a global value
+
+function thisIsGlobal()
+    Debug.print("a global function is called!")
+end
+
+local function thisIsLocal()
+    Debug.print("a local function is called!")
+end
+```
+
+When possible, prefer using local variables. This prevents you from overwriting a variable by mistake by creating 2 variables with the same name in two different functions.
+However, global variables have some advantages.
+
+First, you can inspect and edit the value of a global variable in the _Watcher_ tool (Open using <kbd>Ctrl</kbd>+<kbd>3</kbd>)
+
+Second, the value of global variables is preserved between script reloads. This is useful when developing as there is usually part of your state that you
+want to reset when reloading and part that you want to keep.
+
+My recommendation is to use the following pattern:
+
+```luau
+
+-- Let's say that we want to preserve the player position between reloads.
+
+function initFromGlobal<T>(defaultValue: T, globalName: string): T
+	if _G[globalName] == nil then
+		_G[globalName] = defaultValue
+	end
+    return _G[globalName]
+end
+
+-- player_pos is both a local and a global.
+-- Because it is local that you get proper typing and information if it is unused
+-- Because it is global, its value is preserved between reloads and you can edit it inside the watcher tool
+local playerPos = initFromGlobal(Vec.V2(0, 0), "playerPos")
+
+```
 
 ## Using sprites
 
