@@ -39,6 +39,8 @@
   - [ ] V4 is a color
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
+  - [ ] The font size of drawText should work with the Coords API
+  - [ ] The radius of drawCircle should work with the Coords API
 - [ ] Audio API
   - [ ] Create an Audio resource
   - [ ] Play a sound
@@ -49,12 +51,22 @@
   - [ ] Implement in Rust
 - [ ] Open-source the project
 - [ ] Add a CI
-- [ ] Timer event?
+- [ ] Entity system
+  - [ ] Add a concept of a 'PhysicsWorld2D'
+  - [ ] Under the hood, this is a QuadTree
+  - [ ] You can add 'objects' to the physics world (circles, rectangles, etc...)
+  - [ ] The objects can have 'tags' (player, enemy, projectile, etc...)
+  - [ ] You can easily move and resize objects in the physics world
+  - [ ] You can efficiently get projects by tag
+  - [ ] You can efficiently get the nearest object to a position / list objects by distance
+  - [ ] You can efficiently get all objects that collide with one object
+  - [ ] You can efficiently see what objects collide with a ray.
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
 - [ ] Event system, part II
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
+  - [ ] Timer event?
 - [ ] Make errors/warnings inside Update spam less the console
   - [ ] When the same error happens in a row inside update, only print it once (same behavior as browsers)
 - [ ] Better errors:
