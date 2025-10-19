@@ -37,6 +37,7 @@
 - [ ] More complete Lua API
   - [ ] V3, V4
   - [ ] V4 is a color
+  - [ ] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
@@ -61,6 +62,7 @@
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
+- [ ] Add a way to set shader uniforms from Luau
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading

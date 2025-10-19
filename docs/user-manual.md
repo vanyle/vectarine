@@ -372,6 +372,63 @@ end
 
 ## Organising rendering using Screens
 
+## Using Shaders
+
+(Fragment) Shaders are little programs that are executed by the GPU and which run on every pixel of an input image.
+They are useful to apply custom graphics effects like blurs, outlines, sepia filters, recoloring images, etc...
+
+In Vectarine, shaders are attached to a canvas, a custom drawing surface.
+
+As an example, Let's use this shader which applies a wave deformation effect to its input
+
+```c
+precision mediump float; // you need to specify this for your shader to run in a browser
+in vec2 uv; // input position
+uniform sampler2D tex; // input image (the content of the canvas)
+uniform float iTime; // you have access to a time variable in all shaders to apply dynamic effects
+out vec4 frag_color; // output color
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    fragColor = texture(tex, vec2(uv.x + cos((uv.y*4.0+iTime)*10.0)/100.0, uv.y + sin((uv.x*4.0+iTime)*10.0)/100.0));
+}
+void main() {
+    mainImage(frag_color, uv);
+}
+```
+
+You can put it inside `gamedata/shaders/wave.glsl`.
+
+Then you can use it like so:
+
+```lua
+local Canvas = require("@vectarine/canvas")
+local Graphics = require("@vectarine/graphics")
+local Vec = require("@vectarine/vec")
+local V2 = Vec.V2
+local shaderResource = Resource.loadShader("shaders/wave.glsl")
+
+-- Create a canvas of size 1200x800 pixels and attach the shader to it.
+local canvas = Canvas.createCanvas(1200, 800)
+canvas:setShader(shaderResource)
+-- You can call canvas:setShader(nil) to stop using a given shader and draw the content of the canvas as-is.
+
+function Update()
+    -- Now, we can draw to the canvas
+    Canvas.paint(canvas, function()
+        -- Every call to Graphics.drawSomething inside paint will be not displayed on the screen
+        -- It will be drawn to the canvas instead
+        -- Note: you can draw the content of one canvas to another canvas to chain multiple shader effects.
+        Graphics.drawRect(V2(0, 0), V2(0.1, 0.1), {r = 1, g = 0, b = 0, a = 1})
+    end)
+
+    -- The canvas can be drawn like an image.
+    -- When it is drawn, the shader is executed
+    Graphics.drawCanvas(canvas, V2(-1, -1), V2(2, 2))
+end
+```
+
+You can find more information about shaders in [the great book of shaders](https://thebookofshaders.com/)
+
 ## Performance Tips
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.

@@ -16,7 +16,7 @@ export type Entity = {
 local _, utils = Resources.loadScript("scripts/utils.luau", require("utils.luau"))
 local entities: { Entity } = utils.initFromGlobal({}, "entities")
 
-local entitySpawnRate = 3
+local entitySpawnRate = 1.0
 local timeSinceLastSpawn = 0.0
 
 local function spawnEntity(entityType: string, position: Vec.Vec2)
@@ -27,6 +27,10 @@ local function spawnEntity(entityType: string, position: Vec.Vec2)
 		isHealthShown = true,
 		attackDamage = 10,
 	}
+	if #entities >= 100 then
+		Debug.print("Maximum number of entities reached. Cannot spawn more.")
+		return entity
+	end
 	table.insert(entities, entity)
 	return entity
 end
