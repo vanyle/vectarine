@@ -1,3 +1,9 @@
+---
+title: "Vectarine User Manual"
+geometry: "left=1cm,right=1cm,top=1cm,bottom=1cm"
+output: pdf_document
+---
+
 # 🍊 Vectarine User Manual
 
 Vectarine is a game engine to make games super quickly with the best possible experience for game makers.
@@ -8,7 +14,7 @@ To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with bet
 This manual is an unopiniated guide to making games using Vectarine. If you already have a bit of game making experience and want to integrate Vectarine into your workflow,
 this guide is for you. If you are new to making games, you can still read this guide, but an opiniated guide is in the works for you!
 
-> Parts annotated with 👷 are a work-in-progress and describe the goals of vectarine, not its current state.
+> ℹ️ Parts annotated with 👷 are a work-in-progress and describe the goals of vectarine, not its current state.
 
 ## Getting started
 
@@ -107,7 +113,7 @@ end
 
 ### Using Coord
 
-> TLDR; Coordinates are like vectors with a unit.
+> ℹ️ TLDR; Coordinates are like vectors with a unit.
 
 Drawing with `Vec` is convenient, however, often, you want to draw squares, or shapes where the width to height ratio needs to say constant.
 When using `Vec`, this means manually multiplying your position by `screen_height/screen_width` to normalize everything.
@@ -249,8 +255,7 @@ want to reset when reloading and part that you want to keep.
 
 My recommendation is to use the following pattern:
 
-```luau
-
+```lua
 -- Let's say that we want to preserve the player position between reloads.
 
 function initFromGlobal<T>(defaultValue: T, globalName: string): T

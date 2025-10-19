@@ -168,6 +168,9 @@ def main() -> None:
     copy_from_root(
         root_path, "docs/user-manual.md", "engine-release/vectarine-guide.md"
     )
+    copy_from_root(
+        root_path, "docs/user-manual.pdf", "engine-release/vectarine-guide.pdf"
+    )
 
     copy_from_root(
         root_path,

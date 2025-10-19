@@ -5,6 +5,7 @@ rust = "1.90.0"
 git-lfs = "latest"
 pandoc = "latest"
 
+
 [tasks.build-editor]
 alias = ["be"]
 description = "Build the editor in release mode"
@@ -43,7 +44,16 @@ run = "cargo test -- --nocapture --show-output"
 description = "Run clippy on all packages and try to fix problems"
 run = ["cargo fix -p runtime --all-targets --all-features --allow-dirty", "cargo fix -p editor --all-targets --all-features --allow-dirty"]
 
+[tasks.pdfify-manual]
+run_windows = """
+pwsh -NonInteractive -NoProfile -Command { pandoc ./docs/user-manual.md -o ./docs/user-manual.pdf -f markdown+emoji --pdf-engine=xelatex --metadata mainfont=\"Segoe UI Emoji\" }
+"""
+description = "Convert the user manual to PDF"
+run = """
+pandoc ./docs/user-manual.md -o ./docs/user-manual.pdf -f markdown+emoji --pdf-engine=xelatex --metadata mainfont="Segoe UI Emoji"
+"""
+
 [tasks.release]
 description = "Create a new release"
-depends = ["clippy", "build-editor", "build-web", "build-runtime"]
+depends = ["clippy", "build-editor", "build-web", "build-runtime", "pdfify-manual"]
 run = ["uv run scripts/release-engine.py"]

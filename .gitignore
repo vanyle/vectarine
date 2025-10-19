@@ -4,6 +4,7 @@
 /personal
 *.exe
 *.zip
+docs/*.pdf
 .DS_Store
 node_modules
 vectarine-config.toml
