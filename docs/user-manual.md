@@ -8,6 +8,8 @@ To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with bet
 This manual is an unopiniated guide to making games using Vectarine. If you already have a bit of game making experience and want to integrate Vectarine into your workflow,
 this guide is for you. If you are new to making games, you can still read this guide, but an opiniated guide is in the works for you!
 
+> Parts annotated with 👷 are a work-in-progress and describe the goals of vectarine, not its current state.
+
 ## Getting started
 
 I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text editor with the [Luau extension](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp) but
@@ -206,6 +208,11 @@ end
 The _Event_ module has multiple useful events you can subscribe to.
 You can also create your own events using `Event.newEvent("name")` if you need to.
 
+> ℹ️ Sometimes, you commonly want to perform an action when debugging
+> This can be spawning a specific enemy, teleporting to a location or resetting the state to some value.
+> You can use the `Event.getConsoleCommandEvent()` event to listen to what you are typing inside the console
+> and trigger specific helpful behavior.
+
 ## Global and Local variables
 
 ## Using sprites
@@ -319,3 +326,30 @@ Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all pla
 I don't really know why you'd want to draw that many rectangles.
 
 If you want to draw something on every pixel, use a Shader instead of called `graphics.drawRect` on a per-pixel basis!
+
+## 👷 Writing automatic tests
+
+> ❓ What are automatic tests?
+
+Automatic tests are piece of code that make sure that parts of your game behave correctly.
+You could test that 2 systems in your game interact as intended, for example that launching a fireball sets grass on fire (thus testing
+that the projectile system and the fire spreading system work together).
+
+Automatic test run automatically and allow you to quickly catch **regression** bugs, things that worked previously, but don't anymore.
+
+> ❓ Why write automatic tests?
+
+If you are working on a small project, like a jam, or are working alone, there is **no reasons to write tests**! **Don't do it**, you'll waste time you could have used
+to improve your game!
+
+Tests are useful for large games, for example multi-year projects or when you have a lot of people (more than 2 programmers).
+When you feel like you are spending a lot of time debugging a part of your game instead of adding feature, it is a sign that this parts needs tests.
+This is especially true if this is a part that you (or somebody else!) wrote a few months, or years ago.
+
+Tests need to be put inside the `tests` folder of your game. They are not exported in the final build. You can run the tests in the editor.
+
+TODO: Design an API for `assert` and general test organisation. The editor needs to work as a CLI to run the tests in watch mode.
+
+## 👷 Networking and Multiplayer
+
+TODO
