@@ -3,6 +3,7 @@ uv = "0.9.0"
 emsdk = "4.0.13"
 rust = "1.90.0"
 git-lfs = "latest"
+pandoc = "latest"
 
 [tasks.build-editor]
 alias = ["be"]

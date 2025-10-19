@@ -3,7 +3,7 @@
 - [ ] Project System in the editor
   - [x] 'assets' should be 'gamedata'
   - [x] Refactor to make the project path a variable
-  - [x] Have a game.toml inside 'gamedata'. It is loaded first instead of game.lua
+  - [x] Have a game.vecta inside 'gamedata'. It is loaded first instead of game.lua
     - [x] Manifest contains name of the game, logo, tags, and root source.
     - [ ] Load the manifest and store its data
     - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.

@@ -1,4 +1,4 @@
-use std::{sync::mpsc::channel, time::Instant};
+use std::{path::PathBuf, sync::mpsc::channel, time::Instant};
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
 use runtime::{RenderingBlock, game::drawable_screen_size, init_sdl};
@@ -18,6 +18,19 @@ pub mod reload;
 
 fn main() {
     gui_main();
+}
+
+fn get_project_to_open_from_args() -> Option<PathBuf> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() == 2 {
+        let path = PathBuf::from(args[1].clone());
+        if path.exists() && path.is_file() {
+            return Some(path);
+        }
+        None
+    } else {
+        None
+    }
 }
 
 fn gui_main() {
@@ -46,7 +59,15 @@ fn gui_main() {
         gl.clone(),
         debounce_event_sender,
     );
-    editor_state.load_config(true);
+
+    let project_to_open = get_project_to_open_from_args();
+    if let Some(project_path) = project_to_open {
+        editor_state.load_config(false);
+        let _ = editor_state.load_project(&project_path);
+    } else {
+        editor_state.load_config(true);
+    }
+
     window
         .borrow_mut()
         .set_always_on_top(editor_state.config.borrow().is_always_on_top);

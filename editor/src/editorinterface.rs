@@ -229,7 +229,7 @@ impl EditorState {
 
 pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
     let Some(path) = rfd::FileDialog::new()
-        .add_filter("Vectarine Project", &["toml"])
+        .add_filter("Vectarine Project", &["vecta", "toml"])
         .set_title("Open Vectarine Project")
         .pick_file()
     else {
@@ -259,7 +259,7 @@ pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
                             ui.label(RichText::new("No project loaded").size(24.0));
                             ui.add_space(8.0);
                             ui.label(
-                                RichText::new("A project is loaded from a game.toml file. See the gallery for examples.")
+                                RichText::new("A project is loaded from a game.vecta file. See the gallery for examples.")
                                     .size(18.0),
                             );
                             ui.add_space(16.0);

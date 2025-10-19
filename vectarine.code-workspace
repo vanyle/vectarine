@@ -90,6 +90,9 @@
 			"emsdk/bazel/**": true,
 			"**/.venv/**": true,
 		},
+		"files.associations": {
+			"*.vecta": "toml",
+		},
 		"workbench.colorCustomizations": {
 			"titleBar.activeBackground": "#ffaa00c7",
 			"titleBar.activeForeground": "#541c29",
