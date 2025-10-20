@@ -35,9 +35,18 @@ local defaultPlayer = {
 	attackDamage = 20,
 }
 
-local camera = utils.initFromGlobal({ position = Vec.V2(0, 0), zoom = 50 }, "camera")
-local player = utils.initFromGlobal(defaultPlayer, "player")
-local projectiles: { Projectile } = utils.initFromGlobal({}, "projectiles")
+local camera = nil
+local player = nil
+local projectiles: { Projectile } = nil
+
+Event.getResourceLoadedEvent():on(function(resource)
+	-- Workaround async dependency loading. I need to find a cleaner way to do this.
+	if utils.initFromGlobal ~= nil then
+		camera = utils.initFromGlobal({ position = Vec.V2(0, 0), zoom = 50 }, "camera")
+		player = utils.initFromGlobal(defaultPlayer, "player")
+		projectiles = utils.initFromGlobal({}, "projectiles")
+	end
+end)
 
 local function getPlayerSize(): Vec.Vec2
 	return Vec.V2(1, 1)
