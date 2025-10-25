@@ -115,7 +115,7 @@ end
 
 > ℹ️ TLDR; Coordinates are like vectors with a unit.
 
-Drawing with `Vec` is convenient, however, often, you want to draw squares, or shapes where the width to height ratio needs to say constant.
+Drawing with `Vec` is convenient, however, often, you want to draw squares, or shapes where the width to height ratio needs to stay constant.
 When using `Vec`, this means manually multiplying your position by `screen_height/screen_width` to normalize everything.
 
 As this is something that all games need, Vectarine provides a shortcut: Coordinates!
