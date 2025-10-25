@@ -13,6 +13,7 @@ pub mod editorinterface;
 pub mod editormenu;
 pub mod editorresources;
 pub mod editorwatcher;
+pub mod exportinterface;
 pub mod projectstate;
 pub mod reload;
 

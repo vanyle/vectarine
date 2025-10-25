@@ -42,8 +42,8 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                         }
 
                         if ui.button("Export...").clicked() {
-                            // TO-DO: implement export dialog
-                            println!("Export not implemented yet. You can manually zip the game data together with the executable for now.");
+                            let mut config = editor.config.borrow_mut();
+                            config.is_export_window_shown = true;
                         }
                     });
 

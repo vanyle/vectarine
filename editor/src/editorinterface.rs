@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     editorconsole::draw_editor_console, editormenu::draw_editor_menu,
     editorresources::draw_editor_resources, editorwatcher::draw_editor_watcher,
-    projectstate::ProjectState,
+    exportinterface::draw_editor_export, projectstate::ProjectState,
 };
 
 const EDITOR_CONFIG_FILE: &str = "vectarine-config.toml";
@@ -35,6 +35,7 @@ pub struct EditorConfig {
     pub is_console_shown: bool,
     pub is_resources_window_shown: bool,
     pub is_watcher_window_shown: bool,
+    pub is_export_window_shown: bool,
     pub is_always_on_top: bool,
     pub debug_resource_shown: Option<ResourceId>,
 
@@ -198,6 +199,7 @@ impl EditorState {
         draw_editor_console(self, &ctx);
         draw_editor_resources(self, &ctx);
         draw_editor_watcher(self, &ctx);
+        draw_editor_export(self, &ctx);
 
         if self.project.borrow().is_none() {
             draw_empty_screen(self, &ctx);
