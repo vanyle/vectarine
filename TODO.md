@@ -65,6 +65,7 @@
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
+- [ ] Monads for futures
 - [ ] The 3D API!!
   - [ ] See how Three.js does things.
   - [ ] Camera
