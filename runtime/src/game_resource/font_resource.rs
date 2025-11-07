@@ -36,11 +36,8 @@ impl Resource for FontResource {
         _lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
-        data: &[u8],
+        data: Box<[u8]>,
     ) -> Status {
-        if data.is_empty() {
-            return Status::Error("File is empty or does not exist.".to_string());
-        }
         let font = fontdue::Font::from_bytes(data, fontdue::FontSettings::default());
         let font = match font {
             Err(e) => {

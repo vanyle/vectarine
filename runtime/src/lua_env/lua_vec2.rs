@@ -124,6 +124,24 @@ impl mlua::UserData for Vec2 {
                 y: vec.y * other.x + vec.x * other.y,
             })
         });
+        methods.add_method("normalized", |_, vec, ()| {
+            let len = (vec.x * vec.x + vec.y * vec.y).sqrt();
+            if len == 0.0 {
+                // We pick an arbitrary direction in this case
+                return Ok(Vec2 { x: 1.0, y: 0.0 });
+            }
+            Ok(Vec2 {
+                x: vec.x / len,
+                y: vec.y / len,
+            })
+        });
+        methods.add_method("round", |_, vec, (digits_of_precision,): (Option<u32>,)| {
+            let factor = 10f32.powi(digits_of_precision.unwrap_or(0) as i32);
+            Ok(Vec2 {
+                x: (vec.x * factor).round() / factor,
+                y: (vec.y * factor).round() / factor,
+            })
+        });
         methods.add_meta_function(mlua::MetaMethod::Add, |_, (vec, other): (Vec2, Vec2)| {
             Ok(Vec2 {
                 x: vec.x + other.x,
@@ -157,5 +175,8 @@ pub fn setup_vec_api(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
             Ok(data)
         })?,
     )?;
+
+    vec2_module.set("ZERO2", Vec2 { x: 0.0, y: 0.0 })?;
+
     Ok(vec2_module)
 }

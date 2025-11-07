@@ -19,9 +19,9 @@ impl Resource for ScriptResource {
         lua: &Rc<mlua::Lua>,
         _gl: std::sync::Arc<glow::Context>,
         path: &Path,
-        data: &[u8],
+        data: Box<[u8]>,
     ) -> Status {
-        run_file_and_display_error_from_lua_handle(lua, data, path, self.target_table.as_ref());
+        run_file_and_display_error_from_lua_handle(lua, &data, path, self.target_table.as_ref());
         self.script.replace(Some(data.to_vec()));
         Status::Loaded
     }

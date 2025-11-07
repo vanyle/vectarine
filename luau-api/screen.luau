@@ -7,16 +7,17 @@ You can use screens to better organize your game code.
 If you do, you need to call 'drawCurrentScreen' in your Update function to draw the current screen.
 
 Tip: you can draw a screen on a canvas for debugging if needed.
-]]--
+]]
+--
 local module = {}
 
-local ScreenImpl = {screen=true}
+local ScreenImpl = { screen = true }
 ScreenImpl.__index = ScreenImpl
 export type Screen = typeof(setmetatable({}, ScreenImpl))
 
 --- Makes a new screen with the given name.
 function module.newScreen(screen_name: string, draw_function: () -> ()): Screen
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Represents a transition between two screens.
@@ -25,30 +26,34 @@ end
 ---
 --- `duration` is a number in seconds.
 export type ScreenTransition = {
-    duration: number,
-    transition_style: "fade" | "slide_up" | "slide_down" | "toon" | (old_screen: Screen, new_screen: Screen, progress: number) -> ()
+	duration: number,
+	transition_style: "fade"
+		| "slide_up"
+		| "slide_down"
+		| "toon"
+		| (old_screen: Screen, new_screen: Screen, progress: number) -> (),
 }
 
 --- Sets the current screen, with an optional transition.
 --- If this is the first screen, it will be set immediately.
 function module.setCurrentScreen(screen: Screen, transition: ScreenTransition?)
-    error("Not implemented")
+	error("Not implemented")
 end
 
 function module.getCurrentScreen(): Screen?
-    error("Not implemented")
+	error("Not implemented")
 end
 
 function module.drawCurrentScreen()
-    error("Not implemented")
+	error("Not implemented")
 end
 
 function ScreenImpl.name(self: Screen): string
-    error("Not implemented")
+	error("Not implemented")
 end
 
 function ScreenImpl.draw(self: Screen)
-    error("Not implemented")
+	error("Not implemented")
 end
 
 return module

@@ -3,7 +3,7 @@ use std::{ops, rc::Rc};
 use mlua::{AnyUserData, FromLua, IntoLua, UserData};
 
 use crate::{
-    graphics::glframebuffer::get_viewport,
+    graphics::glframebuffer::{Viewport, get_viewport},
     lua_env::{add_fn_to_table, get_gl_handle, lua_vec2::Vec2},
 };
 
@@ -54,6 +54,9 @@ impl ScreenPosition {
 impl ScreenVec {
     pub fn as_vec2(self) -> Vec2 {
         self.0
+    }
+    pub fn scale(self, k: f32) -> Self {
+        ScreenVec(self.0.scale(k))
     }
     pub fn from_px(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
         ScreenVec(Vec2::new(
@@ -125,10 +128,19 @@ impl UserData for ScreenVec {
         );
 
         methods.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
-        methods.add_method("px", |lua, this, ()| {
+        methods.add_method("px", |lua, this, (screen_size,): (Option<Vec2>,)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(this.as_px(viewport.width as f32, viewport.height as f32))
+        });
+        methods.add_method("scale", |_, this, (k,): (f32,)| Ok(this.scale(k)));
+
+        methods.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
+            Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x, pos.0.y))
         });
     }
 }
@@ -136,9 +148,13 @@ impl UserData for ScreenVec {
 impl UserData for ScreenPosition {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
-        methods.add_method("px", |lua, this, ()| {
+        methods.add_method("px", |lua, this, (screen_size,): (Option<Vec2>,)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(this.as_px(viewport.width as f32, viewport.height as f32))
         });
 
@@ -174,7 +190,7 @@ impl UserData for ScreenPosition {
         );
 
         methods.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
-            Ok(format!("ScreenPosition({}, {})", pos.0.x, pos.0.y))
+            Ok(format!("ScreenPosition({:.4}, {:.4})", pos.0.x, pos.0.y))
         });
     }
 }
@@ -183,85 +199,124 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     let coords_module = lua.create_table()?;
 
     add_fn_to_table(lua, &coords_module, "px", {
-        move |lua, (x, y): (f32, f32)| {
+        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(ScreenPosition::from_px(
-                Vec2::new(x, y),
+                v,
                 viewport.width as f32,
                 viewport.height as f32,
             ))
         }
     });
 
-    add_fn_to_table(lua, &coords_module, "pxDelta", {
-        move |lua, (x, y): (f32, f32)| {
+    add_fn_to_table(lua, &coords_module, "pxVec", {
+        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(ScreenVec::from_px(
-                Vec2::new(x, y),
+                v,
                 viewport.width as f32,
                 viewport.height as f32,
             ))
         }
     });
 
-    add_fn_to_table(lua, &coords_module, "gl", move |_, (x, y): (f32, f32)| {
-        Ok(ScreenPosition::from_opengl(Vec2::new(x, y)))
+    add_fn_to_table(lua, &coords_module, "gl", move |_, (v,): (Vec2,)| {
+        Ok(ScreenPosition::from_opengl(v))
     });
 
-    add_fn_to_table(
-        lua,
-        &coords_module,
-        "glDelta",
-        move |_, (x, y): (f32, f32)| Ok(ScreenVec(Vec2::new(x, y))),
-    );
+    add_fn_to_table(lua, &coords_module, "glVec", move |_, (v,): (Vec2,)| {
+        Ok(ScreenVec(v))
+    });
 
     add_fn_to_table(lua, &coords_module, "vw", {
-        move |lua, (x, y): (f32, f32)| {
+        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(ScreenPosition::from_vw(
-                Vec2::new(x, y),
+                v,
                 viewport.width as f32,
                 viewport.height as f32,
             ))
         }
     });
 
-    add_fn_to_table(lua, &coords_module, "vwDelta", {
-        move |lua, (x, y): (f32, f32)| {
+    add_fn_to_table(lua, &coords_module, "vwVec", {
+        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(ScreenVec(Vec2::new(
-                x * 2.0 / 100.0,
-                y * 2.0 / 100.0 * viewport.width as f32 / viewport.height as f32,
+                v.x * 2.0 / 100.0,
+                v.y * 2.0 / 100.0 * viewport.width as f32 / viewport.height as f32,
             )))
         }
     });
 
     add_fn_to_table(lua, &coords_module, "vh", {
-        move |lua, (x, y): (f32, f32)| {
+        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(ScreenPosition::from_vh(
-                Vec2::new(x, y),
+                v,
                 viewport.width as f32,
                 viewport.height as f32,
             ))
         }
     });
 
-    add_fn_to_table(lua, &coords_module, "vhDelta", {
-        move |lua, (x, y): (f32, f32)| {
+    add_fn_to_table(lua, &coords_module, "vhVec", {
+        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let gl = get_gl_handle(lua);
-            let viewport = get_viewport(&gl);
+            let viewport = if let Some(screen_size) = screen_size {
+                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+            } else {
+                get_viewport(&gl)
+            };
             Ok(ScreenVec(Vec2::new(
-                x * 2.0 / 100.0 * viewport.height as f32 / viewport.width as f32,
-                y * 2.0 / 100.0,
+                v.x * 2.0 / 100.0 * viewport.height as f32 / viewport.width as f32,
+                v.y * 2.0 / 100.0,
             )))
         }
     });
+
+    coords_module.set("CENTER", ScreenPosition::from_opengl(Vec2::zero()))?;
+    coords_module.set(
+        "TOP_LEFT",
+        ScreenPosition::from_opengl(Vec2::new(-1.0, 1.0)),
+    )?;
+    coords_module.set(
+        "TOP_RIGHT",
+        ScreenPosition::from_opengl(Vec2::new(1.0, 1.0)),
+    )?;
+    coords_module.set(
+        "BOTTOM_LEFT",
+        ScreenPosition::from_opengl(Vec2::new(-1.0, -1.0)),
+    )?;
+    coords_module.set(
+        "BOTTOM_RIGHT",
+        ScreenPosition::from_opengl(Vec2::new(1.0, -1.0)),
+    )?;
 
     Ok(coords_module)
 }

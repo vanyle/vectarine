@@ -163,6 +163,20 @@ pub struct Viewport {
     pub height: i32,
 }
 
+impl Viewport {
+    pub fn aspect_ratio(&self) -> f32 {
+        self.width as f32 / self.height as f32
+    }
+    pub fn from_size(width: i32, height: i32) -> Self {
+        Viewport {
+            x: 0,
+            y: 0,
+            width,
+            height,
+        }
+    }
+}
+
 pub fn get_viewport(gl: &Arc<glow::Context>) -> Viewport {
     let mut viewport = [0, 0, 0, 0];
     unsafe {

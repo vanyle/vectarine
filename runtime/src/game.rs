@@ -1,33 +1,81 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
 use glow::HasContext;
 use sdl2::video::{FullscreenType, WindowPos};
 
 use crate::{
     console::Verbosity,
-    game_resource::{Resource, ResourceId, Status},
-    io::process_events,
+    game_resource::{Resource, ResourceId, Status, script_resource::ScriptResource},
+    graphics::batchdraw::BatchDraw2d,
+    io::{fs::ReadOnlyFileSystem, process_events},
     lua_env::{LuaEnvironment, lua_screen},
+    projectinfo::ProjectInfo,
 };
 
 pub struct Game {
     pub gl: Arc<glow::Context>,
     pub lua_env: LuaEnvironment,
-    pub was_load_called: bool,
+    pub was_main_script_executed: bool,
+    pub main_script_path: String,
 }
 
 impl Game {
-    pub fn new(gl: &Arc<glow::Context>, lua_env: LuaEnvironment) -> Self {
+    /// Creates a new game instance from the given project path.
+    /// The game will load resources using the provided file system.
+    /// The game provided in the callback is fully initialized and ready to use.
+    pub fn from_project<F>(
+        project_path: &Path,
+        project_info: &ProjectInfo,
+        file_system: Box<dyn ReadOnlyFileSystem>,
+        gl: Arc<glow::Context>,
+        video: &Rc<RefCell<sdl2::VideoSubsystem>>,
+        window: &Rc<RefCell<sdl2::video::Window>>,
+        callback: F,
+    ) where
+        F: FnOnce(anyhow::Result<Self>),
+    {
+        let project_dir = project_path.parent();
+        let Some(project_dir) = project_dir else {
+            callback(Err(anyhow::anyhow!("Invalid project path")));
+            return;
+        };
+
+        let _ = window.borrow_mut().set_title(&project_info.title);
+        let _ = window.borrow_mut().set_size(
+            project_info.default_screen_width,
+            project_info.default_screen_height,
+        );
+
+        let batch = BatchDraw2d::new(&gl).unwrap();
+        let lua_env = LuaEnvironment::new(batch, file_system, project_dir);
+        let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone());
+        game.load(video, window);
+        let path = Path::new(&game.main_script_path);
+        game.lua_env.resources.load_resource::<ScriptResource>(
+            path,
+            gl.clone(),
+            game.lua_env.lua.clone(),
+            game.lua_env.default_events.resource_loaded_event,
+        );
+        callback(Ok(game));
+    }
+
+    fn from_lua(
+        gl: &Arc<glow::Context>,
+        lua_env: LuaEnvironment,
+        main_script_path: String,
+    ) -> Self {
         Game {
             gl: gl.clone(),
             lua_env,
-            was_load_called: false,
+            was_main_script_executed: false,
+            main_script_path,
         }
     }
 
     /// Initializes the game environment with the current video and window information.
     /// This needs to be called before loading Lua scripts.
-    pub fn load(
+    fn load(
         &mut self,
         video: &Rc<RefCell<sdl2::VideoSubsystem>>,
         window: &Rc<RefCell<sdl2::video::Window>>,
@@ -84,23 +132,6 @@ impl Game {
         delta_time: std::time::Duration,
         _in_editor: bool,
     ) {
-        if !self.was_load_called {
-            let load_fn = self.lua_env.lua.globals().get::<mlua::Function>("Load");
-            if let Ok(load_fn) = load_fn {
-                let err = load_fn.call::<()>(());
-                if let Err(err) = err {
-                    self.lua_env.print(
-                        &format!("Lua error while calling Load():\n{err}"),
-                        Verbosity::Error,
-                    );
-                }
-                self.was_load_called = true;
-            } else {
-                self.lua_env
-                    .print("Load() function not found", Verbosity::Warn);
-            }
-        }
-
         let framebuffer_width;
         let framebuffer_height;
         {
@@ -151,6 +182,9 @@ impl Game {
                 }
                 env_state.fullscreen_state_request = None;
             }
+            if let Some(title) = env_state.window_title.take() {
+                window.borrow_mut().set_title(&title).unwrap_or(());
+            }
 
             if env_state.center_window_request {
                 window
@@ -170,7 +204,7 @@ impl Game {
         // Update screen transitions
         lua_screen::update_screen_transition(&self.lua_env.lua, delta_time.as_secs_f32());
 
-        {
+        if self.was_main_script_executed {
             let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
                 let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
@@ -192,11 +226,14 @@ impl Game {
     }
 
     /// Calls reload on all unloaded resource inside the manager.
-    pub fn load_resource_as_needed(&mut self, gl: Arc<glow::Context>) {
+    pub fn load_resource_as_needed(&mut self) {
         let mut to_reload = Vec::new();
         {
             let resource_manager = &self.lua_env.resources;
             for (id, resource) in resource_manager.enumerate() {
+                if resource.get_path().display().to_string() == self.main_script_path {
+                    self.was_main_script_executed = resource.get_status() == Status::Loaded;
+                }
                 if resource.get_status() != Status::Unloaded {
                     continue;
                 }
@@ -206,7 +243,7 @@ impl Game {
         for resource_id in to_reload {
             self.lua_env.resources.clone().reload(
                 resource_id,
-                gl.clone(),
+                self.gl.clone(),
                 self.lua_env.lua.clone(),
                 self.lua_env.default_events.resource_loaded_event,
             );

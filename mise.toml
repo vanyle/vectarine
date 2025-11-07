@@ -3,8 +3,6 @@ uv = "0.9.0"
 emsdk = "4.0.13"
 rust = "1.90.0"
 git-lfs = "latest"
-pandoc = "latest"
-
 
 [tasks.build-editor]
 alias = ["be"]
@@ -45,12 +43,12 @@ description = "Run clippy on all packages and try to fix problems"
 run = ["cargo fix -p runtime --all-targets --all-features --allow-dirty", "cargo fix -p editor --all-targets --all-features --allow-dirty"]
 
 [tasks.pdfify-manual]
-run_windows = """
-pwsh -NonInteractive -NoProfile -Command { pandoc ./docs/user-manual.md -o ./docs/user-manual.pdf -f markdown+emoji --pdf-engine=xelatex --metadata mainfont=\"Segoe UI Emoji\" }
-"""
 description = "Convert the user manual to PDF"
 run = """
-pandoc ./docs/user-manual.md -o ./docs/user-manual.pdf -f markdown+emoji --pdf-engine=xelatex --metadata mainfont="Segoe UI Emoji"
+docker run --platform linux/x86_64 --volume "$(pwd)/docs:/data" \
+    $(docker build --platform linux/x86_64 -q -f ./docs/doc-generation-utils/Dockerfile ./docs/doc-generation-utils) \
+    ./user-manual.md -o ./user-manual.pdf \
+    --pdf-engine lualatex --template ./doc-generation-utils/eisvogel.latex -f markdown+backtick_code_blocks+emoji
 """
 
 [tasks.release]

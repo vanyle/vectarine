@@ -6,12 +6,12 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 egui = "0.32.2"
-egui_glow = "0.32.2"
-egui_sdl2_platform = "0.4.0"
 fontdue = "0.9.3"
 glow = "0.16.0"
 image = { version = "0.25.8", features = ["png", "bmp", "jpeg", "ico", "gif", "webp"] }
 serde = { version = "1.0.219", features = ["derive"] }
+toml = "0.9.8"
+zip = "6.0.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "use-vcpkg"] }
@@ -32,6 +32,10 @@ mlua = { version = "0.11.2", features = ["luau", "serde", "vendored"] }
 emscripten-val = { git = "https://github.com/vanyle/emscripten-val", package = "emscripten-val", rev = "2f77cc9" }
 emscripten-functions = "0.3.0"
 base64 = "0.22.1"
+
+[build-dependencies]
+winresource = "0.1.23"
+
 [package.metadata.vcpkg]
 dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "sdl2-gfx", "sdl2-mixer"]
 git = "https://github.com/microsoft/vcpkg"
@@ -41,5 +45,5 @@ git = "https://github.com/microsoft/vcpkg"
 rev = "50c0cb4"
 
 [package.metadata.vcpkg.target]
-x86_64-pc-windows-msvc = { triplet = "x64-windows-static" }
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
 aarch64-apple-darwin = { triplet = "arm64-osx" }

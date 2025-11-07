@@ -1,4 +1,4 @@
-local Vec = require('@vectarine/vec')
+local Vec = require("@vectarine/vec")
 
 local module = {}
 
@@ -6,50 +6,55 @@ local module = {}
 --- For example, `IsKeyDown("space")`. If the name is invalid, always return false.
 --- You can use 'GetKeysDown' to find the name of keys
 function module.isKeyDown(keycode: string): boolean
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Returns a list of key that are currently pressed
-function module.getKeysDown(): {string}
-    error("Not implemented")
+function module.getKeysDown(): { string }
+	error("Not implemented")
 end
 
 --- Get the current mouse position in OpenGL coordinates
 function module.getMouse(): Vec.Vec2
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Get the current mouse state
 --- @return {is_left_down: boolean, is_right_down: boolean}
-function module.getMouseState(): { is_left_down: boolean; is_right_down: boolean }
-    error("Not implemented")
+function module.getMouseState(): { is_left_down: boolean, is_right_down: boolean }
+	error("Not implemented")
 end
 
 --- Get the current window size (in px)
 function module.getWindowSize(): Vec.Vec2
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Center the window on the screen
 --- Does nothing on the web
 function module.centerWindow(): ()
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Get the current screen size (in px)
 function module.getScreenSize(): Vec.Vec2
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Sets the window size
 --- Does nothing on the web
 function module.setWindowSize(width: number, height: number): ()
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Set if the window is resizeable
 function module.setResizeable(resizeable: boolean): ()
-    error("Not implemented")
+	error("Not implemented")
+end
+
+--- Set the window title
+function module.setWindowTitle(title: string): ()
+	error("Not implemented")
 end
 
 --- Set the window to fullscreen or windowed mode
@@ -57,12 +62,12 @@ end
 --- On the web, the game is usually embedded in an iframe / player which already provides a fullscreen button, so this
 --- function module.does nothing.
 function module.setFullscreen(fullscreen: boolean): ()
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Return a friendly string representation of arg
 function module.toString(arg: any): string
-    error("Not implemented")
+	error("Not implemented")
 end
 
 return module

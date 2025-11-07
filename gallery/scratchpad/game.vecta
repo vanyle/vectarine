@@ -1,8 +1,9 @@
+#!/usr/bin/env vecta
 title = "Scratchpad"
-entry = "scripts/game.luau"
+main_script_path = "scripts/game.luau"
 logo = "textures/logo.png"
 tags = ["tutorial", "prototype"]
 description = """A demo project to try various things."""
-loader = "pixel"
+loading_animation = "pixel"
 screen_width = 800
 screen_height = 600

@@ -78,23 +78,23 @@ pub fn setup_io_api(
 
     add_fn_to_table(lua, &io_module, "getWindowSize", {
         let env_state = env_state.clone();
-        move |lua, ()| {
+        move |_lua, ()| {
             let state = env_state.borrow();
-            let table = lua.create_table().unwrap();
-            let _ = table.set("x", state.window_width);
-            let _ = table.set("y", state.window_height);
-            Ok(table)
+            Ok(Vec2 {
+                x: (state.window_width as f32 / state.px_ratio_x),
+                y: (state.window_height as f32 / state.px_ratio_y),
+            })
         }
     });
 
     add_fn_to_table(lua, &io_module, "getScreenSize", {
         let env_state = env_state.clone();
-        move |lua, ()| {
+        move |_lua, ()| {
             let state = env_state.borrow();
-            let table = lua.create_table().unwrap();
-            let _ = table.set("x", state.screen_width);
-            let _ = table.set("y", state.screen_height);
-            Ok(table)
+            Ok(Vec2 {
+                x: state.screen_width as f32,
+                y: state.screen_height as f32,
+            })
         }
     });
 
@@ -110,6 +110,14 @@ pub fn setup_io_api(
         let env_state = env_state.clone();
         move |_, (width, height): (u32, u32)| {
             env_state.borrow_mut().window_target_size = Some((width, height));
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &io_module, "setWindowTitle", {
+        let env_state = env_state.clone();
+        move |_, (title,): (String,)| {
+            env_state.borrow_mut().window_title = Some(title);
             Ok(())
         }
     });

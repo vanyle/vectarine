@@ -3,12 +3,14 @@ use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
 
+pub mod lua_audio;
 pub mod lua_canvas;
 pub mod lua_coord;
 pub mod lua_debug;
 pub mod lua_event;
 pub mod lua_graphics;
 pub mod lua_io;
+pub mod lua_persist;
 pub mod lua_resource;
 pub mod lua_screen;
 pub mod lua_vec2;
@@ -17,6 +19,7 @@ use crate::console::{ConsoleMessage, Verbosity};
 use crate::game_resource::ResourceManager;
 use crate::graphics::batchdraw::BatchDraw2d;
 use crate::io::IoEnvState;
+use crate::io::fs::ReadOnlyFileSystem;
 
 pub struct LuaEnvironment {
     pub lua: Rc<mlua::Lua>,
@@ -33,7 +36,11 @@ pub struct LuaEnvironment {
 }
 
 impl LuaEnvironment {
-    pub fn new(batch: BatchDraw2d, base_path: &Path) -> Self {
+    pub fn new(
+        batch: BatchDraw2d,
+        file_system: Box<dyn ReadOnlyFileSystem>,
+        base_path: &Path,
+    ) -> Self {
         let batch = Rc::new(RefCell::new(batch));
         let lua_options = mlua::LuaOptions::default();
         let lua_libs = mlua::StdLib::MATH | mlua::StdLib::TABLE | mlua::StdLib::STRING;
@@ -56,10 +63,14 @@ impl LuaEnvironment {
         let internals = get_internals(&lua);
         internals.set(GL_USERDATA_KEY, LuaGLContext(gl)).unwrap();
 
-        let resources = Rc::new(ResourceManager::new(base_path));
+        let resources = Rc::new(ResourceManager::new(file_system, base_path));
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
         let frame_messages = Rc::new(RefCell::new(Vec::new()));
         let messages = Rc::new(RefCell::new(VecDeque::new()));
+
+        let persist_module = lua_persist::setup_persist_api(&lua).unwrap();
+        lua.register_module("@vectarine/persist", persist_module)
+            .unwrap();
 
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
@@ -98,6 +109,10 @@ impl LuaEnvironment {
         lua.register_module("@vectarine/event", event_module)
             .unwrap();
 
+        let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/audio", audio_module)
+            .unwrap();
+
         let original_require = lua.globals().get::<mlua::Function>("require").unwrap();
         add_global_fn(&lua, "require", move |lua, module_name: String| {
             // We provide a custom require with the following features:
@@ -108,7 +123,13 @@ impl LuaEnvironment {
             }
             let module = lua.create_table()?;
             module.raw_set("@vectarine/filename", module_name.clone())?;
-            Ok(module) // We require an empty table as this is just for the types.
+            module.raw_set(
+                "info",
+                "Thank you cowboy! But your module is in another castle!",
+            )?;
+            // We return an empty table as this is just for the types.
+            // We put a message to indicate that. loadScript is what loads the script, not require.
+            Ok(module)
         });
 
         // Add this to utils module?
@@ -165,6 +186,7 @@ pub fn run_file_and_display_error_from_lua_handle(
     file_path: &Path,
     target_table: Option<&mlua::Table>,
 ) {
+    // lua.set_compiler(compiler);
     let lua_chunk = lua.load(file_content);
     // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
     let result = lua_chunk

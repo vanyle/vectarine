@@ -1,12 +1,16 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc};
 
-use mlua::UserData;
+use mlua::{AnyUserData, UserData};
 
 use crate::{
-    game_resource::{self, ResourceId},
-    graphics::{batchdraw, glframebuffer, gltexture::ImageAntialiasing},
+    game_resource::{self, ResourceId, shader_resource::ShaderResource},
+    graphics::{
+        batchdraw, glframebuffer,
+        gltexture::ImageAntialiasing,
+        gluniforms::{UniformValue, Uniforms},
+    },
     io,
-    lua_env::add_fn_to_table,
+    lua_env::{add_fn_to_table, lua_vec2::Vec2},
 };
 
 #[derive(Clone)]
@@ -87,6 +91,64 @@ pub fn setup_canvas_api(
                 batch.borrow_mut().draw(&resources, true);
             });
             result
+        }
+    });
+
+    add_fn_to_table(lua, &canvas_module, "setUniform", {
+        let resources = resources.clone();
+        move |_lua, (canvas, name, value): (RcFramebuffer, String, f32)| {
+            let shader_id = canvas.current_shader();
+            let Some(shader_id) = shader_id else {
+                return Ok(()); // no op if no shader is set
+            };
+            let shader = resources.get_by_id::<ShaderResource>(shader_id);
+            let Ok(shader) = shader else {
+                return Ok(()); // no op if shader resource is not loaded
+            };
+            let mut shader = shader.shader.borrow_mut();
+            let shader = shader.as_mut();
+            let Some(shader) = shader else {
+                return Ok(()); // no op if shader is not compiled
+            };
+            shader.shader.use_program();
+            let mut uniforms = Uniforms::new();
+            uniforms.add(&name, UniformValue::Float(value));
+            shader.shader.set_uniforms(&uniforms);
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &canvas_module, "getSize", {
+        let resources = resources.clone();
+        move |_lua, (canvas_or_image,): (AnyUserData,)| {
+            let maybe_canvas = canvas_or_image.borrow::<RcFramebuffer>();
+            if let Ok(canvas) = maybe_canvas {
+                let size = Vec2::new(canvas.gl().width() as f32, canvas.gl().height() as f32);
+                return Ok(size);
+            }
+            let maybe_image = canvas_or_image.borrow::<ResourceId>();
+            let Ok(resource_id) = maybe_image else {
+                return Err(mlua::Error::FromLuaConversionError {
+                    from: "unknown",
+                    to: "Canvas | ImageResource".to_string(),
+                    message: Some("Expected Canvas or ImageResource userdata".to_string()),
+                });
+            };
+            let image_resource =
+                resources.get_by_id::<game_resource::image_resource::ImageResource>(*resource_id);
+            let Ok(image_resource) = image_resource else {
+                return Err(mlua::Error::RuntimeError(
+                    "ImageResource not found".to_string(),
+                ));
+            };
+            let image_resource = image_resource.texture.borrow();
+            let Some(image_texture) = image_resource.as_ref() else {
+                return Err(mlua::Error::RuntimeError(
+                    "ImageResource texture not loaded".to_string(),
+                ));
+            };
+            let size = Vec2::new(image_texture.width() as f32, image_texture.height() as f32);
+            Ok(size)
         }
     });
 

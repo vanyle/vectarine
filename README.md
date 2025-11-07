@@ -19,7 +19,7 @@ _Vectarine is a game engine with a focus on ultra fast prototyping, ease of use 
   - 🚀 Performance: Render millions of entities at 60 fps
 - 🌍 Reach a wide audience
   - 🌐 Supports the Web, Windows, Linux, MacOS
-  - 📦 Distribute your game by sharing only 2 files with a small size footprint.
+  - 📦 Distribute your game by sharing a zip with a small size footprint.
   - 📖 Free and open-source
 
 ## Getting started making games
@@ -45,7 +45,30 @@ You'll need to get started:
 - A working `mise` installation (mise is a package manager). See how to [install `mise`](https://mise.jdx.dev/getting-started.html).
 
 Mise will install all the dependencies for you, including Rust, Python, Emscripten, and uv.
-To make commands shorter, it'd recommend [activating mise in your shell](https://mise.jdx.dev/getting-started.html#activate-mise)
+
+To make commands shorter, you need to [activate mise in your shell](https://mise.jdx.dev/getting-started.html#activate-mise)
+
+> ### Activating mise on Windows
+>
+> First you have to allow `Invoke-Expression` execution in Powershell.
+>
+> ```bash
+> wind> Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force
+> ```
+>
+> Then open your Powershell profile file with your favorite text editor:
+>
+> ```bash
+> wind> code $profile
+> ```
+>
+> Then add the following line to your Powershell profile:
+>
+> ```bash
+> (mise activate pwsh) | Out-String | Invoke-Expression
+> ```
+>
+> Save and restart your Powershell terminal.
 
 ```bash
 # Clone this repository
@@ -107,6 +130,19 @@ both> cargo vcpkg build
 
 You are now ready to build and run the engine and the runtime!
 
+> ℹ️ Troubleshooting
+>
+> On Windows, if after running `cargo run -p runtime` or `mise run run-editor` or any build command and you see a message like:
+>
+> `package sdl2 is not installed for vcpkg triplet x64-windows-static-md`
+>
+> This means `cargo vcpkg build` did not install the required packages.
+> Assuming vcpkg is in your PATH, you can manually install them with:
+>
+> ```bash
+> vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixer sdl2-gfx --triplet x64-windows-static-md
+> ```
+
 ## Common commands
 
 Start the runtime: `cargo run -p runtime`
@@ -151,7 +187,7 @@ debugging, hot reloading, etc...
 
 To make the project cross-platform, we use python for all build scripts.
 
-To make a release build, run `uv run ./scripts/release-engine.py`.
+To make a release build, run `mise run release`.
 A distributable zip file will be created at the root.
 
 ## Building for other platforms than yours
@@ -173,3 +209,17 @@ Then, build as usual while replacing `cargo` with `cross`:
 # Making a Linux build on Windows/MacOS
 cross build -p editor --target x86_64-unknown-linux-gnu --release
 ```
+
+**Cross compilation matrix**:
+
+Can you build for platform _target_ when using _host_?
+
+| Target \ Host | Windows | Linux | MacOS |
+| ------------- | ------- | ----- | ----- |
+| Windows       | ✅      | ⚠️    | ⚠️    |
+| Linux         | ✅      | ✅    | ✅    |
+| MacOS         | ❌      | ❌    | ✅    |
+| Web           | ✅      | ✅    | ✅    |
+
+> ⚠️ You'll need to use [cross toolchains](https://github.com/cross-rs/cross-toolchains) to perform the build. This is not tested and might not work.
+> ❌ This is not legally possible due to licensing on Apple's SDK (but technically possible with cross).

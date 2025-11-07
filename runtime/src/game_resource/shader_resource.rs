@@ -37,13 +37,9 @@ impl Resource for ShaderResource {
         _lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
-        data: &[u8],
+        data: Box<[u8]>,
     ) -> Status {
-        if data.is_empty() {
-            return Status::Error("File is empty or does not exist.".to_string());
-        }
-
-        let frag_src = match std::str::from_utf8(data) {
+        let frag_src = match std::str::from_utf8(&data) {
             Ok(src) => src,
             Err(e) => {
                 return Status::Error(format!("Shader is not valid UTF-8: {e}"));

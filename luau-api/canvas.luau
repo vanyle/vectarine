@@ -1,4 +1,5 @@
 local Resources = require("@vectarine/resources")
+local Vec = require("@vectarine/vec")
 
 local module = {}
 
@@ -10,7 +11,7 @@ export type Canvas = typeof(setmetatable({}, Canvas))
 --- The canvas is empty and fully transparent by default
 --- Creating a canvas is an expensive operation! For performance reasons, you shouldn't create canvases every frame!
 function module.createCanvas(width: number, height: number): Canvas
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- Paint on the canvas.
@@ -22,7 +23,7 @@ end
 ---
 --- Once you have finished painting the canvas, you can use `graphics.drawCanvas` to draw it on the screen or on another canvas.
 function module.paint(self: Canvas, draw_function: () -> ()): ()
-    error("Not implemented")
+	error("Not implemented")
 end
 
 --- When the canvas is drawn, instead of being drawn as-is, it will be used as a texture input to the shader that
@@ -30,7 +31,17 @@ end
 --- To disable the shader, call `setShader(nil)`.
 --- You can see examples of shaders on [ShaderToy](https://www.shadertoy.com/)
 function Canvas.setShader(self: Canvas, shader: Resources.ShaderResource?): ()
-    error("Not implemented")
+	error("Not implemented")
+end
+
+--- Sets a uniform float value for the shader used when drawing this canvas.
+function module.setUniform(self: Canvas, name: string, value: number): ()
+	error("Not implemented")
+end
+
+--- Gets the size of the canvas or image in pixels
+function module.getSize(self: Canvas | Resources.ImageResource): Vec.Vec2
+	error("Not implemented")
 end
 
 return module

@@ -123,10 +123,10 @@ local function handlePlayerAutoAttack()
 		-- Fire one (or more) projectiles.
 		if #projectiles < 50 then
 			-- TODO: multiple projectiles might be shot per frame.
-			local closestEntity = getClosestEntity(player.position, "slime")
+			local closestEntity = getClosestEntity(player.position, true, "slime")
 			if closestEntity ~= nil then
 				local towardsEntity = (closestEntity.position - player.position)
-				towardsEntity = towardsEntity:scale(1 / towardsEntity:length())
+				towardsEntity = towardsEntity:normalized()
 				local projectile = {
 					type = "bullet",
 					position = player.position,
@@ -144,7 +144,7 @@ local function handlePlayerAutoAttack()
 		local projectile = projectiles[i]
 		projectile.position = projectile.position + projectile.speed:scale(delta)
 
-		local closestEntity = getClosestEntity(projectile.position, "slime")
+		local closestEntity = getClosestEntity(projectile.position, true, "slime")
 		if closestEntity then
 			local distanceToClosest = (projectile.position - closestEntity.position):length()
 			if distanceToClosest < 0.5 then
@@ -166,24 +166,24 @@ local function drawHealthBar()
 	local total_health_bar_width = camera.zoom * 3
 	local health_bar_width = total_health_bar_width * (player.health / 100 * 0.7)
 	Graphics.drawRect(
-		Coord.gl(1, 1) + Coord.pxDelta(-200, 50) - Coord.pxDelta(5, 5),
-		Coord.pxDelta(total_health_bar_width + 10, 30),
+		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 50)) - Coord.pxVec(Vec.V2(5, 5)),
+		Coord.pxVec(Vec.V2(total_health_bar_width + 10, 30)),
 		{ r = 0, g = 0, b = 0, a = 1 }
 	)
 	Graphics.drawRect(
-		Coord.gl(1, 1) + Coord.pxDelta(-200, 50),
-		Coord.pxDelta(total_health_bar_width, 20),
+		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 50)),
+		Coord.pxVec(Vec.V2(total_health_bar_width, 20)),
 		{ r = 0.5, g = 0.5, b = 0.5, a = 1 }
 	)
 	Graphics.drawRect(
-		Coord.gl(1, 1) + Coord.pxDelta(-200, 50),
-		Coord.pxDelta(health_bar_width, 20),
+		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 50)),
+		Coord.pxVec(Vec.V2(health_bar_width, 20)),
 		{ r = 1, g = 0, b = 0, a = 1 }
 	)
 	Graphics.drawText(
 		tostring(player.health),
 		fontResource,
-		Coord.gl(1, 1) + Coord.pxDelta(-200, 67),
+		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 67)),
 		0.07,
 		{ r = 0, g = 0, b = 0, a = 1 }
 	)
@@ -200,7 +200,7 @@ function renderGameplay()
 	local cameraSpeed = 0.01
 	camera.position = camera.position + (player.position - Vec.V2(8, 5) - camera.position):scale(cameraSpeed)
 
-	Graphics.drawRect(Coord.gl(-1, -1), Coord.glDelta(2, 2), { r = 0.2, g = 0, b = 0, a = 1 })
+	Graphics.drawRect(Coord.gl(Vec.V2(-1, -1)), Coord.glVec(Vec.V2(2, 2)), { r = 0.2, g = 0, b = 0, a = 1 })
 
 	-- Draw level
 	for y = 1, #level do
@@ -210,7 +210,7 @@ function renderGameplay()
 				local color = tile == 1 and { r = 0.5, g = 0.5, b = 0.5, a = 1 } or { r = 0.8, g = 0.8, b = 0.8, a = 1 }
 				local tile_pos = getCamPos(Vec.V2((x - 1), (y - 1)))
 				local tile_size = getCamSize(Vec.V2(1, 1))
-				Graphics.drawRect(Coord.px(tile_pos.x, tile_pos.y), Coord.pxDelta(tile_size.x, tile_size.y), color)
+				Graphics.drawRect(Coord.px(Vec.V2(tile_pos.x, tile_pos.y)), Coord.pxVec(Vec.V2(tile_size.x, tile_size.y)), color)
 			end
 		end
 	end
@@ -220,18 +220,18 @@ function renderGameplay()
 	for _, entity in pairs(entities) do
 		local entity_screen_pos = getCamPos(entity.position)
 		Graphics.drawRect(
-			Coord.px(entity_screen_pos.x, entity_screen_pos.y),
-			Coord.pxDelta(camera.zoom, camera.zoom),
+			Coord.px(Vec.V2(entity_screen_pos.x, entity_screen_pos.y)),
+			Coord.pxVec(Vec.V2(camera.zoom, camera.zoom)),
 			{ r = 0, g = 1, b = 0, a = 1 }
 		)
 		if entity.isHealthShown then
 			local health_bar_width = camera.zoom * (entity.health / 100)
 			Graphics.drawRect(
-				Coord.px(
+				Coord.px(Vec.V2(
 					entity_screen_pos.x - (camera.zoom / 2) + (health_bar_width / 2),
 					entity_screen_pos.y - camera.zoom * 0.6
-				),
-				Coord.pxDelta(health_bar_width, camera.zoom * 0.2),
+				)),
+				Coord.pxVec(Vec.V2(health_bar_width, camera.zoom * 0.2)),
 				{ r = 1, g = 0, b = 0, a = 1 }
 			)
 		end
@@ -241,8 +241,8 @@ function renderGameplay()
 	local player_screen_pos = getCamPos(player.position)
 	local player_screen_size = getCamSize(Vec.V2(1, 1))
 	Graphics.drawRect(
-		Coord.px(player_screen_pos.x, player_screen_pos.y),
-		Coord.pxDelta(player_screen_size.x, player_screen_size.y),
+		Coord.px(Vec.V2(player_screen_pos.x, player_screen_pos.y)),
+		Coord.pxVec(Vec.V2(player_screen_size.x, player_screen_size.y)),
 		{ r = 0, g = 0, b = 1, a = 1 }
 	)
 
@@ -254,8 +254,8 @@ function renderGameplay()
 		local projectile_size = getCamSize(Vec.V2(0.2, 0.2))
 		local projectile_screen_pos = getCamPos(projectile.position + Vec.V2(0.5, 0.5) - Vec.V2(0.1, 0.1))
 		Graphics.drawRect(
-			Coord.px(projectile_screen_pos.x, projectile_screen_pos.y),
-			Coord.pxDelta(projectile_size.x, projectile_size.y),
+			Coord.px(Vec.V2(projectile_screen_pos.x, projectile_screen_pos.y)),
+			Coord.pxVec(Vec.V2(projectile_size.x, projectile_size.y)),
 			{ r = 1, g = 1, b = 0, a = 1 }
 		)
 	end

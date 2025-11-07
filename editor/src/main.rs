@@ -1,7 +1,9 @@
 use std::{path::PathBuf, sync::mpsc::channel, time::Instant};
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
-use runtime::{RenderingBlock, game::drawable_screen_size, init_sdl};
+use runtime::{
+    RenderingBlock, game::drawable_screen_size, init_audio, init_sdl, io::localfs::LocalFileSystem,
+};
 
 use crate::{
     editorinterface::{EditorState, process_events_when_no_game},
@@ -13,6 +15,7 @@ pub mod editorinterface;
 pub mod editormenu;
 pub mod editorresources;
 pub mod editorwatcher;
+pub mod egui_sdl2_platform;
 pub mod exportinterface;
 pub mod projectstate;
 pub mod reload;
@@ -41,11 +44,15 @@ fn gui_main() {
         window,
         mut event_pump,
         gl,
-    } = init_sdl();
+    } = init_sdl(|video_subsystem| unsafe {
+        egui_glow::painter::Context::from_loader_function(|name| {
+            video_subsystem.gl_get_proc_address(name) as *const _
+        })
+    });
+    let _audio_subsystem = init_audio(&sdl);
+    // sdl2::mixer::close_audio(); // no need to clean up, the program will clean on exit.
 
     let (debounce_event_sender, debounce_receiver) = channel();
-
-    // window.borrow_mut().set_bordered(false);
 
     // Setup the editor interface
     let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
@@ -64,7 +71,7 @@ fn gui_main() {
     let project_to_open = get_project_to_open_from_args();
     if let Some(project_path) = project_to_open {
         editor_state.load_config(false);
-        let _ = editor_state.load_project(&project_path);
+        editor_state.load_project(Box::new(LocalFileSystem), &project_path, |_r| {});
     } else {
         editor_state.load_config(true);
     }
@@ -90,11 +97,19 @@ fn gui_main() {
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
 
+        if window.borrow().is_minimized() {
+            // Preserve CPU when minimized
+            process_events_when_no_game(&latest_events, &gl);
+            window.borrow().gl_swap_window();
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            continue;
+        }
+
         let new_start_of_frame = Instant::now();
         if let Some(project) = editor_state.project.borrow_mut().as_mut() {
             let game = &mut project.game;
 
-            game.load_resource_as_needed(gl.clone());
+            game.load_resource_as_needed();
             reload_assets_if_needed(
                 &gl,
                 &game.lua_env.resources,

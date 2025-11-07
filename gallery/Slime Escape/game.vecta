@@ -1,8 +1,9 @@
-title = "Scratchpad"
-entry = "scripts/game.luau"
+#!/usr/bin/env vecta
+title = "Slime Escape"
+main_script_path = "scripts/game.luau"
 logo = "textures/logo.png"
 tags = ["tutorial", "prototype"]
-description = """A demo project to try various things."""
-loader = "pixel"
+description = """Avoid the slimes, collect coins and grow stronger!"""
+loading_animation = "pixel"
 screen_width = 800
 screen_height = 600

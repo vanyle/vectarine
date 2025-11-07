@@ -18,13 +18,17 @@ use runtime::{
     anyhow::{self},
     game::drawable_screen_size,
     game_resource::ResourceId,
-    io::file,
+    io::{
+        fs::{FileSystem, ReadOnlyFileSystem},
+        localfs::LocalFileSystem,
+    },
+    toml,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
     editorconsole::draw_editor_console, editormenu::draw_editor_menu,
-    editorresources::draw_editor_resources, editorwatcher::draw_editor_watcher,
+    editorresources::draw_editor_resources, editorwatcher::draw_editor_watcher, egui_sdl2_platform,
     exportinterface::draw_editor_export, projectstate::ProjectState,
 };
 
@@ -60,7 +64,7 @@ impl EditorState {
     pub fn save_config(&self) {
         let config = &self.config.borrow();
         let data = toml::to_string(config.deref()).unwrap_or_default();
-        file::write_file(EDITOR_CONFIG_FILE, data.as_bytes());
+        LocalFileSystem.write_file(EDITOR_CONFIG_FILE, data.as_bytes(), Box::new(|_| {}));
     }
 
     /// Load the editor config from file.
@@ -73,7 +77,7 @@ impl EditorState {
         let window = self.window.clone();
         let debouncer = self.debouncer.clone();
 
-        file::read_file(
+        LocalFileSystem.read_file(
             EDITOR_CONFIG_FILE,
             Box::new(move |data: Option<Vec<u8>>| {
                 let Some(data) = data else {
@@ -101,10 +105,18 @@ impl EditorState {
                                 .watch(parent, notify::RecursiveMode::Recursive);
                         }
 
-                        let loaded_project = ProjectState::new(&project_path, gl, video, window);
-                        if let Ok(loaded_project) = loaded_project {
-                            project.replace(Some(loaded_project));
-                        }
+                        ProjectState::new(
+                            &project_path,
+                            Box::new(LocalFileSystem),
+                            gl,
+                            video,
+                            window,
+                            |loaded_project| {
+                                if let Ok(loaded_project) = loaded_project {
+                                    project.replace(Some(loaded_project));
+                                }
+                            },
+                        );
                     }
                 }
             }),
@@ -141,32 +153,48 @@ impl EditorState {
         }
     }
 
-    pub fn load_project(&self, project_path: &Path) -> anyhow::Result<()> {
-        let project = ProjectState::new(
+    pub fn load_project<F>(
+        &self,
+        file_system: Box<dyn ReadOnlyFileSystem>,
+        project_path: &Path,
+        callback: F,
+    ) where
+        F: FnOnce(anyhow::Result<()>),
+    {
+        ProjectState::new(
             project_path,
+            file_system,
             self.gl.clone(),
             self.video.clone(),
             self.window.clone(),
+            |project| {
+                match project {
+                    Ok(p) => self.project.borrow_mut().replace(p),
+                    Err(e) => {
+                        callback(Err(e));
+                        return;
+                    }
+                };
+                self.config.borrow_mut().opened_project_path =
+                    Some(project_path.to_string_lossy().to_string());
+
+                let parent = project_path.parent();
+                if let Some(parent) = parent {
+                    let _ = self
+                        .debouncer
+                        .borrow_mut()
+                        .watch(parent, notify::RecursiveMode::Recursive);
+                }
+                self.save_config();
+                callback(Ok(()));
+            },
         );
-        match project {
-            Ok(p) => self.project.borrow_mut().replace(p),
-            Err(e) => {
-                return Err(e);
-            }
-        };
-        self.config.borrow_mut().opened_project_path =
-            Some(project_path.to_string_lossy().to_string());
+    }
 
-        let parent = project_path.parent();
-        if let Some(parent) = parent {
-            let _ = self
-                .debouncer
-                .borrow_mut()
-                .watch(parent, notify::RecursiveMode::Recursive);
+    pub fn reload_project(&mut self) {
+        if let Some(proj) = &mut *self.project.borrow_mut() {
+            proj.reload();
         }
-
-        self.save_config();
-        Ok(())
     }
 
     pub fn close_project(&mut self) {
@@ -187,7 +215,7 @@ impl EditorState {
         &mut self,
         platform: &mut egui_sdl2_platform::Platform,
         sdl: &sdl2::Sdl,
-        latest_events: &Vec<sdl2::event::Event>,
+        latest_events: &[sdl2::event::Event],
         painter: &mut egui_glow::Painter,
     ) {
         // Update the time
@@ -237,11 +265,12 @@ pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
     else {
         return;
     };
-    let result = state.load_project(&path);
-    if let Err(e) = result {
-        // TO-DO: show error in GUI
-        println!("Failed to load project: {e}");
-    }
+    state.load_project(Box::new(LocalFileSystem), &path, |result| {
+        if let Err(e) = result {
+            // TO-DO: show error in GUI
+            println!("Failed to load project: {e}");
+        }
+    });
 }
 
 pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
@@ -279,7 +308,7 @@ pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
         });
 }
 
-pub fn process_events_when_no_game(latest_events: &Vec<sdl2::event::Event>, gl: &glow::Context) {
+pub fn process_events_when_no_game(latest_events: &[sdl2::event::Event], gl: &glow::Context) {
     unsafe {
         gl.clear_color(0.1, 0.1, 0.1, 1.0);
         gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);

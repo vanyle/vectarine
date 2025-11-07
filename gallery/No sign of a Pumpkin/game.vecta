@@ -1,0 +1,9 @@
+#!/usr/bin/env vecta
+title = "No Sign of a Pumpkin"
+main_script_path = "scripts/game.luau"
+logo = "textures/logo.png"
+tags = ["tutorial", "prototype"]
+description = """A demo project to try various things."""
+loading_animation = "pixel"
+screen_width = 800
+screen_height = 600

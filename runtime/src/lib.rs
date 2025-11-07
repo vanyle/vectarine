@@ -3,19 +3,25 @@ pub mod game;
 pub mod game_resource;
 pub mod graphics;
 pub mod io;
+pub mod loader;
 pub mod lua_env;
+pub mod projectinfo;
 
 // Re-export commonly used crates for the editor
 pub use anyhow;
 pub use mlua;
+pub use sdl2;
+pub use toml;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
 use glow::HasContext;
 use sdl2::{
-    EventPump, Sdl, VideoSubsystem,
+    AudioSubsystem, EventPump, Sdl, VideoSubsystem,
     video::{SwapInterval, Window, gl_attr::GLAttr},
 };
+
+use crate::game_resource::audio_resource::{AUDIO_CHANNELS, AUDIO_SAMPLE_FREQUENCY};
 
 pub struct RenderingBlock {
     pub video: Rc<RefCell<VideoSubsystem>>,
@@ -56,7 +62,58 @@ pub fn set_opengl_attributes(gl_attr: GLAttr) {
     // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
 }
 
-pub fn init_sdl() -> RenderingBlock {
+pub fn init_audio(sdl: &Sdl) -> Option<AudioSubsystem> {
+    let audio = sdl.audio();
+    let audio = match audio {
+        Ok(audio) => audio,
+        Err(audio_err) => {
+            println!(
+                "Failed to initialize audio subsystem: {:?}. Audio will be disabled.",
+                audio_err
+            );
+            return None;
+        }
+    };
+
+    let mixer_ctx = sdl2::mixer::init(sdl2::mixer::InitFlag::OGG);
+    if let Err(err) = mixer_ctx {
+        println!(
+            "Failed to initialize audio mixer: {:?}. Audio will be disabled.",
+            err
+        );
+        return None;
+    }
+    // https://manpages.debian.org/experimental/libsdl3-mixer-doc/Mix_OpenAudioDevice.3.en.html
+    // 2048 as a reasonable default. Lower number means lower latency, but you risk dropouts if the number is too low.
+    // We use stereo audio (2 channels) and a frequency of 48000 Hz.
+    let audio_device = sdl2::mixer::open_audio(
+        AUDIO_SAMPLE_FREQUENCY,
+        sdl2::mixer::AUDIO_S16,
+        AUDIO_CHANNELS,
+        1024,
+    );
+    if let Err(err) = audio_device {
+        println!(
+            "Failed to open audio device: {:?}. Audio will be disabled.",
+            err
+        );
+        return None;
+    }
+
+    // 8 is the default allocated by open_audio
+    // sdl2::mixer::allocate_channels(8);
+
+    Some(audio)
+}
+
+pub fn deinit_audio(_audio_subsystem: AudioSubsystem) {
+    sdl2::mixer::close_audio();
+}
+
+pub fn init_sdl<F>(make_gl_from_video_system: F) -> RenderingBlock
+where
+    F: FnOnce(&VideoSubsystem) -> glow::Context,
+{
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let gl_attr = video_subsystem.gl_attr();
@@ -79,12 +136,7 @@ pub fn init_sdl() -> RenderingBlock {
             .expect("Failed to create GL context"),
     );
 
-    let gl = unsafe {
-        egui_glow::painter::Context::from_loader_function(|name| {
-            video_subsystem.gl_get_proc_address(name) as *const _
-        })
-    };
-
+    let gl = make_gl_from_video_system(&video_subsystem);
     let gl: Arc<glow::Context> = Arc::new(gl);
 
     let _ = video_subsystem.gl_set_swap_interval(SwapInterval::VSync);

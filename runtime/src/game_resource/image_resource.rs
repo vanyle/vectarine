@@ -21,12 +21,9 @@ impl Resource for ImageResource {
         _lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
-        data: &[u8],
+        data: Box<[u8]>,
     ) -> Status {
-        if data.is_empty() {
-            return Status::Error("File is empty or does not exist.".to_string());
-        }
-        let result = image::load_from_memory(data);
+        let result = image::load_from_memory(&data);
         let Ok(image) = result else {
             return Status::Error(format!("{}", result.err().unwrap()));
         };

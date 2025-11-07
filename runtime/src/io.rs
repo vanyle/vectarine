@@ -3,7 +3,9 @@ use mlua::IntoLua;
 use sdl2::{event::Event, keyboard::Keycode};
 use std::collections::HashMap;
 
-pub mod file;
+pub mod fs;
+pub mod localfs;
+pub mod zipfs;
 
 #[derive(Clone, Debug, Default)]
 pub struct MouseState {
@@ -32,6 +34,7 @@ pub struct IoEnvState {
     pub center_window_request: bool,
     pub fullscreen_state_request: Option<bool>,
     pub window_target_size: Option<(u32, u32)>,
+    pub window_title: Option<String>,
 }
 
 impl Default for IoEnvState {
@@ -52,6 +55,7 @@ impl Default for IoEnvState {
             window_target_size: None,
             fullscreen_state_request: None,
             center_window_request: false,
+            window_title: None,
         }
     }
 }

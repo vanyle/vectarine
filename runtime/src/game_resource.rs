@@ -10,13 +10,16 @@ use mlua::IntoLua;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game_resource::script_resource::ScriptResource, io::file, lua_env::lua_event::EventType,
+    game_resource::script_resource::ScriptResource, io::fs::ReadOnlyFileSystem,
+    lua_env::lua_event::EventType,
 };
 
+pub mod audio_resource;
 pub mod font_resource;
 pub mod image_resource;
 pub mod script_resource;
 pub mod shader_resource;
+pub mod text_resource;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Status {
@@ -65,6 +68,10 @@ impl mlua::UserData for ResourceId {
         methods.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (Self,)| {
             Ok(format!("ResourceId({})", id.0))
         });
+
+        methods.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (Self, Self)| {
+            Ok(id1 == id2)
+        });
     }
 }
 
@@ -84,6 +91,7 @@ impl ResourceHolder {
     /// Request the resource to be reloaded.
     fn reload(
         self: Rc<Self>,
+        file_system: &dyn ReadOnlyFileSystem,
         assigned_id: ResourceId,
         resource_manager: Rc<ResourceManager>,
         gl: Arc<glow::Context>,
@@ -110,7 +118,7 @@ impl ResourceHolder {
 
         // We pass data to the resource into the closure.
         // As this data needs to be kept alive, every piece of state pass inside needs Rc or Arc.
-        file::read_file(
+        file_system.read_file(
             &abs_path,
             Box::new(move |data| {
                 let Some(data) = data else {
@@ -126,7 +134,7 @@ impl ResourceHolder {
                     &lua,
                     gl.clone(),
                     &self.path,
-                    &data,
+                    data.into_boxed_slice(),
                 );
                 self.status.replace(resulting_status);
                 let _ = resource_event.trigger(&lua, assigned_id.into_lua(&lua).unwrap());
@@ -176,6 +184,7 @@ impl ResourceHolder {
 }
 
 pub struct ResourceManager {
+    file_system: Box<dyn ReadOnlyFileSystem>,
     resources: RefCell<Vec<Rc<ResourceHolder>>>,
     base_path: PathBuf,
 }
@@ -223,10 +232,11 @@ impl DependencyReporter {
 }
 
 impl ResourceManager {
-    pub fn new(base_path: &Path) -> Self {
+    pub fn new(file_system: Box<dyn ReadOnlyFileSystem>, base_path: &Path) -> Self {
         Self {
             resources: RefCell::new(Vec::new()),
             base_path: base_path.to_path_buf(),
+            file_system,
         }
     }
 
@@ -343,7 +353,14 @@ impl ResourceManager {
         loaded_event: EventType,
     ) {
         let resource = self.get_holder_by_id(id);
-        resource.reload(id, self.clone(), gl, lua, loaded_event);
+        resource.reload(
+            self.file_system.as_ref(),
+            id,
+            self.clone(),
+            gl,
+            lua,
+            loaded_event,
+        );
     }
 
     /// Performance: O(n) for now. Store the ID and use instead get_by_id if you already have the id.
@@ -447,7 +464,7 @@ pub trait Resource: ResourceToAny {
         lua: &Rc<mlua::Lua>,
         gl: Arc<glow::Context>,
         path: &Path,
-        data: &[u8],
+        data: Box<[u8]>,
     ) -> Status;
 
     /// Draw an interface with information about the resource.
@@ -464,11 +481,9 @@ pub trait Resource: ResourceToAny {
 }
 
 pub fn get_absolute_path(current_base_path: &Path, resource_path: &Path) -> String {
-    // TODO: need to access the path of the project currently opened.
     let abs_path = current_base_path.join(resource_path);
-    let abs_path = abs_path.canonicalize().unwrap_or(abs_path);
-    let as_str = abs_path.to_string_lossy();
-    as_str.into_owned()
+    // let abs_path = abs_path.canonicalize().unwrap_or(abs_path);
+    abs_path.to_string_lossy().replace("\\", "/")
 }
 
 pub trait ResourceToAny: 'static {

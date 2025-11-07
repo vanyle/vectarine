@@ -2,8 +2,8 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 
 use crate::{
     game_resource::{
-        ResourceId, ResourceManager, font_resource::FontResource, image_resource::ImageResource,
-        shader_resource,
+        ResourceId, ResourceManager, audio_resource::AudioResource, font_resource::FontResource,
+        image_resource::ImageResource, shader_resource,
     },
     graphics::gltexture::ImageAntialiasing,
     lua_env::add_fn_to_table,
@@ -42,6 +42,14 @@ pub fn setup_resource_api(
         let resources = resources.clone();
         move |_, path: String| {
             let id = resources.schedule_load_resource::<FontResource>(Path::new(&path));
+            Ok(id)
+        }
+    });
+
+    add_fn_to_table(lua, &resources_module, "loadAudio", {
+        let resources = resources.clone();
+        move |_, path: String| {
+            let id = resources.schedule_load_resource::<AudioResource>(Path::new(&path));
             Ok(id)
         }
     });

@@ -1,19 +1,5 @@
 # TO-DO
 
-- [ ] Project System in the editor
-  - [x] 'assets' should be 'gamedata'
-  - [x] Refactor to make the project path a variable
-  - [x] Have a game.vecta inside 'gamedata'. It is loaded first instead of game.lua
-    - [x] Manifest contains name of the game, logo, tags, and root source.
-    - [ ] Load the manifest and store its data
-    - [ ] Until the first script is loaded (an update function is available in the lua env), a splash screen is displayed.
-  - [x] Remember the last opened project and open it at startup
-  - [x] Allow closing the current project
-  - [x] Allow reopening aka 'reset' of games
-  - [x] Fix live-reload as we need to only live-reload the current opened project
-  - [x] Open manifest in the editor from the file menu
-  - [ ] Allow opening zips that are "compiled projects" (from the runtime)
-  - [ ] Have an export feature in the editor to make zips
 - [ ] Add a gallery
   - [x] Create a gallery folder with a sample game
   - [ ] Show the gallery by default in the editor
@@ -23,6 +9,8 @@
 - [ ] Save system
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
+- [ ] Profiler tool
+- [ ] Rework the resource API to use futures to prevent use of unloaded resources
 - [ ] Tiled parsing
   - [ ] Sprites/Tilesets as an asset class
   - [ ] Reading tiled files
@@ -36,29 +24,29 @@
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
   - [ ] V3, V4
-  - [ ] V4 is a color
-  - [ ] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`
+  - [ ] V4 is a color (provide default colors and a Color(r,g,b,a) function)
+  - [ ] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`. In general, the API should have a more OOP style.
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
+- [ ] Add `Io.isKeyJustPressed`
 - [ ] Audio API
   - [ ] Create an Audio resource
   - [ ] Play a sound
 - [ ] Make a game with it!!!
 
-- [ ] Expose Stencil API to Lua
-  - [ ] Define in Luau types: drawWithMask(drawFunction, maskFunction)
-  - [ ] Implement in Rust
 - [ ] Open-source the project
+- [ ] True MacOS exports with an app folder
 - [ ] Add a CI
+- [ ] Animation system from multiple PNG files
 - [ ] Entity system
   - [ ] Add a concept of a 'PhysicsWorld2D'
   - [ ] Under the hood, this is a QuadTree
   - [ ] You can add 'objects' to the physics world (circles, rectangles, etc...)
   - [ ] The objects can have 'tags' (player, enemy, projectile, etc...)
   - [ ] You can easily move and resize objects in the physics world
-  - [ ] You can efficiently get projects by tag
+  - [ ] You can efficiently get objects by tag
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
@@ -89,6 +77,25 @@
 
 # Done
 
+- [x] Project System in the editor
+  - [x] 'assets' should be 'gamedata'
+  - [x] Refactor to make the project path a variable
+  - [x] Have a game.vecta inside 'gamedata'. It is loaded first instead of game.lua
+    - [x] Manifest contains name of the game, logo, tags, and root source.
+    - [x] Load the manifest and store its data
+    - [x] Set window title to the name of the project
+  - [x] Add a reload button to reload the whole project (and a keyboard shortcut, probably Ctrl+R for it)
+  - [x] Remember the last opened project and open it at startup
+  - [x] Allow closing the current project
+  - [x] Allow reopening aka 'reset' of games
+  - [x] Fix live-reload as we need to only live-reload the current opened project
+  - [x] Open manifest in the editor from the file menu
+  - [x] Add Luau API to set window title
+  - [x] Have an export feature in the editor to make zips
+  - [x] Allow opening zips that are "compiled projects" (from the runtime)
+- [x] Expose Stencil API to Lua
+  - [x] Define in Luau types: drawWithMask(drawFunction, maskFunction)
+  - [x] Implement in Rust
 - [x] 'Screen' system (Menu, Settings, Game, Pause...)
   - [x] Design an API for the screen system
   - [x] Implement the types of the Rust side

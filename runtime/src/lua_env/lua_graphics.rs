@@ -4,10 +4,10 @@ use mlua::{AnyUserData, Table};
 
 use crate::{
     game_resource::{self, ResourceId, font_resource::FontResource, image_resource::ImageResource},
-    graphics::{batchdraw, shape::Quad},
+    graphics::{batchdraw, glstencil::draw_with_mask, shape::Quad},
     io,
     lua_env::{
-        add_fn_to_table, lua_canvas,
+        add_fn_to_table, get_gl_handle, lua_canvas,
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
         lua_vec2::Vec2,
     },
@@ -143,6 +143,26 @@ pub fn setup_graphics_api(
             batch
                 .borrow_mut()
                 .draw_image_part(quad, tex, src_pos, src_size);
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "drawWithMask", {
+        let batch = batch.clone();
+        let resources = resources.clone();
+        move |lua, (draw_fn, mask_fn): (mlua::Function, mlua::Function)| {
+            let gl = get_gl_handle(lua);
+            draw_with_mask(
+                &gl,
+                || {
+                    let _ = mask_fn.call::<()>(());
+                    batch.borrow_mut().draw(&resources, true);
+                },
+                || {
+                    let _ = draw_fn.call::<()>(());
+                    batch.borrow_mut().draw(&resources, true);
+                },
+            );
             Ok(())
         }
     });
