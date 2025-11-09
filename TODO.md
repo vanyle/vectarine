@@ -14,10 +14,6 @@
 - [ ] Tiled parsing
   - [ ] Sprites/Tilesets as an asset class
   - [ ] Reading tiled files
-- [ ] Refacto: add a console system to load messages from anywhere in all environments
-  - [ ] 3 levels: Info, Warning, Error
-  - [ ] Enable errors and warnings, even for release builds
-  - [ ] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
@@ -55,6 +51,17 @@
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
+- [ ] Add a CLI version of the editor
+  - [ ] The editor is compiled with -mwindow
+  - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
+- [ ] Put the console system outside of Lua Env
+  - [ ] Create a logger trait in console.rs
+  - [ ] LuaEnv needs a logger to be built and prints writes to the logger.
+    - [ ] 3 levels: Info, Warning, Error
+  - [ ] The runtime and editor have separate logger implementation
+  - [ ] The logger is easily accessible from anywhere in the code even without Lua.
+  - [ ] Enable errors and warnings, even for release builds
+  - [ ] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [ ] Event system, part II
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
   - [ ] Timer event?
