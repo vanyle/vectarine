@@ -40,8 +40,8 @@ pub fn main() {
                     let now_instant = now_ms();
                     let delta_duration =
                         std::time::Duration::from_micros(((now_instant - now) * 1000.0) as u64);
-                    game.main_loop(&latest_events, &window, delta_duration, false);
                     now = now_instant;
+                    game.main_loop(&latest_events, &window, delta_duration, false);
 
                     // These are for debug and are never displayed in the runtime.
                     // We still need to clear them to avoid memory leaks.
