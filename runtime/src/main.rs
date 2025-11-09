@@ -1,8 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::time::Instant;
 
 use runtime::game::Game;
+use runtime::io::time::now_ms;
 use runtime::{RenderingBlock, init_audio, init_sdl, loader::loader};
+use std::panic;
 
 pub fn main() {
     let RenderingBlock {
@@ -31,13 +32,16 @@ pub fn main() {
                 let Ok(mut game) = result else {
                     panic!("Failed to load the game project at {:?}", project_path);
                 };
-                let mut now = Instant::now();
+                let mut now = now_ms();
 
                 set_main_loop_wrapper(move || {
                     let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
                     game.load_resource_as_needed();
-                    game.main_loop(&latest_events, &window, now.elapsed(), false);
-                    now = Instant::now();
+                    let now_instant = now_ms();
+                    let delta_duration =
+                        std::time::Duration::from_micros(((now_instant - now) * 1000.0) as u64);
+                    game.main_loop(&latest_events, &window, delta_duration, false);
+                    now = now_instant;
 
                     // These are for debug and are never displayed in the runtime.
                     // We still need to clear them to avoid memory leaks.

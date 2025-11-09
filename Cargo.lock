@@ -2424,6 +2424,7 @@ dependencies = [
  "fontdue",
  "glow",
  "image",
+ "lazy_static",
  "mlua",
  "sdl2",
  "serde",
