@@ -14,6 +14,10 @@
 - [ ] Tiled parsing
   - [ ] Sprites/Tilesets as an asset class
   - [ ] Reading tiled files
+- [ ] Refacto: add a console system to load messages from anywhere in all environments
+  - [ ] 3 levels: Info, Warning, Error
+  - [ ] Enable errors and warnings, even for release builds
+  - [ ] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
@@ -31,9 +35,6 @@
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
 - [ ] Add `Io.isKeyJustPressed`
-- [ ] Audio API
-  - [ ] Create an Audio resource
-  - [ ] Play a sound
 - [ ] Make a game with it!!!
 
 - [ ] Open-source the project
@@ -78,6 +79,9 @@
 
 # Done
 
+- [x] Audio API
+  - [x] Create an Audio resource
+  - [x] Play a sound
 - [x] Project System in the editor
   - [x] 'assets' should be 'gamedata'
   - [x] Refactor to make the project path a variable
