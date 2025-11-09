@@ -211,7 +211,7 @@ local player: LevelDesignType.Player = Persist.onReload({
 
 	fuel = 0, -- Start at 0, will ramp up during windup
 	max_fuel = 150.0,
-	fuel_drain_rate = 2.0, -- fuel units per second
+	fuel_drain_rate = 1.0, -- fuel units per second
 	fuel_death_threshold = -1,
 }, "player")
 
