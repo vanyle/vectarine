@@ -20,15 +20,18 @@ where
                     let fs = ZipFileSystem::new(data);
                     let Ok(fs) = fs else {
                         // Not a valid zip file, we won't be able to load the game.
+                        println!("bundle.vecta is not a valid game bundle");
                         return;
                     };
                     let meta = fs.read_file_sync("gamedata/game.vecta");
                     let Some(meta) = meta else {
+                        println!("The bundle is missing a game.vecta file inside gamedata.");
                         // Missing game manifest.
                         return;
                     };
                     let project_info = get_project_info(String::from_utf8_lossy(&meta).as_ref());
                     let Ok(project_info) = project_info else {
+                        println!("Malformed game.vecta file");
                         return;
                     };
                     callback((
@@ -44,11 +47,13 @@ where
                         "gamedata/game.vecta",
                         Box::new(move |result| {
                             let Some(data) = result else {
+                                println!("game.vecta not found in local filesystem");
                                 return;
                             };
                             let project_info =
                                 get_project_info(String::from_utf8_lossy(&data).as_ref());
                             let Ok(project_info) = project_info else {
+                                println!("Malformed game.vecta file");
                                 return;
                             };
                             callback((path, project_info, Box::new(LocalFileSystem)));

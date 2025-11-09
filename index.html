@@ -94,14 +94,25 @@
 				(async () => {
 					try {
 						const response = await fetch(filename);
+						if (response.status >= 400) {
+							callback(false);
+							return;
+						}
 						const blob = await response.blob();
 						const reader = new FileReader();
 						reader.readAsDataURL(blob);
 						reader.onloadend = function () {
 							const base64data = reader.result.split(",")[1];
-							try {
-								callback(base64data); // This always throws to catch the execution flow
-							} catch (err) {}
+							if (base64data.length >= 4_000_000) {
+								console.warn(
+									`File ${filename} too large (${base64data.length} > 4.000.000) to read (WASM might refuse to allocate this much memory to store it): `
+								);
+								callback(false);
+							} else {
+								try {
+									callback(base64data); // This always throws to catch the execution flow
+								} catch (err) {}
+							}
 						};
 					} catch (err) {
 						console.error("Error fetching file:");
@@ -151,6 +162,11 @@
 						dump(text + "\n"); // fast, straight to the real console
 					} else {
 						console.error(text);
+						if (text.startsWith("fatal runtime error")) {
+							// Stop the module on fatal errors
+							// This avoid spamming the console with unrelevant errors
+							Module.abort();
+						}
 					}
 				},
 				canvas: (function () {
@@ -215,10 +231,13 @@
 				statusText.textContent =
 					"Error loading runtime, is the file there?";
 			}
+			addEventListener("load", () => {
+				let script = document.createElement("script");
+				script.onerror = scriptLoadError;
+				script.src =
+					"target/wasm32-unknown-emscripten/release/runtime.js";
+				document.head.appendChild(script);
+			});
 		</script>
-		<script
-			onerror="scriptLoadError()"
-			src="target/wasm32-unknown-emscripten/debug/runtime.js"
-		></script>
 	</body>
 </html>
