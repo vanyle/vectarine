@@ -10,6 +10,8 @@ fn main() -> io::Result<()> {
         println!("cargo:rustc-link-arg=-sEXPORTED_FUNCTIONS=_main");
         println!("cargo:rustc-link-arg=-sUSE_WEBGL2=1");
         println!("cargo:rustc-link-arg=-sUSE_SDL_MIXER=2");
+        println!("cargo:rustc-link-arg=-sASSERTIONS=1");
+        // println!("cargo:rustc-link-arg=-sSTACK_SIZE=1048576"); // 1MB stack
 
         // println!("cargo:rustc-link-arg=--use-port=sdl2_image:formats=png");
         // println!("cargo:rustc-link-arg=--embed-file=assets");

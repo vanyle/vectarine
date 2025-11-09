@@ -171,7 +171,7 @@ local WINDUP_DURATION = 3.0 -- seconds to ramp up to full fuel
 local ANIMATION_START_DELAY = 0.2 -- seconds after fire onset sound
 local UNPAUSE_ANIMATION_FRAMES = 14
 
-local REFUEL_AMOUNT = 30.0
+local REFUEL_AMOUNT = 40.0
 
 local FIRE_CRACKLING_DIVISOR = 250
 local LIGHT_ZONE_TRANSFORM_NUMERATOR = 25
@@ -189,11 +189,12 @@ local PUMPKIN_CREATE_OFFSET = 5
 
 -- Win animation constants
 local WIN_DURATION = 5.0 -- seconds for the win effect
-local WIN_TARGET_ZOOM = 10
+local WIN_TARGET_ZOOM = 20
 local WIN_TARGET_FUEL = 500.0 -- Very high fuel for bright light
 local PLAYER_POSITION_START = V2(10, 10)
 
 local windup_timer = Persist.onReload({ timer = 0.0 }, "windup_timer")
+local INITIAL_FUEL_AMOUNT = 100.0 -- fuel amount after ramp-up
 local player: LevelDesignType.Player = Persist.onReload({
 	position = PLAYER_POSITION_START,
 	size = 1.0,
@@ -209,7 +210,7 @@ local player: LevelDesignType.Player = Persist.onReload({
 	anim_time = 0,
 
 	fuel = 0, -- Start at 0, will ramp up during windup
-	max_fuel = 100.0,
+	max_fuel = 150.0,
 	fuel_drain_rate = 2.0, -- fuel units per second
 	fuel_death_threshold = -1,
 }, "player")
@@ -236,7 +237,7 @@ function manage_windup(time_delta: number)
 			-- Smooth easing function for nice ramp-up
 			local ease_progress = windup_progress * windup_progress * (3 - 2 * windup_progress) -- smoothstep
 			-- Ramp from minimal fuel to full fuel
-			player.fuel = MINIMAL_FUEL_AMOUNT + ease_progress * (player.max_fuel - MINIMAL_FUEL_AMOUNT)
+			player.fuel = MINIMAL_FUEL_AMOUNT + ease_progress * (INITIAL_FUEL_AMOUNT - MINIMAL_FUEL_AMOUNT)
 		end
 	end
 end
@@ -266,7 +267,6 @@ function manage_win_animation(time_delta: number)
 	-- End the win animation after duration and trigger music
 	if GameState.win_timer >= WIN_DURATION then
 		if not GameState.win_music_played then
-			Debug.print("Win animation complete! Playing battle music and displaying baba sign...")
 			soundsHelpers.play_battle_music()
 
 			-- Display baba sign permanently (no pause needed)
@@ -613,7 +613,7 @@ function manage_pumpkin(
 		end
 	else
 		-- Not chasing
-		if dist_to_player <= MAX_CHASE_DISTANCE then
+		if dist_to_player <= MAX_CHASE_DISTANCE and not GameState.win_music_played then
 			pumpkin.state = "chasing"
 			soundsHelpers.play_creepy_sound()
 			pumpkin.target = nil
@@ -678,7 +678,7 @@ function manage_pumpkin(
 	end
 
 	-- If close enough, die to the pumpkin
-	if not GameState.cheating then
+	if not GameState.cheating and not GameState.win_music_played then
 		local player_hitbox = gameMechanics.createHitbox(player :: any)
 		local pumpkin_hitbox = gameMechanics.createHitbox(pumpkin :: any)
 
@@ -762,16 +762,16 @@ end
 function manage_player(time_delta: number)
 	-- player movement
 	local dx, dy = 0, 0
-	if Io.isKeyDown("q") then
+	if Io.isKeyDown("q") or Io.isKeyDown("left") then
 		dx = dx - 1
 	end
-	if Io.isKeyDown("d") then
+	if Io.isKeyDown("d") or Io.isKeyDown("right") then
 		dx = dx + 1
 	end
-	if Io.isKeyDown("z") then
+	if Io.isKeyDown("z") or Io.isKeyDown("up") then
 		dy = dy - 1
 	end
-	if Io.isKeyDown("s") then
+	if Io.isKeyDown("s") or Io.isKeyDown("down") then
 		dy = dy + 1
 	end
 

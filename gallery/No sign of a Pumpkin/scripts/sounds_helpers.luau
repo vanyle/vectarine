@@ -18,7 +18,7 @@ Event.getResourceLoadedEvent():on(function(r)
 	if r == ambiantMusic then
 		Debug.print("Playing background music from resource loaded event...")
 		Audio.play(ambiantMusic, true)
-		Audio.setVolume(ambiantMusic, 0.0)
+		Audio.setVolume(ambiantMusic, 0.2)
 	end
 end)
 

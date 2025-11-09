@@ -32,7 +32,6 @@ impl ReadOnlyFileSystem for ZipFileSystem {
     /// Returns the content of the file at `path`
     /// Reads the file from the zip archive and calls the callback with the file contents.
     fn read_file(&self, filename: &str, callback: Box<dyn FnOnce(Option<Vec<u8>>)>) {
-        println!("Reading: {filename} from zip.");
         let mut archive = self.archive.borrow_mut();
 
         // Try to find and read the file from the zip archive
@@ -41,7 +40,6 @@ impl ReadOnlyFileSystem for ZipFileSystem {
             file.read_to_end(&mut contents).ok()?;
             Some(contents)
         });
-        println!("Found: {}", result.is_some());
         callback(result);
     }
 }
