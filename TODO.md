@@ -1,6 +1,7 @@
 # TO-DO
 
 - [ ] Allow fake fullscreen as an option
+- [ ] Make the "create new project" button actually work.
 - [ ] Save system
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
@@ -26,7 +27,6 @@
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
 - [ ] Add `Io.isKeyJustPressed`
-- [ ] Make a game with it!!!
 
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
@@ -81,6 +81,7 @@
 
 # Done
 
+- [x] Make a game with it!!!
 - [x] Add a gallery
   - [x] Create a gallery folder with a sample game
   - [x] Show the gallery by default in the editor
