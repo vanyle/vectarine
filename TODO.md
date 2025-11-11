@@ -1,10 +1,5 @@
 # TO-DO
 
-- [ ] Add a gallery
-  - [x] Create a gallery folder with a sample game
-  - [ ] Show the gallery by default in the editor
-  - [ ] Allow creating a game using a piece of the gallery as an example
-  - [ ] Show off parts of the API in various gallery games
 - [ ] Allow fake fullscreen as an option
 - [ ] Save system
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
@@ -47,10 +42,10 @@
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
-- [ ] Add a way to set shader uniforms from Luau
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
+- [ ] Play/pause the project in the editor
 - [ ] Add a CLI version of the editor
   - [ ] The editor is compiled with -mwindow
   - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
@@ -86,9 +81,14 @@
 
 # Done
 
+- [x] Add a gallery
+  - [x] Create a gallery folder with a sample game
+  - [x] Show the gallery by default in the editor
+  - [x] Show off parts of the API in various gallery games
 - [x] Audio API
   - [x] Create an Audio resource
   - [x] Play a sound
+- [x] Add a way to set shader uniforms from Luau
 - [x] Project System in the editor
   - [x] 'assets' should be 'gamedata'
   - [x] Refactor to make the project path a variable
