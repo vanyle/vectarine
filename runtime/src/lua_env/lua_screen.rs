@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Represents a screen in the game (menu, gameplay, pause, etc.)
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Screen {
     name: String,
     draw_fn: mlua::Function,
@@ -20,6 +20,10 @@ impl UserData for Screen {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("name", |_, this, ()| Ok(this.name.clone()));
         methods.add_method("draw", |_, this, ()| this.draw_fn.call::<()>(()));
+
+        methods.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (Self, Self)| {
+            Ok(id1 == id2)
+        });
     }
 }
 
