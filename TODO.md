@@ -1,11 +1,7 @@
 # TO-DO
 
-- [ ] Add a gallery
-  - [x] Create a gallery folder with a sample game
-  - [ ] Show the gallery by default in the editor
-  - [ ] Allow creating a game using a piece of the gallery as an example
-  - [ ] Show off parts of the API in various gallery games
 - [ ] Allow fake fullscreen as an option
+- [ ] Make the "create new project" button actually work.
 - [ ] Save system
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
@@ -31,10 +27,6 @@
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
 - [ ] Add `Io.isKeyJustPressed`
-- [ ] Audio API
-  - [ ] Create an Audio resource
-  - [ ] Play a sound
-- [ ] Make a game with it!!!
 
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
@@ -50,10 +42,21 @@
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
-- [ ] Add a way to set shader uniforms from Luau
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
+- [ ] Play/pause the project in the editor
+- [ ] Add a CLI version of the editor
+  - [ ] The editor is compiled with -mwindow
+  - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
+- [ ] Put the console system outside of Lua Env
+  - [ ] Create a logger trait in console.rs
+  - [ ] LuaEnv needs a logger to be built and prints writes to the logger.
+    - [ ] 3 levels: Info, Warning, Error
+  - [ ] The runtime and editor have separate logger implementation
+  - [ ] The logger is easily accessible from anywhere in the code even without Lua.
+  - [ ] Enable errors and warnings, even for release builds
+  - [ ] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [ ] Event system, part II
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
   - [ ] Timer event?
@@ -65,6 +68,7 @@
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
+- [ ] Monads for futures
 - [ ] The 3D API!!
   - [ ] See how Three.js does things.
   - [ ] Camera
@@ -77,6 +81,15 @@
 
 # Done
 
+- [x] Make a game with it!!!
+- [x] Add a gallery
+  - [x] Create a gallery folder with a sample game
+  - [x] Show the gallery by default in the editor
+  - [x] Show off parts of the API in various gallery games
+- [x] Audio API
+  - [x] Create an Audio resource
+  - [x] Play a sound
+- [x] Add a way to set shader uniforms from Luau
 - [x] Project System in the editor
   - [x] 'assets' should be 'gamedata'
   - [x] Refactor to make the project path a variable

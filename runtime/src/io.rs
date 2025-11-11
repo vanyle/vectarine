@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 pub mod fs;
 pub mod localfs;
+pub mod time;
 pub mod zipfs;
 
 #[derive(Clone, Debug, Default)]

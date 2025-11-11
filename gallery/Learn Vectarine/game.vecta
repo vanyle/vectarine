@@ -1,9 +1,9 @@
 #!/usr/bin/env vecta
-title = "Scratchpad"
+title = "Learn Vectarine!"
 main_script_path = "scripts/game.luau"
 logo = "textures/logo.png"
 tags = ["tutorial", "prototype"]
-description = """A demo project to try various things."""
+description = """Open this project to discover how vectarine works!"""
 loading_animation = "pixel"
 screen_width = 800
 screen_height = 600

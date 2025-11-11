@@ -2,7 +2,6 @@ use crate::io::fs::FileSystem;
 use crate::io::fs::ReadOnlyFileSystem;
 
 pub struct LocalFileSystem;
-
 #[cfg(not(target_os = "emscripten"))]
 impl ReadOnlyFileSystem for LocalFileSystem {
     /// Returns the content of the file at `path`
@@ -14,12 +13,22 @@ impl ReadOnlyFileSystem for LocalFileSystem {
         };
 
         let path = Path::new(filename);
-        if let Ok(canonical) = path.canonicalize() {
-            let ends_with = canonical.ends_with(path);
+        if path.is_relative() // Only perform this check for relative paths.
+            && let Ok(canonical) = path.canonicalize()
+        {
+            let canonical_with_slash = canonical.to_string_lossy().replace("\\", "/");
+            let ends_with = canonical_with_slash.ends_with(filename);
             if !ends_with {
                 // Access might work on MacOS or Windows, but not on the web (path is case-sensitive + you might be accessing a file outside the bundle)
                 // We fail on all platforms for consistency and to catch errors early.
-                // TODO: log a warning
+                #[cfg(debug_assertions)]
+                {
+                    println!(
+                        "The path provided is not canonicalized correctly: {} instead of {}",
+                        filename,
+                        canonical.display(),
+                    );
+                }
                 callback(None);
                 return;
             }

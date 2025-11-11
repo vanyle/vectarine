@@ -51,6 +51,8 @@ docker run --platform linux/x86_64 --volume "$(pwd)/docs:/data" \
     --pdf-engine lualatex --template ./doc-generation-utils/eisvogel.latex -f markdown+backtick_code_blocks+emoji
 """
 
+run_windows = "echo On Windows, Run Docker manually to generate the manual as a PDF"
+
 [tasks.release]
 description = "Create a new release"
 depends = ["clippy", "build-editor", "build-web", "build-runtime", "pdfify-manual"]

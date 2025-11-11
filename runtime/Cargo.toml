@@ -9,6 +9,7 @@ egui = "0.32.2"
 fontdue = "0.9.3"
 glow = "0.16.0"
 image = { version = "0.25.8", features = ["png", "bmp", "jpeg", "ico", "gif", "webp"] }
+lazy_static = "1.5.0"
 serde = { version = "1.0.219", features = ["derive"] }
 toml = "0.9.8"
 zip = "6.0.0"

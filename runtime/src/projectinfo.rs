@@ -43,8 +43,8 @@ pub fn get_project_info(project_manifest_content: &str) -> Result<ProjectInfo> {
 
     Ok(ProjectInfo {
         title: get_str_or_default("title", "Untitle Vectarine Game"),
-        default_screen_width: get_u32_or_default("default_screen_width", 1200),
-        default_screen_height: get_u32_or_default("default_screen_height", 800),
+        default_screen_width: get_u32_or_default("screen_width", 1200),
+        default_screen_height: get_u32_or_default("screen_height", 800),
         description: get_str_or_default("description", ""),
         tags: tags.unwrap_or_else(std::vec::Vec::new),
         main_script_path: get_str_or_default("main_script_path", "scripts/game.luau"),

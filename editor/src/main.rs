@@ -1,8 +1,13 @@
-use std::{path::PathBuf, sync::mpsc::channel, time::Instant};
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use std::{path::PathBuf, sync::mpsc::channel};
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
 use runtime::{
-    RenderingBlock, game::drawable_screen_size, init_audio, init_sdl, io::localfs::LocalFileSystem,
+    RenderingBlock,
+    game::drawable_screen_size,
+    init_audio, init_sdl,
+    io::{localfs::LocalFileSystem, time::now_ms},
 };
 
 use crate::{
@@ -93,7 +98,7 @@ fn gui_main() {
     platform.handle_event(&event, &sdl, &video.borrow());
 
     // The main loop
-    let mut start_of_frame = Instant::now();
+    let mut start_of_frame = now_ms();
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
 
@@ -105,7 +110,11 @@ fn gui_main() {
             continue;
         }
 
-        let new_start_of_frame = Instant::now();
+        let now_instant = now_ms();
+        let delta_duration =
+            std::time::Duration::from_micros(((now_instant - start_of_frame) * 1000.0) as u64);
+        start_of_frame = now_instant;
+
         if let Some(project) = editor_state.project.borrow_mut().as_mut() {
             let game = &mut project.game;
 
@@ -118,12 +127,11 @@ fn gui_main() {
             );
 
             // Render the game
-            game.main_loop(&latest_events, &window, start_of_frame.elapsed(), true);
+            game.main_loop(&latest_events, &window, delta_duration, true);
         } else {
             // Clear the screen when no project is loaded
             process_events_when_no_game(&latest_events, &gl);
         }
-        start_of_frame = new_start_of_frame;
 
         editor_state.draw_editor_interface(&mut platform, &sdl, &latest_events, &mut painter);
         window.borrow().gl_swap_window();

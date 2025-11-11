@@ -5,13 +5,19 @@
 # ///
 import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from pathlib import Path
 
 """
 A tiny Python HTTP server to serve the content of the build folder with the proper HTTP headers for web assembly. 
 """
 
+DIRECTORY = Path(__file__).parent.parent
+
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
     extensions_map = {
         "": "application/octet-stream",
         ".css": "text/css",
