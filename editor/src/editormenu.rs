@@ -1,6 +1,6 @@
 use egui::{Popup, RichText, UiBuilder};
 
-use crate::editorinterface::{EditorState, open_file_dialog_and_load_project};
+use crate::editorinterface::{EditorState, emptyscreen::open_file_dialog_and_load_project};
 
 pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
     if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
