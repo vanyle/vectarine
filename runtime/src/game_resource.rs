@@ -366,9 +366,9 @@ impl ResourceManager {
     /// Performance: O(n) for now. Store the ID and use instead get_by_id if you already have the id.
     /// instead of get_by_path.
     pub fn get_id_by_path(&self, path: &Path) -> Option<ResourceId> {
-        let to_match = get_absolute_path(&self.base_path, path);
+        let to_match = get_canonical_absolute_path(&self.base_path, path);
         for (i, res) in self.resources.borrow().iter().enumerate() {
-            let p = get_absolute_path(&self.base_path, &res.path);
+            let p = get_canonical_absolute_path(&self.base_path, &res.path);
             if to_match == p {
                 return Some(ResourceId(i));
             }
@@ -484,6 +484,12 @@ pub fn get_absolute_path(current_base_path: &Path, resource_path: &Path) -> Stri
     let abs_path = current_base_path.join(resource_path);
     // let abs_path = abs_path.canonicalize().unwrap_or(abs_path);
     abs_path.to_string_lossy().replace("\\", "/")
+}
+pub fn get_canonical_absolute_path(current_base_path: &Path, resource_path: &Path) -> PathBuf {
+    current_base_path
+        .join(resource_path)
+        .canonicalize()
+        .unwrap_or_else(|_| current_base_path.join(resource_path))
 }
 
 pub trait ResourceToAny: 'static {

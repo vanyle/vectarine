@@ -8,7 +8,7 @@ use std::{
 };
 
 use egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
-use egui_extras::{Column, Size, StripBuilder, TableBuilder};
+use egui_extras::{Size, StripBuilder};
 use egui_sdl2_platform::sdl2;
 use glow::HasContext;
 use notify_debouncer_full::{
@@ -181,6 +181,7 @@ impl EditorState {
 
                 let parent = project_path.parent();
                 if let Some(parent) = parent {
+                    // This only makes sense for a local file system.
                     let _ = self
                         .debouncer
                         .borrow_mut()
