@@ -13,6 +13,21 @@ pub struct ProjectInfo {
     pub default_screen_height: u32,
 }
 
+impl Default for ProjectInfo {
+    fn default() -> Self {
+        Self {
+            title: "".to_string(),
+            main_script_path: "scripts/game.luau".to_string(),
+            logo_path: "".to_string(),
+            description: "".to_string(),
+            tags: vec![],
+            default_screen_width: 800,
+            default_screen_height: 600,
+            loading_animation: "pixel".to_string(),
+        }
+    }
+}
+
 pub fn get_project_info(project_manifest_content: &str) -> Result<ProjectInfo> {
     let r = toml::from_str::<ProjectInfo>(project_manifest_content);
     if let Ok(r) = r {

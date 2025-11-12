@@ -1,18 +1,25 @@
 use std::{
     cell::RefCell,
+    fs,
     path::{Path, PathBuf},
 };
 
 use egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
 use egui_extras::{Size, StripBuilder};
+use regex::Regex;
 use runtime::{
     io::localfs::LocalFileSystem,
     projectinfo::{ProjectInfo, get_project_info},
+    toml,
 };
 
 use crate::editorinterface::EditorState;
 
 pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
+    thread_local! {
+        static NEW_GAME_PATH: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+    }
+
     egui::Window::new("No project loaded")
         .default_width(384.0)
         .default_height(256.0)
@@ -25,13 +32,27 @@ pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
                 .size(Size::remainder().at_most(384.0))
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
-                        draw_empty_screen_window_content(state, ui);
+                        NEW_GAME_PATH.with_borrow_mut(|new_game_path| {
+                            let mut reset_path = false;
+                            if let Some(new_game_path) = new_game_path.as_ref() {
+                                reset_path = draw_new_game_window_content(state, ui, new_game_path);
+                            } else {
+                                draw_empty_screen_window_content(state, ui, new_game_path);
+                            }
+                            if reset_path {
+                                new_game_path.take();
+                            }
+                        });
                     });
                 });
         });
 }
 
-pub fn draw_empty_screen_window_content(state: &mut EditorState, ui: &mut egui::Ui) {
+pub fn draw_empty_screen_window_content(
+    state: &mut EditorState,
+    ui: &mut egui::Ui,
+    new_game_path: &mut Option<PathBuf>,
+) {
     ui.vertical_centered(|ui| {
         ui.with_layout(Layout::top_down(Align::Min), |ui| {
             ui.label(RichText::new("Welcome to Vectarine").size(24.0));
@@ -43,7 +64,7 @@ pub fn draw_empty_screen_window_content(state: &mut EditorState, ui: &mut egui::
                 .button(RichText::new("Create new Project").size(18.0))
                 .clicked()
             {
-                open_folder_dialog_and_create_project(state);
+                *new_game_path = open_folder_dialog_and_create_project(state);
             }
             ui.add_space(8.0);
             if ui
@@ -78,7 +99,119 @@ pub fn draw_empty_screen_window_content(state: &mut EditorState, ui: &mut egui::
     });
 }
 
-pub fn open_folder_dialog_and_create_project(state: &mut EditorState) {
+pub fn draw_new_game_window_content(
+    state: &mut EditorState,
+    ui: &mut egui::Ui,
+    new_game_path: &Path,
+) -> bool {
+    ui.label(RichText::new("Create a new project").size(24.0));
+    ui.add_space(8.0);
+    {
+        let components = new_game_path.components().collect::<Vec<_>>();
+        // Show last 5 components of the path.
+        let end_of_path = &components[std::cmp::max(0, components.len() - 5)..components.len()]
+            .iter()
+            .map(|c| PathBuf::from(c.as_os_str()))
+            .fold(PathBuf::new(), |a, b| a.join(b));
+
+        let label = egui::Label::new(RichText::new(format!("{}", end_of_path.display())))
+            .wrap_mode(egui::TextWrapMode::Truncate);
+        ui.label(RichText::new("Game folder created in").strong());
+        ui.add(label);
+    }
+
+    thread_local! {
+        static GAME_NAME: RefCell<String> = const {RefCell::new(String::new())}
+    }
+
+    const ERRORS: [&str; 2] = [
+        "The name cannot be empty",
+        "The name must only contain spaces, letters, numbers, dashes and underscores",
+    ];
+    let mut error_idx: Option<usize> = None;
+
+    ui.label(RichText::new("Name of the game").strong());
+    GAME_NAME.with_borrow_mut(|game_name| {
+        ui.text_edit_singleline(game_name);
+        if game_name.is_empty() {
+            error_idx = Some(0);
+        } else {
+            let regex = Regex::new(r"^[A-Za-z0-9_\- ]+$").unwrap();
+            if !regex.is_match(game_name) {
+                error_idx = Some(1);
+            }
+        }
+    });
+    if let Some(error_idx) = error_idx {
+        ui.label(
+            RichText::new(ERRORS[error_idx])
+                .color(egui::Color32::DARK_RED)
+                .size(12.0),
+        );
+    }
+    let mut exit_new_game_window = false;
+    ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+        if ui.button("Create the game and open it!").clicked() {
+            GAME_NAME.with_borrow(|game_name| {
+                create_game_and_open_it(state, game_name, new_game_path);
+            });
+            exit_new_game_window = true;
+        }
+        if ui.button(RichText::new("Cancel")).clicked() {
+            exit_new_game_window = true;
+        }
+    });
+    exit_new_game_window
+}
+
+pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_path: &Path) {
+    let project_folder = game_path.join(game_name);
+    let project_file_path = project_folder.join("game.vecta");
+    let script_folder = project_folder.join("scripts");
+    let project_info = ProjectInfo {
+        title: game_name.to_string(),
+        ..ProjectInfo::default()
+    };
+
+    let main_script_path = project_folder.join(&project_info.main_script_path);
+    let mut setup_failed = None;
+
+    setup_failed = setup_failed.or(fs::create_dir_all(script_folder).err());
+    {
+        let serialized = toml::to_string(&project_info).unwrap();
+        setup_failed = setup_failed.or(fs::write(&project_file_path, serialized).err());
+    }
+    setup_failed = setup_failed.or(fs::write(
+        &main_script_path,
+        "
+local Debug = require('@vectarine/debug')
+local Graphics = require('@vectarine/graphics')
+Debug.print(\"Loaded.\")
+function Update(deltaTime: number)
+    Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
+    Graphics.clear({r = 0, g = 0, b = 0, a = 1})
+end
+    ",
+    )
+    .err());
+
+    if let Some(setup_failed) = setup_failed {
+        println!(
+            "Unable to create a project at the provided location: {}",
+            setup_failed
+        );
+        return;
+    }
+
+    state.load_project(Box::new(LocalFileSystem), &project_file_path, |result| {
+        if let Err(e) = result {
+            // TO-DO: show error in GUI
+            println!("Failed to load project: {e}");
+        }
+    });
+}
+
+pub fn open_folder_dialog_and_create_project(state: &mut EditorState) -> Option<PathBuf> {
     state.window.borrow_mut().set_always_on_top(false); // prevent editor from being over the file picker.
     let path = rfd::FileDialog::new()
         .set_title("Select a location where the Vectarine project folder will be created")
@@ -87,10 +220,7 @@ pub fn open_folder_dialog_and_create_project(state: &mut EditorState) {
         .window
         .borrow_mut()
         .set_always_on_top(state.config.borrow().is_always_on_top);
-    let Some(path) = path else {
-        return;
-    };
-    // ...
+    path
 }
 
 pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
