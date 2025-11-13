@@ -17,6 +17,7 @@
   - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
+
   - [ ] V3, V4
   - [ ] V4 is a color (provide default colors and a Color(r,g,b,a) function)
   - [ ] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`. In general, the API should have a more OOP style.
@@ -24,7 +25,6 @@
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
-- [ ] Add `Io.isKeyJustPressed`
 
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
@@ -79,6 +79,7 @@
 
 # Done
 
+- [x] Add `Io.isKeyJustPressed`
 - [x] Allow fake fullscreen as an option
 - [x] Make the "create new project" button actually work.
 - [x] Make a game with it!!!

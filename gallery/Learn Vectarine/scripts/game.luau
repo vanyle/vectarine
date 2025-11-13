@@ -265,8 +265,6 @@ function Load()
 	table.clear(frame_times)
 end
 
-local spaceJustPressed = false
-local backJustPressed = false
 function Update(time_delta: number)
 	fprint("You can also use fprint (frame print) to show messages that change every frame!")
 	local bg_color: Graphics.Color = { r = 0, g = 0, b = 0.2, a = 1 }
@@ -297,30 +295,20 @@ function Update(time_delta: number)
 		})
 	end
 
-	if Io.isKeyDown("Space") then
+	if Io.isKeyJustPressed("Space") then
 		textSize = 0.1
-		if not spaceJustPressed then
-			currentScreenIndex.index = currentScreenIndex.index + 1
-			if currentScreenIndex.index > #screens then
-				currentScreenIndex.index = 2
-			end
+		currentScreenIndex.index = currentScreenIndex.index + 1
+		if currentScreenIndex.index > #screens then
+			currentScreenIndex.index = 2
 		end
-		spaceJustPressed = true
-	else
-		spaceJustPressed = false
 	end
 
-	if Io.isKeyDown("Backspace") then
+	if Io.isKeyJustPressed("Backspace") then
 		textSize = 0.1
-		if not backJustPressed then
-			currentScreenIndex.index = currentScreenIndex.index - 1
-			if currentScreenIndex.index < 1 then
-				currentScreenIndex.index = 1
-			end
+		currentScreenIndex.index = currentScreenIndex.index - 1
+		if currentScreenIndex.index < 1 then
+			currentScreenIndex.index = 1
 		end
-		backJustPressed = true
-	else
-		backJustPressed = false
 	end
 
 	Screen.drawCurrentScreen()

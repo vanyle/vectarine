@@ -41,6 +41,22 @@ pub fn setup_io_api(
         }
     });
 
+    add_fn_to_table(lua, &io_module, "isKeyJustPressed", {
+        let env_state = env_state.clone();
+        move |_, keycode_name: String| {
+            let keycode = Keycode::from_name(&keycode_name);
+            let Some(keycode) = keycode else {
+                return Ok(false);
+            };
+            let is_pressed = *env_state
+                .borrow()
+                .keyboard_just_pressed_state
+                .get(&keycode)
+                .unwrap_or(&false);
+            Ok(is_pressed)
+        }
+    });
+
     add_fn_to_table(lua, &io_module, "getKeysDown", {
         let env_state = env_state.clone();
         move |lua, ()| {

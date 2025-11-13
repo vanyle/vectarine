@@ -16,7 +16,7 @@ pub struct MouseState {
     pub is_right_down: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct IoEnvState {
     // Inputs
     pub window_width: u32,
@@ -27,6 +27,7 @@ pub struct IoEnvState {
     pub px_ratio_y: f32,
     pub mouse_state: MouseState,
     pub keyboard_state: HashMap<Keycode, bool>,
+    pub keyboard_just_pressed_state: HashMap<Keycode, bool>,
 
     pub start_time: std::time::Instant,
 
@@ -49,6 +50,7 @@ impl Default for IoEnvState {
             px_ratio_y: 1.0,
             mouse_state: MouseState::default(),
             keyboard_state: HashMap::new(),
+            keyboard_just_pressed_state: HashMap::new(),
 
             start_time: std::time::Instant::now(),
 
@@ -67,6 +69,11 @@ pub fn process_events(
     framebuffer_width: f32,
     framebuffer_height: f32,
 ) {
+    {
+        let mut env_state = game.lua_env.env_state.borrow_mut();
+        env_state.keyboard_just_pressed_state.clear();
+    }
+
     for event in events.iter() {
         match event {
             Event::Quit { .. } => {
@@ -90,6 +97,7 @@ pub fn process_events(
                 };
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 env_state.keyboard_state.insert(*keycode, true);
+                env_state.keyboard_just_pressed_state.insert(*keycode, true);
 
                 let _ = game.lua_env.default_events.keydown_event.trigger(
                     &game.lua_env.lua,

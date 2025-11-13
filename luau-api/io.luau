@@ -9,6 +9,13 @@ function module.isKeyDown(keycode: string): boolean
 	error("Not implemented")
 end
 
+--- Checks if a key was just pressed (this frame)
+--- For example, `IsKeyJustPressed("space")`. If the name is invalid, always return false.
+--- You can use 'GetKeysDown' to find the name of keys
+function module.isKeyJustPressed(keycode: string): boolean
+	error("Not implemented")
+end
+
 --- Returns a list of key that are currently pressed
 function module.getKeysDown(): { string }
 	error("Not implemented")
