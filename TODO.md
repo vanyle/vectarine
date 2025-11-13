@@ -1,6 +1,5 @@
 # TO-DO
 
-- [ ] Allow fake fullscreen as an option
 - [ ] Save system
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
@@ -80,6 +79,7 @@
 
 # Done
 
+- [x] Allow fake fullscreen as an option
 - [x] Make the "create new project" button actually work.
 - [x] Make a game with it!!!
 - [x] Add a gallery

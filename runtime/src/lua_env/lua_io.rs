@@ -132,8 +132,25 @@ pub fn setup_io_api(
 
     add_fn_to_table(lua, &io_module, "setFullscreen", {
         let env_state = env_state.clone();
-        move |_, (fullscreen,): (bool,)| {
-            env_state.borrow_mut().fullscreen_state_request = Some(fullscreen);
+        move |_, (fullscreen,): (mlua::Value,)| {
+            if let Some(fullscreen_bool) = fullscreen.as_boolean() {
+                let fullscreen_mode = if fullscreen_bool {
+                    sdl2::video::FullscreenType::True
+                } else {
+                    sdl2::video::FullscreenType::Off
+                };
+                env_state.borrow_mut().fullscreen_state_request = Some(fullscreen_mode);
+            }
+            if let Some(fullscreen_str) = fullscreen.as_string() {
+                let fullscreen_mode = match fullscreen_str.to_string_lossy().as_str() {
+                    "fullscreen" => Some(sdl2::video::FullscreenType::True),
+                    "windowed" => Some(sdl2::video::FullscreenType::Off),
+                    "desktop" => Some(sdl2::video::FullscreenType::Desktop),
+                    _ => None,
+                };
+                env_state.borrow_mut().fullscreen_state_request = fullscreen_mode;
+            }
+
             Ok(())
         }
     });

@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
 use glow::HasContext;
-use sdl2::video::{FullscreenType, WindowPos};
+use sdl2::video::WindowPos;
 
 use crate::{
     console::Verbosity,
@@ -175,11 +175,7 @@ impl Game {
                 env_state.window_target_size = None;
             }
             if let Some(fullscreen_request) = env_state.fullscreen_state_request {
-                if fullscreen_request {
-                    let _ = window.borrow_mut().set_fullscreen(FullscreenType::True);
-                } else {
-                    let _ = window.borrow_mut().set_fullscreen(FullscreenType::Off);
-                }
+                let _ = window.borrow_mut().set_fullscreen(fullscreen_request);
                 env_state.fullscreen_state_request = None;
             }
             if let Some(title) = env_state.window_title.take() {

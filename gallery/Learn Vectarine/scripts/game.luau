@@ -274,7 +274,7 @@ function Update(time_delta: number)
 
 	if fullscreen.is_on then
 		local screen = Io.getScreenSize()
-		Io.setFullscreen(true)
+		Io.setFullscreen("desktop")
 		Io.setWindowSize(screen.x, screen.y)
 	else
 		Io.setFullscreen(false)

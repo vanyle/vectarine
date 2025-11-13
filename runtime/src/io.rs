@@ -1,6 +1,6 @@
 use crate::game::Game;
 use mlua::IntoLua;
-use sdl2::{event::Event, keyboard::Keycode};
+use sdl2::{event::Event, keyboard::Keycode, video::FullscreenType};
 use std::collections::HashMap;
 
 pub mod fs;
@@ -33,7 +33,7 @@ pub struct IoEnvState {
     // Outputs
     pub is_window_resizeable: bool,
     pub center_window_request: bool,
-    pub fullscreen_state_request: Option<bool>,
+    pub fullscreen_state_request: Option<FullscreenType>,
     pub window_target_size: Option<(u32, u32)>,
     pub window_title: Option<String>,
 }

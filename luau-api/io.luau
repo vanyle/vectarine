@@ -57,11 +57,12 @@ function module.setWindowTitle(title: string): ()
 	error("Not implemented")
 end
 
---- Set the window to fullscreen or windowed mode
---- Before calling this function,module. you can set the window size to the size of the screen to avoid black borders.
+--- Set the window to fullscreen, windowed, or "desktop fullscreen" (also called fake fullscreen) mode
+--- true means "fullscreen", false means "windowed".
+--- Before calling this function, you can set the window size to the size of the screen to avoid black borders.
 --- On the web, the game is usually embedded in an iframe / player which already provides a fullscreen button, so this
---- function module.does nothing.
-function module.setFullscreen(fullscreen: boolean): ()
+--- function does nothing.
+function module.setFullscreen(fullscreen: true | false | "fullscreen" | "windowed" | "desktop"): ()
 	error("Not implemented")
 end
 
