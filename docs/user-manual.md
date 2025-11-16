@@ -301,22 +301,23 @@ end
 
 # 🖼️ Loading images, scripts, and other resources
 
-You can load images, scripts, and other resources using the `Resources` module.
+You can load images, scripts, and other resources using the `Loader` module.
 Let's see how to works with Images.
 
 ## Images
 
 ```lua
-local Resources = require("@vectarine/resources")
+local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 local Coord = require("@vectarine/coord")
-local imageResource = Resources.loadImage("textures/my_image.png")
+
+local imageResource = Loader.loadImage("textures/my_image.png")
 
 function Update()
-    if Resources.isResourceReady(imageResource) then
+    if imageResource:isReady() then
         -- Draw the image at the center of the screen with size 200x200 pixels
         local size = Coord.pxDelta(Vec.V2(200, 200))
-        Graphics.drawImage(imageResource, Coord.gl(Vec.ZERO2) - size:scale(0.5), size)
+        imageResource.draw(Coord.gl(Vec.ZERO2) - size:scale(0.5), size)
     end
 end
 ```
@@ -325,9 +326,9 @@ end
 > "textures/my_image.png" is different from "textures/My_Image.png"!
 
 When you call `loadImage`, the image is not immediately available on all platforms. On the web, the browser needs to download it first.
-To represent this, `loadImage` returns a _resource handle_ which you can use to check if the resource is ready using `isResourceReady`.
+To represent this, `loadImage` returns a _resource handle_ which you can use to check if the resource is ready using `isReady`.
 
-All functions inside `Resource` behave this way. You can load scripts, shaders, fonts, and other resources using the same pattern.
+All functions inside `Loader` behave this way. You can load scripts, shaders, fonts, and other resources using the same pattern.
 
 ## Sound and Music
 
@@ -350,12 +351,12 @@ show a loading screen or something else.
 Example:
 
 ```lua
-local Resources = require('@vectarine/resources')
+local Loader = require('@vectarine/loader')
 local Event = require('@vectarine/event')
 
-local otherScriptResource = Resources.loadScript("scripts/other_script.luau")
-
+local otherScriptResource = Loader.loadScript("scripts/other_script.luau")
 local resourceReadyEvent = Event.getResourceReadyEvent()
+
 resourceReadyEvent:on(function(resource_handle)
     if otherScriptResource == resource_handle then
         -- The resource is ready, you can access global variables and functions defined inside other_script
@@ -363,7 +364,7 @@ resourceReadyEvent:on(function(resource_handle)
 end)
 
 -- You can also check at any point if a resource is ready or not:
-if Resources.isResourceReady(otherScriptResource) then
+if otherScriptResource:isReady() then
     -- OK
 end
 ```
@@ -406,12 +407,12 @@ return module -- return for the module to make it available
 ```lua
 -- main.luau
 local Debug = require('@vectarine/debug')
-local Resources = require('@vectarine/resources')
+local Loader = require('@vectarine/loader')
 
 --- We use the import 'technique'
-local helperResource, Helper = Resources.loadScript("scripts/helper.luau", require("helper.luau"))
+local helperResource, Helper = Loader.loadScript("scripts/helper.luau", require("helper.luau"))
 
---- Resources.loadScript is what actually executes `helper.luau`.
+--- Loader.loadScript is what actually executes `helper.luau`.
 --- require() returns an empty table, but is properly typed.
 --- When a table is passed as the second argument to loadScript, it is filled with the exports of the script.
 --- This gives the impression that require() returns the exports of the script, but it does not.
@@ -423,7 +424,7 @@ local helperResource, Helper = Resources.loadScript("scripts/helper.luau", requi
 --- This only works if the script returns a table, otherwise, this is ignored.
 
 function Update()
-    if !Resources.isResourceReady(helperResource) then
+    if !helperResource.isReady() then
         -- Don't forget to add a loading state to indicate that the script is not ready yet!
         Debug.fprint("Loading helper.luau...")
         return
@@ -468,10 +469,12 @@ Then you can use it like so:
 ```lua
 local Canvas = require("@vectarine/canvas")
 local Io = require("@vectarine/io")
+local Loader = require("@vectarine/loader")
 local Graphics = require("@vectarine/graphics")
 local Vec = require("@vectarine/vec")
 local V2 = Vec.V2
-local shaderResource = Resource.loadShader("shaders/wave.glsl")
+
+local shaderResource = Loader.loadShader("shaders/wave.glsl")
 
 -- Create a canvas of size 1200x800 pixels and attach the shader to it.
 local canvas = Canvas.createCanvas(1200, 800)
@@ -489,7 +492,7 @@ function Update()
 
     -- The canvas can be drawn like an image.
     -- When it is drawn, the shader is executed
-    Graphics.drawCanvas(canvas, V2(-1, -1), V2(2, 2))
+    canvas:draw(V2(-1, -1), V2(2, 2))
 end
 ```
 
