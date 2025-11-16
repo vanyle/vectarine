@@ -40,25 +40,6 @@ function TilesetResourceImpl.getTiles(self: TilesetResource): { number }
 	error("Not implemented")
 end
 
---MARK: TileId
-
-local TileIdImpl = { tileid = true }
-TileIdImpl.__index = TileIdImpl
---- Represents a unique identifier for a tile in a tileset.
---- This is just a positive integer. You can use the `id` function to get it.
---- TileId 0 represents the absence of a tile.
-export type TileId = typeof(setmetatable({}, TileIdImpl))
-
---- Convert a TileId to an integer.
-function TileIdImpl.id(self: TileId): number
-	error("Not implemented")
-end
-
---- Convert an integer to a TileId. Floats will be rounded down and negative numbers will become 0.
-function module.tileId(id: number): TileId
-	error("Not implemented")
-end
-
 --MARK: Tilemap
 local TilemapResourceImpl = { tilemap = true }
 TilemapResourceImpl.__index = TilemapResourceImpl
@@ -68,26 +49,28 @@ TilemapResourceImpl.__index = TilemapResourceImpl
 --- Tilemaps represents their data efficiently and can be infinite in size.
 export type TilemapResource = typeof(setmetatable({}, TilemapResourceImpl)) & ResourceTypes.Resource
 
-function TilemapResourceImpl.getTile(self: TilemapResource, layer: number, x: number, y: number): TileId
+--- Returns the id of the tile at the location specified.
+---
+--- Returns 0 if the tilemap is not defined at the provided location, the layer does not exist or if the layer is not a tile layer.
+function TilemapResourceImpl.getTile(self: TilemapResource, layer: number, x: number, y: number): number
 	error("Not implemented")
 end
 
---- A high-performance way to draw or access a part of a tilemap
-function TilemapResourceImpl.accessTilemapPart(
+--- A high-performance way to draw or access a part of a tilemap.
+---
+--- Call accessFunction for all tiles with coordinates (x,y) such that:
+--- lowx <= x <= highx and lowy <= y <= highy
+---
+--- If the layer does not exist or the coordinates are outside of where the tilemap is defined, the accessFunction might never be called.
+function TilemapResourceImpl.getTilemapPart(
 	self: TilemapResource,
 	layer: number,
 	lowx: number,
 	lowy: number,
 	highx: number,
 	highy: number,
-	accessFunction: (tileId: TileId, x: number, y: number) -> ()
+	accessFunction: (tileId: number, x: number, y: number) -> ()
 )
-	error("Not implemented")
-end
-
---- Create a new tilemap from a generation function.
---- The tilemap can use caching, so the generationFunction may not be called every time a tile is accessed.
-function module.createTilemap(generationFunction: (layer: number, x: number, y: number) -> TileId): TilemapResource
 	error("Not implemented")
 end
 

@@ -4,11 +4,6 @@
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
 - [ ] Profiler tool
-- [ ] Tiled parsing
-  - [x] Sprites/Tilesets as an asset class
-  - [x] Reading tiled tileset files
-  - [ ] Tilemaps as an asset class
-  - [ ] Reading tiled tilemap files
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
@@ -81,6 +76,11 @@
 
 # Done
 
+- [x] Tiled parsing
+  - [x] Sprites/Tilesets as an asset class
+  - [x] Reading tiled tileset files
+  - [x] Tilemaps as an asset class
+  - [x] Reading tiled tilemap files
 - [x] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`. In general, the API should have a more OOP style.
 - [x] Add `Io.isKeyJustPressed`
 - [x] Allow fake fullscreen as an option

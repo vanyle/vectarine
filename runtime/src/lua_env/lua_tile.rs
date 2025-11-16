@@ -3,7 +3,10 @@ use std::rc::Rc;
 use mlua::{FromLua, IntoLua, UserDataMethods};
 
 use crate::{
-    game_resource::{ResourceId, ResourceManager, tile_resource::TilesetResource},
+    game_resource::{
+        ResourceId, ResourceManager,
+        tile_resource::{TilemapResource, TilesetResource},
+    },
     lua_env::{
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
         lua_vec2::Vec2,
@@ -56,6 +59,39 @@ where
     let mut tileset_content = tileset_res.content.borrow_mut();
     let tileset_content = tileset_content.as_mut()?;
     f(tileset_content)
+}
+
+// ...
+
+#[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
+pub struct TilemapResourceId(ResourceId);
+
+impl ResourceIdWrapper for TilemapResourceId {
+    fn to_resource_id(&self) -> ResourceId {
+        self.0
+    }
+    fn from_id(id: ResourceId) -> Self {
+        Self(id)
+    }
+}
+
+impl IntoLua for TilemapResourceId {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
+    }
+}
+
+impl FromLua for TilemapResourceId {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+        match value {
+            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "TilesetResource".to_string(),
+                message: Some("Expected ImageResource userdata".to_string()),
+            }),
+        }
+    }
 }
 
 pub fn setup_tile_api(
@@ -153,6 +189,78 @@ pub fn setup_tile_api(
                 None => lua.create_table(),
             }
         })
+    })?;
+
+    lua.register_userdata_type::<TilemapResourceId>(|registry| {
+        register_resource_id_methods_on_type(resources, registry);
+
+        registry.add_method("getTile", {
+            let resources = resources.clone();
+            move |_lua, tilemap_resource_id, (layer, x, y): (i32, i32, i32)| {
+                let tileset_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
+                let Ok(tileset_res) = tileset_res else {
+                    return Ok(0);
+                };
+                let mut tileset_content = tileset_res.content.borrow_mut();
+                let tileset_content = tileset_content.as_mut();
+                let tile_id = tileset_content
+                    .and_then(|content| content.layers().nth(layer as usize))
+                    .and_then(|l| l.as_tile_layer())
+                    .and_then(|l| l.get_tile(x, y))
+                    .map(|tile| tile.id())
+                    .unwrap_or(0);
+                Ok(tile_id)
+            }
+        });
+
+        registry.add_method("getTilemapPart", {
+            let resources = resources.clone();
+            move |_lua,
+                  tilemap_resource_id,
+                  (layer, lx, ly, hx, hy, access_fn): (
+                i32,
+                i32,
+                i32,
+                i32,
+                i32,
+                mlua::Function,
+            )| {
+                let tileset_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
+                let Ok(tileset_res) = tileset_res else {
+                    return Ok(());
+                };
+                let mut tileset_content = tileset_res.content.borrow_mut();
+                let tileset_content = tileset_content.as_mut();
+                let layer = tileset_content
+                    .and_then(|content| content.layers().nth(layer as usize))
+                    .and_then(|l| l.as_tile_layer());
+                let Some(layer) = layer else{
+                    return Ok(());
+                };
+                match layer {
+                    tiled::TileLayer::Finite(finite_layer) => {
+                        for x in lx..hx{
+                            for y in ly..hy{
+                                if let Some(tile) = finite_layer.get_tile_data(x, y) {
+                                    let _ = access_fn.call::<()>((tile.id(), x, y));
+                                }
+                            }
+                        }
+                    },
+                    tiled::TileLayer::Infinite(infinite_layer) => {
+                        for x in lx..hx{
+                            for y in ly..hy{
+                                if let Some(tile) = infinite_layer.get_tile_data(x, y) {
+                                    let _ = access_fn.call::<()>((tile.id(), x, y));
+                                }
+                            }
+                        }
+                    }
+                };
+
+                Ok(())
+            }
+        });
     })?;
 
     Ok(tile_module)
