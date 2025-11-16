@@ -4,16 +4,15 @@
   - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [ ] Implement the API in Rust
 - [ ] Profiler tool
-- [ ] Rework the resource API to use futures to prevent use of unloaded resources
 - [ ] Tiled parsing
-  - [ ] Sprites/Tilesets as an asset class
-  - [ ] Reading tiled files
-  - [ ] Provide an API to name parts of an image
+  - [x] Sprites/Tilesets as an asset class
+  - [x] Reading tiled tileset files
+  - [ ] Tilemaps as an asset class
+  - [ ] Reading tiled tilemap files
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
 - [ ] Potential performance improvements
-  - [ ] No base64 for loading data on the web
   - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.
   - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
   - [ ] Check if StreamDraw / StaticDraw actually does something
@@ -31,6 +30,8 @@
 - [ ] True MacOS exports with an app folder
 - [ ] Add a CI
 - [ ] Animation system from multiple PNG files
+- [ ] Add search in the resource window
+- [ ] Rework the resource API to use futures to prevent use of unloaded resources
 - [ ] Entity system
   - [ ] Add a concept of a 'PhysicsWorld2D'
   - [ ] Under the hood, this is a QuadTree

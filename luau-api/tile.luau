@@ -1,4 +1,5 @@
 local ResourceTypes = require("@vectarine/resource")
+local Vec = require("@vectarine/vec")
 local module = {}
 
 --MARK: Tileset
@@ -10,10 +11,32 @@ TilesetResourceImpl.__index = TilesetResourceImpl
 --- Drawing multiple tiles from the same tileset is more efficient than drawing multiple images.
 export type TilesetResource = typeof(setmetatable({}, TilesetResourceImpl)) & ResourceTypes.Resource
 
+--- Get the size of a tile in pixels
+function TilesetResourceImpl.getTileSize(): Vec.Vec2
+	error("Not implemented")
+end
+
+--- Get the size of a tile, as the ratio of the full image.
+--- For example, if you have 8 tiles per row and column, this will return V2(1/8, 1/8)
+function TilesetResourceImpl.getTileRatio(): Vec.Vec2
+	error("Not implemented")
+end
+
+--- Get the position of a tile in the image.
+--- The position is returned as a ratio of the full image.
 function TilesetResourceImpl.getTile(
 	self: TilesetResource,
-	tilename: string
-): { x: number, y: number, width: number, height: number }
+	tileId: number
+): {
+	pos: Vec.Vec2,
+	probability: number,
+	type: string,
+}?
+	error("Not implemented")
+end
+
+--- Return a list of tile ids defined in the tileset provided.
+function TilesetResourceImpl.getTiles(self: TilesetResource): { number }
 	error("Not implemented")
 end
 

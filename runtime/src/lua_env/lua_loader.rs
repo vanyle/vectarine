@@ -4,6 +4,7 @@ use crate::{
     game_resource::{
         ResourceManager, audio_resource::AudioResource, font_resource::FontResource,
         image_resource::ImageResource, shader_resource::ShaderResource,
+        tile_resource::TilesetResource,
     },
     graphics::gltexture::ImageAntialiasing,
     lua_env::{
@@ -13,6 +14,7 @@ use crate::{
         lua_image::ImageResourceId,
         lua_resource::{ResourceIdWrapper, ScriptResourceId, register_resource_id_methods_on_type},
         lua_text::FontResourceId,
+        lua_tile::TilesetResourceId,
     },
 };
 
@@ -67,6 +69,14 @@ pub fn setup_loader_api(
         move |_, path: String| {
             let id = resources.schedule_load_resource::<ShaderResource>(Path::new(&path));
             Ok(ShaderResourceId::from_id(id))
+        }
+    });
+
+    add_fn_to_table(lua, &loader_module, "loadTileset", {
+        let resources = resources.clone();
+        move |_, path: String| {
+            let id = resources.schedule_load_resource::<TilesetResource>(Path::new(&path));
+            Ok(TilesetResourceId::from_id(id))
         }
     });
 

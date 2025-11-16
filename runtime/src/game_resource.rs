@@ -20,6 +20,7 @@ pub mod image_resource;
 pub mod script_resource;
 pub mod shader_resource;
 pub mod text_resource;
+pub mod tile_resource;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Status {

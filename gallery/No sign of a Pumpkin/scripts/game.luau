@@ -20,6 +20,8 @@ local _, drawHelpers = Loader.loadScript("scripts/draw_helpers.luau", require("d
 
 local sign_image = Loader.loadImage("textures/Signs/small/Sign.png", false)
 
+local tileset = Loader.loadTileset("levels/gloomy-forest.tsx")
+
 if _G.isReady == nil then
 	_G.isReady = false
 end

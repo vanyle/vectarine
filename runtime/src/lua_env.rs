@@ -16,6 +16,7 @@ pub mod lua_persist;
 pub mod lua_resource;
 pub mod lua_screen;
 pub mod lua_text;
+pub mod lua_tile;
 pub mod lua_vec2;
 
 use crate::console::{ConsoleMessage, Verbosity};
@@ -119,6 +120,9 @@ impl LuaEnvironment {
         let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/audio", audio_module)
             .unwrap();
+
+        let tile_module = lua_tile::setup_tile_api(&lua, &resources).unwrap();
+        lua.register_module("@vectarine/tile", tile_module).unwrap();
 
         let loader_module = lua_loader::setup_loader_api(&lua, &resources).unwrap();
         lua.register_module("@vectarine/loader", loader_module)
