@@ -1,9 +1,9 @@
 local Io = require("@vectarine/io")
-local Resources = require("@vectarine/resources")
+local Loader = require("@vectarine/loader")
 local Screen = require("@vectarine/screen")
 
-local _menuResource, menu = Resources.loadScript("scripts/menu.luau", require("menu.luau"))
-local _gameResource, game = Resources.loadScript("scripts/gameplay.luau", require("gameplay.luau"))
+local _menuResource, menu = Loader.loadScript("scripts/menu.luau", require("menu.luau"))
+local _gameResource, game = Loader.loadScript("scripts/gameplay.luau", require("gameplay.luau"))
 
 Io.setResizeable(true)
 

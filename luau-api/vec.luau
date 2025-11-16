@@ -23,6 +23,12 @@ function module.V2(x: number, y: number): Vec2
 	return nil :: any
 end
 
+--- Create a new 2d vector from an angle and a length.
+--- This is the same as: `V2(math.cos(angle), math.sin(angle)):scale(length)`
+function module.Euler(angle: number, length: number): Vec2
+	error("Not implemented")
+end
+
 function Vec2Impl.scale(a: Vec2, k: number): Vec2
 	error("Not implemented")
 end

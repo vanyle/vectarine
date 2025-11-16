@@ -1,12 +1,11 @@
-local Debug = require("@vectarine/debug")
+local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
-local Resource = require("@vectarine/resources")
 local Vec = require("@vectarine/vec")
 local V2 = Vec.V2
 
 local pumpkin_animation = {}
 for i = 1, 6 do
-	local img = Resource.loadImage("textures/PumpkinMan/PumpkinMan" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/PumpkinMan/PumpkinMan" .. tostring(i) .. ".png", false)
 	table.insert(pumpkin_animation, img)
 end
 

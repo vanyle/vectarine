@@ -8,6 +8,7 @@
 - [ ] Tiled parsing
   - [ ] Sprites/Tilesets as an asset class
   - [ ] Reading tiled files
+  - [ ] Provide an API to name parts of an image
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
@@ -17,14 +18,14 @@
   - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
-
   - [ ] V3, V4
   - [ ] V4 is a color (provide default colors and a Color(r,g,b,a) function)
-  - [ ] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`. In general, the API should have a more OOP style.
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
+  - [ ] Add more convenience functions for V2 such as a:distance(b) for (a-b):length() 
+
 
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
@@ -79,6 +80,7 @@
 
 # Done
 
+- [x] Canvas API should be `canvas:paint` instead of `Canvas.paint(canvas)`. In general, the API should have a more OOP style.
 - [x] Add `Io.isKeyJustPressed`
 - [x] Allow fake fullscreen as an option
 - [x] Make the "create new project" button actually work.

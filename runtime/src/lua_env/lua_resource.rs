@@ -1,95 +1,65 @@
-use std::{cell::RefCell, path::Path, rc::Rc};
+use std::rc::Rc;
 
-use crate::{
-    game_resource::{
-        ResourceId, ResourceManager, audio_resource::AudioResource, font_resource::FontResource,
-        image_resource::ImageResource, shader_resource,
-    },
-    graphics::gltexture::ImageAntialiasing,
-    lua_env::add_fn_to_table,
-};
+use mlua::{FromLua, IntoLua, UserDataMethods, UserDataRegistry};
 
-/// Adds to the Lua environment functions to interact with the outside environment
-/// For example, the keyboard, the mouse, the window, etc...
-/// This is called the IO API.
-pub fn setup_resource_api(
-    lua: &Rc<mlua::Lua>,
+use crate::game_resource::{ResourceId, ResourceManager};
+
+pub trait ResourceIdWrapper: std::cmp::Eq + FromLua {
+    fn to_resource_id(&self) -> ResourceId;
+    fn from_id(id: ResourceId) -> Self;
+}
+
+pub fn register_resource_id_methods_on_type<T: ResourceIdWrapper>(
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<mlua::Table> {
-    let resources_module = lua.create_table()?;
-
-    add_fn_to_table(lua, &resources_module, "loadImage", {
-        let resources = resources.clone();
-        move |_, (path, antialiasing): (String, Option<bool>)| {
-            let id = resources.schedule_load_resource_with_builder::<ImageResource, _>(
-                Path::new(&path),
-                || ImageResource {
-                    texture: RefCell::new(None),
-                    antialiasing: antialiasing.map(|is_antialiasing| {
-                        if is_antialiasing {
-                            ImageAntialiasing::Linear
-                        } else {
-                            ImageAntialiasing::Nearest
-                        }
-                    }),
-                },
-            );
-            Ok(id)
-        }
+    registry: &mut UserDataRegistry<T>,
+) {
+    registry.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (ResourceId,)| {
+        Ok(format!("{}", id))
     });
-
-    add_fn_to_table(lua, &resources_module, "loadFont", {
-        let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<FontResource>(Path::new(&path));
-            Ok(id)
-        }
+    registry.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (T, T)| {
+        Ok(id1 == id2)
     });
-
-    add_fn_to_table(lua, &resources_module, "loadAudio", {
+    registry.add_method("getStatus", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<AudioResource>(Path::new(&path));
-            Ok(id)
-        }
-    });
-
-    add_fn_to_table(lua, &resources_module, "loadShader", {
-        let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources
-                .schedule_load_resource::<shader_resource::ShaderResource>(Path::new(&path));
-            Ok(id)
-        }
-    });
-
-    add_fn_to_table(lua, &resources_module, "loadScript", {
-        let resources = resources.clone();
-        move |lua, (path, results): (String, Option<mlua::Table>)| {
-            if let Some(target_table) = results {
-                let (id, table) =
-                    resources.schedule_load_script_resource(Path::new(&path), target_table);
-                return Ok((id, mlua::Value::Table(table)));
-            }
-            let dummy_table = lua.create_table().unwrap();
-            let (id, table) =
-                resources.schedule_load_script_resource(Path::new(&path), dummy_table);
-            Ok((id, mlua::Value::Table(table)))
-        }
-    });
-
-    add_fn_to_table(lua, &resources_module, "getResourceStatus", {
-        let resources = resources.clone();
-        move |_, id: ResourceId| {
-            let status = resources.get_holder_by_id(id).get_status();
+        move |_, id: &T, (): ()| {
+            let status = resources.get_holder_by_id(id.to_resource_id()).get_status();
             Ok(status.to_string())
         }
     });
-
-    add_fn_to_table(lua, &resources_module, "isResourceReady", {
+    registry.add_method("isReady", {
         let resources = resources.clone();
-        move |_, id: ResourceId| Ok(resources.get_holder_by_id(id).is_loaded())
+        move |_, id: &T, (): ()| Ok(resources.get_holder_by_id(id.to_resource_id()).is_loaded())
     });
+}
 
-    Ok(resources_module)
+// MARK: Script Resource
+#[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
+pub struct ScriptResourceId(ResourceId);
+
+impl ResourceIdWrapper for ScriptResourceId {
+    fn to_resource_id(&self) -> ResourceId {
+        self.0
+    }
+    fn from_id(id: ResourceId) -> Self {
+        Self(id)
+    }
+}
+
+impl IntoLua for ScriptResourceId {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
+    }
+}
+
+impl FromLua for ScriptResourceId {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+        match value {
+            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "ScriptResource".to_string(),
+                message: Some("Expected ScriptResource userdata".to_string()),
+            }),
+        }
+    }
 }

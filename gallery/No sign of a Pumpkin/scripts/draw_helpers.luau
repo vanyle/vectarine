@@ -2,14 +2,14 @@ local Coord = require("@vectarine/coord")
 local Debug = require("@vectarine/debug")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
-local Resource = require("@vectarine/resources")
+local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 
-local _, levelDesign = Resource.loadScript("scripts/level_design.luau", require("level_design.luau"))
-local _, coordHelpers = Resource.loadScript("scripts/coord_helpers.luau", require("coord_helpers.luau"))
-local _, mathHelpers = Resource.loadScript("scripts/math_helpers.luau", require("math_helpers.luau"))
+local _, levelDesign = Loader.loadScript("scripts/level_design.luau", require("level_design.luau"))
+local _, coordHelpers = Loader.loadScript("scripts/coord_helpers.luau", require("coord_helpers.luau"))
+local _, mathHelpers = Loader.loadScript("scripts/math_helpers.luau", require("math_helpers.luau"))
 
-local environment = Resource.loadImage("textures/environment/gloomy-forest.png", false)
+local environment = Loader.loadImage("textures/environment/gloomy-forest.png", false)
 type PathMarker = {
 	position: Vec.Vec2,
 	next_marker: PathMarker?,
@@ -34,13 +34,13 @@ local function drawPosition(GameState, worldPos: Vec.Vec2, color: { r: number, g
 
 	-- Draw a 6x6 pixel cross
 	-- Horizontal line (6px wide, 1px tall)
-	local h_start = screen_pos + Coord.pxDelta(V2(-CROSS_SIZE_PX / 2, 0), windowSize) -- Center the 6px line
-	local h_size = Coord.pxDelta(V2(CROSS_SIZE_PX, CROSS_THICKNESS_PX), windowSize)
+	local h_start = screen_pos + Coord.pxVec(V2(-CROSS_SIZE_PX / 2, 0), windowSize) -- Center the 6px line
+	local h_size = Coord.pxVec(V2(CROSS_SIZE_PX, CROSS_THICKNESS_PX), windowSize)
 	Graphics.drawRect(h_start, h_size, pos_color)
 
 	-- Vertical line (1px wide, 6px tall)
-	local v_start = screen_pos + Coord.pxDelta(V2(0, -CROSS_SIZE_PX / 2), windowSize) -- Center the 6px line
-	local v_size = Coord.pxDelta(V2(CROSS_THICKNESS_PX, CROSS_SIZE_PX), windowSize)
+	local v_start = screen_pos + Coord.pxVec(V2(0, -CROSS_SIZE_PX / 2), windowSize) -- Center the 6px line
+	local v_size = Coord.pxVec(V2(CROSS_THICKNESS_PX, CROSS_SIZE_PX), windowSize)
 	Graphics.drawRect(v_start, v_size, pos_color)
 end
 
@@ -88,8 +88,7 @@ local function drawEnvironmentTile(GameState, tileName: string, position: Vec.Ve
 
 	local permutated = mathHelpers.permute(dest_p1, dest_p2, dest_p3, dest_p4, rotation)
 
-	Graphics.drawImagePart(
-		environment,
+	environment:drawPart(
 		permutated[1],
 		permutated[2],
 		permutated[3],
@@ -100,7 +99,7 @@ local function drawEnvironmentTile(GameState, tileName: string, position: Vec.Ve
 end
 
 -- Clear the currently displayed asset (Large Sign)
-local function clear_displayed_asset(GameState)
+local function clear_displayed_asset(GameState: any)
 	GameState.displayed_asset = nil
 	GameState.displayed_asset_name = ""
 	Debug.print("Cleared displayed asset")

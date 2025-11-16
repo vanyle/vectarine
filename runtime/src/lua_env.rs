@@ -9,10 +9,13 @@ pub mod lua_coord;
 pub mod lua_debug;
 pub mod lua_event;
 pub mod lua_graphics;
+pub mod lua_image;
 pub mod lua_io;
+pub mod lua_loader;
 pub mod lua_persist;
 pub mod lua_resource;
 pub mod lua_screen;
+pub mod lua_text;
 pub mod lua_vec2;
 
 use crate::console::{ConsoleMessage, Verbosity};
@@ -79,14 +82,22 @@ impl LuaEnvironment {
         lua.register_module("@vectarine/coord", coords_module)
             .unwrap();
 
-        let graphics_module =
-            lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/graphics", graphics_module)
-            .unwrap();
-
         let canvas_module =
             lua_canvas::setup_canvas_api(&lua, &batch, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/canvas", canvas_module)
+            .unwrap();
+
+        let image_module =
+            lua_image::setup_image_api(&lua, &batch, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/image", image_module)
+            .unwrap();
+
+        let text_module = lua_text::setup_text_api(&lua, &batch, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/text", text_module).unwrap();
+
+        let graphics_module =
+            lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();
+        lua.register_module("@vectarine/graphics", graphics_module)
             .unwrap();
 
         let screen_module =
@@ -101,16 +112,16 @@ impl LuaEnvironment {
         lua.register_module("@vectarine/debug", debug_module)
             .unwrap();
 
-        let resources_module = lua_resource::setup_resource_api(&lua, &resources).unwrap();
-        lua.register_module("@vectarine/resources", resources_module)
-            .unwrap();
-
         let (event_module, default_events) = lua_event::setup_event_api(&lua).unwrap();
         lua.register_module("@vectarine/event", event_module)
             .unwrap();
 
         let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/audio", audio_module)
+            .unwrap();
+
+        let loader_module = lua_loader::setup_loader_api(&lua, &resources).unwrap();
+        lua.register_module("@vectarine/loader", loader_module)
             .unwrap();
 
         let original_require = lua.globals().get::<mlua::Function>("require").unwrap();

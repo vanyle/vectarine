@@ -1,6 +1,6 @@
 local Debug = require("@vectarine/debug")
 local Event = require("@vectarine/event")
-local Resources = require("@vectarine/resources")
+local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 
 local module = {}
@@ -13,7 +13,7 @@ export type Entity = {
 	attackDamage: number,
 }
 
-local _, utils = Resources.loadScript("scripts/utils.luau", require("utils.luau"))
+local _, utils = Loader.loadScript("scripts/utils.luau", require("utils.luau"))
 local entities: { Entity } = utils.initFromGlobal({}, "entities")
 
 local entitySpawnRate = 1.0

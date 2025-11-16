@@ -3,20 +3,19 @@ use std::{cell::RefCell, rc::Rc};
 use mlua::{AnyUserData, Table};
 
 use crate::{
-    game_resource::{self, ResourceId, font_resource::FontResource, image_resource::ImageResource},
-    graphics::{batchdraw, glstencil::draw_with_mask, shape::Quad},
+    game_resource,
+    graphics::{batchdraw, glstencil::draw_with_mask},
     io,
     lua_env::{
-        add_fn_to_table, get_gl_handle, lua_canvas,
+        add_fn_to_table, get_gl_handle,
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
-        lua_vec2::Vec2,
     },
 };
 
 pub fn setup_graphics_api(
     lua: &Rc<mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
-    env_state: &Rc<RefCell<io::IoEnvState>>,
+    _env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
 ) -> mlua::Result<mlua::Table> {
     let graphics_module = lua.create_table()?;
@@ -93,60 +92,6 @@ pub fn setup_graphics_api(
         }
     });
 
-    add_fn_to_table(lua, &graphics_module, "drawImage", {
-        let batch = batch.clone();
-        let resources = resources.clone();
-        move |_, (id, mpos, msize): (ResourceId, AnyUserData, AnyUserData)| {
-            let pos = get_pos_as_vec2(mpos)?;
-            let size = get_size_as_vec2(msize)?;
-            let tex = resources.get_by_id::<ImageResource>(id);
-            let Ok(tex) = tex else {
-                return Ok(());
-            };
-            let tex = tex.texture.borrow();
-            let Some(tex) = tex.as_ref() else {
-                return Ok(());
-            };
-            batch
-                .borrow_mut()
-                .draw_image(pos.x, pos.y, size.x, size.y, tex);
-            Ok(())
-        }
-    });
-
-    add_fn_to_table(lua, &graphics_module, "drawImagePart", {
-        let batch = batch.clone();
-        let resources = resources.clone();
-        move |_,
-              (id, mp1, mp2, mp3, mp4, src_pos, src_size): (
-            ResourceId,
-            AnyUserData,
-            AnyUserData,
-            AnyUserData,
-            AnyUserData,
-            Vec2,
-            Vec2,
-        )| {
-            let p1 = get_pos_as_vec2(mp1)?;
-            let p2 = get_pos_as_vec2(mp2)?;
-            let p3 = get_pos_as_vec2(mp3)?;
-            let p4 = get_pos_as_vec2(mp4)?;
-            let tex = resources.get_by_id::<ImageResource>(id);
-            let Ok(tex) = tex else {
-                return Ok(());
-            };
-            let tex = tex.texture.borrow();
-            let Some(tex) = tex.as_ref() else {
-                return Ok(());
-            };
-            let quad = Quad { p1, p2, p3, p4 };
-            batch
-                .borrow_mut()
-                .draw_image_part(quad, tex, src_pos, src_size);
-            Ok(())
-        }
-    });
-
     add_fn_to_table(lua, &graphics_module, "drawWithMask", {
         let batch = batch.clone();
         let resources = resources.clone();
@@ -167,73 +112,6 @@ pub fn setup_graphics_api(
         }
     });
 
-    add_fn_to_table(lua, &graphics_module, "drawCanvas", {
-        let batch = batch.clone();
-        let env = env_state.clone();
-        move |_, (canvas, mpos, msize): (lua_canvas::RcFramebuffer, AnyUserData, AnyUserData)| {
-            let pos = get_pos_as_vec2(mpos)?;
-            let size = get_size_as_vec2(msize)?;
-            let framebuffer = canvas.gl();
-            let shader = canvas.current_shader();
-            batch
-                .borrow_mut()
-                .draw_canvas(pos, size, framebuffer, shader, &env.borrow());
-            Ok(())
-        }
-    });
-
-    add_fn_to_table(lua, &graphics_module, "drawCanvasPart", {
-        let batch = batch.clone();
-        let env_state = env_state.clone();
-        move |_,
-              (canvas, mp1, mp2, mp3, mp4, src_pos, src_size): (
-            lua_canvas::RcFramebuffer,
-            AnyUserData,
-            AnyUserData,
-            AnyUserData,
-            AnyUserData,
-            Vec2,
-            Vec2,
-        )| {
-            let p1 = get_pos_as_vec2(mp1)?;
-            let p2 = get_pos_as_vec2(mp2)?;
-            let p3 = get_pos_as_vec2(mp3)?;
-            let p4 = get_pos_as_vec2(mp4)?;
-            let framebuffer = canvas.gl();
-            let shader = canvas.current_shader();
-            batch.borrow_mut().draw_canvas_part(
-                Quad { p1, p2, p3, p4 },
-                framebuffer,
-                src_pos,
-                src_size,
-                shader,
-                &env_state.borrow(),
-            );
-            Ok(())
-        }
-    });
-
-    add_fn_to_table(lua, &graphics_module, "drawText", {
-        let batch = batch.clone();
-        let resources = resources.clone();
-        move |_, (text, font, mpos, size, color): (String, ResourceId, AnyUserData, f32, Table)| {
-            let pos = get_pos_as_vec2(mpos)?;
-            let color = table_to_color(color);
-            let font_resource = resources.get_by_id::<FontResource>(font);
-            let Ok(font_resource) = font_resource else {
-                return Ok(());
-            };
-            let font_resource = font_resource.font_rendering.borrow();
-            let Some(font_resource) = font_resource.as_ref() else {
-                return Ok(());
-            };
-            batch
-                .borrow_mut()
-                .draw_text(pos.x, pos.y, &text, color, size, font_resource);
-            Ok(())
-        }
-    });
-
     add_fn_to_table(lua, &graphics_module, "clear", {
         let batch = batch.clone();
         move |_, (color,): (Table,)| {
@@ -242,28 +120,6 @@ pub fn setup_graphics_api(
                 .borrow_mut()
                 .clear(color[0], color[1], color[2], color[3]);
             Ok(())
-        }
-    });
-
-    add_fn_to_table(lua, &graphics_module, "measureText", {
-        let resources = resources.clone();
-        let env_state = env_state.clone();
-        move |lua, (text, font, font_size): (String, ResourceId, f32)| {
-            let font_resource = resources.get_by_id::<FontResource>(font);
-            let result = lua.create_table().unwrap();
-            let Ok(font_resource) = font_resource else {
-                let _ = result.set("width", 0.0);
-                let _ = result.set("height", 0.0);
-                let _ = result.set("bearingY", 0.0);
-                return Ok(result);
-            };
-            let env_state = env_state.borrow();
-            let ratio = env_state.window_width as f32 / env_state.window_height as f32;
-            let (width, height, max_ascent) = font_resource.measure_text(&text, font_size, ratio);
-            let _ = result.set("width", width);
-            let _ = result.set("height", height);
-            let _ = result.set("bearingY", max_ascent);
-            Ok(result)
         }
     });
 

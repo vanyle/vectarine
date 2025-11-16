@@ -1,6 +1,6 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc};
 
-use mlua::{AnyUserData, UserData};
+use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     game_resource::{self, ResourceId, shader_resource::ShaderResource},
@@ -8,15 +8,52 @@ use crate::{
         batchdraw, glframebuffer,
         gltexture::ImageAntialiasing,
         gluniforms::{UniformValue, Uniforms},
+        shape::Quad,
     },
     io,
-    lua_env::{add_fn_to_table, lua_vec2::Vec2},
+    lua_env::{
+        add_fn_to_table,
+        lua_coord::{get_pos_as_vec2, get_size_as_vec2},
+        lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
+        lua_vec2::Vec2,
+    },
 };
 
 #[derive(Clone)]
 pub struct RcFramebuffer {
     buffer: Rc<glframebuffer::Framebuffer>,
-    shader: RefCell<Option<ResourceId>>,
+    shader: RefCell<Option<ShaderResourceId>>,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub struct ShaderResourceId(ResourceId);
+
+impl ResourceIdWrapper for ShaderResourceId {
+    fn to_resource_id(&self) -> ResourceId {
+        self.0
+    }
+    fn from_id(id: ResourceId) -> Self {
+        Self(id)
+    }
+}
+
+impl IntoLua for ShaderResourceId {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
+    }
+}
+
+impl FromLua for ShaderResourceId {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+        match value {
+            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "ImageResource".to_string(),
+                message: Some("Expected ImageResource userdata".to_string()),
+            }),
+        }
+    }
 }
 
 impl RcFramebuffer {
@@ -30,19 +67,13 @@ impl RcFramebuffer {
         self.buffer.deref()
     }
     pub fn current_shader(&self) -> Option<ResourceId> {
-        *self.shader.borrow()
+        self.shader.borrow().map(|s| s.to_resource_id())
     }
 }
 
-impl UserData for RcFramebuffer {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method(
-            "setShader",
-            |_, canvas, (shader,): (Option<ResourceId>,)| {
-                canvas.shader.replace(shader);
-                Ok(())
-            },
-        );
+impl mlua::IntoLua for RcFramebuffer {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
     }
 }
 
@@ -62,7 +93,7 @@ impl mlua::FromLua for RcFramebuffer {
 pub fn setup_canvas_api(
     lua: &Rc<mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
-    _env_state: &Rc<RefCell<io::IoEnvState>>,
+    env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
 ) -> mlua::Result<mlua::Table> {
     let canvas_module = lua.create_table()?;
@@ -80,77 +111,109 @@ pub fn setup_canvas_api(
         }
     });
 
-    add_fn_to_table(lua, &canvas_module, "paint", {
-        let batch = batch.clone();
-        let resources = resources.clone();
-        move |_lua, (canvas, func): (RcFramebuffer, mlua::Function)| {
-            let mut result = Ok(());
-            batch.borrow_mut().draw(&resources, true); // flush before changing framebuffer
-            canvas.gl().using(|| {
-                result = func.call::<()>(());
-                batch.borrow_mut().draw(&resources, true);
-            });
-            result
-        }
-    });
+    lua.register_userdata_type::<ShaderResourceId>(|registry| {
+        register_resource_id_methods_on_type(resources, registry);
+    })?;
 
-    add_fn_to_table(lua, &canvas_module, "setUniform", {
-        let resources = resources.clone();
-        move |_lua, (canvas, name, value): (RcFramebuffer, String, f32)| {
-            let shader_id = canvas.current_shader();
-            let Some(shader_id) = shader_id else {
-                return Ok(()); // no op if no shader is set
-            };
-            let shader = resources.get_by_id::<ShaderResource>(shader_id);
-            let Ok(shader) = shader else {
-                return Ok(()); // no op if shader resource is not loaded
-            };
-            let mut shader = shader.shader.borrow_mut();
-            let shader = shader.as_mut();
-            let Some(shader) = shader else {
-                return Ok(()); // no op if shader is not compiled
-            };
-            shader.shader.use_program();
-            let mut uniforms = Uniforms::new();
-            uniforms.add(&name, UniformValue::Float(value));
-            shader.shader.set_uniforms(&uniforms);
-            Ok(())
-        }
-    });
-
-    add_fn_to_table(lua, &canvas_module, "getSize", {
-        let resources = resources.clone();
-        move |_lua, (canvas_or_image,): (AnyUserData,)| {
-            let maybe_canvas = canvas_or_image.borrow::<RcFramebuffer>();
-            if let Ok(canvas) = maybe_canvas {
-                let size = Vec2::new(canvas.gl().width() as f32, canvas.gl().height() as f32);
-                return Ok(size);
-            }
-            let maybe_image = canvas_or_image.borrow::<ResourceId>();
-            let Ok(resource_id) = maybe_image else {
-                return Err(mlua::Error::FromLuaConversionError {
-                    from: "unknown",
-                    to: "Canvas | ImageResource".to_string(),
-                    message: Some("Expected Canvas or ImageResource userdata".to_string()),
+    lua.register_userdata_type::<RcFramebuffer>(|registry| {
+        registry.add_method(
+            "setShader",
+            |_, canvas, (shader,): (Option<ShaderResourceId>,)| {
+                canvas.shader.replace(shader);
+                Ok(())
+            },
+        );
+        registry.add_method("paint", {
+            let batch = batch.clone();
+            let resources = resources.clone();
+            move |_, canvas, (func,): (mlua::Function,)| {
+                let mut result = Ok(());
+                batch.borrow_mut().draw(&resources, true); // flush before changing framebuffer
+                canvas.gl().using(|| {
+                    result = func.call::<()>(());
+                    batch.borrow_mut().draw(&resources, true);
                 });
-            };
-            let image_resource =
-                resources.get_by_id::<game_resource::image_resource::ImageResource>(*resource_id);
-            let Ok(image_resource) = image_resource else {
-                return Err(mlua::Error::RuntimeError(
-                    "ImageResource not found".to_string(),
-                ));
-            };
-            let image_resource = image_resource.texture.borrow();
-            let Some(image_texture) = image_resource.as_ref() else {
-                return Err(mlua::Error::RuntimeError(
-                    "ImageResource texture not loaded".to_string(),
-                ));
-            };
-            let size = Vec2::new(image_texture.width() as f32, image_texture.height() as f32);
-            Ok(size)
-        }
-    });
+                result
+            }
+        });
+
+        registry.add_method("setUniform", {
+            let resources = resources.clone();
+            move |_lua, canvas, (name, value): (String, f32)| {
+                let shader_id = canvas.current_shader();
+                let Some(shader_id) = shader_id else {
+                    return Ok(()); // no op if no shader is set
+                };
+                let shader = resources.get_by_id::<ShaderResource>(shader_id);
+                let Ok(shader) = shader else {
+                    return Ok(()); // no op if shader resource is not loaded
+                };
+                let mut shader = shader.shader.borrow_mut();
+                let shader = shader.as_mut();
+                let Some(shader) = shader else {
+                    return Ok(()); // no op if shader is not compiled
+                };
+                shader.shader.use_program();
+                let mut uniforms = Uniforms::new();
+                uniforms.add(&name, UniformValue::Float(value));
+                shader.shader.set_uniforms(&uniforms);
+                Ok(())
+            }
+        });
+
+        registry.add_method("getSize", {
+            move |_lua, canvas, (): ()| {
+                let size = Vec2::new(canvas.gl().width() as f32, canvas.gl().height() as f32);
+                Ok(size)
+            }
+        });
+
+        registry.add_method("draw", {
+            let batch = batch.clone();
+            let env = env_state.clone();
+            move |_, canvas, (mpos, msize): (AnyUserData, AnyUserData)| {
+                let pos = get_pos_as_vec2(mpos)?;
+                let size = get_size_as_vec2(msize)?;
+                let framebuffer = canvas.gl();
+                let shader = canvas.current_shader();
+                batch
+                    .borrow_mut()
+                    .draw_canvas(pos, size, framebuffer, shader, &env.borrow());
+                Ok(())
+            }
+        });
+
+        registry.add_method("drawPart", {
+            let batch = batch.clone();
+            let env_state = env_state.clone();
+            move |_,
+                  canvas,
+                  (mp1, mp2, mp3, mp4, src_pos, src_size): (
+                AnyUserData,
+                AnyUserData,
+                AnyUserData,
+                AnyUserData,
+                Vec2,
+                Vec2,
+            )| {
+                let p1 = get_pos_as_vec2(mp1)?;
+                let p2 = get_pos_as_vec2(mp2)?;
+                let p3 = get_pos_as_vec2(mp3)?;
+                let p4 = get_pos_as_vec2(mp4)?;
+                let framebuffer = canvas.gl();
+                let shader = canvas.current_shader();
+                batch.borrow_mut().draw_canvas_part(
+                    Quad { p1, p2, p3, p4 },
+                    framebuffer,
+                    src_pos,
+                    src_size,
+                    shader,
+                    &env_state.borrow(),
+                );
+                Ok(())
+            }
+        });
+    })?;
 
     Ok(canvas_module)
 }

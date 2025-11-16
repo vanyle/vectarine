@@ -2,18 +2,17 @@ local module = {}
 
 local Coord = require("@vectarine/coord")
 local Debug = require("@vectarine/debug")
-local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
-local Resources = require("@vectarine/resources")
+local Loader = require("@vectarine/loader")
+local Persist = require("@vectarine/persist")
 local Screen = require("@vectarine/screen")
 local Vec = require("@vectarine/vec")
 local entity = require("./entity")
 
-local logoResource = Resources.loadImage("textures/logo.png")
-local fontResource = Resources.loadFont("fonts/arial.ttf")
-local _, utils = Resources.loadScript("scripts/utils.luau", require("utils.luau"))
-local _, entity = Resources.loadScript("scripts/entity.luau", require("entity.luau"))
+-- local logoResource = Loader.loadImage("textures/logo.png")
+local fontResource = Loader.loadFont("fonts/arial.ttf")
+local _, entity = Loader.loadScript("scripts/entity.luau", require("entity.luau"))
 
 type Player = {
 	position: Vec.Vec2,
@@ -35,18 +34,9 @@ local defaultPlayer = {
 	attackDamage = 20,
 }
 
-local camera = nil
-local player = nil
-local projectiles: { Projectile } = nil
-
-Event.getResourceLoadedEvent():on(function(resource)
-	-- Workaround async dependency loading. I need to find a cleaner way to do this.
-	if utils.initFromGlobal ~= nil then
-		camera = utils.initFromGlobal({ position = Vec.V2(0, 0), zoom = 50 }, "camera")
-		player = utils.initFromGlobal(defaultPlayer, "player")
-		projectiles = utils.initFromGlobal({}, "projectiles")
-	end
-end)
+local camera = Persist.onReload({ position = Vec.V2(0, 0), zoom = 50 }, "camera")
+local player = Persist.onReload(defaultPlayer, "player")
+local projectiles = Persist.onReload({}, "projectiles")
 
 local function getPlayerSize(): Vec.Vec2
 	return Vec.V2(1, 1)
@@ -180,9 +170,8 @@ local function drawHealthBar()
 		Coord.pxVec(Vec.V2(health_bar_width, 20)),
 		{ r = 1, g = 0, b = 0, a = 1 }
 	)
-	Graphics.drawText(
+	fontResource:drawText(
 		tostring(player.health),
-		fontResource,
 		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 67)),
 		0.07,
 		{ r = 0, g = 0, b = 0, a = 1 }
@@ -210,7 +199,11 @@ function renderGameplay()
 				local color = tile == 1 and { r = 0.5, g = 0.5, b = 0.5, a = 1 } or { r = 0.8, g = 0.8, b = 0.8, a = 1 }
 				local tile_pos = getCamPos(Vec.V2((x - 1), (y - 1)))
 				local tile_size = getCamSize(Vec.V2(1, 1))
-				Graphics.drawRect(Coord.px(Vec.V2(tile_pos.x, tile_pos.y)), Coord.pxVec(Vec.V2(tile_size.x, tile_size.y)), color)
+				Graphics.drawRect(
+					Coord.px(Vec.V2(tile_pos.x, tile_pos.y)),
+					Coord.pxVec(Vec.V2(tile_size.x, tile_size.y)),
+					color
+				)
 			end
 		end
 	end
@@ -227,10 +220,12 @@ function renderGameplay()
 		if entity.isHealthShown then
 			local health_bar_width = camera.zoom * (entity.health / 100)
 			Graphics.drawRect(
-				Coord.px(Vec.V2(
-					entity_screen_pos.x - (camera.zoom / 2) + (health_bar_width / 2),
-					entity_screen_pos.y - camera.zoom * 0.6
-				)),
+				Coord.px(
+					Vec.V2(
+						entity_screen_pos.x - (camera.zoom / 2) + (health_bar_width / 2),
+						entity_screen_pos.y - camera.zoom * 0.6
+					)
+				),
 				Coord.pxVec(Vec.V2(health_bar_width, camera.zoom * 0.2)),
 				{ r = 1, g = 0, b = 0, a = 1 }
 			)

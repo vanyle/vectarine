@@ -1,7 +1,17 @@
-local Resources = require("@vectarine/resources")
+local Coord = require("@vectarine/coord")
+local Resource = require("@vectarine/resource")
 local Vec = require("@vectarine/vec")
 
+type Pos = Coord.ScreenPosition | Vec.Vec2
+type Direction = Coord.ScreenVec | Vec.Vec2
+
+--- Functions to create canvas and shaders
+--- A canvas is a drawing surface and a shader is a program that changes how a canvas is drawn to another drawing surface.
 local module = {}
+
+local ShaderResourceImpl = { type = "shader" }
+ShaderResourceImpl.__index = ShaderResourceImpl
+export type ShaderResource = typeof(setmetatable({}, ShaderResourceImpl)) & Resource.Resource
 
 local Canvas = {}
 Canvas.__index = Canvas
@@ -22,7 +32,7 @@ end
 --- The canvas uses the same coordinate system as the screen with (-1,-1) being the bottom-left, (0,0) the center and (1,1) the top-right.
 ---
 --- Once you have finished painting the canvas, you can use `graphics.drawCanvas` to draw it on the screen or on another canvas.
-function module.paint(self: Canvas, draw_function: () -> ()): ()
+function Canvas.paint(self: Canvas, draw_function: () -> ()): ()
 	error("Not implemented")
 end
 
@@ -30,17 +40,36 @@ end
 --- you provide. The output of the shader is what will be drawn. This can be used for post-processing effects, outlines, recoloring, etc.
 --- To disable the shader, call `setShader(nil)`.
 --- You can see examples of shaders on [ShaderToy](https://www.shadertoy.com/)
-function Canvas.setShader(self: Canvas, shader: Resources.ShaderResource?): ()
+function Canvas.setShader(self: Canvas, shader: ShaderResource?): ()
 	error("Not implemented")
 end
 
 --- Sets a uniform float value for the shader used when drawing this canvas.
-function module.setUniform(self: Canvas, name: string, value: number): ()
+function Canvas.setUniform(self: Canvas, name: string, value: number): ()
 	error("Not implemented")
 end
 
 --- Gets the size of the canvas or image in pixels
-function module.getSize(self: Canvas | Resources.ImageResource): Vec.Vec2
+function Canvas.getSize(self: Canvas): Vec.Vec2
+	error("Not implemented")
+end
+
+--- Draws a canvas at given position and size
+function Canvas.draw(self: Canvas, pos: Vec.Vec2, size: Direction): ()
+	error("Not implemented")
+end
+
+--- Draws a part canvas stretched to fit the quadrilateral delimited by the 4 destination points
+--- This is the same as `drawImagePart` but for canvases
+function Canvas.drawPart(
+	self: Canvas,
+	dest_p1: Pos,
+	dest_p2: Pos,
+	dest_p3: Pos,
+	dest_p4: Pos,
+	src_pos: Vec.Vec2,
+	src_size: Vec.Vec2
+): ()
 	error("Not implemented")
 end
 

@@ -4,20 +4,21 @@ local Debug = require("@vectarine/debug")
 local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
+local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
-local Resource = require("@vectarine/resources")
 local Vec = require("@vectarine/vec")
+local image = require("@vectarine/image")
 
 local LevelDesignType = require("level_design.luau")
-local _, levelDesign = Resource.loadScript("scripts/level_design.luau", require("level_design.luau"))
-local helperScript, eventHelpers = Resource.loadScript("scripts/event_helpers.luau", require("event_helpers.luau"))
-local _, gameMechanics = Resource.loadScript("scripts/game_mechanics.luau", require("game_mechanics.luau"))
-local _, soundsHelpers = Resource.loadScript("scripts/sounds_helpers.luau", require("sounds_helpers.luau"))
-local _, animationHelpers = Resource.loadScript("scripts/animation_helpers.luau", require("animation_helpers.luau"))
-local _, coordHelpers = Resource.loadScript("scripts/coord_helpers.luau", require("coord_helpers.luau"))
-local _, drawHelpers = Resource.loadScript("scripts/draw_helpers.luau", require("draw_helpers.luau"))
+local _, levelDesign = Loader.loadScript("scripts/level_design.luau", require("level_design.luau"))
+local helperScript, eventHelpers = Loader.loadScript("scripts/event_helpers.luau", require("event_helpers.luau"))
+local _, gameMechanics = Loader.loadScript("scripts/game_mechanics.luau", require("game_mechanics.luau"))
+local _, soundsHelpers = Loader.loadScript("scripts/sounds_helpers.luau", require("sounds_helpers.luau"))
+local _, animationHelpers = Loader.loadScript("scripts/animation_helpers.luau", require("animation_helpers.luau"))
+local _, coordHelpers = Loader.loadScript("scripts/coord_helpers.luau", require("coord_helpers.luau"))
+local _, drawHelpers = Loader.loadScript("scripts/draw_helpers.luau", require("draw_helpers.luau"))
 
-local sign_image = Resource.loadImage("textures/Signs/small/Sign.png", false)
+local sign_image = Loader.loadImage("textures/Signs/small/Sign.png", false)
 
 if _G.isReady == nil then
 	_G.isReady = false
@@ -26,79 +27,79 @@ end
 -- Load the animation frames
 local fire_spirit_animation = {}
 for i = 1, 6 do
-	local img = Resource.loadImage("textures/FireSpirit/fire spirit" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/FireSpirit/fire spirit" .. tostring(i) .. ".png", false)
 	table.insert(fire_spirit_animation, img)
 end
 
 local pumpkin_animation = {}
 for i = 1, 6 do
-	local img = Resource.loadImage("textures/PumpkinMan/PumpkinMan" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/PumpkinMan/PumpkinMan" .. tostring(i) .. ".png", false)
 	table.insert(pumpkin_animation, img)
 end
 
 local menu_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/menu/Menu" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/menu/Menu" .. tostring(i) .. ".png", false)
 	table.insert(menu_animation, img)
 end
 
 local watching_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/watching/watching" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/watching/watching" .. tostring(i) .. ".png", false)
 	table.insert(watching_animation, img)
 end
 
 local water_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/water/water" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/water/water" .. tostring(i) .. ".png", false)
 	table.insert(water_animation, img)
 end
 
 local baba_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/baba/baba" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/baba/baba" .. tostring(i) .. ".png", false)
 	table.insert(baba_animation, img)
 end
 
 local behind_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/behind/behind" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/behind/behind" .. tostring(i) .. ".png", false)
 	table.insert(behind_animation, img)
 end
 
 local directions_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/directions/directions" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/directions/directions" .. tostring(i) .. ".png", false)
 	table.insert(directions_animation, img)
 end
 
 local hiding_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/hiding/hiding" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/hiding/hiding" .. tostring(i) .. ".png", false)
 	table.insert(hiding_animation, img)
 end
 
 local moving_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/moving/moving" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/moving/moving" .. tostring(i) .. ".png", false)
 	table.insert(moving_animation, img)
 end
 
 local nightmare_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/nightmare/nightmare" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/nightmare/nightmare" .. tostring(i) .. ".png", false)
 	table.insert(nightmare_animation, img)
 end
 
 local quiet_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/quiet/quiet" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/quiet/quiet" .. tostring(i) .. ".png", false)
 	table.insert(quiet_animation, img)
 end
 
 local running_animation = {}
 for i = 1, 14 do
-	local img = Resource.loadImage("textures/Signs/running/running" .. tostring(i) .. ".png", false)
+	local img = Loader.loadImage("textures/Signs/running/running" .. tostring(i) .. ".png", false)
 	table.insert(running_animation, img)
 end
 
@@ -117,7 +118,7 @@ local animations = {
 	running = running_animation,
 }
 
-local shadowShader = Resource.loadShader("shaders/simple_shadow.glsl")
+local shadowShader = Loader.loadShader("shaders/simple_shadow.glsl")
 
 local V2 = Vec.V2
 local timer = 0.0
@@ -157,7 +158,7 @@ local GameState = Persist.onReload({
 	win_music_played = false,
 
 	-- Asset display
-	displayed_asset = nil :: any,
+	displayed_asset = nil :: image.ImageResource?,
 	displayed_asset_name = "",
 }, "GameState")
 
@@ -289,7 +290,7 @@ function Restart()
 	reset_windup() -- Reset windup system
 
 	-- Clear all delayed actions and unpause the game
-	if Resource.isResourceReady(helperScript) then
+	if helperScript:isReady() then
 		eventHelpers.clear_all_delayed_actions()
 	end
 	GameState.game_paused = false
@@ -306,7 +307,7 @@ function Restart()
 	drawHelpers.clear_displayed_asset(GameState)
 
 	-- Schedule pop sound to play before blackscreen ends
-	if Resource.isResourceReady(helperScript) then
+	if helperScript:isReady() then
 		eventHelpers.schedule_action(
 			BLACKSCREEN_DURATION - POP_SOUND_DELAY,
 			soundsHelpers.play_pop_sound,
@@ -324,7 +325,7 @@ function render_sign_overlay()
 	local should_show_sign = (GameState.game_paused and GameState.displayed_asset)
 		or (GameState.winning and GameState.displayed_asset_name == "baba" and GameState.displayed_asset)
 
-	if not (should_show_sign and Resource.isResourceReady(GameState.displayed_asset)) then
+	if not (should_show_sign and (GameState.displayed_asset == nil or GameState.displayed_asset:isReady())) then
 		return
 	end
 
@@ -336,7 +337,7 @@ function render_sign_overlay()
 		current_asset = animation_array[frame_index]
 	end
 
-	if Resource.isResourceReady(current_asset) then
+	if current_asset ~= nil and current_asset:isReady() then
 		local currentWindowSize = Io.getWindowSize()
 		local window_width, window_height = currentWindowSize.x, currentWindowSize.y
 		local padding = DISPLAY_PADDING_PX
@@ -346,13 +347,13 @@ function render_sign_overlay()
 		local target_width_px, target_height_px = ASSET_WIDTH_PX * scale_factor, ASSET_HEIGHT_PX * scale_factor
 		local display_size = Coord.pxVec(V2(target_width_px, target_height_px), currentWindowSize)
 		local display_pos = Coord.px(V2(window_width / 2 - target_width_px / 2, padding), currentWindowSize)
-		Graphics.drawImage(current_asset, display_pos, display_size)
+		current_asset:draw(display_pos, display_size)
 	end
 end
 
 function Update(time_delta: number)
 	if not _G.isReady then
-		if Resource.isResourceReady(helperScript) then
+		if helperScript:isReady() then
 			_G.isReady = true
 			Debug.print("Game is ready!")
 			Load()
@@ -424,7 +425,7 @@ function Update(time_delta: number)
 		end
 	end
 
-	if Resource.isResourceReady(shadowShader) then
+	if shadowShader:isReady() then
 		canvas:setShader(shadowShader)
 
 		local pp = coordHelpers.convertToScreenPos(GameState, player.position + V2(1, 1):scale(0.5 * player.size), true)
@@ -441,13 +442,13 @@ function Update(time_delta: number)
 			+ LIGHT_ZONE_TRANSFORM_OFFSET / LIGHT_ZONE_TRANSFORM_DENOMINATOR
 		local lightZoneSize = GameState.cheating and 2.0
 			or math.clamp(transformedFuel, 0, player.max_fuel) / 100 + fireCracklingEffect
-		Canvas.setUniform(canvas, "lightZone", lightZoneSize)
-		Canvas.setUniform(canvas, "lightPosX", ppGl.x / 2)
-		Canvas.setUniform(canvas, "lightPosY", ppGl.y / 2)
+		canvas:setUniform("lightZone", lightZoneSize)
+		canvas:setUniform("lightPosX", ppGl.x / 2)
+		canvas:setUniform("lightPosY", ppGl.y / 2)
 
 		local windowSize = Io.getWindowSize()
-		Canvas.setUniform(canvas, "windowWidth", windowSize.x)
-		Canvas.setUniform(canvas, "windowHeight", windowSize.y)
+		canvas:setUniform("windowWidth", windowSize.x)
+		canvas:setUniform("windowHeight", windowSize.y)
 	end
 
 	Graphics.clear({ r = 0, g = 0, b = 0, a = 1 })
@@ -464,7 +465,7 @@ function Update(time_delta: number)
 		return -- Just show blackscreen, no menu
 	end
 
-	Canvas.paint(canvas, function()
+	canvas:paint(function()
 		Graphics.clear({ r = 0.6, g = 0.5, b = 0.2, a = 1 })
 
 		-- Only update game entities when not paused
@@ -516,7 +517,7 @@ function Update(time_delta: number)
 			local img = pumpkin_animation[frameId]
 			-- Debug.fprint("Pumpkin : Frame id = ", frameId, " img = ", img)
 			if img ~= nil then
-				Graphics.drawImage(img, pumpkin_screen_pos, pumpkin_screen_size)
+				img:draw(pumpkin_screen_pos, pumpkin_screen_size)
 			end
 
 			-- Draw pumpkin hitbox
@@ -531,7 +532,7 @@ function Update(time_delta: number)
 		for _, sign in ipairs(levelDesign.list_sign) do
 			local sign_screen_pos = coordHelpers.convertToScreenPos(GameState, sign.position, false)
 			local sign_screen_size = coordHelpers.convertToScreenSize(GameState, V2(1, 1))
-			Graphics.drawImage(sign_image, sign_screen_pos, sign_screen_size)
+			sign_image:draw(sign_screen_pos, sign_screen_size)
 
 			-- Draw sign hitbox
 			local sign_hitbox_pos = sign.position + V2(0, 0)
@@ -547,7 +548,7 @@ function Update(time_delta: number)
 		local frameId = animationHelpers.animate(player, animation_delta, player.frame_delay)
 		local img = fire_spirit_animation[frameId]
 		if img ~= nil then
-			Graphics.drawImage(img, player_screen_pos, player_screen_size)
+			img:draw(player_screen_pos, player_screen_size)
 		end
 
 		-- Draw player hitbox
@@ -562,7 +563,7 @@ function Update(time_delta: number)
 		end
 	end)
 
-	Graphics.drawCanvas(canvas, V2(-1, -1), V2(2, 2))
+	canvas:draw(V2(-1, -1), V2(2, 2))
 
 	-- Display loaded asset during pause (outside canvas for overlay effect)
 	render_sign_overlay()

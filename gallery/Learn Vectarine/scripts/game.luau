@@ -1,10 +1,11 @@
+local Color = require("@vectarine/color")
 local Coord = require("@vectarine/coord")
 local Debug = require("@vectarine/debug")
 local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
+local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
-local Resources = require("@vectarine/resources")
 local Screen = require("@vectarine/screen")
 local Vec = require("@vectarine/vec")
 local print = Debug.print
@@ -29,15 +30,15 @@ CONSOLE_COMMAND:on(function(command: string)
 	end
 end)
 
-local logoResource = Resources.loadImage("textures/logo.png")
-local _missing = Resources.loadImage("textures/this_file_is_missing.png")
-local fontResource = Resources.loadFont("fonts/arial.ttf")
+local logoResource = Loader.loadImage("textures/logo.png")
+local _missing = Loader.loadImage("textures/this_file_is_missing.png")
+local fontResource = Loader.loadFont("fonts/arial.ttf")
 
 local circle = Persist.onReload({ r = 0.0, g = 0.0, b = 0.0, a = 1.0 }, "circle")
 
 function drawTextCentered(text: string, position: Coord.ScreenPosition, textSize: number, color)
-	local textMeasure = Graphics.measureText(text, fontResource, textSize)
-	Graphics.drawText(text, fontResource, position - Coord.glVec(V2(textMeasure.width / 2, 0)), textSize, color)
+	local textMeasure = fontResource:measureText(text, textSize)
+	fontResource:drawText(text, position - Coord.glVec(V2(textMeasure.width / 2, 0)), textSize, color)
 end
 
 local timer = 0.0
@@ -45,9 +46,8 @@ local screen0: Screen.Screen = Screen.newScreen("secret_screen", function()
 	timer += 2.0 / 60.0
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), { r = 0.2, g = 0.4, b = 1, a = 1 })
 
-	Graphics.drawText(
+	fontResource:drawText(
 		"You found the secret screen!",
-		fontResource,
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
@@ -60,18 +60,17 @@ local screen0: Screen.Screen = Screen.newScreen("secret_screen", function()
 	local p2 = Coord.CENTER + Coord.pxVec(getOffset(timer + math.pi / 2))
 	local p3 = Coord.CENTER + Coord.pxVec(getOffset(timer + math.pi))
 	local p4 = Coord.CENTER + Coord.pxVec(getOffset(timer + 3 * math.pi / 2))
-	Graphics.drawImagePart(logoResource, p1, p2, p3, p4, V2(0, 0), V2(1, 1))
+	logoResource:drawPart(p1, p2, p3, p4, V2(0, 0), V2(1, 1))
 end)
 
 local screen1: Screen.Screen = Screen.newScreen("screen_1", function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), { r = 0.2, g = 0, b = 0, a = 1 })
-	if Resources.isResourceReady(logoResource) then
-		Graphics.drawImage(logoResource, Coord.gl(V2(0, 0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
+	if logoResource:isReady() then
+		logoResource:draw(Coord.gl(V2(0, 0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
 	end
 	drawTextCentered("Welcome to Vectarine", Coord.CENTER, 0.16, { r = 1, g = 1, b = 1, a = 1 })
-	Graphics.drawText(
+	fontResource:drawText(
 		"Press SPACE to continue",
-		fontResource,
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
@@ -85,16 +84,14 @@ local screen2: Screen.Screen = Screen.newScreen("screen_2", function()
 		textSize,
 		{ r = 1, g = 1, b = 1, a = 1 }
 	)
-	Graphics.drawText(
+	fontResource:drawText(
 		"Press BACK to go back",
-		fontResource,
 		Coord.gl(V2(-1, -1 + 0.16)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
 	)
-	Graphics.drawText(
+	fontResource:drawText(
 		"Press SPACE to continue",
-		fontResource,
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
@@ -128,9 +125,8 @@ local screen3: Screen.Screen = Screen.newScreen("screen_3", function()
 		{ r = 1, g = 1, b = 1, a = 1 }
 	)
 
-	Graphics.drawText(
+	fontResource:drawText(
 		"Press SPACE to continue",
-		fontResource,
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
@@ -215,8 +211,8 @@ local screen6: Screen.Screen = Screen.newScreen("screen_6", function()
 		0.10,
 		{ r = 1, g = 1, b = 1, a = 1 }
 	)
-	if Resources.isResourceReady(logoResource) then
-		Graphics.drawImage(logoResource, Coord.gl(V2(0, -0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
+	if logoResource:isReady() then
+		logoResource:draw(Coord.gl(V2(0, -0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
 	end
 end)
 
@@ -234,16 +230,14 @@ local screen7: Screen.Screen = Screen.newScreen("screen_7", function()
 		0.10,
 		{ r = 1, g = 1, b = 1, a = 1 }
 	)
-	Graphics.drawText(
+	fontResource:drawText(
 		"Press BACK to go back",
-		fontResource,
 		Coord.gl(V2(-1, -1 + 0.16)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
 	)
-	Graphics.drawText(
+	fontResource:drawText(
 		"Press SPACE to continue",
-		fontResource,
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),
 		0.16,
 		{ r = 0.7, g = 0.7, b = 0.7, a = 1 }
@@ -267,7 +261,7 @@ end
 
 function Update(time_delta: number)
 	fprint("You can also use fprint (frame print) to show messages that change every frame!")
-	local bg_color: Graphics.Color = { r = 0, g = 0, b = 0.2, a = 1 }
+	local bg_color: Color.Vec4 = { r = 0, g = 0, b = 0.2, a = 1 }
 	Graphics.clear(bg_color)
 
 	if fullscreen.is_on then

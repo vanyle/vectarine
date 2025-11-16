@@ -46,7 +46,7 @@ pub struct ResourceId(usize);
 
 impl std::fmt::Display for ResourceId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "RID({})", self.0)
+        write!(f, "ResourceId({})", self.0)
     }
 }
 
@@ -63,15 +63,9 @@ impl mlua::FromLua for ResourceId {
     }
 }
 
-impl mlua::UserData for ResourceId {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (Self,)| {
-            Ok(format!("ResourceId({})", id.0))
-        });
-
-        methods.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (Self, Self)| {
-            Ok(id1 == id2)
-        });
+impl mlua::IntoLua for ResourceId {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
     }
 }
 
