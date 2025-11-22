@@ -1,30 +1,37 @@
+# A list of custom function that the JS runtime provides to Rust
+
 ## read_file_for_rust
 
-Type: Rust -> JS
+Reads the content of a network resource and returns it as a base64 encoded string for rust.
+Known issue: The function fails for resources larger that a few MBs.
 
-Reads the content of a network resource and returns it as a string for rust.
+```ts
+read_file_for_rust(arg: { callback: (result: string) => void, filename: string })
+```
 
-TODO:
-- Handle failure
-- Handle non-UTF8 content
+## sleep_for_rust
 
-## exit
+Wrapper to the setTimeout function to allow sleep in a browser context.
+sleep is in ms.
 
-Type: Rust -> JS
+```ts
+sleep_for_rust(arg: { callback: (result: string) => void, sleep: number })
+```
+
+## exited_did_rust
 
 Signals to the JS runtime that the program finished.
 The JS needs to display a message so that the user is not left with a black screen.
-Maybe have a way to restart?
 
-TODO:
-- Everything
-
-## ready
-
-Type: Rust -> JS
+## ready_is_rust
 
 Signals to the JS runtime that the program is ready.
 The JS needs to stop displaying the loader.
 
-TODO:
-- Everything
+## getScreenSize
+
+Allows rust to get the size of the canvas as it appears on the screen.
+
+## getDrawableScreenSize
+
+Allows rust to get the size of the canvas in px.

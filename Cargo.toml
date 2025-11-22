@@ -5,6 +5,7 @@ members = ["editor", "runtime"]
 [profile.dev]
 # Emscripten does not like -O2 + debug info
 opt-level = 1
+lto = "off"
 debug = true
 debug-assertions = true
 overflow-checks = true
