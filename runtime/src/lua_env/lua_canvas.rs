@@ -3,6 +3,7 @@ use std::{cell::RefCell, ops::Deref, rc::Rc};
 use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
+    auto_impl_lua,
     game_resource::{self, ResourceId, shader_resource::ShaderResource},
     graphics::{
         batchdraw, glframebuffer,
@@ -17,44 +18,19 @@ use crate::{
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
         lua_vec2::Vec2,
     },
+    make_resource_lua_compatible,
 };
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub struct ShaderResourceId(ResourceId);
+make_resource_lua_compatible!(ShaderResourceId);
 
 #[derive(Clone)]
 pub struct RcFramebuffer {
     buffer: Rc<glframebuffer::Framebuffer>,
     shader: RefCell<Option<ShaderResourceId>>,
 }
-
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub struct ShaderResourceId(ResourceId);
-
-impl ResourceIdWrapper for ShaderResourceId {
-    fn to_resource_id(&self) -> ResourceId {
-        self.0
-    }
-    fn from_id(id: ResourceId) -> Self {
-        Self(id)
-    }
-}
-
-impl IntoLua for ShaderResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
-    }
-}
-
-impl FromLua for ShaderResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "ImageResource".to_string(),
-                message: Some("Expected ImageResource userdata".to_string()),
-            }),
-        }
-    }
-}
+auto_impl_lua!(RcFramebuffer, Framebuffer);
 
 impl RcFramebuffer {
     fn new(fb: glframebuffer::Framebuffer) -> Self {
@@ -68,25 +44,6 @@ impl RcFramebuffer {
     }
     pub fn current_shader(&self) -> Option<ResourceId> {
         self.shader.borrow().map(|s| s.to_resource_id())
-    }
-}
-
-impl mlua::IntoLua for RcFramebuffer {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
-    }
-}
-
-impl mlua::FromLua for RcFramebuffer {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "Framebuffer".to_string(),
-                message: Some("Expected Framebuffer userdata".to_string()),
-            }),
-        }
     }
 }
 

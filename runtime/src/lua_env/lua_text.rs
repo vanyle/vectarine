@@ -11,38 +11,12 @@ use crate::{
         lua_graphics::table_to_color,
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
     },
+    make_resource_lua_compatible,
 };
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct FontResourceId(ResourceId);
-
-impl ResourceIdWrapper for FontResourceId {
-    fn to_resource_id(&self) -> ResourceId {
-        self.0
-    }
-    fn from_id(id: ResourceId) -> Self {
-        Self(id)
-    }
-}
-
-impl IntoLua for FontResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
-    }
-}
-
-impl FromLua for FontResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "FontResource".to_string(),
-                message: Some("Expected FontResource userdata".to_string()),
-            }),
-        }
-    }
-}
+make_resource_lua_compatible!(FontResourceId);
 
 pub fn setup_text_api(
     lua: &Rc<mlua::Lua>,

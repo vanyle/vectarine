@@ -6,38 +6,12 @@ use crate::{
     game_resource::{self, ResourceId, audio_resource::AudioResource},
     io,
     lua_env::lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
+    make_resource_lua_compatible,
 };
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct AudioResourceId(ResourceId);
-
-impl ResourceIdWrapper for AudioResourceId {
-    fn to_resource_id(&self) -> ResourceId {
-        self.0
-    }
-    fn from_id(id: ResourceId) -> Self {
-        Self(id)
-    }
-}
-
-impl IntoLua for AudioResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
-    }
-}
-
-impl FromLua for AudioResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "AudioResource".to_string(),
-                message: Some("Expected AudioResource userdata".to_string()),
-            }),
-        }
-    }
-}
+make_resource_lua_compatible!(AudioResourceId);
 
 pub fn setup_audio_api(
     lua: &Rc<mlua::Lua>,

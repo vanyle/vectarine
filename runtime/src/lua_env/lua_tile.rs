@@ -11,38 +11,12 @@ use crate::{
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
         lua_vec2::Vec2,
     },
+    make_resource_lua_compatible,
 };
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct TilesetResourceId(ResourceId);
-
-impl ResourceIdWrapper for TilesetResourceId {
-    fn to_resource_id(&self) -> ResourceId {
-        self.0
-    }
-    fn from_id(id: ResourceId) -> Self {
-        Self(id)
-    }
-}
-
-impl IntoLua for TilesetResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
-    }
-}
-
-impl FromLua for TilesetResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "TilesetResource".to_string(),
-                message: Some("Expected ImageResource userdata".to_string()),
-            }),
-        }
-    }
-}
+make_resource_lua_compatible!(TilesetResourceId);
 
 fn get_tileset_from_resource_id<F, R>(
     resources: &Rc<ResourceManager>,
@@ -65,34 +39,7 @@ where
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct TilemapResourceId(ResourceId);
-
-impl ResourceIdWrapper for TilemapResourceId {
-    fn to_resource_id(&self) -> ResourceId {
-        self.0
-    }
-    fn from_id(id: ResourceId) -> Self {
-        Self(id)
-    }
-}
-
-impl IntoLua for TilemapResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
-    }
-}
-
-impl FromLua for TilemapResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "TilesetResource".to_string(),
-                message: Some("Expected ImageResource userdata".to_string()),
-            }),
-        }
-    }
-}
+make_resource_lua_compatible!(TilemapResourceId);
 
 pub fn setup_tile_api(
     lua: &Rc<mlua::Lua>,

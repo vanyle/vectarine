@@ -7,11 +7,6 @@ use crate::{
     lua_env::{add_fn_to_table, get_internals, lua_vec2::Vec2},
 };
 
-pub struct RcEnvState(pub Rc<RefCell<IoEnvState>>);
-impl mlua::UserData for RcEnvState {}
-
-const ENV_STATE_KEY: &str = "__env_state";
-
 /// Adds to the Lua environment functions to interact with the outside environment
 /// For example, the keyboard, the mouse, the window, etc...
 /// This is called the IO API.
@@ -20,10 +15,6 @@ pub fn setup_io_api(
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> mlua::Result<mlua::Table> {
     let io_module = lua.create_table()?;
-
-    get_internals(lua)
-        .raw_set(ENV_STATE_KEY, RcEnvState(env_state.clone()))
-        .unwrap();
 
     add_fn_to_table(lua, &io_module, "isKeyDown", {
         let env_state = env_state.clone();
@@ -172,12 +163,4 @@ pub fn setup_io_api(
     });
 
     Ok(io_module)
-}
-
-pub fn get_env_state(lua: &mlua::Lua) -> Rc<RefCell<IoEnvState>> {
-    let internals = get_internals(lua);
-    let value: mlua::Value = internals.raw_get(ENV_STATE_KEY).unwrap();
-    let rc_env_state = value.as_userdata().unwrap();
-    let rc_env_state = rc_env_state.borrow::<RcEnvState>().unwrap();
-    rc_env_state.0.clone()
 }
