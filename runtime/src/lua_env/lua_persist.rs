@@ -14,7 +14,7 @@ pub fn setup_persist_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             {
                 return Ok(value);
             }
-            let _ = g.raw_set(global_name.clone(), default_value.clone());
+            let _ = g.raw_set(global_name, default_value.clone());
             Ok(default_value)
         }
     });

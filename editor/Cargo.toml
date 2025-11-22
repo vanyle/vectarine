@@ -24,3 +24,20 @@ path = "src/main.rs"
 
 [build-dependencies]
 winresource = "0.1.23"
+
+# https://rust-lang.github.io/rust-clippy/master/index.html
+[lints.clippy]
+enum_glob_use = "warn"
+elidable_lifetime_names = "warn"
+empty_enum = "warn"
+error_impl_error = "warn"
+range_plus_one = "warn"
+range_minus_one = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+redundant_clone = "warn"
+redundant_test_prefix = "warn"
+ref_option = "warn"
+ref_option_ref = "warn"
+# expect is better as you can put a message inside:
+unwrap_used = "warn"

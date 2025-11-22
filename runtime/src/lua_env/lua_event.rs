@@ -168,7 +168,7 @@ pub fn create_event(lua: &mlua::Lua, name: String) -> mlua::Result<EventType> {
     em.registered_events.insert(name.clone(), event_type);
     em.event_map.push(EventSubscriptions {
         next_id: 0,
-        name: name.clone(),
+        name,
         subscriptions: HashMap::new(),
     });
     Ok(event_type)
@@ -186,7 +186,7 @@ pub fn create_event_constant_in_event_module(
     );
     let constant_name = format!("get{name_with_uppercase_first}Event");
     let name = format!("@vectarine/{name}");
-    let event_type = create_event(lua, name.clone())?;
+    let event_type = create_event(lua, name)?;
     event_module_table.raw_set(
         constant_name,
         lua.create_function(move |lua, ()| {

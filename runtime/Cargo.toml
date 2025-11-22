@@ -42,10 +42,29 @@ winresource = "0.1.23"
 dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "sdl2-gfx", "sdl2-mixer"]
 git = "https://github.com/microsoft/vcpkg"
 
-# to check for a new release, check https://github.com/microsoft/vcpkg/releases
+# To check for a new release, check https://github.com/microsoft/vcpkg/releases
 # https://github.com/microsoft/vcpkg/commit/50c0cb48a0cf2f6fc5c7b2c0d2bafbe26d0a7ca2
 rev = "50c0cb4"
 
 [package.metadata.vcpkg.target]
 x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
 aarch64-apple-darwin = { triplet = "arm64-osx" }
+
+# https://rust-lang.github.io/rust-clippy/master/index.html
+[lints.clippy]
+enum_glob_use = "warn"
+elidable_lifetime_names = "warn"
+empty_enum = "warn"
+error_impl_error = "warn"
+range_plus_one = "warn"
+range_minus_one = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+redundant_clone = "warn"
+redundant_test_prefix = "warn"
+ref_option = "warn"
+ref_option_ref = "warn"
+# expect is better as you can put a message inside:
+unwrap_used = "warn"
+# Might need to enable this as arithmetic can panic
+# arithmetic_side_effects = "warn"

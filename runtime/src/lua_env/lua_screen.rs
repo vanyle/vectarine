@@ -166,7 +166,7 @@ pub fn setup_screen_api(
 
     add_fn_to_table(lua, &screen_module, "drawCurrentScreen", {
         let lua = lua.clone();
-        let screen_state = screen_state.clone();
+        let screen_state = screen_state;
         let batch = batch.clone();
         let resources = resources.clone();
         move |_, ()| draw_current_screen_impl(&lua, &screen_state, &batch, &resources)

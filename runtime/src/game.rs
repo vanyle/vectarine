@@ -53,7 +53,7 @@ impl Game {
         let path = Path::new(&game.main_script_path);
         game.lua_env.resources.load_resource::<ScriptResource>(
             path,
-            gl.clone(),
+            gl,
             game.lua_env.lua.clone(),
             game.lua_env.default_events.resource_loaded_event,
         );

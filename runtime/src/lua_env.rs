@@ -137,7 +137,7 @@ impl LuaEnvironment {
                 return original_require.call(module_name);
             }
             let module = lua.create_table()?;
-            module.raw_set("@vectarine/filename", module_name.clone())?;
+            module.raw_set("@vectarine/filename", module_name)?;
             module.raw_set(
                 "info",
                 "Thank you cowboy! But your module is in another castle!",

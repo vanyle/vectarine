@@ -397,13 +397,13 @@ impl ResourceManager {
         self.iter().enumerate().map(|(i, r)| (ResourceId(i), r))
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Rc<ResourceHolder>> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = Rc<ResourceHolder>> + '_ {
         // resources is in a RefCell, We need to implement our own iterator to avoid cloning the whole vec
         struct ResourceManagerIter<'a> {
             inner: &'a ResourceManager,
             idx: usize,
         }
-        impl<'a> Iterator for ResourceManagerIter<'a> {
+        impl Iterator for ResourceManagerIter<'_> {
             type Item = Rc<ResourceHolder>;
             fn next(&mut self) -> Option<Self::Item> {
                 let idx = self.idx;
