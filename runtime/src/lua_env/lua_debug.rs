@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use crate::{
     console::{ConsoleMessage, Verbosity},
-    lua_env::{add_fn_to_table, get_internals, stringify_lua_value},
+    lua_env::{add_fn_to_table, stringify_lua_value},
 };
 
 pub fn setup_debug_api(
@@ -43,22 +43,6 @@ pub fn setup_debug_api(
             Ok(())
         }
     });
-
-    // Put a print function inside an internal table so that it can be called from anywhere in Rust.
-    let internals = get_internals(lua);
-    internals.raw_set(
-        "print",
-        lua.create_function({
-            let messages = messages.clone();
-            move |_, (msg, verbosity): (String, Verbosity)| {
-                messages
-                    .borrow_mut()
-                    .push_front(ConsoleMessage { msg, verbosity });
-                Ok(())
-            }
-        })
-        .unwrap(),
-    )?;
 
     Ok(debug_module)
 }

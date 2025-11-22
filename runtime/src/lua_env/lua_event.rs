@@ -1,39 +1,32 @@
+use std::hash::Hash;
+use std::rc::Weak;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::lua_env::{add_fn_to_table, get_internals};
+use crate::{auto_impl_lua, lua_env::add_fn_to_table};
+use mlua::FromLua;
+use mlua::IntoLua;
+use mlua::UserDataFields;
+use mlua::UserDataMethods;
 
-#[derive(Clone, Debug, PartialEq, Copy, Hash, Eq)]
-pub struct EventType(usize);
+#[derive(Clone, Debug)]
+pub struct EventType(usize, Weak<RefCell<EventManager>>);
+auto_impl_lua!(EventType, EventType);
 
-#[derive(Clone, Debug, PartialEq, Copy, Hash, Eq)]
+impl Hash for EventType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+impl PartialEq for EventType {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for EventType {}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SubscriptionId(usize, EventType);
-
-impl mlua::UserData for SubscriptionId {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("unsubscribe", |lua, id, ()| {
-            let event_manager = get_event_manager(lua);
-            let mut em = event_manager.0.borrow_mut();
-            let subscriptions = &mut em.event_map;
-            let entry = subscriptions
-                .get_mut(id.1.0)
-                .expect("Event type should exist");
-            entry.subscriptions.remove(id);
-            Ok(())
-        });
-    }
-}
-impl mlua::FromLua for SubscriptionId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "SubscriptionId".to_string(),
-                message: Some("Expected SubscriptionId userdata".to_string()),
-            }),
-        }
-    }
-}
+auto_impl_lua!(SubscriptionId, SubscriptionId);
 
 #[derive(Default)]
 pub struct EventSubscriptions {
@@ -46,24 +39,11 @@ struct EventManager {
     registered_events: HashMap<String, EventType>,
     event_map: Vec<EventSubscriptions>,
 }
+
+#[derive(Clone)]
 pub struct EventManagerRc(Rc<RefCell<EventManager>>);
 
-const EVENT_MANAGER_KEY: &str = "__event_manager";
-
-impl mlua::UserData for EventManagerRc {}
-
-impl mlua::FromLua for EventManagerRc {
-    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(EventManagerRc(ud.borrow::<Self>()?.0.clone())),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "EventManager".to_string(),
-                message: Some("expected EventManager userdata".to_string()),
-            }),
-        }
-    }
-}
+auto_impl_lua!(EventManagerRc, EventManager);
 
 impl Default for EventManagerRc {
     fn default() -> Self {
@@ -74,28 +54,24 @@ impl Default for EventManagerRc {
     }
 }
 
-pub fn get_event_manager(lua: &mlua::Lua) -> EventManagerRc {
-    let internals = get_internals(lua);
-    internals.raw_get(EVENT_MANAGER_KEY).unwrap()
-}
-
 impl EventType {
-    pub fn trigger(&self, lua: &mlua::Lua, data: mlua::Value) -> mlua::Result<()> {
-        let event_manager = get_event_manager(lua);
-        let subscriptions = event_manager.0.borrow();
-        let subscriptions = subscriptions.event_map.get(self.0);
-        let Some(subscriptions) = subscriptions else {
+    pub fn trigger(&self, data: mlua::Value) -> mlua::Result<()> {
+        // Maybe no-op instead of panic?
+        let event_manager = self.1.upgrade().expect("Event manager should exist");
+        let event_manager = event_manager.borrow();
+        let subscription = event_manager.event_map.get(self.0);
+        let Some(subscription) = subscription else {
             return Ok(());
         };
-        for callback in subscriptions.subscriptions.values() {
+        for callback in subscription.subscriptions.values() {
             let _ = callback.call::<mlua::Value>(data.clone());
         }
         Ok(())
     }
-    pub fn clear_subscription(&self, lua: &mlua::Lua) {
-        let event_manager = get_event_manager(lua);
-        let mut em = event_manager.0.borrow_mut();
-        let subscriptions = &mut em.event_map;
+    pub fn clear_subscription(&self) {
+        let event_manager = self.1.upgrade().expect("Event manager should exist");
+        let mut event_manager = event_manager.borrow_mut();
+        let subscriptions = &mut event_manager.event_map;
         let entry = subscriptions
             .get_mut(self.0)
             .expect("Event type should exist");
@@ -104,55 +80,11 @@ impl EventType {
     }
 }
 
-impl mlua::UserData for EventType {
-    fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
-        fields.add_field_method_get("name", |lua, etype: &EventType| {
-            let event_manager = get_event_manager(lua);
-            let events = &event_manager.0.borrow().event_map;
-            Ok(events.get(etype.0).unwrap().name.clone())
-        });
-    }
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("dispatch", |lua, event_type, data: mlua::Value| {
-            event_type.trigger(lua, data)
-        });
-
-        methods.add_method("clear", |lua, event_type, ()| {
-            event_type.clear_subscription(lua);
-            Ok(())
-        });
-
-        methods.add_method("on", |lua, event_type, callback: mlua::Function| {
-            // We can access the outside using lua.globals()
-            let event_manager = get_event_manager(lua);
-            let mut subscriptions = event_manager.0.borrow_mut();
-            let subscriptions = &mut subscriptions.event_map;
-            let entry = subscriptions
-                .get_mut(event_type.0)
-                .expect("Event type should exist");
-            let id = SubscriptionId(entry.next_id, *event_type);
-            entry.next_id += 1;
-            entry.subscriptions.insert(id, callback);
-            Ok(id)
-        });
-    }
-}
-
-impl mlua::FromLua for EventType {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "Event".to_string(),
-                message: Some("expected Event userdata".to_string()),
-            }),
-        }
-    }
-}
-
-pub fn create_event(lua: &mlua::Lua, name: String) -> mlua::Result<EventType> {
-    let event_manager = get_event_manager(lua);
+pub fn create_event(
+    event_manager: &EventManagerRc,
+    _lua: &mlua::Lua,
+    name: String,
+) -> mlua::Result<EventType> {
     let mut em = event_manager.0.borrow_mut();
     {
         let entry = em.registered_events.get(&name).cloned();
@@ -164,8 +96,9 @@ pub fn create_event(lua: &mlua::Lua, name: String) -> mlua::Result<EventType> {
             return Ok(event_type);
         }
     }
-    let event_type = EventType(em.event_map.len());
-    em.registered_events.insert(name.clone(), event_type);
+    let event_type = EventType(em.event_map.len(), Rc::downgrade(&event_manager.0));
+    em.registered_events
+        .insert(name.clone(), event_type.clone());
     em.event_map.push(EventSubscriptions {
         next_id: 0,
         name,
@@ -175,23 +108,27 @@ pub fn create_event(lua: &mlua::Lua, name: String) -> mlua::Result<EventType> {
 }
 
 pub fn create_event_constant_in_event_module(
+    event_manager: &EventManagerRc,
     lua: &mlua::Lua,
     name: &str,
     event_module_table: &mlua::Table,
 ) -> mlua::Result<EventType> {
     let name_with_uppercase_first = format!(
         "{}{}",
-        name.chars().next().unwrap().to_uppercase(),
+        name.chars().next().unwrap_or_default().to_uppercase(),
         &name[1..]
     );
     let constant_name = format!("get{name_with_uppercase_first}Event");
     let name = format!("@vectarine/{name}");
-    let event_type = create_event(lua, name)?;
+    let event_type = create_event(event_manager, lua, name)?;
     event_module_table.raw_set(
         constant_name,
-        lua.create_function(move |lua, ()| {
-            event_type.clear_subscription(lua);
-            Ok(event_type)
+        lua.create_function({
+            let event_type = event_type.clone();
+            move |_lua, ()| {
+                event_type.clear_subscription();
+                Ok(event_type.clone())
+            }
         })?,
     )?;
     Ok(event_type)
@@ -210,31 +147,90 @@ pub struct DefaultEvents {
     pub console_command_event: EventType,
 }
 
-pub fn setup_event_api(lua: &Rc<mlua::Lua>) -> mlua::Result<(mlua::Table, DefaultEvents)> {
-    let internals = get_internals(lua);
-
-    internals.raw_set(EVENT_MANAGER_KEY, EventManagerRc::default())?;
-
+pub fn setup_event_api(
+    lua: &Rc<mlua::Lua>,
+) -> mlua::Result<(mlua::Table, DefaultEvents, EventManagerRc)> {
     let event_module = lua.create_table()?;
-    add_fn_to_table(lua, &event_module, "newEvent", |lua, name: String| {
-        create_event(lua, name)
+    let event_manager = EventManagerRc::default();
+
+    lua.register_userdata_type::<EventType>(|registry| {
+        registry.add_field_method_get("name", {
+            let event_manager = event_manager.clone();
+            move |_lua, etype: &EventType| {
+                let events = &event_manager.0.borrow().event_map;
+                Ok(events
+                    .get(etype.0)
+                    .map(|e| e.name.clone())
+                    .unwrap_or_default())
+            }
+        });
+        registry.add_method("dispatch", {
+            move |_lua, event_type, data: mlua::Value| event_type.trigger(data)
+        });
+        registry.add_method("clear", {
+            move |_lua, event_type, ()| {
+                event_type.clear_subscription();
+                Ok(())
+            }
+        });
+        registry.add_method("on", {
+            let event_manager = event_manager.clone();
+            move |_lua, event_type, callback: mlua::Function| {
+                // We can access the outside using lua.globals()
+                let mut subscriptions = event_manager.0.borrow_mut();
+                let subscriptions = &mut subscriptions.event_map;
+                let entry = subscriptions
+                    .get_mut(event_type.0)
+                    .expect("Event type should exist");
+                let id = SubscriptionId(entry.next_id, event_type.clone());
+                entry.next_id += 1;
+                entry.subscriptions.insert(id.clone(), callback);
+                Ok(id)
+            }
+        });
+    })?;
+
+    lua.register_userdata_type::<SubscriptionId>(|registry| {
+        let event_manager = event_manager.clone();
+        registry.add_method("unsubscribe", move |_lua, id, ()| {
+            let mut em = event_manager.0.borrow_mut();
+            let subscriptions = &mut em.event_map;
+            let entry = subscriptions
+                .get_mut(id.1.0)
+                .expect("Event type should exist");
+            entry.subscriptions.remove(id);
+            Ok(())
+        })
+    })?;
+
+    add_fn_to_table(lua, &event_module, "newEvent", {
+        let event_manager = event_manager.clone();
+        move |lua, name: String| create_event(&event_manager, lua, name)
     });
 
     let keydown_event =
-        create_event_constant_in_event_module(lua, "keyDown", &event_module).unwrap();
-    let keyup_event = create_event_constant_in_event_module(lua, "keyUp", &event_module).unwrap();
+        create_event_constant_in_event_module(&event_manager, lua, "keyDown", &event_module)?;
+    let keyup_event =
+        create_event_constant_in_event_module(&event_manager, lua, "keyUp", &event_module)?;
 
     let mouse_down_event =
-        create_event_constant_in_event_module(lua, "mouseDown", &event_module).unwrap();
+        create_event_constant_in_event_module(&event_manager, lua, "mouseDown", &event_module)?;
     let mouse_up_event =
-        create_event_constant_in_event_module(lua, "mouseUp", &event_module).unwrap();
+        create_event_constant_in_event_module(&event_manager, lua, "mouseUp", &event_module)?;
     let mouse_click_event =
-        create_event_constant_in_event_module(lua, "mouseClick", &event_module).unwrap();
-
-    let resource_loaded_event =
-        create_event_constant_in_event_module(lua, "resourceLoaded", &event_module).unwrap();
-    let console_command_event =
-        create_event_constant_in_event_module(lua, "consoleCommand", &event_module).unwrap();
+        create_event_constant_in_event_module(&event_manager, lua, "mouseClick", &event_module)?;
+    let resource_loaded_event = create_event_constant_in_event_module(
+        &event_manager,
+        lua,
+        "resourceLoaded",
+        &event_module,
+    )?;
+    let console_command_event = create_event_constant_in_event_module(
+        &event_manager,
+        lua,
+        "consoleCommand",
+        &event_module,
+    )?;
 
     let default_events = DefaultEvents {
         keydown_event,
@@ -246,5 +242,5 @@ pub fn setup_event_api(lua: &Rc<mlua::Lua>) -> mlua::Result<(mlua::Table, Defaul
         console_command_event,
     };
 
-    Ok((event_module, default_events))
+    Ok((event_module, default_events, event_manager))
 }

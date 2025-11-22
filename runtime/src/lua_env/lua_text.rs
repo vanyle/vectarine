@@ -54,7 +54,7 @@ pub fn setup_text_api(
             let env_state = env_state.clone();
             move |lua, font_resource_id, (text, font_size): (String, f32)| {
                 let font_resource = resources.get_by_id::<FontResource>(font_resource_id.0);
-                let result = lua.create_table().unwrap();
+                let result = lua.create_table()?;
                 let Ok(font_resource) = font_resource else {
                     let _ = result.set("width", 0.0);
                     let _ = result.set("height", 0.0);

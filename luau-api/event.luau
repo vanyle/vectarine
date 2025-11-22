@@ -1,4 +1,4 @@
-local Resources = require("@vectarine/resources")
+local Resource = require("@vectarine/resource")
 
 local module = {}
 
@@ -60,7 +60,7 @@ end
 
 --- Clear all previous subscriptions to the resource loaded event and return it.
 --- This event is triggered when a resource finishes loading and is ready to be used or if it failed to load.
-function module.getResourceLoadedEvent(): Event<Resources.ResourceId>
+function module.getResourceLoadedEvent(): Event<Resource.Resource>
 	error("Not implemented")
 end
 

@@ -96,6 +96,33 @@ macro_rules! auto_impl_lua {
     };
 }
 
+/// This macro automatically implements IntoLua and FromLua for a given struct.
+/// The struct needs to implement copy for this to work.
+/// The second parameter of the macro is the name of the struct in conversion error messages
+#[macro_export]
+macro_rules! auto_impl_lua_copy {
+    ($struct_name:ident, $friendly_name:ident) => {
+        impl IntoLua for $struct_name {
+            fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+                lua.create_any_userdata(self).map(mlua::Value::UserData)
+            }
+        }
+
+        impl FromLua for $struct_name {
+            fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+                match value {
+                    mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+                    _ => Err(mlua::Error::FromLuaConversionError {
+                        from: value.type_name(),
+                        to: stringify!($friendly_name).to_string(),
+                        message: Some(format!("Expected {} userdata", stringify!($friendly_name))),
+                    }),
+                }
+            }
+        }
+    };
+}
+
 // MARK: Script Resource
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct ScriptResourceId(ResourceId);

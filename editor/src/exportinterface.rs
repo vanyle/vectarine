@@ -50,7 +50,9 @@ fn draw_editor_export_window(ui: &mut egui::Ui, editor: &mut EditorState) {
     };
 
     let project_file_path = &mut project.project_path;
-    let project_folder = project_file_path.parent().unwrap();
+    let project_folder = project_file_path
+        .parent()
+        .expect("Failed to get project folder");
 
     thread_local! {
         static OBFUSCATE_GAME_DATA: RefCell<bool> = const { RefCell::new(true) };
@@ -112,7 +114,7 @@ Read the manual section about obfuscation for more details.
 
     if export_button.ui(ui).clicked() {
         {
-            let mut log_buffer = EXPORT_LOG_BUFFER.lock().unwrap();
+            let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
             log_buffer.clear();
         }
         let project_path = project.project_path.clone();
@@ -128,13 +130,10 @@ Read the manual section about obfuscation for more details.
                 target_platform,
             );
             if let Err(err_msg) = result {
-                let mut log_buffer = EXPORT_LOG_BUFFER.lock().unwrap();
+                let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
                 *log_buffer = format!("Export failed: {}\n", err_msg);
-                // EXPORT_LOG_BUFFER.with_borrow_mut(|log_buffer| {
-                //     log_buffer.push_str(&format!("Export failed: {}\n", err_msg));
-                // });
             } else {
-                let mut log_buffer = EXPORT_LOG_BUFFER.lock().unwrap();
+                let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
                 *log_buffer = "Export completed successfully.\n".into();
             }
         });
@@ -259,7 +258,9 @@ fn get_files_in_folder(folder_path: &Path, zip_base_path: &str) -> Vec<(PathBuf,
 }
 
 fn get_project_files(project_path: &Path) -> impl Iterator<Item = (PathBuf, String)> {
-    let game_data_folder = project_path.parent().unwrap();
+    let game_data_folder = project_path
+        .parent()
+        .expect("Failed to get game data folder");
     let unexported_folder_names = [
         "release", "game", "output", "build", "debug", "export", "private",
     ];
@@ -270,14 +271,24 @@ fn get_project_files(project_path: &Path) -> impl Iterator<Item = (PathBuf, Stri
         "gamedata/game.vecta".to_string(),
     )];
 
-    let game_data_files = fs::read_dir(game_data_folder).unwrap();
+    let Ok(game_data_files) = fs::read_dir(game_data_folder) else {
+        return iter.into_iter();
+    };
     for entry in game_data_files {
-        let entry = entry.unwrap();
+        let Ok(entry) = entry else {
+            continue;
+        };
         let path = entry.path();
         if !path.is_dir() {
             continue;
         }
-        let folder_name = path.file_name().unwrap().to_string_lossy();
+        let Some(folder_name) = path.file_name() else {
+            unreachable!(
+                "When listing files in a directory like {}, only entries which a filename should be returned.",
+                game_data_folder.display()
+            );
+        };
+        let folder_name = folder_name.to_string_lossy();
         let folder_name = folder_name.as_str();
         if unexported_folder_names.contains(&folder_name) {
             continue;
@@ -294,7 +305,9 @@ fn export_project(
     obfuscate: bool,
     platform: ExportPlatform,
 ) -> Result<PathBuf, String> {
-    let game_data_folder = project_path.parent().unwrap();
+    let game_data_folder = project_path
+        .parent()
+        .expect("Failed to get game data folder");
 
     let exported_filename = get_export_filename(project_info, platform);
     let output_path = game_data_folder.join(exported_filename);
@@ -302,7 +315,7 @@ fn export_project(
         let _ = fs::remove_file(&output_path);
     }
 
-    let output_file = fs::File::create(&output_path).unwrap();
+    let output_file = fs::File::create(&output_path).map_err(|e| e.to_string())?;
     let mut zip = zip::ZipWriter::new(output_file);
 
     match platform {
@@ -322,8 +335,9 @@ fn export_project(
                 let _ = fs::remove_file(&output_path);
             }
 
-            let index_html_content = fs::read_to_string(&index_html_path).unwrap();
-            let re = Regex::new(r"target/[a-zA-Z0-9\-/]+/runtime.js").unwrap();
+            let index_html_content =
+                fs::read_to_string(&index_html_path).map_err(|e| e.to_string())?;
+            let re = Regex::new(r"target/[a-zA-Z0-9\-/]+/runtime.js").map_err(|e| e.to_string())?;
             let index_html_content = re.replace_all(&index_html_content, "runtime.js");
             let index_html_content =
                 index_html_content.replace("Vectarine Web Build", &project_info.title);
@@ -333,12 +347,12 @@ fn export_project(
                 "index.html",
                 SimpleFileOptions::default(),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
             add_file_to_zip_from_path(&mut zip, &runtime_js_path, "runtime.js", false, false)
-                .unwrap();
+                .map_err(|e| e.to_string())?;
             add_file_to_zip_from_path(&mut zip, &runtime_wasm_path, "runtime.wasm", false, false)
-                .unwrap();
+                .map_err(|e| e.to_string())?;
         }
         ExportPlatform::Windows => {
             let runtime_path = look_for_file_next_to_exe(
@@ -352,7 +366,7 @@ fn export_project(
             );
             if let Some(runtime_path) = runtime_path {
                 add_file_to_zip_from_path(&mut zip, &runtime_path, "game.exe", true, false)
-                    .unwrap();
+                    .map_err(|e| e.to_string())?;
             } else {
                 return Err("Failed to locate runtime.exe".into());
             }
@@ -367,7 +381,8 @@ fn export_project(
                 None,
             );
             if let Some(runtime_path) = runtime_path {
-                add_file_to_zip_from_path(&mut zip, &runtime_path, "game", true, false).unwrap();
+                add_file_to_zip_from_path(&mut zip, &runtime_path, "game", true, false)
+                    .map_err(|e| e.to_string())?;
             } else {
                 return Err("Failed to locate runtime executable".into());
             }
@@ -382,7 +397,8 @@ fn export_project(
                 None,
             );
             if let Some(runtime_path) = runtime_path {
-                add_file_to_zip_from_path(&mut zip, &runtime_path, "game", true, false).unwrap();
+                add_file_to_zip_from_path(&mut zip, &runtime_path, "game", true, false)
+                    .map_err(|e| e.to_string())?;
             } else {
                 return Err("Failed to locate runtime executable".into());
             }
@@ -395,46 +411,52 @@ fn export_project(
 
         let game_data_files = get_project_files(project_path);
         for (file_path, zip_path) in game_data_files {
-            add_file_to_zip_from_path(&mut zip, &file_path, &zip_path, false, false).unwrap();
+            add_file_to_zip_from_path(&mut zip, &file_path, &zip_path, false, false)
+                .map_err(|e| e.to_string())?;
         }
     } else {
         // Compress game data into bundle.vecta (a zip with zstd compression)
         // then, put the bundle.vecta file into the exported zip
         let inner_zip_path = game_data_folder.join("bundle.vecta");
-        let inner_zip_file = fs::File::create(&inner_zip_path).unwrap();
+        let inner_zip_file = fs::File::create(&inner_zip_path).map_err(|e| e.to_string())?;
         let mut inner_zip = zip::ZipWriter::new(inner_zip_file);
         let game_data_files = get_project_files(project_path);
         for (file_path, zip_path) in game_data_files {
             if file_path.extension() == Some(std::ffi::OsStr::new("luau")) {
                 // Compile into bytecode
-                let script_content = fs::read_to_string(&file_path).unwrap();
+                let script_content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
                 let compiler = mlua::Compiler::new()
                     .set_optimization_level(2)
                     .set_type_info_level(1);
                 let result = compiler.compile(script_content);
-                if let Ok(bytecode) = result {
-                    add_file_content_to_zip(
-                        &mut inner_zip,
-                        &bytecode,
-                        &zip_path,
-                        SimpleFileOptions::default(),
-                    )
-                    .unwrap();
-                } else {
-                    println!(
-                        "Failed to compile {}: {}",
-                        file_path.display(),
-                        result.err().unwrap()
-                    );
-                    add_file_to_zip_from_path(&mut inner_zip, &file_path, &zip_path, false, false)
-                        .unwrap();
+                match result {
+                    Ok(bytecode) => {
+                        add_file_content_to_zip(
+                            &mut inner_zip,
+                            &bytecode,
+                            &zip_path,
+                            SimpleFileOptions::default(),
+                        )
+                        .map_err(|e| e.to_string())?;
+                    }
+                    Err(err) => {
+                        println!("Failed to compile {}: {}", file_path.display(), err);
+                        add_file_to_zip_from_path(
+                            &mut inner_zip,
+                            &file_path,
+                            &zip_path,
+                            false,
+                            false,
+                        )
+                        .map_err(|e| e.to_string())?;
+                    }
                 }
             } else {
                 add_file_to_zip_from_path(&mut inner_zip, &file_path, &zip_path, false, false)
-                    .unwrap();
+                    .map_err(|e| e.to_string())?;
             }
         }
-        inner_zip.finish().unwrap();
+        inner_zip.finish().map_err(|e| e.to_string())?;
 
         add_file_to_zip_from_path(
             &mut zip,
@@ -443,10 +465,10 @@ fn export_project(
             false,
             false, // avoid double compression
         )
-        .unwrap();
+        .map_err(|e| e.to_string())?;
         let _ = fs::remove_file(&inner_zip_path);
     }
 
-    zip.finish().unwrap();
+    zip.finish().map_err(|e| e.to_string())?;
     Ok(output_path)
 }

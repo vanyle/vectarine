@@ -4,7 +4,7 @@ use sdl2::keyboard::Keycode;
 
 use crate::{
     io::IoEnvState,
-    lua_env::{add_fn_to_table, get_internals, lua_vec2::Vec2},
+    lua_env::{add_fn_to_table, lua_vec2::Vec2},
 };
 
 /// Adds to the Lua environment functions to interact with the outside environment
@@ -51,10 +51,10 @@ pub fn setup_io_api(
     add_fn_to_table(lua, &io_module, "getKeysDown", {
         let env_state = env_state.clone();
         move |lua, ()| {
-            let table = lua.create_table().unwrap();
+            let table = lua.create_table()?;
             for (keycode, is_pressed) in env_state.borrow().keyboard_state.iter() {
                 if *is_pressed {
-                    let _ = table.set(table.len().unwrap() + 1, keycode.name());
+                    let _ = table.set(table.raw_len() + 1, keycode.name());
                 }
             }
             Ok(table)
@@ -76,7 +76,7 @@ pub fn setup_io_api(
         let env_state = env_state.clone();
         move |lua, ()| {
             let mouse_state = env_state.borrow().mouse_state.clone();
-            let table = lua.create_table().unwrap();
+            let table = lua.create_table()?;
             let _ = table.set("is_left_down", mouse_state.is_left_down);
             let _ = table.set("is_right_down", mouse_state.is_right_down);
             Ok(table)

@@ -114,8 +114,10 @@ pub fn init_sdl<F>(make_gl_from_video_system: F) -> RenderingBlock
 where
     F: FnOnce(&VideoSubsystem) -> glow::Context,
 {
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
+    let sdl_context = sdl2::init().expect("Failed to initialize SDL");
+    let video_subsystem = sdl_context
+        .video()
+        .expect("Failed to initialize video subsystem");
     let gl_attr = video_subsystem.gl_attr();
 
     set_opengl_attributes(gl_attr);
@@ -126,9 +128,11 @@ where
         .allow_highdpi() // For Retina displays on macOS
         .position_centered()
         .build()
-        .unwrap();
+        .expect("Failed to create window");
 
-    let event_pump = sdl_context.event_pump().unwrap();
+    let event_pump = sdl_context
+        .event_pump()
+        .expect("Failed to create event pump");
 
     let _gl_context = ManuallyDrop::new(
         window

@@ -1,13 +1,14 @@
-use std::{cell::RefCell, rc::Rc};
-
-use mlua::UserData;
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use crate::{
+    auto_impl_lua,
     game_resource::{self, ResourceManager},
     graphics::{batchdraw, glstencil::draw_with_mask},
     io,
-    lua_env::{add_fn_to_table, get_gl_handle, get_internals},
+    lua_env::{add_fn_to_table, get_internals},
 };
+use mlua::IntoLua;
+use mlua::{FromLua, UserDataMethods};
 
 /// Represents a screen in the game (menu, gameplay, pause, etc.)
 #[derive(Clone, PartialEq)]
@@ -15,30 +16,7 @@ pub struct Screen {
     name: String,
     draw_fn: mlua::Function,
 }
-
-impl UserData for Screen {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("name", |_, this, ()| Ok(this.name.clone()));
-        methods.add_method("draw", |_, this, ()| this.draw_fn.call::<()>(()));
-
-        methods.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (Self, Self)| {
-            Ok(id1 == id2)
-        });
-    }
-}
-
-impl mlua::FromLua for Screen {
-    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "Screen".to_string(),
-                message: Some("Expected Screen userdata".to_string()),
-            }),
-        }
-    }
-}
+auto_impl_lua!(Screen, Screen);
 
 #[derive(Default)]
 pub struct ScreenState {
@@ -66,18 +44,21 @@ pub struct RcScreenState(pub Rc<RefCell<ScreenState>>);
 impl mlua::UserData for RcScreenState {}
 
 const SCREEN_STATE_KEY: &str = "__screen_state";
-
-pub fn get_screen_state(lua: &mlua::Lua) -> Rc<RefCell<ScreenState>> {
+pub fn get_screen_state(lua: &mlua::Lua) -> Option<Rc<RefCell<ScreenState>>> {
     let internals = get_internals(lua);
-    let value: mlua::Value = internals.raw_get(SCREEN_STATE_KEY).unwrap();
-    let rc_screen_state = value.as_userdata().unwrap();
-    let rc_screen_state = rc_screen_state.borrow::<RcScreenState>().unwrap();
-    rc_screen_state.0.clone()
+    let value: mlua::Value = internals.raw_get(SCREEN_STATE_KEY).ok()?;
+    let rc_screen_state = value.as_userdata()?;
+    let rc_screen_state = rc_screen_state.borrow::<RcScreenState>().ok()?;
+    Some(rc_screen_state.0.clone())
 }
 
 /// Updates the screen transition state. Should be called each frame with delta_time.
 pub fn update_screen_transition(lua: &mlua::Lua, delta_time: f32) {
-    let screen_state = get_screen_state(lua);
+    let Some(screen_state) = get_screen_state(lua) else {
+        // Indicates that the Lua code tampered with the internals.
+        return;
+    };
+
     let mut state = screen_state.borrow_mut();
 
     if let Some(ref mut transition) = state.transition {
@@ -93,11 +74,19 @@ pub fn setup_screen_api(
 ) -> mlua::Result<mlua::Table> {
     let screen_module = lua.create_table()?;
 
-    // Store screen state in internals
     let screen_state = Rc::new(RefCell::new(ScreenState::default()));
     get_internals(lua)
         .raw_set(SCREEN_STATE_KEY, RcScreenState(screen_state.clone()))
-        .unwrap();
+        .expect("Failed to set screen state");
+
+    lua.register_userdata_type::<Screen>(|registry| {
+        registry.add_method("name", |_, this, ()| Ok(this.name.clone()));
+        registry.add_method("draw", |_, this, ()| this.draw_fn.call::<()>(()));
+        registry.add_meta_function(
+            mlua::MetaMethod::Eq,
+            |_lua, (id1, id2): (Screen, Screen)| Ok(id1 == id2),
+        );
+    })?;
 
     add_fn_to_table(lua, &screen_module, "newScreen", {
         move |_, (name, draw_fn): (String, mlua::Function)| Ok(Screen { name, draw_fn })
@@ -165,18 +154,18 @@ pub fn setup_screen_api(
     });
 
     add_fn_to_table(lua, &screen_module, "drawCurrentScreen", {
-        let lua = lua.clone();
+        let gl = batch.borrow().drawing_target.gl().clone();
         let screen_state = screen_state;
         let batch = batch.clone();
         let resources = resources.clone();
-        move |_, ()| draw_current_screen_impl(&lua, &screen_state, &batch, &resources)
+        move |_, ()| draw_current_screen_impl(&gl, &screen_state, &batch, &resources)
     });
 
     Ok(screen_module)
 }
 
 fn draw_current_screen_impl(
-    lua: &Rc<mlua::Lua>,
+    gl: &Arc<glow::Context>,
     screen_state: &Rc<RefCell<ScreenState>>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     resources: &Rc<ResourceManager>,
@@ -205,17 +194,13 @@ fn draw_current_screen_impl(
     if has_transition {
         match style {
             Some(TransitionStyle::SlideUp) => {
-                draw_slide_transition(
-                    lua, old_screen, new_screen, progress, 1.0, batch, resources,
-                )?;
+                draw_slide_transition(gl, old_screen, new_screen, progress, 1.0, batch, resources);
             }
             Some(TransitionStyle::SlideDown) => {
-                draw_slide_transition(
-                    lua, old_screen, new_screen, progress, -1.0, batch, resources,
-                )?;
+                draw_slide_transition(gl, old_screen, new_screen, progress, -1.0, batch, resources);
             }
             Some(TransitionStyle::Toon) => {
-                draw_toon_transition(lua, old_screen, new_screen, progress, batch, resources)?;
+                draw_toon_transition(gl, old_screen, new_screen, progress, batch, resources);
             }
             Some(TransitionStyle::Custom(custom_fn)) => {
                 custom_fn.call::<()>((old_screen, new_screen, progress))?;
@@ -226,26 +211,24 @@ fn draw_current_screen_impl(
         // Just draw current screen
         screen.draw_fn.call::<()>(())?;
     }
-
     Ok(())
 }
 
 fn draw_slide_transition(
-    lua: &Rc<mlua::Lua>,
+    gl: &Arc<glow::Context>,
     old_screen: Option<Screen>,
     new_screen: Option<Screen>,
     progress: f32,
     direction: f32,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<()> {
-    let gl = get_gl_handle(lua);
+) {
     let height = progress * 2.0;
     let slide_up = direction > 0.0;
 
     if let Some(ref screen) = old_screen {
         draw_with_mask(
-            &gl,
+            gl,
             || {
                 batch.borrow_mut().draw_rect(
                     -1.0,
@@ -267,7 +250,7 @@ fn draw_slide_transition(
     if let Some(ref screen) = new_screen {
         let y = if slide_up { -1.0 } else { 1.0 - height };
         draw_with_mask(
-            &gl,
+            gl,
             || {
                 batch
                     .borrow_mut()
@@ -280,20 +263,17 @@ fn draw_slide_transition(
             },
         );
     }
-
-    Ok(())
 }
 
 fn draw_toon_transition(
-    _lua: &Rc<mlua::Lua>,
+    gl: &Arc<glow::Context>,
     old_screen: Option<Screen>,
     new_screen: Option<Screen>,
     progress: f32,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<()> {
+) {
     // Circle wipe effect
-    let gl = get_gl_handle(_lua);
     let radius = progress * 2.0;
 
     if let Some(ref screen) = old_screen {
@@ -303,7 +283,7 @@ fn draw_toon_transition(
 
     if let Some(ref screen) = new_screen {
         draw_with_mask(
-            &gl,
+            gl,
             || {
                 batch
                     .borrow_mut()
@@ -316,6 +296,4 @@ fn draw_toon_transition(
             },
         );
     }
-
-    Ok(())
 }

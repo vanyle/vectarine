@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{hint::unreachable_unchecked, sync::Arc};
 
 use glow::HasContext;
 
@@ -37,9 +37,9 @@ impl BufferUsageHint {
 
 impl GpuVertexData {
     pub fn new(gl: &Arc<glow::Context>) -> Self {
-        let vao = unsafe { gl.create_vertex_array().unwrap() };
-        let vbo = unsafe { gl.create_buffer().unwrap() };
-        let ebo = unsafe { gl.create_buffer().unwrap() };
+        let vao = unsafe { gl.create_vertex_array().expect("Failed to create VAO") };
+        let vbo = unsafe { gl.create_buffer().expect("Failed to create VBO") };
+        let ebo = unsafe { gl.create_buffer().expect("Failed to create EBO") };
 
         Self {
             vbo,
@@ -265,17 +265,23 @@ impl SharedGPUCPUBuffer {
         usage_hint: &BufferUsageHint,
     ) -> &GpuVertexData {
         if self.gpu_up_to_date {
-            return self.gpu_buffer.as_ref().unwrap();
+            return self
+                .gpu_buffer
+                .as_ref()
+                .expect("GPU buffer should be initialized");
         }
         let mut gpu_buffer = GpuVertexData::new(gl);
         gpu_buffer.apply_layout(self.layout.clone());
         // We know set_data only performs a soundness check, so we can safely unwrap.
         gpu_buffer
             .set_data_with_usage(&self.cpu_vertex_data, &self.cpu_index_data, usage_hint)
-            .unwrap();
+            .expect("Unable to send data to GPU");
         self.gpu_buffer = Some(gpu_buffer);
         self.gpu_up_to_date = true;
-        self.gpu_buffer.as_ref().unwrap()
+        match self.gpu_buffer.as_ref() {
+            Some(buffer) => buffer,
+            None => unsafe { unreachable_unchecked() }, // Soundness: see 4 lines above
+        }
     }
 
     pub fn is_on_gpu(&self) -> bool {

@@ -24,8 +24,9 @@ impl Resource for ImageResource {
         data: Box<[u8]>,
     ) -> Status {
         let result = image::load_from_memory(&data);
-        let Ok(image) = result else {
-            return Status::Error(format!("{}", result.err().unwrap()));
+        let image = match result {
+            Err(err) => return Status::Error(format!("{}", err)),
+            Ok(image) => image,
         };
 
         self.texture.replace(Some(Texture::new_rgba(

@@ -136,7 +136,7 @@ pub fn draw_new_game_window_content(
         if game_name.is_empty() {
             error_idx = Some(0);
         } else {
-            let regex = Regex::new(r"^[A-Za-z0-9_\- ]+$").unwrap();
+            let regex = Regex::new(r"^[A-Za-z0-9_\- ]+$").expect("Unable to create regex");
             if !regex.is_match(game_name) {
                 error_idx = Some(1);
             }
@@ -178,7 +178,7 @@ pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_pa
 
     setup_failed = setup_failed.or(fs::create_dir_all(script_folder).err());
     {
-        let serialized = toml::to_string(&project_info).unwrap();
+        let serialized = toml::to_string(&project_info).unwrap_or_default();
         setup_failed = setup_failed.or(fs::write(&project_file_path, serialized).err());
     }
     setup_failed = setup_failed.or(fs::write(

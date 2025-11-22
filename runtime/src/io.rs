@@ -87,8 +87,10 @@ pub fn process_events(
                 env_state.keyboard_state.insert(*keycode, false);
 
                 let _ = game.lua_env.default_events.keyup_event.trigger(
-                    &game.lua_env.lua,
-                    keycode.name().into_lua(&game.lua_env.lua).unwrap(),
+                    keycode
+                        .name()
+                        .into_lua(&game.lua_env.lua)
+                        .expect("Failed to convert Keycode to Lua"),
                 );
             }
             Event::KeyDown { keycode, .. } => {
@@ -100,8 +102,10 @@ pub fn process_events(
                 env_state.keyboard_just_pressed_state.insert(*keycode, true);
 
                 let _ = game.lua_env.default_events.keydown_event.trigger(
-                    &game.lua_env.lua,
-                    keycode.name().into_lua(&game.lua_env.lua).unwrap(),
+                    keycode
+                        .name()
+                        .into_lua(&game.lua_env.lua)
+                        .expect("Failed to convert Keycode to Lua"),
                 );
             }
             Event::MouseButtonUp { mouse_btn, .. } => {
@@ -116,8 +120,9 @@ pub fn process_events(
                 }
                 let mouse_button = mouse_button_to_str(*mouse_btn);
                 let _ = game.lua_env.default_events.mouse_up_event.trigger(
-                    &game.lua_env.lua,
-                    mouse_button.into_lua(&game.lua_env.lua).unwrap(),
+                    mouse_button
+                        .into_lua(&game.lua_env.lua)
+                        .expect("Failed to convert mouse button to Lua"),
                 );
             }
             Event::MouseButtonDown { mouse_btn, .. } => {
@@ -132,8 +137,9 @@ pub fn process_events(
                 }
                 let mouse_button = mouse_button_to_str(*mouse_btn);
                 let _ = game.lua_env.default_events.mouse_down_event.trigger(
-                    &game.lua_env.lua,
-                    mouse_button.into_lua(&game.lua_env.lua).unwrap(),
+                    mouse_button
+                        .into_lua(&game.lua_env.lua)
+                        .expect("Failed to convert mouse button to Lua"),
                 );
             }
             Event::MouseMotion {

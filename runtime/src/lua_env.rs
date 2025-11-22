@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
@@ -40,6 +39,7 @@ pub struct LuaEnvironment {
 }
 
 impl LuaEnvironment {
+    #[allow(clippy::unwrap_used)]
     pub fn new(
         batch: BatchDraw2d,
         file_system: Box<dyn ReadOnlyFileSystem>,
@@ -48,6 +48,7 @@ impl LuaEnvironment {
         let batch = Rc::new(RefCell::new(batch));
         let lua_options = mlua::LuaOptions::default();
         let lua_libs = mlua::StdLib::MATH | mlua::StdLib::TABLE | mlua::StdLib::STRING;
+        let gl = batch.borrow().drawing_target.gl().clone();
 
         let lua =
             Rc::new(mlua::Lua::new_with(lua_libs, lua_options).expect("Failed to create Lua"));
@@ -58,14 +59,13 @@ impl LuaEnvironment {
         );
         let _ = lua.sandbox(false);
 
+        // We create a table used to store rust state that is tied to the lua environment, for internal use.
+        // An example of such state is the current screen object (from the screen.luau module)
+        // This screen can only be set/get from lua using function and direct variable access is not allowed, but it needs to be saved somewhere.
+        // Hence an internal table.
         lua.globals()
             .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
-            .unwrap(); // Table used to store unsafe function that we need to access from Rust inside Rust.
-
-        // Put gl into internals
-        let gl = batch.borrow().drawing_target.gl().clone();
-        let internals = get_internals(&lua);
-        internals.set(GL_USERDATA_KEY, LuaGLContext(gl)).unwrap();
+            .unwrap();
 
         let resources = Rc::new(ResourceManager::new(file_system, base_path));
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
@@ -79,8 +79,13 @@ impl LuaEnvironment {
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
 
-        let coords_module = lua_coord::setup_coords_api(&lua).unwrap();
+        let coords_module = lua_coord::setup_coords_api(&lua, &gl).unwrap();
         lua.register_module("@vectarine/coord", coords_module)
+            .unwrap();
+
+        let (event_module, default_events, _event_manager) =
+            lua_event::setup_event_api(&lua).unwrap();
+        lua.register_module("@vectarine/event", event_module)
             .unwrap();
 
         let canvas_module =
@@ -111,10 +116,6 @@ impl LuaEnvironment {
 
         let debug_module = lua_debug::setup_debug_api(&lua, &messages, &frame_messages).unwrap();
         lua.register_module("@vectarine/debug", debug_module)
-            .unwrap();
-
-        let (event_module, default_events) = lua_event::setup_event_api(&lua).unwrap();
-        lua.register_module("@vectarine/event", event_module)
             .unwrap();
 
         let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
@@ -173,6 +174,7 @@ impl LuaEnvironment {
     }
 }
 
+#[allow(clippy::unwrap_used)]
 pub fn add_global_fn<F, A, R>(lua: &Rc<mlua::Lua>, name: &str, func: F)
 where
     F: Fn(&mlua::Lua, A) -> mlua::Result<R> + 'static,
@@ -184,6 +186,7 @@ where
         .unwrap()
 }
 
+#[allow(clippy::unwrap_used)]
 pub fn add_fn_to_table<F, A, R>(lua: &Rc<mlua::Lua>, table: &mlua::Table, name: &str, func: F)
 where
     F: Fn(&mlua::Lua, A) -> mlua::Result<R> + 'static,
@@ -205,7 +208,7 @@ pub fn run_file_and_display_error_from_lua_handle(
     let lua_chunk = lua.load(file_content);
     // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
     let result = lua_chunk
-        .set_name("@".to_owned() + file_path.to_str().unwrap())
+        .set_name(format!("@{}", file_path.to_string_lossy()))
         .eval::<mlua::Value>();
 
     match result {
@@ -244,13 +247,6 @@ pub fn stringify_lua_value(value: &mlua::Value) -> String {
     stringify_lua_value_helper(value, &mut seen)
 }
 
-const UNSAFE_INTERNALS_KEY: &str = "VectarineUnsafeInternal";
-
-pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
-    let globals = lua.globals();
-    globals.raw_get(UNSAFE_INTERNALS_KEY).unwrap()
-}
-
 pub fn to_lua<T>(lua: &mlua::Lua, value: T) -> mlua::Result<mlua::Value>
 where
     T: mlua::IntoLua,
@@ -266,10 +262,10 @@ pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
 }
 
 /// Helper function to allow printing messages from anywhere in Rust as long as you have access to a lua handle.
-pub fn print(lua: &Rc<mlua::Lua>, verbosity: Verbosity, msg: &str) {
-    let internals = get_internals(lua);
-    let print_fn: mlua::Function = internals.raw_get("print").unwrap();
-    let _ = print_fn.call::<()>((msg.to_string(), verbosity));
+pub fn print(_lua: &Rc<mlua::Lua>, _verbosity: Verbosity, _msg: &str) {
+    todo!(
+        "print is not implemented yet. The planned print should not require you to have a Lua handle."
+    )
 }
 
 fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {
@@ -324,14 +320,11 @@ fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) 
     }
 }
 
-struct LuaGLContext(Arc<glow::Context>);
-impl mlua::UserData for LuaGLContext {}
+const UNSAFE_INTERNALS_KEY: &str = "Vectarine_Unsafe_Internal";
 
-const GL_USERDATA_KEY: &str = "__gl_context";
-pub fn get_gl_handle(lua: &mlua::Lua) -> Arc<glow::Context> {
-    let internals = get_internals(lua);
-    let gl_value: mlua::Value = internals.raw_get(GL_USERDATA_KEY).unwrap();
-    let gl_userdata = gl_value.as_userdata().unwrap();
-    let gl = gl_userdata.borrow::<LuaGLContext>().unwrap();
-    gl.0.clone()
+pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
+    let globals = lua.globals();
+    globals
+        .raw_get(UNSAFE_INTERNALS_KEY)
+        .expect("Failed to get lua internal table")
 }

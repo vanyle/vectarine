@@ -1,7 +1,6 @@
 use std::env;
-use std::io;
 
-fn main() -> io::Result<()> {
+fn main() {
     let profile = env::var("PROFILE")
         .expect("The PROFILE environment variable should be set by cargo when linking.");
 
@@ -44,5 +43,4 @@ fn main() -> io::Result<()> {
             println!("cargo:rustc-link-arg=-mwindows");
         }
     }
-    Ok(())
 }

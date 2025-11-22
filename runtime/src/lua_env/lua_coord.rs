@@ -1,10 +1,12 @@
-use std::{ops, rc::Rc};
+use std::{ops, rc::Rc, sync::Arc};
 
-use mlua::{AnyUserData, FromLua, IntoLua, UserData};
+use glow::Context;
+use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
+    auto_impl_lua_copy,
     graphics::glframebuffer::{Viewport, get_viewport},
-    lua_env::{add_fn_to_table, get_gl_handle, lua_vec2::Vec2},
+    lua_env::{add_fn_to_table, lua_vec2::Vec2},
 };
 
 // MARK: Type Def
@@ -13,10 +15,12 @@ use crate::{
 /// This is internally stored in OpenGL coordinates
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct ScreenPosition(Vec2);
+auto_impl_lua_copy!(ScreenPosition, ScreenPosition);
 
 /// Represents a direction on the screen
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct ScreenVec(Vec2);
+auto_impl_lua_copy!(ScreenVec, ScreenVec);
 
 impl ScreenPosition {
     pub fn as_vec2(self) -> Vec2 {
@@ -72,32 +76,6 @@ impl ScreenVec {
     }
 }
 
-impl FromLua for ScreenPosition {
-    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "ScreenPosition".to_string(),
-                message: Some("Expected ScreenPosition userdata".to_string()),
-            }),
-        }
-    }
-}
-
-impl FromLua for ScreenVec {
-    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "ScreenVec".to_string(),
-                message: Some("Expected ScreenVec userdata".to_string()),
-            }),
-        }
-    }
-}
-
 impl ops::Sub for ScreenPosition {
     type Output = ScreenVec;
 
@@ -114,22 +92,21 @@ impl ops::Add<ScreenVec> for ScreenPosition {
     }
 }
 
-// MARK: Lua
+pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<mlua::Table> {
+    let coords_module = lua.create_table()?;
 
-impl UserData for ScreenVec {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_meta_function(
+    lua.register_userdata_type::<ScreenVec>(|registry| {
+        let gl = gl.clone();
+        registry.add_meta_function(
             mlua::MetaMethod::Add,
             |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 + other.0)),
         );
-        methods.add_meta_function(
+        registry.add_meta_function(
             mlua::MetaMethod::Sub,
             |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 - other.0)),
         );
-
-        methods.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
-        methods.add_method("px", |lua, this, (screen_size,): (Option<Vec2>,)| {
-            let gl = get_gl_handle(lua);
+        registry.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
+        registry.add_method("px", move |_lua, this, (screen_size,): (Option<Vec2>,)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -137,19 +114,17 @@ impl UserData for ScreenVec {
             };
             Ok(this.as_px(viewport.width as f32, viewport.height as f32))
         });
-        methods.add_method("scale", |_, this, (k,): (f32,)| Ok(this.scale(k)));
+        registry.add_method("scale", |_, this, (k,): (f32,)| Ok(this.scale(k)));
 
-        methods.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
+        registry.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
             Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x, pos.0.y))
         });
-    }
-}
+    })?;
 
-impl UserData for ScreenPosition {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
-        methods.add_method("px", |lua, this, (screen_size,): (Option<Vec2>,)| {
-            let gl = get_gl_handle(lua);
+    lua.register_userdata_type::<ScreenPosition>(|registry| {
+        let gl = gl.clone();
+        registry.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
+        registry.add_method("px", move |_lua, this, (screen_size,): (Option<Vec2>,)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -158,7 +133,7 @@ impl UserData for ScreenPosition {
             Ok(this.as_px(viewport.width as f32, viewport.height as f32))
         });
 
-        methods.add_meta_function(
+        registry.add_meta_function(
             mlua::MetaMethod::Add,
             |_lua, (this, other): (ScreenPosition, AnyUserData)| {
                 let is_other_screen_pos = other.is::<ScreenPosition>();
@@ -173,7 +148,7 @@ impl UserData for ScreenPosition {
             },
         );
 
-        methods.add_meta_function(
+        registry.add_meta_function(
             mlua::MetaMethod::Sub,
             |lua, (this, other): (ScreenPosition, AnyUserData)| {
                 let as_screen_pos = other.borrow::<ScreenPosition>();
@@ -189,18 +164,14 @@ impl UserData for ScreenPosition {
             },
         );
 
-        methods.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
+        registry.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
             Ok(format!("ScreenPosition({:.4}, {:.4})", pos.0.x, pos.0.y))
         });
-    }
-}
-
-pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
-    let coords_module = lua.create_table()?;
+    })?;
 
     add_fn_to_table(lua, &coords_module, "px", {
-        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let gl = get_gl_handle(lua);
+        let gl = gl.clone();
+        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -215,8 +186,8 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     });
 
     add_fn_to_table(lua, &coords_module, "pxVec", {
-        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let gl = get_gl_handle(lua);
+        let gl = gl.clone();
+        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -239,8 +210,8 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     });
 
     add_fn_to_table(lua, &coords_module, "vw", {
-        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let gl = get_gl_handle(lua);
+        let gl = gl.clone();
+        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -255,8 +226,8 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     });
 
     add_fn_to_table(lua, &coords_module, "vwVec", {
-        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let gl = get_gl_handle(lua);
+        let gl = gl.clone();
+        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -270,8 +241,8 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     });
 
     add_fn_to_table(lua, &coords_module, "vh", {
-        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let gl = get_gl_handle(lua);
+        let gl = gl.clone();
+        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {
@@ -286,8 +257,8 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     });
 
     add_fn_to_table(lua, &coords_module, "vhVec", {
-        move |lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let gl = get_gl_handle(lua);
+        let gl = gl.clone();
+        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
             } else {

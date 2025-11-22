@@ -161,7 +161,9 @@ impl Platform {
                                 let clipboard = video.clipboard();
                                 if clipboard.has_clipboard_text() {
                                     self.raw_input.events.push(egui::Event::Text(
-                                        clipboard.clipboard_text().unwrap(),
+                                        clipboard
+                                            .clipboard_text()
+                                            .expect("Unable to get clipboard text"),
                                     ));
                                 }
                             }

@@ -88,7 +88,7 @@ pub fn setup_loader_api(
                     resources.schedule_load_script_resource(Path::new(&path), target_table);
                 return Ok((ScriptResourceId::from_id(id), mlua::Value::Table(table)));
             }
-            let dummy_table = lua.create_table().unwrap();
+            let dummy_table = lua.create_table()?;
             let (id, table) =
                 resources.schedule_load_script_resource(Path::new(&path), dummy_table);
             Ok((ScriptResourceId::from_id(id), mlua::Value::Table(table)))

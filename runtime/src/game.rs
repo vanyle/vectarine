@@ -46,7 +46,7 @@ impl Game {
             project_info.default_screen_height,
         );
 
-        let batch = BatchDraw2d::new(&gl).unwrap();
+        let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
         let lua_env = LuaEnvironment::new(batch, file_system, project_dir);
         let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone());
         game.load(video, window);
@@ -55,7 +55,7 @@ impl Game {
             path,
             gl,
             game.lua_env.lua.clone(),
-            game.lua_env.default_events.resource_loaded_event,
+            game.lua_env.default_events.resource_loaded_event.clone(),
         );
         callback(Ok(game));
     }
@@ -241,7 +241,7 @@ impl Game {
                 resource_id,
                 self.gl.clone(),
                 self.lua_env.lua.clone(),
-                self.lua_env.default_events.resource_loaded_event,
+                self.lua_env.default_events.resource_loaded_event.clone(),
             );
         }
     }

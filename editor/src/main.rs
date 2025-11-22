@@ -60,11 +60,12 @@ fn gui_main() {
     let (debounce_event_sender, debounce_receiver) = channel();
 
     // Setup the editor interface
-    let mut painter = egui_glow::Painter::new(gl.clone(), "", None, true).unwrap();
+    let mut painter =
+        egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
 
     // Create the egui + sdl2 platform
-    let mut platform =
-        egui_sdl2_platform::Platform::new(drawable_screen_size(&window.borrow())).unwrap();
+    let mut platform = egui_sdl2_platform::Platform::new(drawable_screen_size(&window.borrow()))
+        .expect("Failed to create platform");
 
     let mut editor_state = EditorState::new(
         video.clone(),

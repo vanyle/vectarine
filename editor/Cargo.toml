@@ -39,5 +39,5 @@ redundant_clone = "warn"
 redundant_test_prefix = "warn"
 ref_option = "warn"
 ref_option_ref = "warn"
-# expect is better as you can put a message inside:
 unwrap_used = "warn"
+unnecessary_wraps = "warn"

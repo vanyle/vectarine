@@ -149,7 +149,7 @@ impl EditorState {
                         Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
                     },
                 )
-                .unwrap(),
+                .expect("Failed to create debouncer"),
             )),
         }
     }
@@ -236,22 +236,27 @@ impl EditorState {
         }
 
         // Stop drawing the egui frame and get the full output
-        let full_output = platform.end_frame(&mut self.video.borrow_mut()).unwrap();
-        // Get the paint jobs
-        let paint_jobs = platform.tessellate(&full_output);
-        let pj = paint_jobs.as_slice();
+        let full_output = platform.end_frame(&mut self.video.borrow_mut());
+        match full_output {
+            Ok(full_output) => {
+                // Get the paint jobs
+                let paint_jobs = platform.tessellate(&full_output);
+                let pj = paint_jobs.as_slice();
 
-        // Render the editor interface on top of the game.
-        let size = drawable_screen_size(&self.window.borrow());
+                // Render the editor interface on top of the game.
+                let size = drawable_screen_size(&self.window.borrow());
 
-        let pixel_per_point = size.0 as f32 / self.window.borrow().size().0 as f32;
+                let pixel_per_point = size.0 as f32 / self.window.borrow().size().0 as f32;
 
-        painter.paint_and_update_textures(
-            [size.0, size.1],
-            pixel_per_point,
-            pj,
-            &full_output.textures_delta,
-        );
+                painter.paint_and_update_textures(
+                    [size.0, size.1],
+                    pixel_per_point,
+                    pj,
+                    &full_output.textures_delta,
+                );
+            }
+            Err(e) => println!("Failed to render debug ui: {e:?}"),
+        };
         for event in latest_events {
             // Convert mouse position.
             platform.handle_event(event, sdl, &self.video.borrow());

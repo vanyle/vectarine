@@ -7,7 +7,7 @@ use crate::{
     graphics::{batchdraw, glstencil::draw_with_mask},
     io,
     lua_env::{
-        add_fn_to_table, get_gl_handle,
+        add_fn_to_table,
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
     },
 };
@@ -56,7 +56,7 @@ pub fn setup_graphics_api(
         move |lua, (mpos, mdir, color, size): (AnyUserData, AnyUserData, Option<Table>, Option<f32>)| {
             let pos = get_pos_as_vec2(mpos)?;
             let dir = get_size_as_vec2(mdir)?;
-            let color = table_to_color(color.unwrap_or(get_default_color(lua).unwrap()));
+            let color = table_to_color(color.unwrap_or(get_default_color(lua)?));
             let dir_len = (dir.x * dir.x + dir.y * dir.y).sqrt();
             if dir_len == 0.0 {
                 return Ok(());
@@ -95,8 +95,8 @@ pub fn setup_graphics_api(
     add_fn_to_table(lua, &graphics_module, "drawWithMask", {
         let batch = batch.clone();
         let resources = resources.clone();
-        move |lua, (draw_fn, mask_fn): (mlua::Function, mlua::Function)| {
-            let gl = get_gl_handle(lua);
+        let gl = batch.borrow().drawing_target.gl().clone();
+        move |_lua, (draw_fn, mask_fn): (mlua::Function, mlua::Function)| {
             draw_with_mask(
                 &gl,
                 || {

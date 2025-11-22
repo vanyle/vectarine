@@ -132,7 +132,11 @@ impl ResourceHolder {
                     data.into_boxed_slice(),
                 );
                 self.status.replace(resulting_status);
-                let _ = resource_event.trigger(&lua, assigned_id.into_lua(&lua).unwrap());
+                let _ = resource_event.trigger(
+                    assigned_id
+                        .into_lua(&lua)
+                        .expect("Failed to convert ResourceId to Lua"),
+                );
             }),
         );
     }

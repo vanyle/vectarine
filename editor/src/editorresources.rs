@@ -113,7 +113,7 @@ fn draw_resource_table(editor: &EditorState, ui: &mut egui::Ui, game: &Option<&m
                                 id,
                                 gl,
                                 game.lua_env.lua.clone(),
-                                game.lua_env.default_events.resource_loaded_event,
+                                game.lua_env.default_events.resource_loaded_event.clone(),
                             );
                         }
                         let mut config = editor.config.borrow_mut();

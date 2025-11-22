@@ -79,8 +79,7 @@ pub fn try_send_command_to_game(game: &Option<&mut Game>, command: &str) {
         return;
     };
     let _ = game.lua_env.default_events.console_command_event.trigger(
-        game.lua_env.lua.as_ref(),
-        to_lua(game.lua_env.lua.as_ref(), command).unwrap(),
+        to_lua(game.lua_env.lua.as_ref(), command).expect("Failed to convert command to lua"),
     );
 }
 
@@ -90,18 +89,24 @@ fn draw_console_content(ui: &mut egui::Ui, game: &Option<&mut Game>) {
     static ARE_LOGS_INFO_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
 
     ui.horizontal(|ui: &mut egui::Ui| {
-        ui.checkbox(&mut ARE_LOGS_INFO_SHOWN.lock().unwrap(), "Infos");
-        ui.checkbox(&mut ARE_LOGS_WARN_SHOWN.lock().unwrap(), "Warnings");
-        ui.checkbox(&mut ARE_LOGS_ERROR_SHOWN.lock().unwrap(), "Errors");
+        if let Ok(mut infos) = ARE_LOGS_INFO_SHOWN.lock() {
+            ui.checkbox(&mut infos, "Infos");
+        }
+        if let Ok(mut warnings) = ARE_LOGS_WARN_SHOWN.lock() {
+            ui.checkbox(&mut warnings, "Warnings");
+        }
+        if let Ok(mut errors) = ARE_LOGS_ERROR_SHOWN.lock() {
+            ui.checkbox(&mut errors, "Errors");
+        }
     });
     egui::ScrollArea::vertical()
         .id_salt("console")
         .auto_shrink(false)
         .stick_to_bottom(true)
         .show(ui, |ui| {
-            let show_errors = *ARE_LOGS_ERROR_SHOWN.lock().unwrap();
-            let show_warnings = *ARE_LOGS_WARN_SHOWN.lock().unwrap();
-            let show_infos = *ARE_LOGS_INFO_SHOWN.lock().unwrap();
+            let show_errors = ARE_LOGS_ERROR_SHOWN.lock().map(|e| *e).unwrap_or_default();
+            let show_warnings = ARE_LOGS_WARN_SHOWN.lock().map(|e| *e).unwrap_or_default();
+            let show_infos = ARE_LOGS_INFO_SHOWN.lock().map(|e| *e).unwrap_or_default();
 
             let Some(game) = game else {
                 ui.label("No game loaded");

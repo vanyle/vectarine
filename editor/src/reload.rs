@@ -40,7 +40,7 @@ pub fn reload_assets_if_needed(
                         res_id,
                         gl.clone(),
                         lua_for_reload.lua.clone(),
-                        lua_for_reload.default_events.resource_loaded_event,
+                        lua_for_reload.default_events.resource_loaded_event.clone(),
                     );
                 }
             }
