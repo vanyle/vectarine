@@ -160,9 +160,12 @@ wind> ./emsdk/emsdk install 4.0.13
 wind> ./emsdk/emsdk activate 4.0.13
 wind> ./emsdk/emsdk_env.ps1 # once you have run activate once, you can use this as a shorthand
 both> cargo build -p runtime --target wasm32-unknown-emscripten
-both> uv run serve.py # Start this in another terminal.
+both> uv run ./script/serve.py # Start this in another terminal.
 # Open http://localhost:8000 in your browser
 ```
+
+When trying out web builds, you can also use the test runner by going to `http://localhost:8000/test-runner.html`.
+The test-runner allows you to switch between debug and release builds.
 
 ## Structure
 

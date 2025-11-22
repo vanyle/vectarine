@@ -22,6 +22,14 @@
 				transform: translate(-50%, -50%);
 			}
 
+			.debug-info {
+				z-index: 1;
+				position: absolute;
+				top: 0%;
+				left: 0%;
+				padding: 16px;
+			}
+
 			/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
 			canvas {
 				border: 0px none;
@@ -80,6 +88,25 @@
 		<div id="loading-info" class="loading-info">
 			<div class="spinner" id="spinner"></div>
 			<div class="emscripten" id="status">Downloading...</div>
+		</div>
+
+		<div id="debug-info" class="debug-info">
+			<div>Debug Info</div>
+			<div id="runtime-path">
+				<select id="runtime-selector">
+					<option
+						value="target/wasm32-unknown-emscripten/debug/runtime.js"
+					>
+						target/wasm32-unknown-emscripten/debug/runtime.js
+					</option>
+					<option
+						value="target/wasm32-unknown-emscripten/release/runtime.js"
+					>
+						target/wasm32-unknown-emscripten/release/runtime.js
+					</option>
+				</select>
+			</div>
+			<button onclick="location.reload()">Restart runtime</button>
 		</div>
 
 		<canvas
@@ -162,103 +189,134 @@
 
 			const loadingInfoElement = document.getElementById("loading-info");
 			const statusText = document.getElementById("status");
-			var Module = {
-				preRun: [],
-				postRun: [],
-				print: (function () {
-					return function (text) {
+
+			function makeModule() {
+				let Module = {
+					preRun: [],
+					postRun: [],
+					print: (function () {
+						return function (text) {
+							if (arguments.length > 1)
+								text = Array.prototype.slice
+									.call(arguments)
+									.join(" ");
+							// These replacements are necessary if you render to raw HTML
+							console.log("[WASM]", ...arguments);
+						};
+					})(),
+					printErr: function (text) {
 						if (arguments.length > 1)
 							text = Array.prototype.slice
 								.call(arguments)
 								.join(" ");
-						// These replacements are necessary if you render to raw HTML
-						console.log("[WASM]", ...arguments);
-					};
-				})(),
-				printErr: function (text) {
-					if (arguments.length > 1)
-						text = Array.prototype.slice.call(arguments).join(" ");
-					if (0) {
-						// XXX disabled for safety typeof dump == 'function') {
-						dump(text + "\n"); // fast, straight to the real console
-					} else {
-						console.error(text);
-						if (text.startsWith("fatal runtime error")) {
-							// Stop the module on fatal errors
-							// This avoid spamming the console with unrelevant errors
-							Module.abort();
+						if (0) {
+							// XXX disabled for safety typeof dump == 'function') {
+							dump(text + "\n"); // fast, straight to the real console
+						} else {
+							console.error(text);
+							if (text.startsWith("fatal runtime error")) {
+								// Stop the module on fatal errors
+								// This avoid spamming the console with unrelevant errors
+								Module.abort();
+							}
 						}
-					}
-				},
-				canvas: (function () {
-					var canvas = document.getElementById("canvas");
-					// As a default initial behavior, pop up an alert when webgl context is lost. To make your
-					// application robust, you may want to override this behavior before shipping!
-					// See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-					canvas.addEventListener(
-						"webglcontextlost",
-						function (e) {
-							alert(
-								"WebGL context lost. You will need to reload the page."
-							);
-							e.preventDefault();
-						},
-						false
-					);
-					return canvas;
-				})(),
-				setStatus: function (text) {
-					if (!Module.setStatus.last)
-						Module.setStatus.last = { time: Date.now(), text: "" };
-					if (text === Module.setStatus.text) return;
-					var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-					var now = Date.now();
-					if (m && now - Date.now() < 30) return; // if this is a progress update, skip it if too soon
+					},
+					canvas: (function () {
+						var canvas = document.getElementById("canvas");
+						// As a default initial behavior, pop up an alert when webgl context is lost. To make your
+						// application robust, you may want to override this behavior before shipping!
+						// See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+						canvas.addEventListener(
+							"webglcontextlost",
+							function (e) {
+								alert(
+									"WebGL context lost. You will need to reload the page."
+								);
+								e.preventDefault();
+							},
+							false
+						);
+						return canvas;
+					})(),
+					setStatus: function (text) {
+						if (!Module.setStatus.last)
+							Module.setStatus.last = {
+								time: Date.now(),
+								text: "",
+							};
+						if (text === Module.setStatus.text) return;
+						var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+						var now = Date.now();
+						if (m && now - Date.now() < 30) return; // if this is a progress update, skip it if too soon
 
-					//console.trace("Status: ", text);
-					if (text.trim() === "Running...") {
-						loadingInfoElement.style.display = "none";
-					}
-				},
-				totalDependencies: 0,
-				monitorRunDependencies: function (left) {
-					this.totalDependencies = Math.max(
-						this.totalDependencies,
-						left
-					);
-					Module.setStatus(
-						left
-							? "Preparing... (" +
-									(this.totalDependencies - left) +
-									"/" +
-									this.totalDependencies +
-									")"
-							: "All downloads complete."
-					);
-				},
-			};
-			Module.setStatus("Downloading...");
-			window.onerror = function (event) {
-				// TODO: do not warn on ok events like simulating an infinite loop or exitStatus
-				Module.setStatus("Exception thrown, see JavaScript console");
-				//loadingInfoElement.style.display = "none";
-				Module.setStatus = function (text) {
-					if (text)
-						Module.printErr("[post-exception status] " + text);
+						//console.trace("Status: ", text);
+						if (text.trim() === "Running...") {
+							loadingInfoElement.style.display = "none";
+						}
+					},
+					totalDependencies: 0,
+					monitorRunDependencies: function (left) {
+						this.totalDependencies = Math.max(
+							this.totalDependencies,
+							left
+						);
+						Module.setStatus(
+							left
+								? "Preparing... (" +
+										(this.totalDependencies - left) +
+										"/" +
+										this.totalDependencies +
+										")"
+								: "All downloads complete."
+						);
+					},
 				};
-			};
+				Module.setStatus("Downloading...");
+				window.onerror = function (event) {
+					// TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+					Module.setStatus(
+						"Exception thrown, see JavaScript console"
+					);
+					//loadingInfoElement.style.display = "none";
+					Module.setStatus = function (text) {
+						if (text)
+							Module.printErr("[post-exception status] " + text);
+					};
+				};
+				window.Module = Module;
+			}
 
 			function scriptLoadError() {
 				statusText.textContent =
 					"Error loading runtime, is the file there?";
 			}
-			addEventListener("load", () => {
+
+			const runtimeSelector = document.getElementById("runtime-selector");
+
+			function loadRuntimeScript(path) {
+				makeModule();
 				let script = document.createElement("script");
+				script.setAttribute("runtime", "true");
 				script.onerror = scriptLoadError;
 				script.src =
 					"target/wasm32-unknown-emscripten/debug/runtime.js";
 				document.head.appendChild(script);
+			}
+
+			addEventListener("load", () => {
+				let runtime =
+					localStorage.getItem("runtime") || runtimeSelector.value;
+				runtimeSelector.value = runtime;
+				loadRuntimeScript(runtimeSelector.value);
 			});
+
+			runtimeSelector.onchange = (evt) => {
+				let scripts = document.head.querySelectorAll("script[runtime]");
+				scripts.forEach((script) => document.head.removeChild(script));
+				const newRuntimePath = evt.target.value;
+				localStorage.setItem("runtime", newRuntimePath);
+				location.reload();
+			};
 		</script>
 	</body>
 </html>
