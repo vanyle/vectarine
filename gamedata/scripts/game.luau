@@ -6,6 +6,7 @@ local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
+local Persist = require("@vectarine/persist")
 local Vec = require("@vectarine/vec")
 local V2 = Vec.V2
 
@@ -26,6 +27,9 @@ local shaderResource = Loader.loadShader("shaders/base.glsl")
 
 local canvas = Canvas.createCanvas(1200, 800)
 canvas:setShader(shaderResource)
+
+local result = Persist.load("saved_value")
+Debug.print("Result: ", result)
 
 -- Io.setWindowSize(800, 600)
 -- Io.centerWindow()
@@ -125,13 +129,10 @@ local function drawEnvironment()
 	environmentImage:draw(p1, size)
 end
 
-local function mod4(x: number)
-	return ((x - 1 + 4) % 4) + 1
-end
-
 local keyEvent = Event.getKeyDownEvent()
 keyEvent:on(function(key: string)
 	print("Key pressed: ", key)
+	Persist.save("saved_value", key)
 	if key == "Space" then
 		if _G.gameover and _G.paused then
 			_G.gameover = false

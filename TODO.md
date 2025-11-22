@@ -1,8 +1,5 @@
 # TO-DO
 
-- [ ] Save system
-  - [ ] Design a simple saving API (probably a KV store with a simple Lua serializer)
-  - [ ] Implement the API in Rust
 - [ ] Profiler tool
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
@@ -24,6 +21,7 @@
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
 - [ ] Add a CI
+  - [ ] See https://github.com/LukeMathWalker/cargo-chef
 - [ ] Animation system from multiple PNG files
 - [ ] Add search in the resource window
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
@@ -44,6 +42,7 @@
 - [ ] Add a CLI version of the editor
   - [ ] The editor is compiled with -mwindow
   - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
+- [ ] Use SDL pref_path for editor settings and cache.
 - [ ] Put the console system outside of Lua Env
   - [ ] Create a logger trait in console.rs
   - [ ] LuaEnv needs a logger to be built and prints writes to the logger.
@@ -76,6 +75,9 @@
 
 # Done
 
+- [x] Save system
+  - [x] Design a simple saving API (probably a KV store with a simple Lua serializer)
+  - [x] Implement the API in Rust
 - [x] Tiled parsing
   - [x] Sprites/Tilesets as an asset class
   - [x] Reading tiled tileset files
