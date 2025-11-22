@@ -167,6 +167,9 @@ both> uv run ./script/serve.py # Start this in another terminal.
 When trying out web builds, you can also use the test runner by going to `http://localhost:8000/test-runner.html`.
 The test-runner allows you to switch between debug and release builds.
 
+Moreover, when debugging web specific crashes, you can consider installing the [C/C++ DevTools Support Chrome Extension](https://chromewebstore.google.com/detail/cc++-devtools-support-dwa/pdcpmagijalfljmkmjngeonclgbbannb)
+More information about [debugging wasm code is available here](https://developer.chrome.com/docs/devtools/wasm/)
+
 ## Structure
 
 ### Runtime
