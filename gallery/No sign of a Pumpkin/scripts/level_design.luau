@@ -400,11 +400,12 @@ function getTileTypeAtPosition(x: number, y: number): number
 	return level[grid_y + 1][grid_x + 1]
 end
 
+local lake = { name_to_id["lake_c"], 0 }
 function getTileAt(x: number, y: number)
 	local grid_x = math.floor(x)
 	local grid_y = math.floor(y)
 	if grid_x < 0 or grid_x >= #level[1] or grid_y < 0 or grid_y >= #level then
-		return { name_to_id["lake_c"], 0 } -- Out of bounds is lake
+		return lake -- Out of bounds is lake
 	end
 	return level_copy[grid_y + 1][grid_x + 1]
 end

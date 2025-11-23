@@ -262,7 +262,7 @@ function manage_win_animation(time_delta: number)
 	local ease_progress = progress * progress * (3 - 2 * progress) -- smoothstep
 
 	-- Gradually zoom out from initial zoom to target zoom
-	GameState.camera.zoom = GameState.win_initial_zoom + ease_progress * (WIN_TARGET_ZOOM - GameState.win_initial_zoom)
+	-- GameState.camera.zoom = GameState.win_initial_zoom + ease_progress * (WIN_TARGET_ZOOM - GameState.win_initial_zoom)
 
 	-- Gradually increase fuel for brighter light
 	player.fuel = GameState.win_initial_fuel + ease_progress * (WIN_TARGET_FUEL - GameState.win_initial_fuel)
@@ -305,7 +305,7 @@ function Restart()
 	GameState.win_timer = 0.0
 	GameState.win_music_played = false
 	-- Reset camera zoom to default
-	GameState.camera.zoom = 60
+	-- GameState.camera.zoom = 60
 	drawHelpers.clear_displayed_asset(GameState)
 
 	-- Schedule pop sound to play before blackscreen ends
@@ -497,15 +497,26 @@ function Update(time_delta: number)
 		local baseY = math.floor(wp.y)
 		wp = V2(baseX, baseY)
 
-		for y = 1, tilesAcrossScreenY do
-			for x = 1, tilesAcrossScreenX do
-				local worldPos = wp + V2(x, y)
-				local tile_id = levelDesign.getTileAt(baseX + x, baseY + y)[1]
-				local tile_rot = levelDesign.getTileAt(baseX + x, baseY + y)[2]
-				local tile_name = levelDesign.sprite_ids[tile_id]
-				drawHelpers.drawEnvironmentTile(GameState, tile_name, worldPos, tile_rot)
+		Debug.timed("draw_environment", function()
+			for y = 1, tilesAcrossScreenY do
+				for x = 1, tilesAcrossScreenX do
+					local worldPos = nil
+					local tile_id = nil
+					local tile_rot = nil
+					local tile_name = nil
+					Debug.timed("drawEnvironmentTile:getTileAt", function()
+						worldPos = wp + V2(x, y)
+						local t = levelDesign.getTileAt(baseX + x, baseY + y)
+						tile_id = t[1]
+						tile_rot = t[2]
+						tile_name = levelDesign.sprite_ids[tile_id]
+					end)
+					Debug.timed("drawEnvironmentTile", function()
+						drawHelpers.drawEnvironmentTile(GameState, tile_name, worldPos, tile_rot)
+					end)
+				end
 			end
-		end
+		end)
 
 		-- Draw pumpkins
 		for _, pumpkin in ipairs(levelDesign.list_pumpkin) do

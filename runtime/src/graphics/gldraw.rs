@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{cell::RefCell, sync::Arc};
 
 use glow::HasContext;
 
@@ -15,6 +15,7 @@ pub struct DrawParams {
 pub struct DrawingTarget {
     gl: Arc<glow::Context>,
     pub current_param_state: DrawParams,
+    draw_call_counter: RefCell<usize>,
 }
 
 impl DrawingTarget {
@@ -26,6 +27,7 @@ impl DrawingTarget {
                 blend: false,
                 cull_face: false,
             },
+            draw_call_counter: RefCell::new(0),
         }
     }
 
@@ -40,6 +42,7 @@ impl DrawingTarget {
         program.set_uniforms(uniforms);
         vertex_buffer.bind_for_drawing();
 
+        *self.draw_call_counter.borrow_mut() += 1;
         let points = vertex_buffer.drawn_point_count as i32;
         unsafe {
             gl.draw_elements(glow::TRIANGLES, points, glow::UNSIGNED_INT, 0);
@@ -52,5 +55,13 @@ impl DrawingTarget {
             gl.clear_color(r, g, b, a);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
         }
+    }
+
+    pub fn get_draw_call_counter(&self) -> usize {
+        *self.draw_call_counter.borrow()
+    }
+
+    pub fn reset_draw_call_counter(&self) {
+        *self.draw_call_counter.borrow_mut() = 0;
     }
 }

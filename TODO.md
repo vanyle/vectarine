@@ -1,11 +1,5 @@
 # TO-DO
 
-- [ ] Profiler tool
-  - [ ] Drawcall counter
-  - [x] FPS graph
-  - [ ] Reload times
-  - [ ] Show Luau heap size (as returned by gcinfo()) over time
-  - [ ] Lua API to measure time taken by sections of code 
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
@@ -80,6 +74,11 @@
 
 # Done
 
+- [x] Profiler tool
+  - [x] Drawcall counter
+  - [x] FPS graph
+  - [x] Show Luau heap size (as returned by gcinfo()) over time
+  - [x] Lua API to measure time taken by sections of code 
 - [x] Save system
   - [x] Design a simple saving API (probably a KV store with a simple Lua serializer)
   - [x] Implement the API in Rust

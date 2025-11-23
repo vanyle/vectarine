@@ -9,6 +9,10 @@ use crate::{
     graphics::batchdraw::BatchDraw2d,
     io::{fs::ReadOnlyFileSystem, process_events},
     lua_env::{LuaEnvironment, lua_screen},
+    metrics::{
+        DRAW_CALL_METRIC_NAME, LUA_HEAP_SIZE_METRIC_NAME, LUA_SCRIPT_TIME_METRIC_NAME,
+        MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
+    },
     projectinfo::ProjectInfo,
 };
 
@@ -17,6 +21,8 @@ pub struct Game {
     pub lua_env: LuaEnvironment,
     pub was_main_script_executed: bool,
     pub main_script_path: String,
+
+    pub metrics_holder: Rc<RefCell<MetricsHolder>>,
 }
 
 impl Game {
@@ -47,8 +53,9 @@ impl Game {
         );
 
         let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
-        let lua_env = LuaEnvironment::new(batch, file_system, project_dir);
-        let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone());
+        let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
+        let lua_env = LuaEnvironment::new(batch, file_system, project_dir, metrics.clone());
+        let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone(), metrics);
         game.load(video, window);
         let path = Path::new(&game.main_script_path);
         game.lua_env.resources.load_resource::<ScriptResource>(
@@ -64,12 +71,14 @@ impl Game {
         gl: &Arc<glow::Context>,
         lua_env: LuaEnvironment,
         main_script_path: String,
+        metrics_holder: Rc<RefCell<MetricsHolder>>,
     ) -> Self {
         Game {
             gl: gl.clone(),
             lua_env,
             was_main_script_executed: false,
             main_script_path,
+            metrics_holder,
         }
     }
 
@@ -132,6 +141,12 @@ impl Game {
         delta_time: std::time::Duration,
         _in_editor: bool,
     ) {
+        self.lua_env
+            .batch
+            .borrow()
+            .drawing_target
+            .reset_draw_call_counter();
+
         let framebuffer_width;
         let framebuffer_height;
         {
@@ -200,6 +215,7 @@ impl Game {
         // Update screen transitions
         lua_screen::update_screen_transition(&self.lua_env.lua, delta_time.as_secs_f32());
 
+        let start_of_lua_update = std::time::Instant::now();
         if self.was_main_script_executed {
             let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
@@ -208,10 +224,11 @@ impl Game {
                     self.lua_env.print(&err.to_string(), Verbosity::Error);
                 }
             } else {
-                self.lua_env
-                    .print("Update() function not found", Verbosity::Warn);
+                // This message is not useful in its current form.
+                // self.lua_env.print("Update() function not found", Verbosity::Warn);
             }
         }
+        let lua_update_duration = start_of_lua_update.elapsed();
 
         {
             self.lua_env
@@ -219,6 +236,29 @@ impl Game {
                 .borrow_mut()
                 .draw(&self.lua_env.resources, true);
         }
+
+        // Default Duration metrics
+        self.metrics_holder
+            .borrow_mut()
+            .record_duration_metric(LUA_SCRIPT_TIME_METRIC_NAME, lua_update_duration);
+        self.metrics_holder
+            .borrow_mut()
+            .record_duration_metric(TOTAL_FRAME_TIME_METRIC_NAME, delta_time);
+
+        // Default Counter metrics
+        self.metrics_holder
+            .borrow_mut()
+            .record_number_metric(LUA_HEAP_SIZE_METRIC_NAME, self.lua_env.lua.used_memory());
+        self.metrics_holder.borrow_mut().record_number_metric(
+            DRAW_CALL_METRIC_NAME,
+            self.lua_env
+                .batch
+                .borrow()
+                .drawing_target
+                .get_draw_call_counter(),
+        );
+
+        self.metrics_holder.borrow_mut().flush();
     }
 
     /// Calls reload on all unloaded resource inside the manager.

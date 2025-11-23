@@ -24,6 +24,8 @@ use crate::graphics::batchdraw::BatchDraw2d;
 use crate::io::IoEnvState;
 use crate::io::fs::ReadOnlyFileSystem;
 
+use crate::metrics::MetricsHolder;
+
 pub struct LuaEnvironment {
     pub lua: Rc<mlua::Lua>,
     pub env_state: Rc<RefCell<IoEnvState>>,
@@ -35,6 +37,7 @@ pub struct LuaEnvironment {
     pub frame_messages: Rc<RefCell<Vec<ConsoleMessage>>>,
     pub messages: Rc<RefCell<VecDeque<ConsoleMessage>>>,
 
+    pub metrics: Rc<RefCell<MetricsHolder>>,
     pub resources: Rc<ResourceManager>,
 }
 
@@ -44,6 +47,7 @@ impl LuaEnvironment {
         batch: BatchDraw2d,
         file_system: Box<dyn ReadOnlyFileSystem>,
         base_path: &Path,
+        metrics: Rc<RefCell<MetricsHolder>>,
     ) -> Self {
         let batch = Rc::new(RefCell::new(batch));
         let lua_options = mlua::LuaOptions::default();
@@ -118,7 +122,8 @@ impl LuaEnvironment {
         let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();
         lua.register_module("@vectarine/io", io_module).unwrap();
 
-        let debug_module = lua_debug::setup_debug_api(&lua, &messages, &frame_messages).unwrap();
+        let debug_module =
+            lua_debug::setup_debug_api(&lua, &messages, &frame_messages, &metrics).unwrap();
         lua.register_module("@vectarine/debug", debug_module)
             .unwrap();
 
@@ -166,6 +171,7 @@ impl LuaEnvironment {
             default_events,
             messages,
             resources,
+            metrics,
         }
     }
 

@@ -575,6 +575,23 @@ end
 
 `Debug.timed` will run your function and measure the time taken by it. You can nest `Debug.timed` calls to measure sub-sections of your code.
 
+You can also call `timed` inside loops to know you much time different parts of the loop take.
+
+```lua
+function Update()
+    for i = 0, 1000 do
+        Debug.timed("Loop Section A", function()
+            -- Your code here
+        end)
+        Debug.timed("Loop Section B", function()
+            -- Your code here
+        end)
+    end
+end
+```
+
+This will only create 2 metrics, "Loop Section A" and "Loop Section B". Because you can filter metrics by name, you should use common prefixes or suffixes to group related metrics.
+
 ## Drawing too many things
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.

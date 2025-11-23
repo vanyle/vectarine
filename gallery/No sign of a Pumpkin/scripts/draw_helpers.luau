@@ -73,6 +73,8 @@ local function drawPathMarkers(GameState, list_path_markers: { PathMarker })
 	end
 end
 
+local toScreenPos = coordHelpers.convertToScreenPos
+
 local function drawEnvironmentTile(GameState, tileName: string, position: Vec.Vec2, rotation: number)
 	local tileInfo: Vec.Vec2? = levelDesign.sprite_table[tileName]
 	if tileInfo == nil then
@@ -81,21 +83,33 @@ local function drawEnvironmentTile(GameState, tileName: string, position: Vec.Ve
 	end
 	local sprite_pos: Vec.Vec2 = tileInfo * levelDesign.sprite_size
 
-	local dest_p1 = coordHelpers.convertToScreenPos(GameState, position, false)
-	local dest_p2 = coordHelpers.convertToScreenPos(GameState, position + V2(1, 0), false)
-	local dest_p3 = coordHelpers.convertToScreenPos(GameState, position + V2(1, 1), false)
-	local dest_p4 = coordHelpers.convertToScreenPos(GameState, position + V2(0, 1), false)
+	local dest_p1 = nil
+	local dest_p2 = nil
+	local dest_p3 = nil
+	local dest_p4 = nil
 
-	local permutated = mathHelpers.permute(dest_p1, dest_p2, dest_p3, dest_p4, rotation)
-
-	environment:drawPart(
-		permutated[1],
-		permutated[2],
-		permutated[3],
-		permutated[4],
-		sprite_pos,
-		levelDesign.sprite_size
-	)
+	-- This is the part that takes the most time during rendering, so we optimize it a bit.
+	Debug.timed("drawEnvironmentTile:toScreenPos", function()
+		dest_p1 = toScreenPos(GameState, position, false):gl()
+		dest_p3 = toScreenPos(GameState, position + V2(1, 1), false):gl()
+		--dest_p2 = toScreenPos(GameState, position + V2(1, 0), false)
+		dest_p2 = V2(dest_p3.x, dest_p1.y)
+		dest_p4 = V2(dest_p1.x, dest_p3.y)
+		--dest_p4 = toScreenPos(GameState, position + V2(0, 1), false)
+	end)
+	Debug.timed("drawEnvironmentTile:environment:drawPart", function()
+		if rotation == 0 then
+			environment:drawPart(dest_p1, dest_p2, dest_p3, dest_p4, sprite_pos, levelDesign.sprite_size)
+		elseif rotation == 1 then
+			environment:drawPart(dest_p4, dest_p1, dest_p2, dest_p3, sprite_pos, levelDesign.sprite_size)
+		elseif rotation == 2 then
+			environment:drawPart(dest_p3, dest_p4, dest_p1, dest_p2, sprite_pos, levelDesign.sprite_size)
+		elseif rotation == 3 then
+			environment:drawPart(dest_p2, dest_p3, dest_p4, dest_p1, sprite_pos, levelDesign.sprite_size)
+		else
+			environment:drawPart(dest_p1, dest_p2, dest_p3, dest_p4, sprite_pos, levelDesign.sprite_size)
+		end
+	end)
 end
 
 -- Clear the currently displayed asset (Large Sign)

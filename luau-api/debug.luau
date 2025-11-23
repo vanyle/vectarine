@@ -26,4 +26,8 @@ function module.fprint(...: any): ()
 	error("Not implemented")
 end
 
+function module.timed(name: string, callback: () -> ()): ()
+	error("Not implemented")
+end
+
 return module
