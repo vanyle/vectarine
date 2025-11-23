@@ -17,6 +17,11 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
         config.is_watcher_window_shown = !config.is_watcher_window_shown;
     }
 
+    if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num4)) {
+        let mut config = editor.config.borrow_mut();
+        config.is_profiler_window_shown = !config.is_profiler_window_shown;
+    }
+
     if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::R)) {
         editor.reload_project();
     }
@@ -74,6 +79,10 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                     if ui.button("Watcher (Ctrl+3)").clicked() {
                         let mut config = editor.config.borrow_mut();
                         config.is_watcher_window_shown = !config.is_watcher_window_shown;
+                    }
+                    if ui.button("Profiler (Ctrl+4)").clicked() {
+                        let mut config = editor.config.borrow_mut();
+                        config.is_profiler_window_shown = !config.is_profiler_window_shown;
                     }
                     {
                         let mut config = editor.config.borrow_mut();

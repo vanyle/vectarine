@@ -79,6 +79,10 @@ impl LuaEnvironment {
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
 
+        let color_module = lua.create_table().unwrap();
+        lua.register_module("@vectarine/color", color_module)
+            .unwrap();
+
         let coords_module = lua_coord::setup_coords_api(&lua, &gl).unwrap();
         lua.register_module("@vectarine/coord", coords_module)
             .unwrap();
@@ -262,10 +266,11 @@ pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
 }
 
 /// Helper function to allow printing messages from anywhere in Rust as long as you have access to a lua handle.
-pub fn print(_lua: &Rc<mlua::Lua>, _verbosity: Verbosity, _msg: &str) {
-    todo!(
-        "print is not implemented yet. The planned print should not require you to have a Lua handle."
-    )
+pub fn print(_lua: &Rc<mlua::Lua>, _verbosity: Verbosity, msg: &str) {
+    println!("{}", msg);
+    //todo!(
+    //    "print is not implemented yet. The planned print should not require you to have a Lua handle."
+    //)
 }
 
 fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {

@@ -1,6 +1,10 @@
 # TO-DO
 
 - [ ] Profiler tool
+  - [ ] Drawcall counter
+  - [x] FPS graph
+  - [ ] Reload times
+  - [ ] Lua API to measure time taken by sections of code 
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
