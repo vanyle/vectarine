@@ -9,6 +9,15 @@ pub fn draw_editor_profiler(editor: &mut EditorState, ctx: &egui::Context) {
         .default_height(200.0)
         .open(&mut is_shown)
         .show(ctx, |ui| {
+
+            let mut project = editor.project.borrow_mut();
+            let project = project.as_mut();
+            let Some(project) = project else {
+                ui.label("No project opened to profile");
+                return;
+            };
+            let metrics = &mut project.game.metrics_holder;
+
             let fps = 1.0 / ctx.input(|i| i.unstable_dt);
 
             thread_local! {
@@ -65,7 +74,7 @@ pub fn draw_editor_profiler(editor: &mut EditorState, ctx: &egui::Context) {
 
                 painter.add(egui::Shape::line(
                     points,
-                    egui::Stroke::new(1.0, egui::Color32::GREEN),
+                    egui::Stroke::new(1.0, egui::Color32::WHITE),
                 ));
                 
                 ui.label(format!("Max: {:.0}", max_fps));

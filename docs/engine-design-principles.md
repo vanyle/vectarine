@@ -66,7 +66,7 @@ In documentation, we try to first present the low level feature and build toward
 
 ## Interface with most tools
 
-We try to support common file formats including (but not limited to) `glb` and `obj` for 3d objects, `png`, `gif` and `jpg` for images,
+We try to support common file formats including (but not limited to) `gltf` and `fbx` for 3d objects, `png`, `gif` and `jpg` for images,
 `wav`, `mp3` and `flac` for audio, `tmx` for levels, etc.
 
 We cannot create the best code editor, 3d modeling software or level editor, but we can seamlessly integrate with the best ones.

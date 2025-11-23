@@ -436,7 +436,33 @@ end
 
 ## Organising rendering using Screens
 
-## Sharing data using events
+You can use `Screens` to organise your rendering code. A screen can be a menu, an inventory or the main game screen.
+Screens also help keep reloading snappy as Vectarine only needs to reload the code for the current screen.
+
+```lua
+local my_screen: Screen.Screen = Screen.newScreen("name_of_the_screen", function()
+    -- Code for drawing the screen.
+end)
+
+Screen.setCurrentScreen(my_screen) -- Set the screen to be the current screen
+
+function Update(time_delta: number)
+    
+    if true then
+        -- Depending on the player action, you can switch to another screen
+        Screen.setCurrentScreen(my_screen, {
+            -- You can add transition between screens if you want
+            duration = 1.0,
+			transition_style = "slide_up",
+        })
+    end
+
+    -- Don't forget to draw the current screen!
+    Screen.drawCurrentScreen()
+end
+```
+
+You can have one file per screen to split logic and rendering code.
 
 # 🌁 Using Shaders
 
@@ -509,14 +535,70 @@ You can find more information about shaders in [the great book of shaders](https
 > end)
 > ```
 
-# 🎲 3d
-
 # 🚀 Performance Tips
+
+Vectarine has a built-in profiler tool to help you understand what parts of your game are taking the most time.
+You can open it from the Tools menu or using <kbd>Ctrl</kbd>+<kbd>4</kbd>.
+
+## The profiler
+
+Checking for FPS is not super useful as Vectarine will always try to run at a number that divides the refresh rate of your monitor.
+For example, if your monitor runs at 60 Hz, Vectarine might run at 60 fps, 30 fps or 20 fps. If your game is able to render at 50 fps, Vectarine will round that
+down to 30 fps.
+
+The profiler thus shows not only the FPS, but also the processing time per frame.
+Generally, the following happens to render a frame of your game:
+
+- You perform some computation to update the state of your game
+- You draw your game
+- You wait a little to sync with the monitor (Vectarine does that automatically)
+
+The profiler shows you how much time is spent on each of these steps and how this varies over time.
+Moreover, you can use the `Debug.timed` function to measure the time taken by a section of code and have
+to drawn in the profiler.
+
+```lua
+function Update()
+    Debug.timed("AI", function()
+        -- Your code here
+    end)
+
+    Debug.timed("Graphics", function()
+        -- Your code here
+    end)
+
+    Debug.timed("Physics", function()
+        -- Your code here
+    end)
+end
+```
+
+`Debug.timed` will run your function and measure the time taken by it. You can nest `Debug.timed` calls to measure sub-sections of your code.
+
+## Drawing too many things
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.
 I don't really know why you'd want to draw that many rectangles.
 
 If you want to draw something on every pixel, use a Shader instead of called `graphics.drawRect` on a per-pixel basis!
+
+## Reducing draw calls and using sprites
+
+A draw call is a command to the GPU to draw something. Every draw call has an overhead, so the less draw calls you perform,
+the faster your game will run. Vectarine automatically groups your drawing instructions to reduce the number of draw calls.
+
+```lua
+-- This is one draw call
+Graphics.drawRect(V2(0, 0), V2(1, 1), {r = 1, g = 0, b = 0, a = 1})
+Graphics.drawRect(V2(1, 1), V2(1, 1), {r = 0, g = 1, b = 0, a = 1})
+```
+ 
+As long as the "kind" of drawing you do is the same, Vectarine will be able to group the rendering instructions together and reduce the total number of draw calls. To help Vectarine do this grouping, you should try to group similar drawing function together.
+
+When you draw 2 different images, this counts as 2 different "kinds" of drawing, and 2 draw calls will be performed.
+To have only one draw call, you should use one image and draw portions of it using the `image:drawPart` function.
+
+You can see the total number of draw calls performed in the profiler. Try to keep it below 1000 per frame.
 
 # 📦 Release and distribute your game
 
@@ -581,6 +663,4 @@ Tests need to be put inside the `tests` folder of your game. They are not export
 
 TODO: Design an API for `assert` and general test organisation. The editor needs to work as a CLI to run the tests in watch mode.
 
-# 🛜 Networking and Multiplayer
 
-TODO

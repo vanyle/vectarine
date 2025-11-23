@@ -4,6 +4,7 @@
   - [ ] Drawcall counter
   - [x] FPS graph
   - [ ] Reload times
+  - [ ] Show Luau heap size (as returned by gcinfo()) over time
   - [ ] Lua API to measure time taken by sections of code 
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
