@@ -181,7 +181,7 @@ impl BatchDraw2d {
         let vertices: Vec<f32> = points.flat_map(|p| {
             points_len += 1;
             vec![
-                p.x, p.y, 0.0, // position
+                p.x(), p.y(), 0.0, // position
                 color[0], color[1], color[2], color[3], // color
             ]
         }).collect();
@@ -265,18 +265,18 @@ impl BatchDraw2d {
     pub fn draw_image_part(
         &mut self, pos_size: Quad, texture: &Arc<Texture>, uv_pos: Vec2, uv_size: Vec2,
     ) {
-        let uv_x1 = uv_pos.x;
-        let uv_y1 = uv_pos.y;
-        let uv_x2 = uv_pos.x + uv_size.x;
-        let uv_y2 = uv_pos.y + uv_size.y;
+        let uv_x1 = uv_pos.x();
+        let uv_y1 = uv_pos.y();
+        let uv_x2 = uv_pos.x() + uv_size.x();
+        let uv_y2 = uv_pos.y() + uv_size.y();
 
         #[rustfmt::skip]
         let vertices: [f32; 4 * 5] = [
             // positions       // tex coords
-            pos_size.p1.x, pos_size.p1.y, 0.0, uv_x1, uv_y2, // bottom left
-            pos_size.p2.x, pos_size.p2.y, 0.0, uv_x2, uv_y2, // bottom right
-            pos_size.p3.x, pos_size.p3.y, 0.0, uv_x2, uv_y1, // top right
-            pos_size.p4.x, pos_size.p4.y, 0.0, uv_x1, uv_y1, // top left
+            pos_size.p1.x(), pos_size.p1.y(), 0.0, uv_x1, uv_y2, // bottom left
+            pos_size.p2.x(), pos_size.p2.y(), 0.0, uv_x2, uv_y2, // bottom right
+            pos_size.p3.x(), pos_size.p3.y(), 0.0, uv_x2, uv_y1, // top right
+            pos_size.p4.x(), pos_size.p4.y(), 0.0, uv_x1, uv_y1, // top left
         ];
 
         let mut uniforms = Uniforms::new();
@@ -295,7 +295,7 @@ impl BatchDraw2d {
         env: &IoEnvState,
     ) {
         self.draw_canvas_part(
-            make_rect(pos.x, pos.y, size.x, size.y),
+            make_rect(pos.x(), pos.y(), size.x(), size.y()),
             canvas,
             Vec2::new(0.0, 0.0),
             Vec2::new(1.0, 1.0),
@@ -309,19 +309,19 @@ impl BatchDraw2d {
         &mut self, pos_size: Quad, canvas: &Framebuffer, uv_pos: Vec2, uv_size: Vec2,
         custom_shader: Option<ResourceId>, env: &IoEnvState
     ) {
-        let uv_x1 = uv_pos.x;
-        let uv_y1 = uv_pos.y;
-        let uv_x2 = uv_pos.x + uv_size.x;
-        let uv_y2 = uv_pos.y + uv_size.y;
+        let uv_x1 = uv_pos.x();
+        let uv_y1 = uv_pos.y();
+        let uv_x2 = uv_pos.x() + uv_size.x();
+        let uv_y2 = uv_pos.y() + uv_size.y();
 
         // Weird that we need to flip the y coordinates in canvas, but not image.
         #[rustfmt::skip]
         let vertices: [f32; 4 * 5] = [
             // positions       // tex coords
-            pos_size.p4.x, pos_size.p4.y, 0.0, uv_x1, uv_y2, // bottom left
-            pos_size.p3.x, pos_size.p3.y, 0.0, uv_x2, uv_y2, // bottom right
-            pos_size.p2.x, pos_size.p2.y, 0.0, uv_x2, uv_y1, // top right
-            pos_size.p1.x, pos_size.p1.y, 0.0, uv_x1, uv_y1, // top left
+            pos_size.p4.x(), pos_size.p4.y(), 0.0, uv_x1, uv_y2, // bottom left
+            pos_size.p3.x(), pos_size.p3.y(), 0.0, uv_x2, uv_y2, // bottom right
+            pos_size.p2.x(), pos_size.p2.y(), 0.0, uv_x2, uv_y1, // top right
+            pos_size.p1.x(), pos_size.p1.y(), 0.0, uv_x1, uv_y1, // top left
         ];
 
         let mut uniforms = Uniforms::new();

@@ -45,7 +45,7 @@ pub fn setup_text_api(
                 };
                 batch
                     .borrow_mut()
-                    .draw_text(pos.x, pos.y, &text, color, size, font_resource);
+                    .draw_text(pos.x(), pos.y(), &text, color, size, font_resource);
                 Ok(())
             }
         });

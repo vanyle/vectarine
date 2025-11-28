@@ -28,8 +28,8 @@ impl ScreenPosition {
     }
     pub fn as_px(self, screen_width: f32, screen_height: f32) -> Vec2 {
         Vec2::new(
-            (self.0.x + 1.0) * 0.5 * screen_width,
-            (1.0 - self.0.y) * 0.5 * screen_height,
+            (self.0.x() + 1.0) * 0.5 * screen_width,
+            (1.0 - self.0.y()) * 0.5 * screen_height,
         )
     }
     pub fn from_opengl(v: Vec2) -> Self {
@@ -37,20 +37,20 @@ impl ScreenPosition {
     }
     pub fn from_px(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
         ScreenPosition(Vec2::new(
-            -1.0 + (v.x * 2.0 / screen_width),
-            1.0 - (v.y * 2.0 / screen_height),
+            -1.0 + (v.x() * 2.0 / screen_width),
+            1.0 - (v.y() * 2.0 / screen_height),
         ))
     }
     pub fn from_vw(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
         ScreenPosition(Vec2::new(
-            -1.0 + v.x * 2.0 / 100.0,
-            -1.0 + v.y * 2.0 / 100.0 * screen_width / screen_height,
+            -1.0 + v.x() * 2.0 / 100.0,
+            -1.0 + v.y() * 2.0 / 100.0 * screen_width / screen_height,
         ))
     }
     pub fn from_vh(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
         ScreenPosition(Vec2::new(
-            -1.0 + v.x * 2.0 / 100.0 * screen_height / screen_width,
-            -1.0 + v.y * 2.0 / 100.0,
+            -1.0 + v.x() * 2.0 / 100.0 * screen_height / screen_width,
+            -1.0 + v.y() * 2.0 / 100.0,
         ))
     }
 }
@@ -64,14 +64,14 @@ impl ScreenVec {
     }
     pub fn from_px(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
         ScreenVec(Vec2::new(
-            v.x * 2.0 / screen_width,
-            -v.y * 2.0 / screen_height,
+            v.x() * 2.0 / screen_width,
+            -v.y() * 2.0 / screen_height,
         ))
     }
     pub fn as_px(self, screen_width: f32, screen_height: f32) -> Vec2 {
         Vec2::new(
-            self.0.x * screen_width * 0.5,
-            -self.0.y * screen_height * 0.5,
+            self.0.x() * screen_width * 0.5,
+            -self.0.y() * screen_height * 0.5,
         )
     }
 }
@@ -108,7 +108,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         registry.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
         registry.add_method("px", move |_lua, this, (screen_size,): (Option<Vec2>,)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -117,7 +117,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         registry.add_method("scale", |_, this, (k,): (f32,)| Ok(this.scale(k)));
 
         registry.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
-            Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x, pos.0.y))
+            Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x(), pos.0.y()))
         });
     })?;
 
@@ -126,7 +126,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         registry.add_method("gl", |_, this, ()| Ok(this.as_vec2()));
         registry.add_method("px", move |_lua, this, (screen_size,): (Option<Vec2>,)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -165,7 +165,11 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         );
 
         registry.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
-            Ok(format!("ScreenPosition({:.4}, {:.4})", pos.0.x, pos.0.y))
+            Ok(format!(
+                "ScreenPosition({:.4}, {:.4})",
+                pos.0.x(),
+                pos.0.y()
+            ))
         });
     })?;
 
@@ -173,7 +177,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         let gl = gl.clone();
         move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -189,7 +193,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         let gl = gl.clone();
         move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -213,7 +217,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         let gl = gl.clone();
         move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -229,13 +233,13 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         let gl = gl.clone();
         move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
             Ok(ScreenVec(Vec2::new(
-                v.x * 2.0 / 100.0,
-                v.y * 2.0 / 100.0 * viewport.width as f32 / viewport.height as f32,
+                v.x() * 2.0 / 100.0,
+                v.y() * 2.0 / 100.0 * viewport.width as f32 / viewport.height as f32,
             )))
         }
     });
@@ -244,7 +248,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         let gl = gl.clone();
         move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -260,13 +264,13 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         let gl = gl.clone();
         move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
             let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x as i32, screen_size.y as i32)
+                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
             Ok(ScreenVec(Vec2::new(
-                v.x * 2.0 / 100.0 * viewport.height as f32 / viewport.width as f32,
-                v.y * 2.0 / 100.0,
+                v.x() * 2.0 / 100.0 * viewport.height as f32 / viewport.width as f32,
+                v.y() * 2.0 / 100.0,
             )))
         }
     });

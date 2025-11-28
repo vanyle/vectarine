@@ -5,6 +5,7 @@ pub mod graphics;
 pub mod io;
 pub mod loader;
 pub mod lua_env;
+pub mod math;
 pub mod metrics;
 pub mod projectinfo;
 

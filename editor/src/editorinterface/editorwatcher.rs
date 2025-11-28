@@ -239,19 +239,52 @@ where
 
 fn draw_vec2_watcher(ui: &mut egui::Ui, vec: &mut Vec2) {
     ui.horizontal(|ui| {
-        let mut x = vec.x;
-        let mut y = vec.y;
+        let mut x = vec.0[0];
+        let mut y = vec.0[1];
         if ui
             .add(egui::DragValue::new(&mut x).prefix("x: ").speed(0.1))
             .changed()
         {
-            vec.x = x;
+            vec.0[0] = x;
         }
         if ui
             .add(egui::DragValue::new(&mut y).prefix("y: ").speed(0.1))
             .changed()
         {
-            vec.y = y;
+            vec.0[1] = y;
+        }
+    });
+}
+
+fn draw_vec4_watcher(ui: &mut egui::Ui, vec: &mut Vec4) {
+    ui.horizontal(|ui| {
+        let mut x = vec.0[0];
+        let mut y = vec.0[1];
+        let mut z = vec.0[2];
+        let mut w = vec.0[3];
+        if ui
+            .add(egui::DragValue::new(&mut x).prefix("x: ").speed(0.1))
+            .changed()
+        {
+            vec.0[0] = x;
+        }
+        if ui
+            .add(egui::DragValue::new(&mut y).prefix("y: ").speed(0.1))
+            .changed()
+        {
+            vec.0[1] = y;
+        }
+        if ui
+            .add(egui::DragValue::new(&mut z).prefix("z: ").speed(0.1))
+            .changed()
+        {
+            vec.0[2] = z;
+        }
+        if ui
+            .add(egui::DragValue::new(&mut w).prefix("w: ").speed(0.1))
+            .changed()
+        {
+            vec.0[3] = w;
         }
     });
 }

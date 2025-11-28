@@ -33,7 +33,7 @@ pub fn setup_graphics_api(
             ];
             batch
                 .borrow_mut()
-                .draw_rect(pos.x, pos.y, size.x, size.y, color);
+                .draw_rect(pos.x(), pos.y(), size.x(), size.y(), color);
             Ok(())
         }
     });
@@ -57,7 +57,7 @@ pub fn setup_graphics_api(
             let pos = get_pos_as_vec2(mpos)?;
             let dir = get_size_as_vec2(mdir)?;
             let color = table_to_color(color.unwrap_or(get_default_color(lua)?));
-            let dir_len = (dir.x * dir.x + dir.y * dir.y).sqrt();
+            let dir_len = dir.length();
             if dir_len == 0.0 {
                 return Ok(());
             }
@@ -87,7 +87,7 @@ pub fn setup_graphics_api(
             let pos = get_pos_as_vec2(mpos)?;
             batch
                 .borrow_mut()
-                .draw_circle(pos.x, pos.y, radius, table_to_color(color));
+                .draw_circle(pos.x(), pos.y(), radius, table_to_color(color));
             Ok(())
         }
     });

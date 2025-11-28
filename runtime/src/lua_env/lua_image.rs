@@ -66,7 +66,7 @@ pub fn setup_image_api(
                 };
                 batch
                     .borrow_mut()
-                    .draw_image(pos.x, pos.y, size.x, size.y, tex);
+                    .draw_image(pos.x(), pos.y(), size.x(), size.y(), tex);
                 Ok(())
             }
         });

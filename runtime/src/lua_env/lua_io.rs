@@ -65,10 +65,7 @@ pub fn setup_io_api(
         let env_state = env_state.clone();
         move |_, ()| {
             let mouse_state = env_state.borrow().mouse_state.clone();
-            Ok(Vec2 {
-                x: mouse_state.x,
-                y: mouse_state.y,
-            })
+            Ok(Vec2::new(mouse_state.x, mouse_state.y))
         }
     });
 
@@ -87,10 +84,10 @@ pub fn setup_io_api(
         let env_state = env_state.clone();
         move |_lua, ()| {
             let state = env_state.borrow();
-            Ok(Vec2 {
-                x: (state.window_width as f32 / state.px_ratio_x),
-                y: (state.window_height as f32 / state.px_ratio_y),
-            })
+            Ok(Vec2::new(
+                state.window_width as f32 / state.px_ratio_x,
+                state.window_height as f32 / state.px_ratio_y,
+            ))
         }
     });
 
@@ -98,10 +95,10 @@ pub fn setup_io_api(
         let env_state = env_state.clone();
         move |_lua, ()| {
             let state = env_state.borrow();
-            Ok(Vec2 {
-                x: state.screen_width as f32,
-                y: state.screen_height as f32,
-            })
+            Ok(Vec2::new(
+                state.screen_width as f32,
+                state.screen_height as f32,
+            ))
         }
     });
 
