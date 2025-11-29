@@ -91,6 +91,22 @@ pub fn setup_graphics_api(
         }
     });
 
+    add_fn_to_table(lua, &graphics_module, "drawEllipse", {
+        let batch = batch.clone();
+        move |_, (mpos, size, color): (AnyUserData, AnyUserData, Option<Vec4>)| {
+            let pos = get_pos_as_vec2(mpos)?;
+            let size = get_size_as_vec2(size)?;
+            batch.borrow_mut().draw_ellipse(
+                pos.x(),
+                pos.y(),
+                size.x(),
+                size.y(),
+                color.unwrap_or(BLACK).0,
+            );
+            Ok(())
+        }
+    });
+
     add_fn_to_table(lua, &graphics_module, "drawWithMask", {
         let batch = batch.clone();
         let resources = resources.clone();

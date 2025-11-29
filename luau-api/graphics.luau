@@ -25,6 +25,9 @@ function module.drawArrow(pos: Pos, direction: Direction, color: Vec4.Vec4?, siz
 --- Draws a filled circle
 function module.drawCircle(center: Pos, radius: number, color: Vec4.Vec4): () end
 
+--- Draws an ellipse contained in the rectangle defined by `center` and `size * 2`
+function module.drawEllipse(center: Pos, size: Direction, color: Vec4.Vec4): () end
+
 --- Runs drawFunction using the result of the maskFunction as a mask.
 --- drawFunction will only be able to draw in places where maskFunction drew.
 --- The output of maskFunction is not visible directly and the colors used by the mask do not matter.

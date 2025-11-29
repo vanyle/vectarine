@@ -220,25 +220,35 @@ impl BatchDraw2d {
         );
     }
 
+    #[inline]
     pub fn draw_circle(&mut self, x: f32, y: f32, radius: f32, color: [f32; 4]) {
-        const CIRCLE_SEGMENTS: usize = 32;
-        let mut vertices: Vec<f32> = Vec::with_capacity((CIRCLE_SEGMENTS + 1) * (2 + 4));
-        let mut indices: Vec<u32> = Vec::with_capacity(CIRCLE_SEGMENTS * 3);
+        self.draw_ellipse(x, y, radius / 2.0 / self.aspect_ratio, radius / 2.0, color);
+    }
+
+    pub fn draw_ellipse(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
+        let circle_segment_count: usize = if (width.abs() + height.abs()) < 0.05 {
+            32
+        } else {
+            64
+        };
+
+        let mut vertices: Vec<f32> = Vec::with_capacity((circle_segment_count + 1) * (2 + 4));
+        let mut indices: Vec<u32> = Vec::with_capacity(circle_segment_count * 3);
 
         // Center vertex
         vertices.push(x);
         vertices.push(y);
         vertices.extend_from_slice(&color);
 
-        for i in 0..=CIRCLE_SEGMENTS {
-            let theta = (i as f32 / CIRCLE_SEGMENTS as f32) * std::f32::consts::TAU;
-            let vx = x + (radius * theta.cos()) / self.aspect_ratio;
-            let vy = y + radius * theta.sin();
+        for i in 0..=circle_segment_count {
+            let theta = (i as f32 / circle_segment_count as f32) * std::f32::consts::TAU;
+            let vx = x + (width * theta.cos());
+            let vy = y + height * theta.sin();
             vertices.push(vx);
             vertices.push(vy);
             vertices.extend_from_slice(&color);
 
-            if i < CIRCLE_SEGMENTS {
+            if i < circle_segment_count {
                 indices.push(0);
                 indices.push(i as u32 + 1);
                 indices.push(i as u32 + 2);
