@@ -5,8 +5,6 @@
   - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
-  - [ ] V4 is a color (provide default colors and a Color(r,g,b,a) function)
-  - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
@@ -77,6 +75,8 @@
 
 # Done
 
+- [x] V4 is a color (provide default colors and a Color(r,g,b,a) function)
+- [x] Default values (if a color is nil, it is infered to be black)
 - [x] Add more convenience functions for V2 such as a:distance(b) for (a-b):length() 
 - [x] Profiler tool
   - [x] Drawcall counter

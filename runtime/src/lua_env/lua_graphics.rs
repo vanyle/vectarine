@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{AnyUserData, Table};
+use mlua::AnyUserData;
 
 use crate::{
     game_resource,
@@ -9,6 +9,7 @@ use crate::{
     lua_env::{
         add_fn_to_table,
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
+        lua_vec4::{BLACK, Vec4, WHITE},
     },
 };
 
@@ -22,41 +23,39 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "drawRect", {
         let batch = batch.clone();
-        move |_, (mpos, msize, color): (AnyUserData, AnyUserData, Table)| {
+        move |_, (mpos, msize, color): (AnyUserData, AnyUserData, Option<Vec4>)| {
             let pos = get_pos_as_vec2(mpos)?;
             let size = get_size_as_vec2(msize)?;
-            let color = [
-                color.get::<f32>("r").unwrap_or(0.0),
-                color.get::<f32>("g").unwrap_or(0.0),
-                color.get::<f32>("b").unwrap_or(0.0),
-                color.get::<f32>("a").unwrap_or(0.0),
-            ];
-            batch
-                .borrow_mut()
-                .draw_rect(pos.x(), pos.y(), size.x(), size.y(), color);
+            batch.borrow_mut().draw_rect(
+                pos.x(),
+                pos.y(),
+                size.x(),
+                size.y(),
+                color.unwrap_or(BLACK).0,
+            );
             Ok(())
         }
     });
 
     add_fn_to_table(lua, &graphics_module, "drawPolygon", {
         let batch = batch.clone();
-        move |_, (points, color): (Vec<AnyUserData>, Table)| {
+        move |_, (points, color): (Vec<AnyUserData>, Option<Vec4>)| {
             let points = points
                 .into_iter()
                 .map(|p| get_pos_as_vec2(p).unwrap_or_default());
             batch
                 .borrow_mut()
-                .draw_polygon(points, table_to_color(color));
+                .draw_polygon(points, color.unwrap_or(BLACK).0);
             Ok(())
         }
     });
 
     add_fn_to_table(lua, &graphics_module, "drawArrow", {
         let batch = batch.clone();
-        move |lua, (mpos, mdir, color, size): (AnyUserData, AnyUserData, Option<Table>, Option<f32>)| {
+        move |_lua, (mpos, mdir, color, size): (AnyUserData, AnyUserData, Option<Vec4>, Option<f32>)| {
             let pos = get_pos_as_vec2(mpos)?;
             let dir = get_size_as_vec2(mdir)?;
-            let color = table_to_color(color.unwrap_or(get_default_color(lua)?));
+            let color = color.unwrap_or(BLACK);
             let dir_len = dir.length();
             if dir_len == 0.0 {
                 return Ok(());
@@ -70,24 +69,24 @@ pub fn setup_graphics_api(
             let p2 = pos + dir + perp.scale(arrow_head_size / 1.5);
             let p3 = pos + dir + dir_norm.scale(arrow_head_size);
             let mut batch = batch.borrow_mut();
-            batch.draw_polygon([p1, p2, p3].into_iter(), color);
+            batch.draw_polygon([p1, p2, p3].into_iter(), color.0);
 
             let p1 = pos - perp.scale(arrow_width / 2.0);
             let p2 = pos + dir - perp.scale(arrow_width / 2.0);
             let p3 = pos + dir + perp.scale(arrow_width / 2.0);
             let p4 = pos + perp.scale(arrow_width / 2.0);
-            batch.draw_polygon([p1, p2, p3, p4].into_iter(), color);
+            batch.draw_polygon([p1, p2, p3, p4].into_iter(), color.0);
             Ok(())
         }
     });
 
     add_fn_to_table(lua, &graphics_module, "drawCircle", {
         let batch = batch.clone();
-        move |_, (mpos, radius, color): (AnyUserData, f32, Table)| {
+        move |_, (mpos, radius, color): (AnyUserData, f32, Option<Vec4>)| {
             let pos = get_pos_as_vec2(mpos)?;
             batch
                 .borrow_mut()
-                .draw_circle(pos.x(), pos.y(), radius, table_to_color(color));
+                .draw_circle(pos.x(), pos.y(), radius, color.unwrap_or(BLACK).0);
             Ok(())
         }
     });
@@ -114,32 +113,11 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "clear", {
         let batch = batch.clone();
-        move |_, (color,): (Table,)| {
-            let color = table_to_color(color);
-            batch
-                .borrow_mut()
-                .clear(color[0], color[1], color[2], color[3]);
+        move |_, (color,): (Option<Vec4>,)| {
+            batch.borrow_mut().clear(color.unwrap_or(WHITE).0);
             Ok(())
         }
     });
 
     Ok(graphics_module)
-}
-
-pub fn table_to_color(color: Table) -> [f32; 4] {
-    [
-        color.get::<f32>("r").unwrap_or(0.0),
-        color.get::<f32>("g").unwrap_or(0.0),
-        color.get::<f32>("b").unwrap_or(0.0),
-        color.get::<f32>("a").unwrap_or(0.0),
-    ]
-}
-
-pub fn get_default_color(lua: &mlua::Lua) -> mlua::Result<Table> {
-    let default_color = lua.create_table()?;
-    default_color.set("r", 0.0)?;
-    default_color.set("g", 0.0)?;
-    default_color.set("b", 0.0)?;
-    default_color.set("a", 1.0)?;
-    Ok(default_color)
 }

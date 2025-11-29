@@ -10,7 +10,7 @@ impl<const N: usize> Default for Vect<N> {
 }
 
 impl<const N: usize> Vect<N> {
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self([0.0; N])
     }
     #[inline]

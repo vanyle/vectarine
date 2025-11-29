@@ -17,23 +17,23 @@ impl mlua::FromLua for Vec2 {
 
 impl Vec2 {
     #[inline(always)]
-    pub fn new(x: f32, y: f32) -> Self {
+    pub const fn new(x: f32, y: f32) -> Self {
         Self([x, y])
     }
     #[inline(always)]
-    pub fn x(&self) -> f32 {
+    pub const fn x(&self) -> f32 {
         self.0[0]
     }
     #[inline(always)]
-    pub fn y(&self) -> f32 {
+    pub const fn y(&self) -> f32 {
         self.0[1]
     }
     #[inline]
-    pub fn with_x(self, x: f32) -> Self {
+    pub const fn with_x(self, x: f32) -> Self {
         Self([x, self.0[1]])
     }
     #[inline]
-    pub fn with_y(self, y: f32) -> Self {
+    pub const fn with_y(self, y: f32) -> Self {
         Self([self.0[0], y])
     }
     #[inline]

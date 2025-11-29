@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{AnyUserData, FromLua, IntoLua, Table, UserDataMethods};
+use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     game_resource::{self, ResourceId, font_resource::FontResource},
@@ -8,8 +8,8 @@ use crate::{
     io,
     lua_env::{
         lua_coord::get_pos_as_vec2,
-        lua_graphics::table_to_color,
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
+        lua_vec4::{BLACK, Vec4},
     },
     make_resource_lua_compatible,
 };
@@ -32,9 +32,9 @@ pub fn setup_text_api(
         registry.add_method("drawText", {
             let batch = batch.clone();
             let resources = resources.clone();
-            move |_, font, (text, mpos, size, color): (String, AnyUserData, f32, Table)| {
+            move |_, font, (text, mpos, size, color): (String, AnyUserData, f32, Option<Vec4>)| {
                 let pos = get_pos_as_vec2(mpos)?;
-                let color = table_to_color(color);
+                let color = color.unwrap_or(BLACK);
                 let font_resource = resources.get_by_id::<FontResource>(font.0);
                 let Ok(font_resource) = font_resource else {
                     return Ok(());
@@ -45,7 +45,7 @@ pub fn setup_text_api(
                 };
                 batch
                     .borrow_mut()
-                    .draw_text(pos.x(), pos.y(), &text, color, size, font_resource);
+                    .draw_text(pos.x(), pos.y(), &text, color.0, size, font_resource);
                 Ok(())
             }
         });

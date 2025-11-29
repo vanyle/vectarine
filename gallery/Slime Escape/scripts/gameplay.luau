@@ -8,6 +8,7 @@ local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
 local Screen = require("@vectarine/screen")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 local entity = require("./entity")
 
 -- local logoResource = Loader.loadImage("textures/logo.png")
@@ -158,23 +159,23 @@ local function drawHealthBar()
 	Graphics.drawRect(
 		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 50)) - Coord.pxVec(Vec.V2(5, 5)),
 		Coord.pxVec(Vec.V2(total_health_bar_width + 10, 30)),
-		{ r = 0, g = 0, b = 0, a = 1 }
+		Vec4.BLACK
 	)
 	Graphics.drawRect(
 		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 50)),
 		Coord.pxVec(Vec.V2(total_health_bar_width, 20)),
-		{ r = 0.5, g = 0.5, b = 0.5, a = 1 }
+		Vec4.GRAY
 	)
 	Graphics.drawRect(
 		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 50)),
 		Coord.pxVec(Vec.V2(health_bar_width, 20)),
-		{ r = 1, g = 0, b = 0, a = 1 }
+		Vec4.RED
 	)
 	fontResource:drawText(
 		tostring(player.health),
 		Coord.gl(Vec.V2(1, 1)) + Coord.pxVec(Vec.V2(-200, 67)),
 		0.07,
-		{ r = 0, g = 0, b = 0, a = 1 }
+		Vec4.BLACK
 	)
 end
 
@@ -189,14 +190,14 @@ function renderGameplay()
 	local cameraSpeed = 0.01
 	camera.position = camera.position + (player.position - Vec.V2(8, 5) - camera.position):scale(cameraSpeed)
 
-	Graphics.drawRect(Coord.gl(Vec.V2(-1, -1)), Coord.glVec(Vec.V2(2, 2)), { r = 0.2, g = 0, b = 0, a = 1 })
+	Graphics.drawRect(Coord.gl(Vec.V2(-1, -1)), Coord.glVec(Vec.V2(2, 2)), Vec4.createColor(0.2, 0, 0, 1))
 
 	-- Draw level
 	for y = 1, #level do
 		for x = 1, #level[y] do
 			local tile = level[y][x]
 			if tile ~= 0 then
-				local color = tile == 1 and { r = 0.5, g = 0.5, b = 0.5, a = 1 } or { r = 0.8, g = 0.8, b = 0.8, a = 1 }
+				local color = tile == 1 and Vec4.GRAY or Vec4.LIGHT_GRAY
 				local tile_pos = getCamPos(Vec.V2((x - 1), (y - 1)))
 				local tile_size = getCamSize(Vec.V2(1, 1))
 				Graphics.drawRect(
@@ -215,7 +216,7 @@ function renderGameplay()
 		Graphics.drawRect(
 			Coord.px(Vec.V2(entity_screen_pos.x, entity_screen_pos.y)),
 			Coord.pxVec(Vec.V2(camera.zoom, camera.zoom)),
-			{ r = 0, g = 1, b = 0, a = 1 }
+			Vec4.GREEN
 		)
 		if entity.isHealthShown then
 			local health_bar_width = camera.zoom * (entity.health / 100)
@@ -227,7 +228,7 @@ function renderGameplay()
 					)
 				),
 				Coord.pxVec(Vec.V2(health_bar_width, camera.zoom * 0.2)),
-				{ r = 1, g = 0, b = 0, a = 1 }
+				Vec4.RED
 			)
 		end
 	end
@@ -238,7 +239,7 @@ function renderGameplay()
 	Graphics.drawRect(
 		Coord.px(Vec.V2(player_screen_pos.x, player_screen_pos.y)),
 		Coord.pxVec(Vec.V2(player_screen_size.x, player_screen_size.y)),
-		{ r = 0, g = 0, b = 1, a = 1 }
+		Vec4.BLUE
 	)
 
 	-- Player health bar
@@ -251,7 +252,7 @@ function renderGameplay()
 		Graphics.drawRect(
 			Coord.px(Vec.V2(projectile_screen_pos.x, projectile_screen_pos.y)),
 			Coord.pxVec(Vec.V2(projectile_size.x, projectile_size.y)),
-			{ r = 1, g = 1, b = 0, a = 1 }
+			Vec4.YELLOW
 		)
 	end
 end

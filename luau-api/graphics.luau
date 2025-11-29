@@ -1,6 +1,6 @@
-local Color = require("@vectarine/color")
 local Coord = require("@vectarine/coord")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 
 --- Graphics
 ---
@@ -11,19 +11,19 @@ type Pos = Coord.ScreenPosition | Vec.Vec2
 type Direction = Coord.ScreenVec | Vec.Vec2
 
 --- Clear the canvas
-function module.clear(color: Color.Vec4): () end
+function module.clear(color: Vec4.Vec4): () end
 
 --- Draws a filled rectangle
-function module.drawRect(pos: Pos, size: Direction, color: Color.Vec4): () end
+function module.drawRect(pos: Pos, size: Direction, color: Vec4.Vec4): () end
 
 --- Draws a convex filled polygon
-function module.drawPolygon(points: { Pos }, color: Color.Vec4): () end
+function module.drawPolygon(points: { Pos }, color: Vec4.Vec4): () end
 
 --- Draws an arrow starting at `pos`, and towards `direction`
-function module.drawArrow(pos: Pos, direction: Direction, color: Color.Vec4?, size: number?): () end
+function module.drawArrow(pos: Pos, direction: Direction, color: Vec4.Vec4?, size: number?): () end
 
 --- Draws a filled circle
-function module.drawCircle(center: Pos, radius: number, color: Color.Vec4): () end
+function module.drawCircle(center: Pos, radius: number, color: Vec4.Vec4): () end
 
 --- Runs drawFunction using the result of the maskFunction as a mask.
 --- drawFunction will only be able to draw in places where maskFunction drew.

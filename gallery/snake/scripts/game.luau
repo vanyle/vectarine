@@ -7,11 +7,12 @@ local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 local V2 = Vec.V2
 
 --- Constants
-_G.BG_COLOR = { r = 132 / 255, g = 160 / 255, b = 189 / 255, a = 1 }
-local _SNAKE_COLOR = { r = 0.2, g = 0.8, b = 0, a = 1 }
+_G.BG_COLOR = Vec4.createColor(132 / 255, 160 / 255, 189 / 255, 1)
+local _SNAKE_COLOR = Vec4.createColor(0.2, 0.8, 0, 1)
 local HEAD_SNAKE_SEGMENT = { 1, 2, 3, 4 }
 local STRAIGHT_SNAKE_SEGMENT = { 9, 10 }
 local CORNER_SNAKE_SEGMENT = { 5, 6, 7, 8 }

@@ -3,11 +3,12 @@ local Coord = require("@vectarine/coord")
 local Debug = require("@vectarine/debug")
 local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
+local Image = require("@vectarine/image")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
 local Vec = require("@vectarine/vec")
-local image = require("@vectarine/image")
+local Vec4 = require("@vectarine/vec4")
 
 local LevelDesignType = require("level_design.luau")
 local _, levelDesign = Loader.loadScript("scripts/level_design.luau", require("level_design.luau"))
@@ -160,7 +161,7 @@ local GameState = Persist.onReload({
 	win_music_played = false,
 
 	-- Asset display
-	displayed_asset = nil :: image.ImageResource?,
+	displayed_asset = nil :: Image.ImageResource?,
 	displayed_asset_name = "",
 }, "GameState")
 
@@ -453,7 +454,7 @@ function Update(time_delta: number)
 		canvas:setUniform("windowHeight", windowSize.y)
 	end
 
-	Graphics.clear({ r = 0, g = 0, b = 0, a = 1 })
+	Graphics.clear(Vec4.BLACK)
 
 	-- Check if we're in blackscreen phase
 	if windup_timer.timer <= BLACKSCREEN_DURATION then
@@ -468,7 +469,7 @@ function Update(time_delta: number)
 	end
 
 	canvas:paint(function()
-		Graphics.clear({ r = 0.6, g = 0.5, b = 0.2, a = 1 })
+		Graphics.clear(Vec4.WHITE)
 
 		-- Only update game entities when not paused
 		if not GameState.game_paused then

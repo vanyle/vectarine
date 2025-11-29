@@ -406,8 +406,9 @@ impl BatchDraw2d {
         self.vertex_data.clear();
     }
 
-    pub fn clear(&self, r: f32, g: f32, b: f32, a: f32) {
-        self.drawing_target.clear(r, g, b, a);
+    pub fn clear(&self, color: [f32; 4]) {
+        self.drawing_target
+            .clear(color[0], color[1], color[2], color[3]);
     }
 }
 

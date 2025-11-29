@@ -1,6 +1,6 @@
 local Debug = require("@vectarine/debug")
 local Event = require("@vectarine/event")
-local Loader = require("@vectarine/loader")
+local Persist = require("@vectarine/persist")
 local Vec = require("@vectarine/vec")
 
 local module = {}
@@ -13,8 +13,7 @@ export type Entity = {
 	attackDamage: number,
 }
 
-local _, utils = Loader.loadScript("scripts/utils.luau", require("utils.luau"))
-local entities: { Entity } = utils.initFromGlobal({}, "entities")
+local entities: { Entity } = Persist.onReload({}, "entities")
 
 local entitySpawnRate = 1.0
 local timeSinceLastSpawn = 0.0
