@@ -2,7 +2,8 @@ use std::sync::{LazyLock, Mutex};
 
 use egui::RichText;
 use egui::Widget;
-use runtime::console::Verbosity;
+use runtime::console;
+use runtime::console::ConsoleMessage;
 use runtime::game::Game;
 use runtime::lua_env::to_lua;
 
@@ -33,10 +34,9 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                         editor.text_command.clear();
                         response.request_focus();
                     }
-                    if egui::Button::new("Clear").ui(ui).clicked()
-                        && let Some(game) = &game {
-                            game.lua_env.messages.borrow_mut().clear();
-                        }
+                    if egui::Button::new("Clear").ui(ui).clicked() {
+                        console::clear_all_logs();
+                    }
                 });
 
                 egui::TopBottomPanel::bottom("bottom_panel")
@@ -53,22 +53,16 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                             .auto_shrink(false)
                             .stick_to_bottom(true)
                             .show(ui, |ui| {
-                                let Some(game) = &game else {
-                                    return;
-                                };
-                                let messages = &mut game.lua_env.frame_messages.borrow_mut();
-                                for line in messages.iter() {
-                                    let msg = &line.msg;
+                                console::consume_frame_logs(|msg| {
                                     ui.label(
                                         RichText::new(msg).color(egui::Color32::WHITE).monospace(),
                                     );
-                                }
-                                messages.clear();
+                                });
                             });
                     });
 
                 egui::CentralPanel::default().show_inside(ui, |ui| {
-                    draw_console_content(ui, &game);
+                    draw_console_content(ui);
                 });
             });
     }
@@ -83,7 +77,7 @@ pub fn try_send_command_to_game(game: &Option<&mut Game>, command: &str) {
     );
 }
 
-fn draw_console_content(ui: &mut egui::Ui, game: &Option<&mut Game>) {
+fn draw_console_content(ui: &mut egui::Ui) {
     static ARE_LOGS_ERROR_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
     static ARE_LOGS_WARN_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
     static ARE_LOGS_INFO_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
@@ -108,30 +102,40 @@ fn draw_console_content(ui: &mut egui::Ui, game: &Option<&mut Game>) {
             let show_warnings = ARE_LOGS_WARN_SHOWN.lock().map(|e| *e).unwrap_or_default();
             let show_infos = ARE_LOGS_INFO_SHOWN.lock().map(|e| *e).unwrap_or_default();
 
-            let Some(game) = game else {
-                ui.label("No game loaded");
-                return;
-            };
-            let messages = &mut game.lua_env.messages.borrow_mut();
-            for line in messages.iter().rev() {
-                let msg = &line.msg;
-                let is_error = line.verbosity == Verbosity::Error;
-                let is_warning = line.verbosity == Verbosity::Warn;
-                let is_info = line.verbosity == Verbosity::Info;
-                if (show_errors && is_error)
-                    || (show_warnings && is_warning)
-                    || (show_infos && is_info)
-                {
-                    let text = if is_error {
-                        RichText::new(msg).color(egui::Color32::RED)
-                    } else if is_warning {
-                        RichText::new(msg).color(egui::Color32::YELLOW)
-                    } else {
-                        RichText::new(msg).color(egui::Color32::WHITE)
-                    };
-                    ui.label(text.monospace());
+            console::get_logs(|msg| {
+                if matches!(msg, ConsoleMessage::Info(_)) && !show_infos {
+                    return;
                 }
-            }
-            messages.truncate(500);
+                if matches!(msg, ConsoleMessage::Warning(_)) && !show_warnings {
+                    return;
+                }
+                if matches!(msg, ConsoleMessage::Error(_) | ConsoleMessage::LuaError(_))
+                    && !show_errors
+                {
+                    return;
+                }
+                match msg {
+                    ConsoleMessage::Info(msg) => ui.label(
+                        RichText::new(format!("{}", msg))
+                            .color(egui::Color32::WHITE)
+                            .monospace(),
+                    ),
+                    ConsoleMessage::Warning(msg) => ui.label(
+                        RichText::new(format!("{}", msg))
+                            .color(egui::Color32::YELLOW)
+                            .monospace(),
+                    ),
+                    ConsoleMessage::Error(msg) => ui.label(
+                        RichText::new(format!("{}", msg))
+                            .color(egui::Color32::RED)
+                            .monospace(),
+                    ),
+                    ConsoleMessage::LuaError(msg) => ui.label(
+                        RichText::new(format!("{}", msg))
+                            .color(egui::Color32::RED)
+                            .monospace(),
+                    ),
+                };
+            });
         });
 }

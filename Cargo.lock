@@ -2442,6 +2442,7 @@ dependencies = [
  "image",
  "lazy_static",
  "mlua",
+ "regex",
  "sdl2",
  "serde",
  "serde_json",

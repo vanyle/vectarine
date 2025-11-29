@@ -3,6 +3,7 @@ use std::sync::Arc;
 use glow::HasContext;
 
 use crate::{
+    console::print_warn,
     get_shader_version,
     graphics::{
         gltypes::DataLayout,
@@ -99,7 +100,10 @@ impl GLProgram {
                 let location = gl.get_uniform_location(self.program, uniform_name.as_str());
                 let Some(location) = location else {
                     // Uniform not found, maybe it was optimized out.
-                    // TODO: put a warning.
+                    print_warn(format!(
+                        "Uniform {} not found in shader, maybe it was unused and optimized out?",
+                        uniform_name
+                    ));
                     continue;
                 };
 

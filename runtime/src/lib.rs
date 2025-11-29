@@ -235,12 +235,14 @@ pub fn lib_main() {
                     // We still need to clear them to avoid memory leaks.
                     {
                         #![cfg(debug_assertions)]
-                        for m in game.lua_env.messages.borrow_mut().drain(..) {
-                            println!("{}", m.msg);
-                        }
+                        console::consume_logs(|log| {
+                            println!("{}", log);
+                        });
+                        console::consume_frame_logs(|log| {
+                            println!("{}", log);
+                        });
                     }
-                    game.lua_env.messages.borrow_mut().clear();
-                    game.lua_env.frame_messages.borrow_mut().clear();
+                    console::clear_all_logs();
 
                     window.borrow().gl_swap_window();
                 });

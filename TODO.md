@@ -43,10 +43,6 @@
   - [ ] The editor is compiled with -mwindow
   - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
 - [ ] Use SDL pref_path for editor settings and cache.
-- [ ] Put the console system outside of Lua Env
-  - [ ] Create a logger trait in console.rs
-  - [ ] LuaEnv needs a logger to be built and prints writes to the logger.
-    - [ ] 3 levels: Info, Warning, Error
   - [ ] The runtime and editor have separate logger implementation
   - [ ] The logger is easily accessible from anywhere in the code even without Lua.
   - [ ] Enable errors and warnings, even for release builds
@@ -75,6 +71,10 @@
 
 # Done
 
+- [x] Put the console system outside of Lua Env
+  - [x] Create a logger in console.rs
+  - [x] The logger is easily accessible from anywhere in the code even without Lua.
+    - [x] 3 levels: Info, Warning, Error
 - [x] V4 is a color (provide default colors and a Color(r,g,b,a) function)
 - [x] Default values (if a color is nil, it is infered to be black)
 - [x] Add more convenience functions for V2 such as a:distance(b) for (a-b):length() 

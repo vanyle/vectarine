@@ -276,7 +276,7 @@ impl Platform {
                     })?;
                 }
                 egui::OutputCommand::CopyImage(_) | egui::OutputCommand::OpenUrl(_) => {
-                    // TODO: Handle CopyImage and OpenUrl commands
+                    // ...
                 }
             }
         }

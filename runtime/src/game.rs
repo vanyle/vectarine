@@ -4,11 +4,11 @@ use glow::HasContext;
 use sdl2::video::WindowPos;
 
 use crate::{
-    console::Verbosity,
+    console::print_warn,
     game_resource::{Resource, ResourceId, Status, script_resource::ScriptResource},
     graphics::batchdraw::BatchDraw2d,
     io::{fs::ReadOnlyFileSystem, process_events},
-    lua_env::{LuaEnvironment, lua_screen},
+    lua_env::{LuaEnvironment, lua_screen, print_lua_error_from_error},
     metrics::{
         DRAW_CALL_METRIC_NAME, LUA_HEAP_SIZE_METRIC_NAME, LUA_SCRIPT_TIME_METRIC_NAME,
         MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
@@ -112,10 +112,6 @@ impl Game {
         }
     }
 
-    pub fn print_to_editor_console(&self, message: &str) {
-        self.lua_env.print(message, Verbosity::Info);
-    }
-
     pub fn get_resource_or_print_error<T>(&self, id: ResourceId) -> Option<Rc<T>>
     where
         T: Resource,
@@ -125,7 +121,7 @@ impl Game {
         let res = match resource {
             Ok(res) => res,
             Err(cause) => {
-                self.print_to_editor_console(&format!(
+                print_warn(format!(
                     "Warning: Failed to get resource with id '{id}': {cause}",
                 ));
                 return None;
@@ -221,11 +217,10 @@ impl Game {
             if let Ok(update_fn) = update_fn {
                 let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
                 if let Err(err) = err {
-                    self.lua_env.print(&err.to_string(), Verbosity::Error);
+                    print_lua_error_from_error(&err, self.main_script_path.clone());
                 }
             } else {
-                // This message is not useful in its current form.
-                // self.lua_env.print("Update() function not found", Verbosity::Warn);
+                print_warn("Update() function not found".to_string());
             }
         }
         let lua_update_duration = start_of_lua_update.elapsed();

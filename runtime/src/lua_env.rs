@@ -1,4 +1,5 @@
-use std::{cell::RefCell, collections::VecDeque, path::Path, rc::Rc};
+use regex::Regex;
+use std::{cell::RefCell, path::Path, rc::Rc};
 
 use mlua::ObjectLike;
 
@@ -19,7 +20,7 @@ pub mod lua_tile;
 pub mod lua_vec2;
 pub mod lua_vec4;
 
-use crate::console::{ConsoleMessage, Verbosity};
+use crate::console::{print_lua_error, print_warn};
 use crate::game_resource::ResourceManager;
 use crate::graphics::batchdraw::BatchDraw2d;
 use crate::io::IoEnvState;
@@ -34,9 +35,6 @@ pub struct LuaEnvironment {
     pub batch: Rc<RefCell<BatchDraw2d>>,
 
     pub default_events: lua_event::DefaultEvents,
-
-    pub frame_messages: Rc<RefCell<Vec<ConsoleMessage>>>,
-    pub messages: Rc<RefCell<VecDeque<ConsoleMessage>>>,
 
     pub metrics: Rc<RefCell<MetricsHolder>>,
     pub resources: Rc<ResourceManager>,
@@ -74,8 +72,6 @@ impl LuaEnvironment {
 
         let resources = Rc::new(ResourceManager::new(file_system, base_path));
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
-        let frame_messages = Rc::new(RefCell::new(Vec::new()));
-        let messages = Rc::new(RefCell::new(VecDeque::new()));
 
         let persist_module = lua_persist::setup_persist_api(&lua).unwrap();
         lua.register_module("@vectarine/persist", persist_module)
@@ -126,8 +122,7 @@ impl LuaEnvironment {
         let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();
         lua.register_module("@vectarine/io", io_module).unwrap();
 
-        let debug_module =
-            lua_debug::setup_debug_api(&lua, &messages, &frame_messages, &metrics).unwrap();
+        let debug_module = lua_debug::setup_debug_api(&lua, &metrics).unwrap();
         lua.register_module("@vectarine/debug", debug_module)
             .unwrap();
 
@@ -171,9 +166,7 @@ impl LuaEnvironment {
             lua,
             env_state,
             batch,
-            frame_messages,
             default_events,
-            messages,
             resources,
             metrics,
         }
@@ -181,10 +174,6 @@ impl LuaEnvironment {
 
     pub fn run_file_and_display_error(&self, file_content: &[u8], file_path: &Path) {
         run_file_and_display_error_from_lua_handle(&self.lua, file_content, file_path, None);
-    }
-
-    pub fn print(&self, msg: &str, verbosity: Verbosity) {
-        print(&self.lua, verbosity, msg);
     }
 }
 
@@ -227,8 +216,7 @@ pub fn run_file_and_display_error_from_lua_handle(
 
     match result {
         Err(error) => {
-            let error_msg = error.to_string();
-            print(lua, Verbosity::Error, &error_msg);
+            print_lua_error_from_error(&error, file_path.to_string_lossy().to_string());
         }
         Ok(value) => {
             // Merge the table with the argument table if provided.
@@ -237,14 +225,10 @@ pub fn run_file_and_display_error_from_lua_handle(
             };
             let table = value.as_table();
             let Some(table) = table else {
-                print(
-                    lua,
-                    Verbosity::Warn,
-                    &format!(
-                        "Script {} did not return a table, so we cannot put its exports into the table provided when calling LoadScript.",
-                        file_path.to_string_lossy()
-                    ),
-                );
+                print_warn(format!(
+                    "Script {} did not return a table, so we cannot put its exports into the table provided when calling LoadScript.",
+                    file_path.to_string_lossy()
+                ));
                 return;
             };
 
@@ -275,12 +259,45 @@ pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
     }
 }
 
-/// Helper function to allow printing messages from anywhere in Rust as long as you have access to a lua handle.
-pub fn print(_lua: &Rc<mlua::Lua>, _verbosity: Verbosity, msg: &str) {
-    println!("{}", msg);
-    //todo!(
-    //    "print is not implemented yet. The planned print should not require you to have a Lua handle."
-    //)
+pub fn get_line_of_error(error: &mlua::Error) -> usize {
+    match error {
+        mlua::Error::CallbackError { traceback, cause } => {
+            // Code taken from mlua's error handling.
+            let (mut cause, mut full_traceback) = (cause, None);
+            while let mlua::Error::CallbackError {
+                cause: cause2,
+                traceback: traceback2,
+            } = &**cause
+            {
+                cause = cause2;
+                full_traceback = Some(traceback2);
+            }
+            let Some(full_traceback) = full_traceback else {
+                return 0;
+            };
+            let traceback = traceback.trim_start_matches("stack traceback:");
+            let traceback = traceback.trim_start().trim_end();
+            // Try to find local traceback within the full traceback
+            let Some(pos) = full_traceback.find(traceback) else {
+                return 0;
+            };
+            let rest = &full_traceback[pos..];
+            // Extract :number:
+            let re = Regex::new(r":(\d+):").expect("This regex is valid");
+            let Some(captures) = re.captures(rest) else {
+                return 0;
+            };
+            let Some(number_str) = captures.get(1) else {
+                return 0;
+            };
+            number_str
+                .as_str()
+                .parse::<usize>()
+                .ok()
+                .unwrap_or_default()
+        }
+        _ => 0,
+    }
 }
 
 fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {
@@ -342,4 +359,10 @@ pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
     globals
         .raw_get(UNSAFE_INTERNALS_KEY)
         .expect("Failed to get lua internal table")
+}
+
+pub fn print_lua_error_from_error(error: &mlua::Error, file_path: String) {
+    let error_msg = error.to_string();
+    let line = get_line_of_error(error);
+    print_lua_error(error_msg, file_path, line);
 }
