@@ -3,13 +3,14 @@ use std::{cell::RefCell, thread::LocalKey};
 use egui::RichText;
 use egui_extras::{Size, StripBuilder};
 use runtime::{
-    lua_env::{lua_vec2::Vec2, stringify_lua_value},
+    lua_env::{lua_vec2::Vec2, lua_vec4::Vec4, stringify_lua_value},
     mlua,
 };
 
 use crate::editorinterface::EditorState;
 
 const MAX_WATCHED_VARIABLES: usize = 20;
+const MAX_TABLE_INSPECTION_DEPTH: usize = 2;
 
 pub fn draw_editor_watcher(editor: &mut EditorState, ctx: &egui::Context) {
     let mut is_shown = editor.config.borrow().is_watcher_window_shown;
@@ -161,7 +162,13 @@ fn draw_watched_variable(
             .then(|| {
                 var_keys.remove(idx);
             });
-        draw_any_watcher(ui, globals, &var, &watched_value);
+        draw_any_watcher(
+            ui,
+            globals,
+            &var,
+            &watched_value,
+            MAX_TABLE_INSPECTION_DEPTH,
+        );
     });
 }
 
@@ -170,44 +177,70 @@ fn draw_any_watcher(
     variable_parent: &mlua::Table,
     value_global_name: &mlua::Value,
     watched_value: &mlua::Value,
+    max_depth: usize,
 ) {
     if let mlua::Value::Table(table) = watched_value {
-        draw_table_watcher(ui, table);
-    } else if let mlua::Value::Boolean(b) = watched_value {
+        draw_table_watcher(ui, table, max_depth);
+        return;
+    }
+    if let mlua::Value::Boolean(b) = watched_value {
         draw_boolean_watcher(ui, *b, |new_val| {
             let _ = variable_parent.raw_set(value_global_name, new_val);
         });
-    } else if let mlua::Value::Integer(n) = watched_value {
+        return;
+    }
+    if let mlua::Value::Integer(n) = watched_value {
         draw_number_watcher(ui, *n as f64, |new_val| {
             let _ = variable_parent.raw_set(value_global_name, new_val);
         });
-    } else if let mlua::Value::Number(n) = watched_value {
+        return;
+    }
+    if let mlua::Value::Number(n) = watched_value {
         draw_number_watcher(ui, *n, |new_val| {
             let _ = variable_parent.raw_set(value_global_name, new_val);
         });
-    } else if let mlua::Value::UserData(ud) = watched_value {
+        return;
+    }
+    // Note: based on the variable name (value_global_name), we can draw a better picker.
+    // For example, if there is color in the name, we can draw a color picker.
+
+    if let mlua::Value::UserData(ud) = watched_value {
         let maybe_vec = ud.borrow_mut::<Vec2>();
         if let Ok(mut vec) = maybe_vec {
             draw_vec2_watcher(ui, &mut vec);
+            return;
         }
-    } else {
-        ui.label(format!(
-            "Non editable value: {}",
-            stringify_lua_value(watched_value)
-        ));
+        let maybe_vec = ud.borrow_mut::<Vec4>();
+        if let Ok(mut vec) = maybe_vec {
+            draw_vec4_watcher(ui, &mut vec);
+            return;
+        }
     }
+
+    ui.label(format!(
+        "Non editable value: {}",
+        stringify_lua_value(watched_value)
+    ));
 }
 
-fn draw_table_watcher(ui: &mut egui::Ui, table: &mlua::Table) {
+fn draw_table_watcher(ui: &mut egui::Ui, table: &mlua::Table, max_depth: usize) {
     let pairs = table.pairs::<mlua::Value, mlua::Value>();
     for pair in pairs.flatten() {
         let (key, value) = pair;
         ui.horizontal(|ui| {
-            ui.label(format!("{}:", stringify_lua_value(&key)));
-            if let mlua::Value::Table(_) = value {
-                ui.label("Table");
+            if max_depth == 0 {
+                ui.label(format!("{}:", stringify_lua_value(&key)));
+                ui.label("...");
+            } else if let mlua::Value::Table(_) = value {
+                egui::CollapsingHeader::new(format!("{}:", stringify_lua_value(&key))).show(
+                    ui,
+                    |ui| {
+                        draw_any_watcher(ui, table, &key, &value, max_depth - 1);
+                    },
+                );
             } else {
-                draw_any_watcher(ui, table, &key, &value);
+                ui.label(format!("{}:", stringify_lua_value(&key)));
+                draw_any_watcher(ui, table, &key, &value, max_depth - 1);
             }
         });
     }
