@@ -95,6 +95,18 @@ function Vec4Impl.sign(v: Vec4): Vec4
 	error("Not implemented")
 end
 
+--- Returns the noise value at the given point
+--- Uses [simplex noise](https://en.wikipedia.org/wiki/OpenSimplex_noise)
+function Vec4Impl.noise(v: Vec4): number
+	error("Not implemented")
+end
+
+--- Returns the noise value at the given point
+--- Uses [Worley noise](https://en.wikipedia.org/wiki/Worley_noise)
+function Vec4Impl.worleyNoise(v: Vec4): number
+	error("Not implemented")
+end
+
 --- The zero vector
 module.ZERO4 = module.V4(0, 0, 0, 0)
 

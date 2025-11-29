@@ -82,21 +82,22 @@ The screen is always 2 units wide and 2 units tall, regardless of the window siz
 
 ```lua
 local Vec = require('@vectarine/vec')
+local Vec4 = require('@vectarine/vec4')
 local V2 = Vec.V2 -- alias the V2 function as it is used very often
 local Graphics = require('@vectarine/graphics')
 
 function Update(time_delta: number)
     -- Draw a white background.
-    local bgColor: Graphics.Color = { r = 1, g = 1, b = 1, a = 1 }
+    local bgColor: Graphics.Color = Vec4.WHITE
     Graphics.clear(bgColor)
 
     -- Draw a blue rectangle at the bottom right of the screen
-    local rectColor = {r = 0, g = 0, b = 1, a = 1}
+    local rectColor = Vec4.createColor(0, 0, 1, 1)
     Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
 
     -- Draw a red circle at the center of the screen with radius 0.1 (2 is the width of the screen)
     -- Vec.ZERO2 is a constant for Vec.V2(0,0)
-    local circleColor = {r = 1, g = 0, b = 0, a = 1}
+    local circleColor = Vec4.V4(1, 0, 0, 1)
     Graphics.drawCircle(Vec.ZERO2, 0.1, circleColor)
 end
 ```
@@ -137,12 +138,13 @@ local Coord = require('@vectarine/coord')
 local Vec = require('@vectarine/vec')
 local Debug = require('@vectarine/debug')
 local Graphics = require('@vectarine/graphics')
+local Vec4 = require('@vectarine/vec4')
 
 local V2 = Vec.V2
 
 function Update(time_delta)
-    Graphics.Clear({ r = 1, g = 1, b = 1, a = 1 })
-    local rectColor = { r = 1, g = 0, b = 0, a = 1 } -- red
+    Graphics.Clear(Vec4.WHITE)
+    local rectColor = Vec4.RED
 
     -- There are multiple ways to create a 'ScreenPosition' using the coordinate system you prefer
     local pos = Coord.gl(V2(0, 0)) -- refer to the center of the screen
@@ -178,12 +180,13 @@ ones and how to use them.
 local Io = require("@vectarine/io")
 local Vec = require("@vectarine/vec")
 local Debug = require("@vectarine/debug")
+local Vec4 = require("@vectarine/vec4")
 
 function Update()
     local m: Vec.Vec2 = Io.getMouse()
     Debug.fprint(m) -- Print the position of the mouse on every frame
     -- Draw a green circle at the position of the cursor.
-    Graphics.drawCircle(m, 0.1, { r = 0, g = 1, b = 0, a = 1 })
+    Graphics.drawCircle(m, 0.1, Vec4.GREEN)
 end
 ```
 
@@ -193,12 +196,13 @@ end
 local Io = require("@vectarine/io")
 local Vec = require("@vectarine/vec")
 local Debug = require("@vectarine/debug")
+local Vec4 = require("@vectarine/vec4")
 
 function Update()
     local isSpacePressed = Io.isKeyDown("space")
     -- Draw a rectangle when space is pressed
     if isSpacePressed then
-        Graphics.drawRect(Vec.V2(0, 0), Vec.V2(0.1, 0.2), { r = 1, g = 0, b = 0, a = 1 })
+        Graphics.drawRect(Vec.V2(0, 0), Vec.V2(0.1, 0.2), Vec4.RED)
     end
     -- Print pressed keys
     Debug.fprint(Io.getKeysDown())

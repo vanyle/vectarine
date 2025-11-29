@@ -1,10 +1,8 @@
 # TO-DO
 
 - [ ] More complete Lua API
-  - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
-
 
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
@@ -67,6 +65,7 @@
 
 # Done
 
+- [x] noise function: simplex and worley for v2 and v4
 - [x] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
 - [x] Put the console system outside of Lua Env
   - [x] Create a logger in console.rs

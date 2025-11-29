@@ -103,12 +103,14 @@ macro_rules! auto_impl_lua {
 macro_rules! auto_impl_lua_copy {
     ($struct_name:ident, $friendly_name:ident) => {
         impl IntoLua for $struct_name {
+            #[inline(always)]
             fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
                 lua.create_any_userdata(self).map(mlua::Value::UserData)
             }
         }
 
         impl FromLua for $struct_name {
+            #[inline(always)]
             fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
                 match value {
                     mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),

@@ -1,3 +1,5 @@
+use noise::{NoiseFn, Simplex, Worley};
+
 use crate::math::Vect;
 
 pub type Vec2 = Vect<2>;
@@ -77,37 +79,119 @@ impl mlua::UserData for Vec2 {
         });
     }
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("length", |_, vec, ()| Ok(vec.length()));
-        methods.add_method("scale", |_, vec, (k,): (f32,)| Ok(*vec * k));
-        methods.add_method("cmul", |_, vec, (other,): (Vec2,)| Ok(vec.cmul(other)));
-        methods.add_method("dot", |_, vec, (other,): (Vec2,)| Ok(vec.dot(&other)));
-        methods.add_method("lengthSq", |_, vec, ()| Ok(vec.length_sq()));
-        methods.add_method("normalized", |_, vec, ()| Ok(vec.normalized()));
-        methods.add_method("round", |_, vec, (digits_of_precision,): (Option<u32>,)| {
-            Ok(vec.round(digits_of_precision))
-        });
-        methods.add_method("angle", |_, vec, ()| Ok(vec.angle()));
-        methods.add_method("floor", |_, vec, ()| Ok(vec.floor()));
-        methods.add_method("lerp", |_, vec, (other, k)| Ok(vec.lerp(other, k)));
-        methods.add_method("ceil", |_, vec, ()| Ok(vec.ceil()));
-        methods.add_method("max", |_, vec, (other,): (Vec2,)| Ok(vec.max(other)));
-        methods.add_method("min", |_, vec, (other,): (Vec2,)| Ok(vec.min(other)));
-        methods.add_method("sign", |_, vec, ()| Ok(vec.sign()));
-        methods.add_method("distance", |_, vec, (other,): (Vec2,)| {
-            Ok((*vec - other).length())
-        });
-        methods.add_meta_function(mlua::MetaMethod::Add, |_, (vec, other): (Vec2, Vec2)| {
-            Ok(vec + other)
-        });
-        methods.add_meta_function(mlua::MetaMethod::Sub, |_, (vec, other): (Vec2, Vec2)| {
-            Ok(vec - other)
-        });
-        methods.add_meta_function(mlua::MetaMethod::Mul, |_, (vec, other): (Vec2, Vec2)| {
-            Ok(vec * other)
-        });
-        methods.add_meta_method(mlua::MetaMethod::ToString, |_, vec, _any: mlua::Value| {
-            Ok(format!("V2({}, {})", vec.0[0], vec.0[1]))
-        });
+        methods.add_method(
+            "length",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.length()),
+        );
+        methods.add_method(
+            "scale",
+            #[inline(always)]
+            |_, vec, (k,): (f32,)| Ok(*vec * k),
+        );
+        methods.add_method(
+            "cmul",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| Ok(vec.cmul(other)),
+        );
+        methods.add_method(
+            "dot",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| Ok(vec.dot(&other)),
+        );
+        methods.add_method(
+            "lengthSq",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.length_sq()),
+        );
+        methods.add_method(
+            "normalized",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.normalized()),
+        );
+        methods.add_method(
+            "round",
+            #[inline(always)]
+            |_, vec, (digits_of_precision,): (Option<u32>,)| Ok(vec.round(digits_of_precision)),
+        );
+        methods.add_method(
+            "angle",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.angle()),
+        );
+        methods.add_method(
+            "floor",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.floor()),
+        );
+        methods.add_method(
+            "lerp",
+            #[inline(always)]
+            |_, vec, (other, k)| Ok(vec.lerp(other, k)),
+        );
+        methods.add_method(
+            "ceil",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.ceil()),
+        );
+        methods.add_method(
+            "max",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| Ok(vec.max(other)),
+        );
+        methods.add_method(
+            "min",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| Ok(vec.min(other)),
+        );
+        methods.add_method(
+            "sign",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.sign()),
+        );
+        let simplex = Simplex::new(noise::Simplex::DEFAULT_SEED);
+        methods.add_method(
+            "noise",
+            #[inline(always)]
+            move |_, vec, ()| {
+                let f64vec = [vec.0[0] as f64, vec.0[1] as f64];
+                Ok(simplex.get(f64vec))
+            },
+        );
+        let worley = Worley::new(noise::Worley::DEFAULT_SEED);
+        methods.add_method(
+            "worleyNoise",
+            #[inline(always)]
+            move |_, vec, ()| {
+                let f64vec = [vec.0[0] as f64, vec.0[1] as f64];
+                Ok(worley.get(f64vec))
+            },
+        );
+        methods.add_method(
+            "distance",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| Ok((*vec - other).length()),
+        );
+        methods.add_meta_function(
+            mlua::MetaMethod::Add,
+            #[inline(always)]
+            |_, (vec, other): (Vec2, Vec2)| Ok(vec + other),
+        );
+        methods.add_meta_function(
+            mlua::MetaMethod::Sub,
+            #[inline(always)]
+            |_, (vec, other): (Vec2, Vec2)| Ok(vec - other),
+        );
+        methods.add_meta_function(
+            mlua::MetaMethod::Mul,
+            #[inline(always)]
+            |_, (vec, other): (Vec2, Vec2)| Ok(vec * other),
+        );
+        methods.add_meta_method(
+            mlua::MetaMethod::ToString,
+            #[inline(always)]
+            |_, vec, _any: mlua::Value| Ok(format!("V2({}, {})", vec.0[0], vec.0[1])),
+        );
     }
 }
 

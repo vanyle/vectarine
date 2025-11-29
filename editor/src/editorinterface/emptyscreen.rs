@@ -186,10 +186,11 @@ pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_pa
         "
 local Debug = require('@vectarine/debug')
 local Graphics = require('@vectarine/graphics')
+local Vec4 = require('@vectarine/vec4')
 Debug.print(\"Loaded.\")
 function Update(deltaTime: number)
+    Graphics.clear(Vec4.WHITE)
     Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
-    Graphics.clear({r = 0, g = 0, b = 0, a = 1})
 end
     ",
     )

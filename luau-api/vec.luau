@@ -113,6 +113,14 @@ function Vec2Impl.sign(v: Vec2): Vec2
 	error("Not implemented")
 end
 
+function Vec2Impl.noise(v: Vec2): number
+	error("Not implemented")
+end
+
+function Vec2Impl.worleyNoise(v: Vec2): number
+	error("Not implemented")
+end
+
 --- The zero vector
 module.ZERO2 = module.V2(0, 0)
 

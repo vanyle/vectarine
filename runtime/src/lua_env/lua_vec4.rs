@@ -1,3 +1,5 @@
+use noise::{NoiseFn, Simplex, Worley};
+
 use crate::math::Vect;
 
 pub type Vec4 = Vect<4>;
@@ -143,6 +145,28 @@ impl mlua::UserData for Vec4 {
         methods.add_method("lerp", |_, vec, (other, k): (Vec4, f32)| {
             Ok(vec.lerp(other, k))
         });
+
+        let simplex = Simplex::new(noise::Simplex::DEFAULT_SEED);
+        let worley = Worley::new(noise::Worley::DEFAULT_SEED);
+        methods.add_method("noise", move |_, vec, ()| {
+            let f64vec = [
+                vec.0[0] as f64,
+                vec.0[1] as f64,
+                vec.0[2] as f64,
+                vec.0[3] as f64,
+            ];
+            Ok(simplex.get(f64vec))
+        });
+        methods.add_method("worleyNoise", move |_, vec, ()| {
+            let f64vec = [
+                vec.0[0] as f64,
+                vec.0[1] as f64,
+                vec.0[2] as f64,
+                vec.0[3] as f64,
+            ];
+            Ok(worley.get(f64vec))
+        });
+
         methods.add_method("sign", |_, vec, ()| Ok(vec.sign()));
         methods.add_meta_function(mlua::MetaMethod::Add, |_, (vec, other): (Vec4, Vec4)| {
             Ok(vec + other)
