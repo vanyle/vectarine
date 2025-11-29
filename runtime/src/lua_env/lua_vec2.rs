@@ -53,6 +53,14 @@ impl Vec2 {
         let sin_a = angle_rad.sin();
         self.cmul(Self::new(cos_a, sin_a))
     }
+    #[inline]
+    pub fn angle(self) -> f32 {
+        self.0[1].atan2(self.0[0])
+    }
+    #[inline]
+    pub fn from_angle(angle_rad: f32) -> Self {
+        Self::new(angle_rad.cos(), angle_rad.sin())
+    }
 }
 
 impl mlua::UserData for Vec2 {
@@ -76,6 +84,9 @@ impl mlua::UserData for Vec2 {
         methods.add_method("round", |_, vec, (digits_of_precision,): (Option<u32>,)| {
             Ok(vec.round(digits_of_precision))
         });
+        methods.add_method("angle", |_, vec, ()| Ok(vec.angle()));
+        methods.add_method("floor", |_, vec, ()| Ok(vec.floor()));
+        methods.add_method("ceil", |_, vec, ()| Ok(vec.ceil()));
         methods.add_meta_function(mlua::MetaMethod::Add, |_, (vec, other): (Vec2, Vec2)| {
             Ok(vec + other)
         });
@@ -95,9 +106,15 @@ pub fn setup_vec_api(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     let vec2_module = lua.create_table()?;
     vec2_module.set(
         "V2",
-        lua.create_function(|lua, (x, y): (f32, f32)| {
-            let data = mlua::Value::UserData(lua.create_userdata(Vec2::new(x, y))?);
-            Ok(data)
+        lua.create_function(|_lua, (x, y): (f32, f32)| Ok(Vec2::new(x, y)))?,
+    )?;
+
+    vec2_module.set(
+        "fromAngle",
+        lua.create_function(|_lua, (angle_rad, length): (f32, Option<f32>)| {
+            let v2 = Vec2::from_angle(angle_rad);
+            let scaled = v2 * length.unwrap_or(1.0);
+            Ok(scaled)
         })?,
     )?;
 

@@ -1,3 +1,6 @@
+--- Module for 2D vectors.
+--- Because 2D vectors are so common (your screen is 2D!), this module is called `vec` instead of `vec2`.
+--- See `vec4` for 3D and 4D vectors.
 local module = {}
 
 local Vec2Impl = { vec2 = true }
@@ -23,12 +26,14 @@ function module.V2(x: number, y: number): Vec2
 	return nil :: any
 end
 
---- Create a new 2d vector from an angle and a length.
---- This is the same as: `V2(math.cos(angle), math.sin(angle)):scale(length)`
-function module.Euler(angle: number, length: number): Vec2
-	error("Not implemented")
+--- Create a new 2d vector of length `length` pointing towards the given angle (in radians)
+--- If `length` is not provided, it defaults to 1
+--- This is the same as: `V2(math.cos(angle), math.sin(angle)) * length`
+function module.fromAngle(angle: number, length: number?): Vec2
+	return nil :: any
 end
 
+--- Scales the vector by the given factor
 function Vec2Impl.scale(a: Vec2, k: number): Vec2
 	error("Not implemented")
 end
@@ -39,8 +44,13 @@ function Vec2Impl.cmul(a: Vec2, b: Vec2): Vec2
 	error("Not implemented")
 end
 
---- Returns `math.sqrt(v.x*v.x + v.y*v.y)`
+--- Returns the length of the vector, defined as `math.sqrt(v.x*v.x + v.y*v.y)`
 function Vec2Impl.length(v: Vec2): number
+	error("Not implemented")
+end
+
+--- Returns the angle (in radians) of the vector
+function Vec2Impl.angle(v: Vec2): number
 	error("Not implemented")
 end
 
@@ -57,6 +67,17 @@ function Vec2Impl.round(v: Vec2, digits_of_precision: number?): Vec2
 	error("Not implemented")
 end
 
+--- Returns a vector with all components rounded down to the nearest integer
+function Vec2Impl.floor(v: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Returns a vector with all components rounded up to the nearest integer
+function Vec2Impl.ceil(v: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- The zero vector
 module.ZERO2 = module.V2(0, 0)
 
 return module

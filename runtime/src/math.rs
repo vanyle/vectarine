@@ -40,6 +40,17 @@ impl<const N: usize> Vect<N> {
     {
         Self(std::array::from_fn(|i| f(self.0[i])))
     }
+
+    #[inline]
+    pub fn floor(self) -> Self {
+        self.map(|x| x.floor())
+    }
+
+    #[inline]
+    pub fn ceil(self) -> Self {
+        self.map(|x| x.ceil())
+    }
+
     #[inline]
     pub fn round(self, digits_of_precision: Option<u32>) -> Self {
         let factor = 10f32.powi(digits_of_precision.unwrap_or(0) as i32);

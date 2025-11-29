@@ -492,10 +492,7 @@ function Update(time_delta: number)
 		local tilesAcrossScreenY = math.ceil(math.abs(2 / coordHelpers.convertToScreenSize(GameState, V2(0, 1)):gl().y))
 			+ 1
 		local tileSizeScreen = coordHelpers.convertToScreenSize(GameState, V2(1, 1)):gl()
-		local wp = coordHelpers.convertToWorldPos(GameState, V2(-1, 1) - tileSizeScreen, false)
-		local baseX = math.floor(wp.x)
-		local baseY = math.floor(wp.y)
-		wp = V2(baseX, baseY)
+		local wp = coordHelpers.convertToWorldPos(GameState, V2(-1, 1) - tileSizeScreen, false):floor()
 
 		Debug.timed("draw_environment", function()
 			for y = 1, tilesAcrossScreenY do
@@ -506,7 +503,7 @@ function Update(time_delta: number)
 					local tile_name = nil
 					Debug.timed("drawEnvironmentTile:getTileAt", function()
 						worldPos = wp + V2(x, y)
-						local t = levelDesign.getTileAt(baseX + x, baseY + y)
+						local t = levelDesign.getTileAt(wp.x + x, wp.y + y)
 						tile_id = t[1]
 						tile_rot = t[2]
 						tile_name = levelDesign.sprite_ids[tile_id]
@@ -761,14 +758,12 @@ function handle_sign_touch(asset_name: string)
 end
 
 function isHitboxInWater(pos: Vec.Vec2, size: Vec.Vec2): boolean
-	local x = math.floor(pos.x)
-	local y = math.floor(pos.y)
-	local xw = math.floor(pos.x + size.x)
-	local yh = math.floor(pos.y + size.y)
-	local tile1 = levelDesign.getTileTypeAtPosition(math.floor(xw), math.floor(yh))
-	local tile2 = levelDesign.getTileTypeAtPosition(math.floor(x), math.floor(y))
-	local tile3 = levelDesign.getTileTypeAtPosition(math.floor(xw), math.floor(y))
-	local tile4 = levelDesign.getTileTypeAtPosition(math.floor(x), math.floor(yh))
+	local p = pos:floor()
+	local ps = (pos + size):floor()
+	local tile1 = levelDesign.getTileTypeAtPosition(ps.x, ps.y)
+	local tile2 = levelDesign.getTileTypeAtPosition(p.x, p.y)
+	local tile3 = levelDesign.getTileTypeAtPosition(ps.x, p.y)
+	local tile4 = levelDesign.getTileTypeAtPosition(p.x, ps.y)
 	return tile1 == 3 or tile2 == 3 or tile3 == 3 or tile4 == 3
 end
 
@@ -794,9 +789,9 @@ function manage_player(time_delta: number)
 
 	local inWater = isHitboxInWater(futurePosition, V2(1, 1))
 	if inWater then
+		local p = (player.position + V2(0.5, 0.5)):floor()
 		-- cannot go into water
-		local currentTile =
-			levelDesign.getTileTypeAtPosition(math.floor(player.position.x + 0.5), math.floor(player.position.y + 0.5))
+		local currentTile = levelDesign.getTileTypeAtPosition(p.x, p.y)
 		if currentTile == 3 then
 			-- Allow movement to get out
 			player.position = futurePosition
