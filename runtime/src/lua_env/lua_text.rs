@@ -1,13 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
+use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value};
 
 use crate::{
     game_resource::{self, ResourceId, font_resource::FontResource},
     graphics::batchdraw,
     io,
     lua_env::{
-        lua_coord::get_pos_as_vec2,
+        lua_coord::{ScreenVec, get_pos_as_vec2},
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
         lua_vec4::{BLACK, Vec4},
     },
@@ -32,7 +32,8 @@ pub fn setup_text_api(
         registry.add_method("drawText", {
             let batch = batch.clone();
             let resources = resources.clone();
-            move |_, font, (text, mpos, size, color): (String, AnyUserData, f32, Option<Vec4>)| {
+            move |_, font, (text, mpos, lua_size, color): (String, AnyUserData, Value, Option<Vec4>)| {
+                let font_size = value_to_text_size(&lua_size)?;
                 let pos = get_pos_as_vec2(mpos)?;
                 let color = color.unwrap_or(BLACK);
                 let font_resource = resources.get_by_id::<FontResource>(font.0);
@@ -45,14 +46,15 @@ pub fn setup_text_api(
                 };
                 batch
                     .borrow_mut()
-                    .draw_text(pos.x(), pos.y(), &text, color.0, size, font_resource);
+                    .draw_text(pos.x(), pos.y(), &text, color.0, font_size, font_resource);
                 Ok(())
             }
         });
         registry.add_method("measureText", {
             let resources = resources.clone();
             let env_state = env_state.clone();
-            move |lua, font_resource_id, (text, font_size): (String, f32)| {
+            move |lua, font_resource_id, (text, lua_font_size): (String, Value)| {
+                let font_size = value_to_text_size(&lua_font_size)?;
                 let font_resource = resources.get_by_id::<FontResource>(font_resource_id.0);
                 let result = lua.create_table()?;
                 let Ok(font_resource) = font_resource else {
@@ -74,4 +76,27 @@ pub fn setup_text_api(
     })?;
 
     Ok(text_module)
+}
+
+fn value_to_text_size(value: &mlua::Value) -> mlua::Result<f32> {
+    match value {
+        mlua::Value::Number(n) => Ok(*n as f32),
+        mlua::Value::UserData(user_data) => {
+            let screen_vec = user_data.borrow::<ScreenVec>();
+            let Ok(vec) = screen_vec else {
+                return Err(mlua::Error::ToLuaConversionError {
+                    from: value.type_name().to_string(),
+                    to: "number",
+                    message: Some("Unable to convert the text size to a number".to_string()),
+                });
+            };
+            Ok(vec.as_vec2().y())
+        }
+        mlua::Value::Nil => Ok(0.05),
+        _ => Err(mlua::Error::ToLuaConversionError {
+            from: value.type_name().to_string(),
+            to: "number",
+            message: Some("Unable to convert the text size to a number".to_string()),
+        }),
+    }
 }

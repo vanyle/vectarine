@@ -1,8 +1,5 @@
 # TO-DO
 
-- [ ] More complete Lua API
-  - [ ] The font size of drawText should work with the Coords API
-
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
 - [ ] Add a CI
@@ -64,6 +61,7 @@
 
 # Done
 
+- [x] The font size of drawText should work with the Coords API
 - [x] The radius of drawCircle should work with the Coords API
 - [x] noise function: simplex and worley for v2 and v4
 - [x] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)

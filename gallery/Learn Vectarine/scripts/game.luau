@@ -36,7 +36,12 @@ local fontResource = Loader.loadFont("fonts/arial.ttf")
 
 local circle = Persist.onReload(Vec4.createColor(0, 0, 0, 1), "circle")
 
-function drawTextCentered(text: string, position: Coord.ScreenPosition, textSize: number, color: Vec4.Vec4)
+function drawTextCentered(
+	text: string,
+	position: Coord.ScreenPosition,
+	textSize: number | Coord.ScreenVec,
+	color: Vec4.Vec4
+)
 	local textMeasure = fontResource:measureText(text, textSize)
 	fontResource:drawText(text, position - Coord.glVec(V2(textMeasure.width / 2, 0)), textSize, color)
 end
@@ -54,7 +59,7 @@ local screen0: Screen.Screen = Screen.newScreen("secret_screen", function()
 	)
 
 	local function getOffset(angle)
-		return V2(math.cos(angle), math.sin(angle)):scale(100 + math.sin(timer / 3.4) * 20)
+		return Vec.fromAngle(angle, 100 + math.sin(timer / 3.4) * 20)
 	end
 	local p1 = Coord.CENTER + Coord.pxVec(getOffset(timer))
 	local p2 = Coord.CENTER + Coord.pxVec(getOffset(timer + math.pi / 2))

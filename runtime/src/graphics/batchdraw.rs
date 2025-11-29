@@ -222,7 +222,7 @@ impl BatchDraw2d {
 
     #[inline]
     pub fn draw_circle(&mut self, x: f32, y: f32, radius: f32, color: [f32; 4]) {
-        self.draw_ellipse(x, y, radius / 2.0 / self.aspect_ratio, radius / 2.0, color);
+        self.draw_ellipse(x, y, radius / self.aspect_ratio, radius, color);
     }
 
     pub fn draw_ellipse(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
@@ -355,7 +355,7 @@ impl BatchDraw2d {
         font_size: f32,
         font_resource: &FontRenderingData,
     ) {
-        let scale = font_size / font_resource.font_size;
+        let scale = font_size.abs() / font_resource.font_size;
         let mut vertices = Vec::<f32>::new();
         let mut indices = Vec::<u32>::new();
         let mut x_pos = 0.0;
