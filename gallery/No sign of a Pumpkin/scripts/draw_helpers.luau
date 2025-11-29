@@ -4,6 +4,7 @@ local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 
 local _, levelDesign = Loader.loadScript("scripts/level_design.luau", require("level_design.luau"))
 local _, coordHelpers = Loader.loadScript("scripts/coord_helpers.luau", require("coord_helpers.luau"))
@@ -22,12 +23,12 @@ local CROSS_SIZE_PX = 30
 local CROSS_THICKNESS_PX = 3
 
 -- cross for position debugging
-local function drawPosition(GameState, worldPos: Vec.Vec2, color: { r: number, g: number, b: number, a: number }?)
+local function drawPosition(GameState, worldPos: Vec.Vec2, color: Vec4.Vec4?)
 	if not GameState.show_entity_positions then
 		return
 	end
 
-	local pos_color = color or { r = 1, g = 1, b = 1, a = 1.0 } -- Default white
+	local pos_color = color or Vec4.WHITE -- Default white
 	local screen_pos = coordHelpers.convertToScreenPos(GameState, worldPos, false)
 
 	local windowSize = Io.getWindowSize()
@@ -44,17 +45,12 @@ local function drawPosition(GameState, worldPos: Vec.Vec2, color: { r: number, g
 	Graphics.drawRect(v_start, v_size, pos_color)
 end
 
-local function drawHitbox(
-	GameState,
-	worldPos: Vec.Vec2,
-	worldSize: Vec.Vec2,
-	color: { r: number, g: number, b: number, a: number }?
-)
+local function drawHitbox(GameState, worldPos: Vec.Vec2, worldSize: Vec.Vec2, color: Vec4.Vec4?)
 	if not GameState.show_hitboxes then
 		return
 	end
 
-	local hitbox_color = color or { r = 1, g = 0, b = 0, a = 0.5 } -- Default red with transparency
+	local hitbox_color = color or Vec4.createColor(1.0, 0.0, 0.0, 0.5) -- Default red with transparency
 	local screen_pos = coordHelpers.convertToScreenPos(GameState, worldPos, false)
 	local screen_size = coordHelpers.convertToScreenSize(GameState, worldSize)
 
@@ -69,7 +65,7 @@ local function drawPathMarkers(GameState, list_path_markers: { PathMarker })
 
 	for _, marker in ipairs(list_path_markers) do
 		local screen_pos = coordHelpers.convertToScreenPos(GameState, marker.position, false)
-		Graphics.drawCircle(screen_pos, 0.01, { r = 1, g = 1, b = 0, a = 1.0 }) -- Yellow color for path markers
+		Graphics.drawCircle(screen_pos, 0.01, Vec4.YELLOW) -- Yellow color for path markers
 	end
 end
 

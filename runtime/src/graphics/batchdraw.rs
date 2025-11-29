@@ -51,7 +51,7 @@ impl BatchDraw2d {
             GLProgram::from_source(gl, COLOR_VERTEX_SHADER_SOURCE, COLOR_FRAG_SHADER_SOURCE)?;
         let mut layout = DataLayout::new();
         layout
-            .add_field("in_vert", GLTypes::Vec3, Some(UsageHint::Position))
+            .add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position))
             .add_field("in_color", GLTypes::Vec4, Some(UsageHint::Color));
         color_program.vertex_layout = layout;
 
@@ -59,7 +59,7 @@ impl BatchDraw2d {
             GLProgram::from_source(gl, TEX_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE)?;
         let mut layout = DataLayout::new();
         layout
-            .add_field("in_vert", GLTypes::Vec3, Some(UsageHint::Position))
+            .add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position))
             .add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
         texture_program.vertex_layout = layout;
 
@@ -181,7 +181,7 @@ impl BatchDraw2d {
         let vertices: Vec<f32> = points.flat_map(|p| {
             points_len += 1;
             vec![
-                p.x(), p.y(), 0.0, // position
+                p.x(), p.y(), // position
                 color[0], color[1], color[2], color[3], // color
             ]
         }).collect();
@@ -204,12 +204,12 @@ impl BatchDraw2d {
 
     pub fn draw_rect(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
         #[rustfmt::skip]
-        let vertices: [f32; 4 * 7] = [
+        let vertices: [f32; 4 * 6] = [
             // positions       // colors
-            x, y, 0.0, color[0], color[1], color[2], color[3], // bottom left
-            x + width, y, 0.0, color[0], color[1], color[2], color[3], // bottom right
-            x + width, y + height, 0.0, color[0], color[1], color[2], color[3], // top right
-            x, y + height, 0.0, color[0], color[1], color[2], color[3], // top left
+            x, y, color[0], color[1], color[2], color[3], // bottom left
+            x + width, y, color[0], color[1], color[2], color[3], // bottom right
+            x + width, y + height, color[0], color[1], color[2], color[3], // top right
+            x, y + height, color[0], color[1], color[2], color[3], // top left
         ];
 
         self.add_to_batch_by_trying_to_merge(
@@ -222,13 +222,12 @@ impl BatchDraw2d {
 
     pub fn draw_circle(&mut self, x: f32, y: f32, radius: f32, color: [f32; 4]) {
         const CIRCLE_SEGMENTS: usize = 32;
-        let mut vertices: Vec<f32> = Vec::with_capacity((CIRCLE_SEGMENTS + 1) * 7);
+        let mut vertices: Vec<f32> = Vec::with_capacity((CIRCLE_SEGMENTS + 1) * (2 + 4));
         let mut indices: Vec<u32> = Vec::with_capacity(CIRCLE_SEGMENTS * 3);
 
         // Center vertex
         vertices.push(x);
         vertices.push(y);
-        vertices.push(0.0);
         vertices.extend_from_slice(&color);
 
         for i in 0..=CIRCLE_SEGMENTS {
@@ -237,7 +236,6 @@ impl BatchDraw2d {
             let vy = y + radius * theta.sin();
             vertices.push(vx);
             vertices.push(vy);
-            vertices.push(0.0);
             vertices.extend_from_slice(&color);
 
             if i < CIRCLE_SEGMENTS {
@@ -271,12 +269,12 @@ impl BatchDraw2d {
         let uv_y2 = uv_pos.y() + uv_size.y();
 
         #[rustfmt::skip]
-        let vertices: [f32; 4 * 5] = [
+        let vertices: [f32; 4 * 4] = [
             // positions       // tex coords
-            pos_size.p1.x(), pos_size.p1.y(), 0.0, uv_x1, uv_y2, // bottom left
-            pos_size.p2.x(), pos_size.p2.y(), 0.0, uv_x2, uv_y2, // bottom right
-            pos_size.p3.x(), pos_size.p3.y(), 0.0, uv_x2, uv_y1, // top right
-            pos_size.p4.x(), pos_size.p4.y(), 0.0, uv_x1, uv_y1, // top left
+            pos_size.p1.x(), pos_size.p1.y(), uv_x1, uv_y2, // bottom left
+            pos_size.p2.x(), pos_size.p2.y(), uv_x2, uv_y2, // bottom right
+            pos_size.p3.x(), pos_size.p3.y(), uv_x2, uv_y1, // top right
+            pos_size.p4.x(), pos_size.p4.y(), uv_x1, uv_y1, // top left
         ];
 
         let mut uniforms = Uniforms::new();
@@ -316,12 +314,12 @@ impl BatchDraw2d {
 
         // Weird that we need to flip the y coordinates in canvas, but not image.
         #[rustfmt::skip]
-        let vertices: [f32; 4 * 5] = [
+        let vertices: [f32; 4 * 4] = [
             // positions       // tex coords
-            pos_size.p4.x(), pos_size.p4.y(), 0.0, uv_x1, uv_y2, // bottom left
-            pos_size.p3.x(), pos_size.p3.y(), 0.0, uv_x2, uv_y2, // bottom right
-            pos_size.p2.x(), pos_size.p2.y(), 0.0, uv_x2, uv_y1, // top right
-            pos_size.p1.x(), pos_size.p1.y(), 0.0, uv_x1, uv_y1, // top left
+            pos_size.p4.x(), pos_size.p4.y(), uv_x1, uv_y2, // bottom left
+            pos_size.p3.x(), pos_size.p3.y(), uv_x2, uv_y2, // bottom right
+            pos_size.p2.x(), pos_size.p2.y(), uv_x2, uv_y1, // top right
+            pos_size.p1.x(), pos_size.p1.y(), uv_x1, uv_y1, // top left
         ];
 
         let mut uniforms = Uniforms::new();

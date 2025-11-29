@@ -1,9 +1,5 @@
 # TO-DO
 
-- [ ] Potential performance improvements
-  - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.
-  - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
-  - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
@@ -71,6 +67,7 @@
 
 # Done
 
+- [x] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
 - [x] Put the console system outside of Lua Env
   - [x] Create a logger in console.rs
   - [x] The logger is easily accessible from anywhere in the code even without Lua.

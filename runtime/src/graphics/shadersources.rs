@@ -1,10 +1,10 @@
 pub const COLOR_VERTEX_SHADER_SOURCE: &str = r#"
-    layout (location = 0) in vec3 in_vert;
+    layout (location = 0) in vec2 in_vert;
     layout (location = 1) in vec4 in_color;
     out vec4 color;
     void main() {
         color = in_color;
-        gl_Position = vec4(in_vert.xyz, 1.0);
+        gl_Position = vec4(in_vert.xy, 0.0, 1.0);
     }"#;
 
 pub const COLOR_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
@@ -15,12 +15,12 @@ pub const COLOR_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
     }"#;
 
 pub const TEX_VERTEX_SHADER_SOURCE: &str = r#"
-    layout (location = 0) in vec3 in_vert;
+    layout (location = 0) in vec2 in_vert;
     layout (location = 1) in vec2 in_uv;
     out vec2 uv;
     void main() {
         uv = in_uv;
-        gl_Position = vec4(in_vert.xyz, 1.0);
+        gl_Position = vec4(in_vert.xy, 0.0, 1.0);
     }"#;
 
 pub const TEX_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
