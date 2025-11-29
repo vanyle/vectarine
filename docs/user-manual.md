@@ -683,29 +683,16 @@ You put these files in a zip and upload it to [itch.io](https://itch.io) if you 
 
 # 👥 Collaborating on a project
 
+Working on a game with other people is more fun!
+
 ## Vectarine and Git
 
-# 🧪 Writing automatic tests
+Vectarine works well with version control systems like [Git](https://git-scm.com/). If you already now Git, use it!
 
-> ❓ What are automatic tests?
+If you don't know Git, do not use it, it is complex to learn.
 
-Automatic tests are piece of code that make sure that parts of your game behave correctly.
-You could test that 2 systems in your game interact as intended, for example that launching a fireball sets grass on fire (thus testing
-that the projectile system and the fire spreading system work together).
+## Vectarine and shared folders
 
-Automatic test run automatically and allow you to quickly catch **regression** bugs, things that worked previously, but don't anymore.
-
-> ❓ Why write automatic tests?
-
-If you are working on a small project, like a jam, or are working alone, there is **no reasons to write tests**! **Don't do it**, you'll waste time you could have used
-to improve your game!
-
-Tests are useful for large games, for example multi-year projects or when you have a lot of people (more than 2 programmers).
-When you feel like you are spending a lot of time debugging a part of your game instead of adding feature, it is a sign that this parts needs tests.
-This is especially true if this is a part that you (or somebody else!) wrote a few months, or years ago.
-
-Tests need to be put inside the `tests` folder of your game. They are not exported in the final build. You can run the tests in the editor.
-
-TODO: Design an API for `assert` and general test organisation. The editor needs to work as a CLI to run the tests in watch mode.
-
+You use shared folder using Google Drive, Dropbox to have multiple people working on the same project.
+You just need to share the folder with the `game.vecta` file.
 
