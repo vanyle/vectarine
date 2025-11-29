@@ -17,6 +17,7 @@ pub mod lua_screen;
 pub mod lua_text;
 pub mod lua_tile;
 pub mod lua_vec2;
+pub mod lua_vec4;
 
 use crate::console::{ConsoleMessage, Verbosity};
 use crate::game_resource::ResourceManager;
@@ -82,6 +83,9 @@ impl LuaEnvironment {
 
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec", vec2_module).unwrap();
+
+        let vec4_module = lua_vec4::setup_vec_api(&lua).unwrap();
+        lua.register_module("@vectarine/vec4", vec4_module).unwrap();
 
         let color_module = lua.create_table().unwrap();
         lua.register_module("@vectarine/color", color_module)

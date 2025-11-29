@@ -16,30 +16,38 @@ impl mlua::FromLua for Vec2 {
 }
 
 impl Vec2 {
+    #[inline(always)]
     pub fn new(x: f32, y: f32) -> Self {
         Self([x, y])
     }
+    #[inline(always)]
     pub fn x(&self) -> f32 {
         self.0[0]
     }
+    #[inline(always)]
     pub fn y(&self) -> f32 {
         self.0[1]
     }
+    #[inline]
     pub fn with_x(self, x: f32) -> Self {
         Self([x, self.0[1]])
     }
+    #[inline]
     pub fn with_y(self, y: f32) -> Self {
         Self([self.0[0], y])
     }
+    #[inline]
     pub fn scale(self, k: f32) -> Self {
         self * k
     }
+    #[inline]
     pub fn cmul(self, other: Self) -> Self {
         Self::new(
             self.0[0] * other.0[0] - self.0[1] * other.0[1],
             self.0[1] * other.0[0] + self.0[0] * other.0[1],
         )
     }
+    #[inline]
     pub fn rotated(self, angle_rad: f32) -> Self {
         let cos_a = angle_rad.cos();
         let sin_a = angle_rad.sin();

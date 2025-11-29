@@ -1,0 +1,170 @@
+use crate::math::Vect;
+
+pub type Vec4 = Vect<4>;
+
+impl mlua::FromLua for Vec4 {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+        match value {
+            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(mlua::Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "Vec4".to_string(),
+                message: Some("expected Vec4 userdata".to_string()),
+            }),
+        }
+    }
+}
+
+impl Vec4 {
+    #[inline(always)]
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+        Self([x, y, z, w])
+    }
+    #[inline(always)]
+    pub fn x(&self) -> f32 {
+        self.0[0]
+    }
+    #[inline(always)]
+    pub fn y(&self) -> f32 {
+        self.0[1]
+    }
+    #[inline(always)]
+    pub fn z(&self) -> f32 {
+        self.0[2]
+    }
+    #[inline(always)]
+    pub fn w(&self) -> f32 {
+        self.0[3]
+    }
+    #[inline]
+    pub fn with_x(self, x: f32) -> Self {
+        Self([x, self.0[1], self.0[2], self.0[3]])
+    }
+    #[inline]
+    pub fn with_y(self, y: f32) -> Self {
+        Self([self.0[0], y, self.0[2], self.0[3]])
+    }
+    #[inline]
+    pub fn with_z(self, z: f32) -> Self {
+        Self([self.0[0], self.0[1], z, self.0[3]])
+    }
+    #[inline]
+    pub fn with_w(self, w: f32) -> Self {
+        Self([self.0[0], self.0[1], self.0[2], w])
+    }
+    #[inline]
+    pub fn scale(self, k: f32) -> Self {
+        self * k
+    }
+    #[inline]
+    pub fn cmul(self, other: Self) -> Self {
+        // Quaternion multiplication
+        Self::new(
+            self.0[0] * other.0[0]
+                - self.0[1] * other.0[1]
+                - self.0[2] * other.0[2]
+                - self.0[3] * other.0[3],
+            self.0[0] * other.0[1] + self.0[1] * other.0[0] + self.0[2] * other.0[3]
+                - self.0[3] * other.0[2],
+            self.0[0] * other.0[2] - self.0[1] * other.0[3]
+                + self.0[2] * other.0[0]
+                + self.0[3] * other.0[1],
+            self.0[0] * other.0[3] + self.0[1] * other.0[2] - self.0[2] * other.0[1]
+                + self.0[3] * other.0[0],
+        )
+    }
+    // TODO: Add quaternion manipulation functions from vectarine
+    // See: https://gitea.vanyle.netlib.re/vanyle/vectarine/src/branch/master/src/v3dpkg/vmath.nim
+}
+
+impl mlua::UserData for Vec4 {
+    fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
+        fields.add_field_method_get("x", |_, v| Ok(v.0[0]));
+        fields.add_field_method_get("y", |_, v| Ok(v.0[1]));
+        fields.add_field_method_get("z", |_, v| Ok(v.0[2]));
+        fields.add_field_method_get("w", |_, v| Ok(v.0[3]));
+
+        // Field aliases for colors
+        fields.add_field_method_get("r", |_, v| Ok(v.0[0]));
+        fields.add_field_method_get("g", |_, v| Ok(v.0[1]));
+        fields.add_field_method_get("b", |_, v| Ok(v.0[2]));
+        fields.add_field_method_get("a", |_, v| Ok(v.0[3]));
+
+        fields.add_field_method_set("x", |_, vec, v| {
+            vec.0[0] = v;
+            Ok(())
+        });
+        fields.add_field_method_set("y", |_, vec, v| {
+            vec.0[1] = v;
+            Ok(())
+        });
+        fields.add_field_method_set("z", |_, vec, v| {
+            vec.0[2] = v;
+            Ok(())
+        });
+        fields.add_field_method_set("w", |_, vec, v| {
+            vec.0[3] = v;
+            Ok(())
+        });
+
+        // Field aliases for colors
+        fields.add_field_method_set("r", |_, vec, v| {
+            vec.0[0] = v;
+            Ok(())
+        });
+        fields.add_field_method_set("g", |_, vec, v| {
+            vec.0[1] = v;
+            Ok(())
+        });
+        fields.add_field_method_set("b", |_, vec, v| {
+            vec.0[2] = v;
+            Ok(())
+        });
+        fields.add_field_method_set("a", |_, vec, v| {
+            vec.0[3] = v;
+            Ok(())
+        });
+    }
+    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method("length", |_, vec, ()| Ok(vec.length()));
+        methods.add_method("scale", |_, vec, (k,): (f32,)| Ok(*vec * k));
+        methods.add_method("cmul", |_, vec, (other,): (Vec4,)| Ok(vec.cmul(other)));
+        methods.add_method("normalized", |_, vec, ()| Ok(vec.normalized()));
+        methods.add_method("round", |_, vec, (digits_of_precision,): (Option<u32>,)| {
+            Ok(vec.round(digits_of_precision))
+        });
+        methods.add_meta_function(mlua::MetaMethod::Add, |_, (vec, other): (Vec4, Vec4)| {
+            Ok(vec + other)
+        });
+        methods.add_meta_function(mlua::MetaMethod::Sub, |_, (vec, other): (Vec4, Vec4)| {
+            Ok(vec - other)
+        });
+        methods.add_meta_function(mlua::MetaMethod::Mul, |_, (vec, other): (Vec4, Vec4)| {
+            Ok(vec * other)
+        });
+        methods.add_meta_method(mlua::MetaMethod::ToString, |_, vec, _any: mlua::Value| {
+            Ok(format!(
+                "V4({}, {}, {}, {})",
+                vec.0[0], vec.0[1], vec.0[2], vec.0[3]
+            ))
+        });
+    }
+}
+
+pub fn setup_vec_api(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+    let vec4_module = lua.create_table()?;
+    vec4_module.set(
+        "V4",
+        lua.create_function(|lua, (x, y, z, w): (f32, f32, f32, f32)| {
+            let data = mlua::Value::UserData(lua.create_userdata(Vec4::new(x, y, z, w))?);
+            Ok(data)
+        })?,
+    )?;
+
+    vec4_module.set("ZERO4", Vec4::zero())?;
+
+    // Default colors
+    // TODO.
+
+    Ok(vec4_module)
+}
