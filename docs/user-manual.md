@@ -537,6 +537,9 @@ You can find more information about shaders in [the great book of shaders](https
 
 # 🚀 Performance Tips
 
+The golden rule of performance is to measure first! To do optimize code that is fast enough or you'll spend your time making your game fast instead of fun.
+Moreover, you need to measure to know if your changes actually make a difference.
+
 Vectarine has a built-in profiler tool to help you understand what parts of your game are taking the most time.
 You can open it from the Tools menu or using <kbd>Ctrl</kbd>+<kbd>4</kbd>.
 
@@ -554,8 +557,8 @@ Generally, the following happens to render a frame of your game:
 - You wait a little to sync with the monitor (Vectarine does that automatically)
 
 The profiler shows you how much time is spent on each of these steps and how this varies over time.
-Moreover, you can use the `Debug.timed` function to measure the time taken by a section of code and have
-to drawn in the profiler.
+You can also use the `Debug.timed` function to measure the time taken by a section of code and have it
+drawn in the profiler.
 
 ```lua
 function Update()
@@ -616,6 +619,27 @@ When you draw 2 different images, this counts as 2 different "kinds" of drawing,
 To have only one draw call, you should use one image and draw portions of it using the `image:drawPart` function.
 
 You can see the total number of draw calls performed in the profiler. Try to keep it below 1000 per frame.
+
+## Use Vectarine functions instead of rewriting your own
+
+While Luau is fast, it is not as fast as the native Vectarine functions. For example, when you
+are manipulating pairs of numbers, you should use the `Vec` object instead of 2 numbers or a table.
+
+```luau
+-- ❌ Avoid
+function to_things(x: number, y: number)
+    local fx = math.floor(x)
+    local fy = math.floor(y)
+    Debug.print(fx, fy)
+end
+
+-- ✅ Prefer
+function to_things(v: Vec)
+    local fx = v:floor()
+    Debug.print(fx)
+end
+```
+    
 
 # 📦 Release and distribute your game
 

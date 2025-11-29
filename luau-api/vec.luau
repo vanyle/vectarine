@@ -44,8 +44,24 @@ function Vec2Impl.cmul(a: Vec2, b: Vec2): Vec2
 	error("Not implemented")
 end
 
+--- Returns the dot product of the two vectors
+function Vec2Impl.dot(a: Vec2, b: Vec2): number
+	error("Not implemented")
+end
+
 --- Returns the length of the vector, defined as `math.sqrt(v.x*v.x + v.y*v.y)`
 function Vec2Impl.length(v: Vec2): number
+	error("Not implemented")
+end
+
+--- Returns the square of the length of the vector, defined as `v.x*v.x + v.y*v.y`
+function Vec2Impl.lengthSq(v: Vec2): number
+	error("Not implemented")
+end
+
+--- Returns the distance between the two vectors.
+--- This is the same as `(a - b):length()`
+function Vec2Impl.distance(a: Vec2, b: Vec2): number
 	error("Not implemented")
 end
 
@@ -74,6 +90,26 @@ end
 
 --- Returns a vector with all components rounded up to the nearest integer
 function Vec2Impl.ceil(v: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Returns the component-wise maximum of the two vectors
+function Vec2Impl.max(a: Vec2, b: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Returns the component-wise minimum of the two vectors
+function Vec2Impl.min(a: Vec2, b: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Returns a vector linearly interpolated between `a` and `b` by the factor `k`
+function Vec2Impl.lerp(a: Vec2, b: Vec2, k: number): Vec2
+	error("Not implemented")
+end
+
+--- Returns the vector containing the sign of each component of the vector
+function Vec2Impl.sign(v: Vec2): Vec2
 	error("Not implemented")
 end
 

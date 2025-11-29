@@ -609,14 +609,13 @@ function manage_pumpkin(
 	local p: Vec.Vec2 = player.position
 	local pp: Vec.Vec2 = pumpkin.position
 	local direction = (pp - p):normalized()
-	local dist_to_player = (pp - p):length()
+	local dist_to_player = pumpkin.position:distance(player.position)
 
 	if pumpkin.state == "chasing" then
 		if dist_to_player > MAX_CHASE_DISTANCE then
 			pumpkin.state = "wandering"
 		else
 			-- Continue chasing
-			direction = (pp - p):normalized()
 			pumpkin.stamina = math.max(pumpkin.stamina - time_delta, 0)
 			local speed_multiplier = pumpkin.stamina > 0 and STAMINA_CHASE_SPEED_MULTIPLIER or 1.0
 			Debug.fprint(speed_multiplier, " ; ", pumpkin.stamina)
@@ -636,7 +635,7 @@ function manage_pumpkin(
 				-- Find the closest marker from this pumpkin's assigned route
 				local marker_distances = {}
 				for _, marker in ipairs(pumpkin.patrol_route) do
-					local dist = (marker.position - pumpkin.position):length()
+					local dist = pumpkin.position:distance(marker.position)
 					table.insert(marker_distances, { marker = marker, distance = dist })
 				end
 				table.sort(marker_distances, function(a, b)
@@ -648,7 +647,7 @@ function manage_pumpkin(
 				-- Fallback to shared markers if no individual route assigned
 				local marker_distances = {}
 				for _, marker in ipairs(levelDesign.list_path_marker) do
-					local dist = (marker.position - pumpkin.position):length()
+					local dist = pumpkin.position:distance(marker.position)
 					table.insert(marker_distances, { marker = marker, distance = dist })
 				end
 				table.sort(marker_distances, function(a, b)

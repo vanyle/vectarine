@@ -45,16 +45,33 @@ impl<const N: usize> Vect<N> {
     pub fn floor(self) -> Self {
         self.map(|x| x.floor())
     }
-
     #[inline]
     pub fn ceil(self) -> Self {
         self.map(|x| x.ceil())
     }
-
     #[inline]
     pub fn round(self, digits_of_precision: Option<u32>) -> Self {
         let factor = 10f32.powi(digits_of_precision.unwrap_or(0) as i32);
         self.map(|x| (x * factor).round() / factor)
+    }
+
+    #[inline]
+    pub fn max(self, other: Self) -> Self {
+        Self(std::array::from_fn(|i| self.0[i].max(other.0[i])))
+    }
+    #[inline]
+    pub fn min(self, other: Self) -> Self {
+        Self(std::array::from_fn(|i| self.0[i].min(other.0[i])))
+    }
+    #[inline]
+    pub fn lerp(self, other: Self, k: f32) -> Self {
+        Self(std::array::from_fn(|i| {
+            self.0[i] + (other.0[i] - self.0[i]) * k
+        }))
+    }
+    #[inline]
+    pub fn sign(self) -> Self {
+        Self(std::array::from_fn(|i| self.0[i].signum()))
     }
 }
 

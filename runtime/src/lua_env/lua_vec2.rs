@@ -80,13 +80,22 @@ impl mlua::UserData for Vec2 {
         methods.add_method("length", |_, vec, ()| Ok(vec.length()));
         methods.add_method("scale", |_, vec, (k,): (f32,)| Ok(*vec * k));
         methods.add_method("cmul", |_, vec, (other,): (Vec2,)| Ok(vec.cmul(other)));
+        methods.add_method("dot", |_, vec, (other,): (Vec2,)| Ok(vec.dot(&other)));
+        methods.add_method("lengthSq", |_, vec, ()| Ok(vec.length_sq()));
         methods.add_method("normalized", |_, vec, ()| Ok(vec.normalized()));
         methods.add_method("round", |_, vec, (digits_of_precision,): (Option<u32>,)| {
             Ok(vec.round(digits_of_precision))
         });
         methods.add_method("angle", |_, vec, ()| Ok(vec.angle()));
         methods.add_method("floor", |_, vec, ()| Ok(vec.floor()));
+        methods.add_method("lerp", |_, vec, (other, k)| Ok(vec.lerp(other, k)));
         methods.add_method("ceil", |_, vec, ()| Ok(vec.ceil()));
+        methods.add_method("max", |_, vec, (other,): (Vec2,)| Ok(vec.max(other)));
+        methods.add_method("min", |_, vec, (other,): (Vec2,)| Ok(vec.min(other)));
+        methods.add_method("sign", |_, vec, ()| Ok(vec.sign()));
+        methods.add_method("distance", |_, vec, (other,): (Vec2,)| {
+            Ok((*vec - other).length())
+        });
         methods.add_meta_function(mlua::MetaMethod::Add, |_, (vec, other): (Vec2, Vec2)| {
             Ok(vec + other)
         });

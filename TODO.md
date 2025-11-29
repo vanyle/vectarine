@@ -1,20 +1,15 @@
 # TO-DO
 
-- [ ] Aseprite support
-  - [ ] Load Aseprite files as images
-  - [ ] Load Aseprite files as tilesets
 - [ ] Potential performance improvements
   - [ ] Use rect_pack for texture atlases, text rendering instead of the naive way.
   - [ ] Use vec2 for drawing 2d shapes instead of vec3 (inside default shaders)
   - [ ] Check if StreamDraw / StaticDraw actually does something
 - [ ] More complete Lua API
-  - [ ] V3, V4
   - [ ] V4 is a color (provide default colors and a Color(r,g,b,a) function)
   - [ ] Default values (if a color is nil, it is infered to be black)
   - [ ] noise function (open simplex, for v2, v3 and v4) and worley
   - [ ] The font size of drawText should work with the Coords API
   - [ ] The radius of drawCircle should work with the Coords API
-  - [ ] Add more convenience functions for V2 such as a:distance(b) for (a-b):length() 
 
 
 - [ ] Open-source the project
@@ -24,6 +19,9 @@
 - [ ] Animation system from multiple PNG files
 - [ ] Add search in the resource window
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
+- [ ] Aseprite support
+  - [ ] Load Aseprite files as images
+  - [ ] Load Aseprite files as tilesets
 - [ ] Entity system
   - [ ] Add a concept of a 'PhysicsWorld2D'
   - [ ] Under the hood, this is a QuadTree
@@ -37,6 +35,11 @@
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
+- [ ] Lua performance helper:
+  - [ ] Add a simple matrix API which ways to convert translation, scaling and rotation into matrices
+  - [ ] Add a lua function which computes AV + B for a list of V efficiently
+  - [ ] Add drawing functions that operate on lists of Lua objects and can perform common linear transformations before drawing
+- [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
 - [ ] Add a CLI version of the editor
   - [ ] The editor is compiled with -mwindow
@@ -74,6 +77,7 @@
 
 # Done
 
+- [x] Add more convenience functions for V2 such as a:distance(b) for (a-b):length() 
 - [x] Profiler tool
   - [x] Drawcall counter
   - [x] FPS graph

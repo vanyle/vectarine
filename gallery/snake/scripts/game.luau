@@ -27,6 +27,7 @@ local shaderResource = Loader.loadShader("shaders/base.glsl")
 local canvas = Canvas.createCanvas(1200, 800)
 canvas:setShader(shaderResource)
 
+Io.setResizeable(true)
 -- Io.setWindowSize(800, 600)
 -- Io.centerWindow()
 
