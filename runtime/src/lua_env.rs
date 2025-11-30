@@ -8,6 +8,7 @@ pub mod lua_canvas;
 pub mod lua_coord;
 pub mod lua_debug;
 pub mod lua_event;
+pub mod lua_fastlist;
 pub mod lua_graphics;
 pub mod lua_image;
 pub mod lua_io;
@@ -82,6 +83,10 @@ impl LuaEnvironment {
 
         let vec4_module = lua_vec4::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec4", vec4_module).unwrap();
+
+        let fastlist_module = lua_fastlist::setup_fastlist_api(&lua).unwrap();
+        lua.register_module("@vectarine/fastlist", fastlist_module)
+            .unwrap();
 
         let color_module = lua.create_table().unwrap();
         lua.register_module("@vectarine/color", color_module)
