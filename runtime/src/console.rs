@@ -78,13 +78,13 @@ impl ConsoleMessage {
         }
     }
     pub fn is_same_kind(&self, other: &ConsoleMessage) -> bool {
-        match (self, other) {
-            (ConsoleMessage::Info(_), ConsoleMessage::Info(_)) => true,
-            (ConsoleMessage::Warning(_), ConsoleMessage::Warning(_)) => true,
-            (ConsoleMessage::Error(_), ConsoleMessage::Error(_)) => true,
-            (ConsoleMessage::LuaError(_), ConsoleMessage::LuaError(_)) => true,
-            _ => false,
-        }
+        matches!(
+            (self, other),
+            (ConsoleMessage::Info(_), ConsoleMessage::Info(_))
+                | (ConsoleMessage::Warning(_), ConsoleMessage::Warning(_))
+                | (ConsoleMessage::Error(_), ConsoleMessage::Error(_))
+                | (ConsoleMessage::LuaError(_), ConsoleMessage::LuaError(_))
+        )
     }
 }
 
@@ -145,8 +145,7 @@ impl Logger {
             .iter()
             .enumerate()
             .rev()
-            .filter(|m| m.1.is_same_kind(&message))
-            .next();
+            .find(|m| m.1.is_same_kind(&message));
         if let Some((index, _)) = last_log {
             self.add_message_without_repeat(message, index);
         } else {
