@@ -2,7 +2,13 @@
     <img src="./assets/logo.png" alt="Vectarine logo" width="200" align="center"/>
 </p>
 
-<h1 align="center"> 🍊 Vectarine Evolved</h1>
+<h1 align="center"> 🍊 Vectarine</h1>
+
+<p align="center">
+<a href="https://github.com/vanyle/vectarine/actions/workflows/test.yml"><img src="https://github.com/vanyle/vectarine/actions/workflows/test.yml/badge.svg" alt="Build & Test CI status badge"></a>
+<a href="LICENSE"><img src="https://img.shields.io/github/license/vanyle/vectarine.svg" alt="License badge"></a>
+<a href="https://discord.gg/zPwg3VDydz"><img src="https://dcbadge.limes.pink/api/server/zPwg3VDydz?style=flat" alt="Discord invite badge" /></a>
+</p>
 
 _Vectarine is a game engine with a focus on ultra fast prototyping, ease of use and a great developer experience._
 
@@ -30,6 +36,8 @@ You'll need:
 - (Optional) Installing a Luau extension for your editor
 
 See [the manual](./docs/user-manual.md) for how to make games with vectarine
+
+Feel free to join our [Discord server](https://discord.gg/zPwg3VDydz) if you have any questions or want to chat with other developers.
 
 Below are information on how to work and improve the engine.
 
