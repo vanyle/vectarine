@@ -113,11 +113,35 @@ function Vec2Impl.sign(v: Vec2): Vec2
 	error("Not implemented")
 end
 
+--- Returns the noise value at the given point
+--- Uses [simplex noise](https://en.wikipedia.org/wiki/OpenSimplex_noise)
 function Vec2Impl.noise(v: Vec2): number
 	error("Not implemented")
 end
 
+--- Returns the noise value at the given point
+--- Uses [Worley noise](https://en.wikipedia.org/wiki/Worley_noise)
 function Vec2Impl.worleyNoise(v: Vec2): number
+	error("Not implemented")
+end
+
+--- Adds `b` to `a`, modifying `a` in-place
+function Vec2Impl.add(a: Vec2, b: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Subtracts `b` from `a`, modifying `a` in-place. Returns `a`.
+function Vec2Impl.sub(a: Vec2, b: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Multiplies `a` by `b`, modifying `a` in-place. Returns `a`.
+function Vec2Impl.mul(a: Vec2, b: Vec2): Vec2
+	error("Not implemented")
+end
+
+--- Multiplies `a` by `k`, modifying `a` in-place. Returns `a`.
+function Vec2Impl.rescale(a: Vec2, k: number): Vec2
 	error("Not implemented")
 end
 

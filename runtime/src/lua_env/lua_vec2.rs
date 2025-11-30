@@ -192,6 +192,44 @@ impl mlua::UserData for Vec2 {
             #[inline(always)]
             |_, vec, _any: mlua::Value| Ok(format!("V2({}, {})", vec.0[0], vec.0[1])),
         );
+
+        // In-place methods
+        methods.add_method_mut(
+            "add",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| {
+                vec.0[0] += other.0[0];
+                vec.0[1] += other.0[1];
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "sub",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| {
+                vec.0[0] -= other.0[0];
+                vec.0[1] -= other.0[1];
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "mul",
+            #[inline(always)]
+            |_, vec, (other,): (Vec2,)| {
+                vec.0[0] *= other.0[0];
+                vec.0[1] *= other.0[1];
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "rescale",
+            #[inline(always)]
+            |_, vec, (k,): (f32,)| {
+                vec.0[0] *= k;
+                vec.0[1] *= k;
+                Ok(())
+            },
+        );
     }
 }
 

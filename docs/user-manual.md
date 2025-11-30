@@ -15,7 +15,7 @@ output: pdf_document
 
 Vectarine is a game engine to make games super quickly with the best possible experience for game makers.
 
-Vectarine uses the [Lua](https://www.lua.org/manual/5.4/manual.html) programing language.
+Vectarine uses the [Lua](https://www.lua.org/pil/contents.html#P1) programing language.
 To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with better performance and autocompletion than regular Lua but the same syntax.
 
 This manual is an unopiniated guide to making games using Vectarine. If you already have a bit of game making experience and want to integrate Vectarine into your workflow,
@@ -81,7 +81,9 @@ The first argument to `V2` (called x) is the horizontal position, the second arg
 The screen is always 2 units wide and 2 units tall, regardless of the window size or aspect ratio.
 
 ```lua
+--- Import the Vec module to create 2D vectors
 local Vec = require('@vectarine/vec')
+-- Colors are represented as 4D vectors (red, green, blue, alpha). You need the Vec4 module to create them.
 local Vec4 = require('@vectarine/vec4')
 local V2 = Vec.V2 -- alias the V2 function as it is used very often
 local Graphics = require('@vectarine/graphics')
