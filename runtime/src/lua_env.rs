@@ -84,7 +84,7 @@ impl LuaEnvironment {
         let vec4_module = lua_vec4::setup_vec_api(&lua).unwrap();
         lua.register_module("@vectarine/vec4", vec4_module).unwrap();
 
-        let fastlist_module = lua_fastlist::setup_fastlist_api(&lua).unwrap();
+        let fastlist_module = lua_fastlist::setup_fastlist_api(&lua, &batch, &resources).unwrap();
         lua.register_module("@vectarine/fastlist", fastlist_module)
             .unwrap();
 

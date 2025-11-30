@@ -541,6 +541,7 @@ Then you can use it like so:
 local Canvas = require("@vectarine/canvas")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
+local Vec4 = require("@vectarine/vec4")
 local Graphics = require("@vectarine/graphics")
 local Vec = require("@vectarine/vec")
 local V2 = Vec.V2
@@ -558,7 +559,7 @@ function Update()
         -- Every call to Graphics.drawSomething inside paint will be not displayed on the game window
         -- It will be drawn to the canvas instead
         -- Note: you can draw the content of one canvas to another canvas to chain multiple shader effects.
-        Graphics.drawRect(Vec.ZERO2, V2(0.1, 0.1), {r = 1, g = 0, b = 0, a = 1})
+        Graphics.drawRect(Vec.ZERO2, V2(0.1, 0.1), Vec4.RED)
     end)
 
     -- The canvas can be drawn like an image.
@@ -640,11 +641,59 @@ end
 
 This will only create 2 metrics, "Loop Section A" and "Loop Section B". Because you can filter metrics by name, you should use common prefixes or suffixes to group related metrics.
 
-## Drawing too many things
+## Using fast list
+
+A `Fastlist` is just a list of `Vec2`. However, unlike regular Lua table,
+they are very fast because they can only contain `Vec2` which allows for some optimizations.
+
+Let's compare 2 ways to draw a grid of 100x100 rectangles:
+
+```lua
+-- Without fastlists, this takes about 5ms depending on your device
+Debug.timed("Without fastlists", function()
+    for x = 0, 100 do
+        for y = 0, 100 do
+            local v = Vec.V2(-0.9 + x * 0.011, -0.9 + y * 0.011)
+            Graphics.drawRect(v, Vec.V2(0.01, 0.01), Vec4.BLUE)
+        end
+    end
+end)
+
+-- With fastlists, about 0.8 ms
+Debug.timed("With fastlist", function()
+    -- Fastlist's version of a double nested for-loop
+    local positions = fastlist.newLinspace(Vec.V2(0, 0), Vec.V2(100, 100), Vec.V2(1, 1))
+    -- Scale the fastlist
+    positions = positions:scale(0.011) + Vec.V2(-0.9, -0.9)
+    -- We create separate fastlists for sizes and colors
+    local sizes = fastlist.fromValue(Vec.V2(0.01, 0.01), #positions)
+    local colors1 = fastlist.fromValue(Vec.V2(0, 0), #positions) -- R,G
+    local colors2 = fastlist.fromValue(Vec.V2(1, 1), #positions) -- B,A
+    -- We weave the fastlists together
+    local together = positions:weave({ sizes, colors1, colors2 })
+    -- We draw them
+    together:drawRects()
+end)
+
+-- If we use newLinspace properly, we can get down to 0.3ms!
+Debug.timed("With linspace", function()
+    local positions = fastlist.newLinspace(Vec.V2(-0.9, -0.9), Vec.V2(0.2, 0.2), Vec.V2(0.011, 0.011))
+    local sizes = fastlist.fromValue(Vec.V2(0.01, 0.01), #positions)
+    local colors1 = fastlist.fromValue(Vec.V2(1, 0), #positions)
+    local colors2 = fastlist.fromValue(Vec.V2(0, 1), #positions)
+    local together = positions:weave({ sizes, colors1, colors2 })
+    Debug.fprint(#positions)
+    together:drawRects()
+end)
+```
+
+While fastlist are fast, they are less readable, so first write your code in a readable way and turn it to fastlist later.
+A fastlist has the same functions as a `Vec` (`+`, `-`, `scale`, `max`, `dot`, etc...), so you can just change your types in the function signature and it will work.
+
+## Using shaders
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.
 I don't really know why you'd want to draw that many rectangles.
-
 If you want to draw something on every pixel, use a Shader instead of called `graphics.drawRect` on a per-pixel basis!
 
 ## Reducing draw calls and using sprites
@@ -654,8 +703,8 @@ the faster your game will run. Vectarine automatically groups your drawing instr
 
 ```lua
 -- This is one draw call
-Graphics.drawRect(V2(0, 0), V2(1, 1), {r = 1, g = 0, b = 0, a = 1})
-Graphics.drawRect(V2(1, 1), V2(1, 1), {r = 0, g = 1, b = 0, a = 1})
+Graphics.drawRect(V2(0, 0), V2(1, 1), Vec4.RED)
+Graphics.drawRect(V2(1, 1), V2(1, 1), Vec4.GREEN)
 ```
  
 As long as the "kind" of drawing you do is the same, Vectarine will be able to group the rendering instructions together and reduce the total number of draw calls. To help Vectarine do this grouping, you should try to group similar drawing function together.
@@ -664,6 +713,8 @@ When you draw 2 different images, this counts as 2 different "kinds" of drawing,
 To have only one draw call, you should use one image and draw portions of it using the `image:drawPart` function.
 
 You can see the total number of draw calls performed in the profiler. Try to keep it below 1000 per frame.
+
+
 
 ## Use Vectarine functions instead of rewriting your own
 

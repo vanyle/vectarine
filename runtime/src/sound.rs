@@ -195,6 +195,7 @@ pub fn flush_all_samples() {
             return;
         };
         global_audio_queue.audio_queue.clear();
+        global_audio_queue.audio_buffers.clear();
     });
 }
 
