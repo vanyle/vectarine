@@ -18,6 +18,7 @@ jobs:
               with:
                   components: clippy, rustfmt
                   cache-all-crates: true
+                  cache-workspace-crates: true
 
             - name: Install dependencies
               run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev

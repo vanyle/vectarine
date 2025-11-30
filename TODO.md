@@ -2,8 +2,7 @@
 
 - [ ] Open-source the project
 - [ ] True MacOS exports with an app folder
-- [ ] Add a CI
-  - [ ] See https://github.com/LukeMathWalker/cargo-chef
+- [ ] Generate true releases using the CI
 - [ ] Animation system from multiple PNG files
 - [ ] Add search in the resource window
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
@@ -61,6 +60,7 @@
 
 # Done
 
+- [x] Add a CI
 - [x] The font size of drawText should work with the Coords API
 - [x] The radius of drawCircle should work with the Coords API
 - [x] noise function: simplex and worley for v2 and v4
