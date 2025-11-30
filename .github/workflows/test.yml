@@ -12,11 +12,12 @@ jobs:
         name: Build & Test
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
             # version 1.15.2 In this crazy system, hashes are the only way to pin dependencies
             - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
               with:
                   components: clippy, rustfmt
+                  target: x86_64-unknown-linux-gnu
                   cache-all-crates: true
                   cache-workspace-crates: true
 
@@ -24,10 +25,10 @@ jobs:
               run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
 
             - name: Build
-              run: cargo build
+              run: cargo build --target=x86_64-unknown-linux-gnu
 
             - name: Test
-              run: cargo test
+              run: cargo test --target=x86_64-unknown-linux-gnu
 
             - name: Clippy
-              run: cargo clippy --all-targets --all-features
+              run: cargo clippy --all-targets --all-features --target=x86_64-unknown-linux-gnu

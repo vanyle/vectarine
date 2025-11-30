@@ -1,0 +1,73 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Release tag"
+                required: true
+    push:
+        tags:
+            - "[0-9]+.[0-9]+.[0-9]+"
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    release_linux:
+        name: Release - Linux
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Install Mise and mise.toml dependencies
+              uses: jdx/mise-action@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  cache: true
+                  version: 2025.10.9
+
+            - name: Set up Docker
+              uses: docker/setup-docker-action@v4
+
+            - name: Make PDF
+              run: mise run pdfify-manual
+
+            - name: Install SDL2 dependencies
+              run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
+
+            - name: Install toolchain
+              run: rustup target add x86_64-unknown-linux-gnu wasm32-unknown-emscripten
+
+            - name: Build runtime (linux)
+              run: cargo build -p runtime --target=x86_64-unknown-linux-gnu --release
+
+            - name: Build editor (linux)
+              run: cargo build -p editor --target=x86_64-unknown-linux-gnu --release
+
+            # TODO: make the web build work
+            # - name: Build runtime (web)
+            #   run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
+
+            # - name: Build editor (web)
+            #  run: cargo build -p editor --target=wasm32-unknown-emscripten --release
+
+            - name: Generate release zip
+              run: uv run scripts/release-engine.py
+
+            - name: Create a Release
+              uses: elgohr/Github-Release-Action@f5c6d2e30a99be3a10be071af9410f26872840bd
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  # ref_name is the tag.
+                  title: "Vectarine-Linux-${{ inputs.tag || github.ref_name }}"
+                  tag: "${{ inputs.tag || github.ref_name }}"
+              # This can fail if the release already exists. Let's ignore that.
+              continue-on-error: true
+
+            - uses: AButler/upload-release-assets@v3.0
+              with:
+                  files: "vectarine.zip"
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+                  release-tag: "${{ inputs.tag || github.ref_name }}"
