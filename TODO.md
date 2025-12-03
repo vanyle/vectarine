@@ -9,6 +9,7 @@
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
+- [ ] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
 - [ ] Entity system
   - [ ] Add a concept of a 'PhysicsWorld2D'
   - [ ] Under the hood, this is a QuadTree
@@ -28,6 +29,10 @@
   - [ ] Add drawing functions that operate on lists of Lua objects and can perform common linear transformations before drawing
 - [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
+- [ ] Screenshot API
+  - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
+  - [ ] Button to screenshot in the editor
+  - [ ] Button to record a short gif in the editor
 - [ ] Add a CLI version of the editor
   - [ ] The editor is compiled with -mwindow
   - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
@@ -37,11 +42,13 @@
   - [ ] Enable errors and warnings, even for release builds
   - [ ] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [ ] Event system, part II
+  - [ ] Action system (you map actions to keys and actions to functions)
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
   - [ ] Timer event?
-- [ ] Make errors/warnings inside Update spam less the console
-  - [ ] When the same error happens in a row inside update, only print it once (same behavior as browsers)
+- [ ] Add a basic code editor with syntax highlighting
+  - [ ] See: https://github.com/p4ymak/egui_code_editor
 - [ ] Better errors:
+  - [ ] Fix bug where only 1 error is printed where there are 2 different errors
   - [ ] Show the line that produced the error instead of just the line number. Make the text clickable to open the file
   - [ ] Print errors to the terminal too as the terminal is also convenient
 - [ ] Modding API
@@ -53,10 +60,14 @@
   - [ ] Camera
   - [ ] Scene
   - [ ] Geometries + Materials = Mesh
+  - [ ] Load 3d models
   - [ ] Allow 2d meshs with 'paper style'
   - [ ] Lights and shadows (set a max number of lights to 20 in the API)
   - [ ] Reflective objects like water
   - [ ] Drawing a depth buffer
+- [ ] Rewrite the sokoban using Vectarine
+- [ ] Joystick support
+- [ ] Android support
 
 # Done
 
