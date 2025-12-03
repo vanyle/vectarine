@@ -1,4 +1,4 @@
-name: Release
+name: 🎉 Release
 
 on:
     workflow_dispatch:
@@ -14,61 +14,143 @@ env:
     CARGO_TERM_COLOR: always
 
 jobs:
-    release_linux:
-        name: Release - Linux
-        runs-on: ubuntu-latest
-        permissions: write-all
+    release_windows:
+        name: 🏗️ Build for Windows x86_64
+        runs-on: windows-latest
         steps:
             - uses: actions/checkout@v6
+              name: 📂 Checkout
 
-            - name: Install Mise and mise.toml dependencies
+            - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+              name: ⚙️ Setup Rust
+              with:
+                  components: clippy, rustfmt
+                  target: x86_64-pc-windows-msvc
+                  cache-all-crates: true
+                  cache-workspace-crates: true
+
+            - name: ⚙️ Install cargo-vcpkg 
+              run: |
+                cargo install cargo-vcpkg
+                cd runtime && cargo vcpkg build
+            
+            - name: 🏗️ Build runtime (windows)
+              run: cargo build -p runtime --target=x86_64-pc-windows-msvc --release
+
+            - name: 🏗️ Build editor (windows)
+              run: cargo build -p editor --target=x86_64-pc-windows-msvc --release
+            
+            - name: 📦 Store windows executables
+              uses: actions/upload-artifact@v5
+              with:
+                name: vecta-windows
+                path: |
+                  target/x86_64-pc-windows-msvc/release/vecta.exe
+                  target/x86_64-pc-windows-msvc/release/runtime.exe
+
+    release_linux:
+        name: 🏗️ Build for Linux x86_64 and Emscripten
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              name: 📂 Checkout
+
+            - name: ⚙️ Install Mise and mise.toml dependencies
               uses: jdx/mise-action@v3
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   cache: true
                   version: 2025.10.9
+            
+            - uses: mymindstorm/setup-emsdk@v14
+              name: 🔋 Set up Emscripten
+              with:
+                  actions-cache-folder: 'emsdk-cache'
+                  version: '4.0.13'
 
-            - name: Set up Docker
+            - name: 🐳 Set up Docker
               uses: docker/setup-docker-action@v4
 
-            - name: Make PDF
+            - name: 📖 Make PDF
               run: mise run pdfify-manual
 
-            - name: Install SDL2 dependencies
+            - name: ⚙️ Install SDL2 dependencies
               run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
 
-            - name: Install toolchain
-              run: rustup target add x86_64-unknown-linux-gnu wasm32-unknown-emscripten
+            - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+              name: ⚙️ Setup Rust
+              with:
+                  components: clippy, rustfmt
+                  target: x86_64-unknown-linux-gnu, wasm32-unknown-emscripten
+                  cache-all-crates: true
+                  cache-workspace-crates: true
 
-            - name: Build runtime (linux)
+            - name: 🏗️ Build runtime (web)
+              run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
+
+            - name: 🏗️ Build runtime (linux)
               run: cargo build -p runtime --target=x86_64-unknown-linux-gnu --release
 
-            - name: Build editor (linux)
+            - name: 🏗️ Build editor (linux)
               run: cargo build -p editor --target=x86_64-unknown-linux-gnu --release
 
-            # TODO: make the web build work
-            # - name: Build runtime (web)
-            #   run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
-
-            # - name: Build editor (web)
-            #  run: cargo build -p editor --target=wasm32-unknown-emscripten --release
-
-            - name: Generate release zip
-              run: uv run scripts/release-engine.py
-
-            - name: Create a Release
-              uses: elgohr/Github-Release-Action@f5c6d2e30a99be3a10be071af9410f26872840bd
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: 📦 Store linux executables, web and PDF
+              uses: actions/upload-artifact@v5
               with:
-                  # ref_name is the tag.
-                  title: "Vectarine-Linux-${{ inputs.tag || github.ref_name }}"
-                  tag: "${{ inputs.tag || github.ref_name }}"
-              # This can fail if the release already exists. Let's ignore that.
-              continue-on-error: true
+                name: vecta-linux-web-and-manual
+                path: |
+                  target/x86_64-unknown-linux-gnu/release/vecta
+                  target/x86_64-unknown-linux-gnu/release/runtime
+                  target/wasm32-unknown-emscripten/release/runtime.js
+                  target/wasm32-unknown-emscripten/release/runtime.wasm
+                  docs/user-manual.pdf
 
-            - uses: AButler/upload-release-assets@v3.0
-              with:
-                  files: "vectarine.zip"
-                  repo-token: ${{ secrets.GITHUB_TOKEN }}
-                  release-tag: "${{ inputs.tag || github.ref_name }}"
+    bundle:
+      name: 📦 Bundle and release
+      needs: [release_linux, release_windows]
+      runs-on: ubuntu-latest
+      permissions: write-all
+      steps:
+      - uses: actions/checkout@v6
+        name: 📂 Checkout
+
+      - name: ⚙️ Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: ⬇️ Download the linux artefact
+        uses: actions/download-artifact@v6
+        with:
+          name: vecta-linux-web-and-manual
+
+      - name: ⬇️ Download the windows artefact
+        uses: actions/download-artifact@v6
+        with:
+          name: vecta-windows
+
+      - name: 🚚 Move executables to their place
+        run: |
+          mkdir -p ./target/x86_64-unknown-linux-gnu/release
+          mkdir -p ./target/wasm32-unknown-emscripten/release
+          mkdir -p ./target/aarch64-apple-darwin/release
+          mkdir -p ./target/x86_64-pc-windows-msvc/release
+
+      - name: 📦 Generate release files
+        run: uv run scripts/release-engine.py
+
+      - name: ✨ Create a GitHub Release
+        uses: elgohr/Github-Release-Action@f5c6d2e30a99be3a10be071af9410f26872840bd
+        # This can fail if the release already exists. Let's ignore that.
+        continue-on-error: true
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+            # ref_name is the tag.
+            title: "Vectarine ${{ inputs.tag || github.ref_name }}"
+            tag: "${{ inputs.tag || github.ref_name }}"
+
+      - name: 📦 Upload release files
+        uses: AButler/upload-release-assets@v3.0
+        with:
+          files: "vectarine.zip"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          release-tag: "${{ inputs.tag || github.ref_name }}"
