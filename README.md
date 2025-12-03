@@ -59,6 +59,6 @@ We have many more features planned in [the TODO List](./TODO.md)
 | --- | --- |
 | ![editor](./assets/screenshots/editor.png) | ![lighting](./assets/screenshots/lighting.png) |
 
-| Simple 3d |  Sokoban  |
+| Simple 3d |  Your project?  |
 | --- | --- |
-| TODO | TODO |
+| TODO | Open a pull request to get your project featured! |
