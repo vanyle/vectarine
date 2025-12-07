@@ -1,9 +1,5 @@
 # TO-DO
 
-- [ ] Generate true releases using the CI
-  - [ ] We need static linking
-  - [ ] The python script needs to produce 1 zip per platform and be more verbose.
-  - [ ] True MacOS exports with an app folder
 - [ ] Make the examples better looking
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
@@ -81,6 +77,10 @@
 
 # Done
 
+- [x] Generate true releases using the CI
+  - [x] We need static linking
+  - [x] The python script needs to produce 1 zip per platform and be more verbose.
+  - [x] True MacOS exports with an app folder
 - [x] Add a CI
 - [x] The font size of drawText should work with the Coords API
 - [x] The radius of drawCircle should work with the Coords API

@@ -205,7 +205,8 @@ jobs:
       name: 📦 Bundle and release
       needs: [release_linux, release_windows, release_web, release_macos]
       runs-on: ubuntu-latest
-      permissions: write-all
+      permissions:
+        contents: write
       steps:
       - uses: actions/checkout@v6
         name: 📂 Checkout
@@ -267,16 +268,18 @@ jobs:
         run: uv run scripts/release-engine.py
 
       - name: ✨ Create a GitHub Release
-        uses: elgohr/Github-Release-Action@f5c6d2e30a99be3a10be071af9410f26872840bd
+        uses: softprops/action-gh-release@v2
         # This can fail if the release already exists. Let's ignore that.
         continue-on-error: true
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
             # ref_name is the tag.
-            # We just put the version number as the title, no need to add vectarine, it looks weird
-            title: "${{ inputs.tag || github.ref_name }}"
-            tag: "${{ inputs.tag || github.ref_name }}"
+            # We just put the version number as the title, no need to add vectarine, it looks weird 
+            name: "${{ inputs.tag || github.ref_name }}"
+            tag_name: "${{ inputs.tag || github.ref_name }}"
+            # Note: we could use a script to generate a body someday.
+            body: ""
 
       - name: 📦 Upload release files
         uses: AButler/upload-release-assets@v3.0
