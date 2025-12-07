@@ -81,7 +81,7 @@ jobs:
               name: ⚙️ Setup Rust
               with:
                   components: clippy, rustfmt
-                  target: x86_64-unknown-linux-gnu, wasm32-unknown-emscripten
+                  target: x86_64-unknown-linux-musl, wasm32-unknown-emscripten
                   cache-all-crates: true
                   cache-workspace-crates: true
 
@@ -89,18 +89,18 @@ jobs:
               run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
 
             - name: 🏗️ Build runtime (linux)
-              run: cargo build -p runtime --target=x86_64-unknown-linux-gnu --release
+              run: cargo build -p runtime --target=x86_64-unknown-linux-musl --release
 
             - name: 🏗️ Build editor (linux)
-              run: cargo build -p editor --target=x86_64-unknown-linux-gnu --release
+              run: cargo build -p editor --target=x86_64-unknown-linux-musl --release
 
             - name: 📦 Store linux executables, web and PDF
               uses: actions/upload-artifact@v5
               with:
                 name: vecta-linux-web-and-manual
                 path: |
-                  target/x86_64-unknown-linux-gnu/release/vecta
-                  target/x86_64-unknown-linux-gnu/release/runtime
+                  target/x86_64-unknown-linux-musl/release/vecta
+                  target/x86_64-unknown-linux-musl/release/runtime
                   target/wasm32-unknown-emscripten/release/runtime.js
                   target/wasm32-unknown-emscripten/release/runtime.wasm
                   docs/user-manual.pdf
@@ -129,7 +129,7 @@ jobs:
 
       - name: 🚚 Move executables to their place
         run: |
-          mkdir -p ./target/x86_64-unknown-linux-gnu/release
+          mkdir -p ./target/x86_64-unknown-linux-musl/release
           mkdir -p ./target/wasm32-unknown-emscripten/release
           mkdir -p ./target/aarch64-apple-darwin/release
           mkdir -p ./target/x86_64-pc-windows-msvc/release
@@ -145,12 +145,13 @@ jobs:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
             # ref_name is the tag.
-            title: "Vectarine ${{ inputs.tag || github.ref_name }}"
+            # We just put the version number as the title, no need to add vectarine, it looks weird
+            title: "${{ inputs.tag || github.ref_name }}"
             tag: "${{ inputs.tag || github.ref_name }}"
 
       - name: 📦 Upload release files
         uses: AButler/upload-release-assets@v3.0
         with:
-          files: "vectarine.zip"
+          files: "vectarine.*.zip"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: "${{ inputs.tag || github.ref_name }}"
