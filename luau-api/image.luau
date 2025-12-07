@@ -10,7 +10,7 @@ export type ImageResource = typeof(setmetatable({}, ImageResourceImpl)) & Resour
 type Pos = Coord.ScreenPosition | Vec.Vec2
 type Direction = Coord.ScreenVec | Vec.Vec2
 
---- Draws the image
+--- Draws the image at the position and with the size given
 function ImageResourceImpl.draw(self: ImageResource, pos: Pos, size: Direction): ()
 	error("Not implemented")
 end
@@ -31,6 +31,7 @@ function ImageResourceImpl.drawPart(
 	error("Not implemented")
 end
 
+--- Gets the size of the image in pixels
 function ImageResourceImpl.getSize(self: ImageResource): Vec.Vec2
 	error("Not implemented")
 end

@@ -43,11 +43,28 @@ Feel free to join our [Discord server](https://discord.gg/zPwg3VDydz) if you hav
 
 Below are information on how to work and improve the engine.
 
-## ⚙️ Working on the engine
+## ⚙️ Helping out on the engine
 
-See [CONTRIBUTING](./CONTRIBUTING.md)
+There are plenty of ways to contribute to the engine!
 
-We have many more features planned in [the TODO List](./TODO.md)
+### You can improve the documentation
+
+- You can document individual functions inside `luau-api`
+- You can clarify and add sections of [the manual](./docs/user-manual.md)
+- You can add new examples to the [gallery](./gallery/README.md)
+
+### You can change the engine itself
+
+- You can improve the editor
+- You can add new APIs to the runtime
+
+See [CONTRIBUTING](./CONTRIBUTING.md) for technical information on the engine
+
+We have many features planned in [the TODO List](./TODO.md), so you can just pick good first issues if you want to help!
+
+### You can take part in the community
+
+We have a [Discord server](https://discord.gg/zPwg3VDydz) where you can discuss features and get help from other developers
 
 ## 📸 Screenshots
 

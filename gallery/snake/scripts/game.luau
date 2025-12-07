@@ -294,23 +294,13 @@ function Update(timeDelta: number)
 		if _G.paused then
 			if _G.gameover then
 				if fontResource:isReady() then
-					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, { r = 1, g = 1, b = 1, a = 1 })
-					fontResource:drawText(
-						"Score: " .. tostring(score),
-						V2(-0.2, 0.25),
-						0.15,
-						{ r = 1, g = 1, b = 1, a = 1 }
-					)
-					fontResource:drawText(
-						"Press SPACE to restart",
-						V2(-0.35, -0.1),
-						0.1,
-						{ r = 1, g = 1, b = 1, a = 1 }
-					)
+					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, Vec4.WHITE)
+					fontResource:drawText("Score: " .. tostring(score), V2(-0.2, 0.25), 0.15, Vec4.WHITE)
+					fontResource:drawText("Press SPACE to restart", V2(-0.35, -0.1), 0.1, Vec4.WHITE)
 				end
 			else
 				if fontResource:isReady() then
-					fontResource:drawText("PAUSED", V2(-0.3, 0.3), 0.3, { r = 1, g = 1, b = 1, a = 1 })
+					fontResource:drawText("PAUSED", V2(-0.3, 0.3), 0.3, Vec4.WHITE)
 				end
 			end
 		end

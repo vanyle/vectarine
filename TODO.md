@@ -1,8 +1,11 @@
 # TO-DO
 
-- [ ] Open-source the project
-- [ ] True MacOS exports with an app folder
 - [ ] Generate true releases using the CI
+  - [ ] We need static linking
+  - [ ] The python script needs to produce 1 zip per platform and be more verbose.
+  - [ ] True MacOS exports with an app folder
+- [ ] Make the examples better looking
+- [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
 - [ ] Add search in the resource window
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
@@ -20,6 +23,7 @@
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
+- [ ] A low/no-code way to get started??
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
@@ -29,6 +33,7 @@
   - [ ] Add drawing functions that operate on lists of Lua objects and can perform common linear transformations before drawing
 - [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
+- [ ] Add a command palette to the editor
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor

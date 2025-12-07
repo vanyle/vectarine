@@ -1,4 +1,4 @@
 [toolchain]
 channel = "1.90.0"
 profile = "default"
-targets = ["wasm32-unknown-emscripten", "aarch64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"]
+targets = ["wasm32-unknown-emscripten", "aarch64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-musl"]
