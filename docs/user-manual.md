@@ -36,7 +36,7 @@ Start the engine by running the `vecta` executable. A window should open.
 > ⚠️ On MacOS, executables from the internet are quarantined by default.
 > You might see this message when attempting to run `vecta.app`: "This app is damaged"
 > You need to run this command to allow the execution:
-> `xattr -d com.apple.quarantine ./vecta.app/vecta`
+> `xattr -d com.apple.quarantine ./vecta.app`
 
 You can press *Create a new project* to select the location where you want to create your project.
 

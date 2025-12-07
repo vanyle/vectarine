@@ -57,6 +57,7 @@ jobs:
               uses: actions/upload-artifact@v5
               with:
                 name: vecta-windows
+                retention-days: 1
                 path: |
                   target/x86_64-pc-windows-msvc/release/vecta.exe
                   target/x86_64-pc-windows-msvc/release/runtime.exe
@@ -78,7 +79,7 @@ jobs:
                 cache-workspace-crates: true
 
           - name: ⚙️ Install dependencies
-            run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
+            run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libmp3lame-dev
 
           - name: 🏗️ Build runtime (linux)
             run: cargo build -p runtime --target=x86_64-unknown-linux-gnu --release
@@ -90,6 +91,7 @@ jobs:
             uses: actions/upload-artifact@v5
             with:
               name: vecta-linux
+              retention-days: 1
               path: |
                 target/x86_64-unknown-linux-gnu/release/vecta
                 target/x86_64-unknown-linux-gnu/release/runtime
@@ -120,6 +122,16 @@ jobs:
             - name: 🐳 Set up Docker
               uses: docker/setup-docker-action@v4
 
+            - name: 💾 Cache target folder
+              id: cache-target-folder
+              uses: actions/cache@v4
+              with:
+                path: |
+                  target/wasm32-unknown-emscripten/release/build
+                  target/wasm32-unknown-emscripten/release/deps
+                  target/wasm32-unknown-emscripten/release/incremental
+                key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('**/Cargo.toml') }}
+
             - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
               name: ⚙️ Setup Rust
               with:
@@ -137,6 +149,7 @@ jobs:
               uses: actions/upload-artifact@v5
               with:
                 name: vecta-web-and-manual
+                retention-days: 1
                 path: |
                   target/wasm32-unknown-emscripten/release/runtime.js
                   target/wasm32-unknown-emscripten/release/runtime.wasm
@@ -183,6 +196,7 @@ jobs:
             uses: actions/upload-artifact@v5
             with:
               name: vecta-macos
+              retention-days: 1
               path: |
                 target/aarch64-apple-darwin/release/vecta
                 target/aarch64-apple-darwin/release/runtime
@@ -202,32 +216,52 @@ jobs:
       - name: ⚙️ Install uv
         uses: astral-sh/setup-uv@v7
 
-      - name: ⬇️ Download the web artefacts
+      - name: ⬇️ Download Linux artefacts
         uses: actions/download-artifact@v6
         with:
-          name: vecta-web-and-manual
+          path: ./linux
+          pattern: vecta-linux
+        continue-on-error: true
 
-      - name: ⬇️ Download the linux artefacts
+      - name: ⬇️ Download Windows artefacts
         uses: actions/download-artifact@v6
         with:
-          name: vecta-linux
+          path: ./windows
+          pattern: vecta-windows
+        continue-on-error: true
 
-      - name: ⬇️ Download the windows artefacts
+      - name: ⬇️ Download Web artefacts
         uses: actions/download-artifact@v6
         with:
-          name: vecta-windows
+          path: ./web
+          pattern: vecta-web-and-manual
+        continue-on-error: true
 
-      - name: ⬇️ Download the macos artefacts
+      - name: ⬇️ Download macOS artefacts
         uses: actions/download-artifact@v6
         with:
-          name: vecta-macos
+          path: ./macos
+          pattern: vecta-macos
+        continue-on-error: true
 
-      - name: 🚚 Move executables to their place
+      - name: 🚚 Move the artefacts
+        # For some reason, the web artefacts are inside /target/wasm32-unknown-emscripten/release but not the others.
         run: |
           mkdir -p ./target/x86_64-unknown-linux-gnu/release
-          mkdir -p ./target/wasm32-unknown-emscripten/release
-          mkdir -p ./target/aarch64-apple-darwin/release
           mkdir -p ./target/x86_64-pc-windows-msvc/release
+          mkdir -p ./target/aarch64-apple-darwin/release
+          mkdir -p ./target/wasm32-unknown-emscripten/release
+          mkdir -p ./docs
+          ls -R ./linux
+          ls -R ./windows
+          ls -R ./macos
+          ls -R ./web
+          mv ./linux/* ./target/x86_64-unknown-linux-gnu/release/
+          mv ./windows/* ./target/x86_64-pc-windows-msvc/release/
+          mv ./macos/* ./target/aarch64-apple-darwin/release/
+          mv ./web/docs/user-manual.pdf ./docs/
+          mv ./web/* .
+        continue-on-error: true
 
       - name: 📦 Generate release files
         run: uv run scripts/release-engine.py
