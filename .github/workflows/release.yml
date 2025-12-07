@@ -20,6 +20,9 @@ jobs:
         steps:
             - uses: actions/checkout@v6
               name: 📂 Checkout
+              with:
+                # Need png for icon in exe
+                lfs: true
 
             - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
               name: ⚙️ Setup Rust
@@ -33,7 +36,7 @@ jobs:
               run: |
                 cargo install cargo-vcpkg
                 cd runtime && cargo vcpkg build
-            
+
             - name: 🏗️ Build runtime (windows)
               run: cargo build -p runtime --target=x86_64-pc-windows-msvc --release
 
@@ -54,6 +57,9 @@ jobs:
         steps:
             - uses: actions/checkout@v6
               name: 📂 Checkout
+              with:
+                # need png for manual
+                lfs: true
 
             - name: ⚙️ Install Mise and mise.toml dependencies
               uses: jdx/mise-action@v3
@@ -74,8 +80,8 @@ jobs:
             - name: 📖 Make PDF
               run: mise run pdfify-manual
 
-            - name: ⚙️ Install SDL2 dependencies
-              run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
+            - name: ⚙️ Install SDL2 dependencies and musl compiler
+              run: sudo apt-get update && sudo apt-get install -y musl-tools musl-dev libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
 
             - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
               name: ⚙️ Setup Rust
@@ -85,14 +91,14 @@ jobs:
                   cache-all-crates: true
                   cache-workspace-crates: true
 
-            - name: 🏗️ Build runtime (web)
-              run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
-
             - name: 🏗️ Build runtime (linux)
               run: cargo build -p runtime --target=x86_64-unknown-linux-musl --release
 
             - name: 🏗️ Build editor (linux)
               run: cargo build -p editor --target=x86_64-unknown-linux-musl --release
+
+            - name: 🏗️ Build runtime (web)
+              run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
 
             - name: 📦 Store linux executables, web and PDF
               uses: actions/upload-artifact@v5
@@ -113,6 +119,9 @@ jobs:
       steps:
       - uses: actions/checkout@v6
         name: 📂 Checkout
+        with:
+          # Need to bundle the gallery which has LFS files
+          lfs: true
 
       - name: ⚙️ Install uv
         uses: astral-sh/setup-uv@v7

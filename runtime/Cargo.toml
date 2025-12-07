@@ -19,7 +19,6 @@ serde_json = "1.0"
 regex = "1.12.2"
 noise = "0.9.0"
 
-
 [target.'cfg(target_os = "windows")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "use-vcpkg"] }
 mlua = { version = "0.11.2", features = ["luau-jit", "serde", "vendored"] }
@@ -29,7 +28,7 @@ sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image",
 mlua = { version = "0.11.2", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "use-pkgconfig"] }
+sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "bundled"] }
 mlua = { version = "0.11.2", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]

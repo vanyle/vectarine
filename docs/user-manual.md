@@ -31,13 +31,52 @@ you are free to use any text editor you want, for example [Zed](https://zed.dev/
 
 Start the engine by running the `vecta` executable. A window should open.
 
-> ⚠️ On MacOS, executables from the internet are quarantined by default.
-> You might see this message when attempting to run `vecta-macos`: "This app is damaged"
-> You need to run this command to allow the execution:
-> `xattr -d com.apple.quarantine vecta-macos`
+![The Start Screen of Vectarine](./screenshots/startscreen.png){width=400}
 
-Write your game inside `gamedata/scripts/game.luau`. As you save, the window updates. See the `luau-api` folder for a list of available functions.
-Your text editor should autocomplete from them.
+> ⚠️ On MacOS, executables from the internet are quarantined by default.
+> You might see this message when attempting to run `vecta.app`: "This app is damaged"
+> You need to run this command to allow the execution:
+> `xattr -d com.apple.quarantine ./vecta.app/vecta`
+
+You can press *Create a new project* to select the location where you want to create your project.
+
+Once you created your project, you will see a white screen. This is normal, as no code has been written yet.
+You can open the resources tab from the tools menu or with <kbd>Ctrl</kbd>+<kbd>2</kbd> to see the files of your project.
+
+Your game has only one resource, the main script, `scripts/game.luau`.
+
+![An empty Vectarine project](./screenshots/emptyproject.png){width=400}
+
+You can click the blue text `scripts/game.luau` to open it in your default text editor. You can also open it manually from your file explorer.
+
+Try to change the content of this file to:
+
+```lua
+local Debug = require('@vectarine/debug')
+local Graphics = require('@vectarine/graphics')
+local Vec4 = require('@vectarine/vec4')
+Debug.print("Loaded.")
+function Update(deltaTime: number)
+    -- Change the background color to red
+    Graphics.clear(Vec4.RED)
+    Debug.fprint("Rendered in ", deltaTime, "sec")
+end
+```
+
+As you save, the game updates instantly.
+See the `luau-api` folder for a list of available functions lua.
+You can copy the content of `luau-api` to the folder with your game and create a `.luaurc` file with the following content:
+```json
+{
+	"languageMode": "strict",
+	"aliases": {
+		"vectarine": "luau-api"
+	}
+}
+``` 
+This should make your text editor be able to autocomplete your code using these functions.
+
+`luau-api` is a great source of documentation and can be though of as a companion to this manual.
 
 # 🌙 Using Vectarine and Luau
 

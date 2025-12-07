@@ -8,7 +8,12 @@
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
 - [ ] Add search in the resource window
+- [ ] Allow opening the game folder in the resource window
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
+- [ ] Add a help button to the editor menu with the options:
+  - [ ] Open Manual
+  - [ ] Open Github
+  - [ ] About (opens a popup with the version and the commit hash)
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets

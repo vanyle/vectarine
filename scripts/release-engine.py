@@ -40,8 +40,8 @@ def copy_runtime_files(root_path: str, dest: str = ""):
         dest = "engine-release"
     # Pack the runtimes for all platforms if possible
     copy_from_root(root_path, "target/x86_64-pc-windows-msvc/release/runtime.exe", os.path.join(dest, "runtime.exe"))
-    copy_from_root(root_path, "target/x86_64-unknown-linux-musl/release/runtime", os.path.join(dest, "runtime"), chmodx=True)
-    copy_from_root(root_path, "target/aarch64-apple-darwin/release/runtime", os.path.join(dest, "runtime"), chmodx=True)
+    copy_from_root(root_path, "target/x86_64-unknown-linux-musl/release/runtime", os.path.join(dest, "runtime-linux"), chmodx=True)
+    copy_from_root(root_path, "target/aarch64-apple-darwin/release/runtime", os.path.join(dest, "runtime-macos"), chmodx=True)
     copy_from_root(root_path, "target/wasm32-unknown-emscripten/release/runtime.js", os.path.join(dest, "runtime.js"))
     copy_from_root(root_path, "target/wasm32-unknown-emscripten/release/runtime.wasm", os.path.join(dest, "runtime.wasm"))
 

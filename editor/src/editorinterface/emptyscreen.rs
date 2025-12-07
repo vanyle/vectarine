@@ -102,7 +102,8 @@ pub fn draw_empty_screen_window_content(
 pub fn get_end_of_path(path: &Path) -> String {
     // Show last 5 components of the path.
     let components = path.components().collect::<Vec<_>>();
-    let end_of_path = &components[std::cmp::max(0, components.len() - 5)..components.len()]
+    let end_of_path = &components
+        [std::cmp::max(0, components.len().saturating_sub(5))..components.len()]
         .iter()
         .map(|c| PathBuf::from(c.as_os_str()))
         .fold(PathBuf::new(), |a, b| a.join(b));
