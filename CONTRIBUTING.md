@@ -184,7 +184,7 @@ Then, build as usual while replacing `cargo` with `cross`:
 
 ```bash
 # Making a Linux build on Windows/MacOS
-cross build -p editor --target x86_64-unknown-linux-musl --release
+cross build -p editor --target x86_64-unknown-linux-gnu --release
 ```
 
 **Cross compilation matrix**:

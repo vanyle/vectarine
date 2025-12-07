@@ -27,7 +27,6 @@ jobs:
             - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
               name: ⚙️ Setup Rust
               with:
-                  components: clippy, rustfmt
                   target: x86_64-pc-windows-msvc
                   cache-all-crates: true
                   cache-workspace-crates: true
@@ -52,7 +51,37 @@ jobs:
                   target/x86_64-pc-windows-msvc/release/runtime.exe
 
     release_linux:
-        name: 🏗️ Build for Linux x86_64 and Emscripten
+        name: 🏗️ Build for Linux x86_64
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v6
+            name: 📂 Checkout
+            with:
+              lfs: false
+
+          - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+            name: ⚙️ Setup Rust
+            with:
+                target: x86_64-unknown-linux-gnu
+                cache-all-crates: true
+                cache-workspace-crates: true
+
+          - name: 🏗️ Build runtime (linux)
+            run: cargo build -p runtime --target=x86_64-unknown-linux-gnu --release
+
+          - name: 🏗️ Build editor (linux)
+            run: cargo build -p editor --target=x86_64-unknown-linux-gnu --release
+
+          - name: 📦 Store linux executables
+            uses: actions/upload-artifact@v5
+            with:
+              name: vecta-linux
+              path: |
+                target/x86_64-unknown-linux-gnu/release/vecta
+                target/x86_64-unknown-linux-gnu/release/runtime
+
+    release_web:
+        name: 🏗️ Build for Emscripten
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
@@ -77,43 +106,31 @@ jobs:
             - name: 🐳 Set up Docker
               uses: docker/setup-docker-action@v4
 
-            - name: 📖 Make PDF
-              run: mise run pdfify-manual
-
-            - name: ⚙️ Install SDL2 dependencies and musl compiler
-              run: sudo apt-get update && sudo apt-get install -y musl-tools musl-dev libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev libmp3lame-dev
-
             - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
               name: ⚙️ Setup Rust
               with:
-                  components: clippy, rustfmt
-                  target: x86_64-unknown-linux-musl, wasm32-unknown-emscripten
+                  target: wasm32-unknown-emscripten
                   cache-all-crates: true
                   cache-workspace-crates: true
-
-            - name: 🏗️ Build runtime (linux)
-              run: cargo build -p runtime --target=x86_64-unknown-linux-musl --release
-
-            - name: 🏗️ Build editor (linux)
-              run: cargo build -p editor --target=x86_64-unknown-linux-musl --release
 
             - name: 🏗️ Build runtime (web)
               run: cargo build -p runtime --target=wasm32-unknown-emscripten --release
 
-            - name: 📦 Store linux executables, web and PDF
+            - name: 📖 Make PDF
+              run: mise run pdfify-manual
+
+            - name: 📦 Store web and PDF
               uses: actions/upload-artifact@v5
               with:
-                name: vecta-linux-web-and-manual
+                name: vecta-web-and-manual
                 path: |
-                  target/x86_64-unknown-linux-musl/release/vecta
-                  target/x86_64-unknown-linux-musl/release/runtime
                   target/wasm32-unknown-emscripten/release/runtime.js
                   target/wasm32-unknown-emscripten/release/runtime.wasm
                   docs/user-manual.pdf
 
     bundle:
       name: 📦 Bundle and release
-      needs: [release_linux, release_windows]
+      needs: [release_linux, release_windows, release_web]
       runs-on: ubuntu-latest
       permissions: write-all
       steps:
@@ -126,10 +143,15 @@ jobs:
       - name: ⚙️ Install uv
         uses: astral-sh/setup-uv@v7
 
+      - name: ⬇️ Download the web artefact
+        uses: actions/download-artifact@v6
+        with:
+          name: vecta-web-and-manual
+
       - name: ⬇️ Download the linux artefact
         uses: actions/download-artifact@v6
         with:
-          name: vecta-linux-web-and-manual
+          name: vecta-linux
 
       - name: ⬇️ Download the windows artefact
         uses: actions/download-artifact@v6
@@ -138,7 +160,7 @@ jobs:
 
       - name: 🚚 Move executables to their place
         run: |
-          mkdir -p ./target/x86_64-unknown-linux-musl/release
+          mkdir -p ./target/x86_64-unknown-linux-gnu/release
           mkdir -p ./target/wasm32-unknown-emscripten/release
           mkdir -p ./target/aarch64-apple-darwin/release
           mkdir -p ./target/x86_64-pc-windows-msvc/release
