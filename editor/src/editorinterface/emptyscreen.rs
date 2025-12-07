@@ -99,6 +99,16 @@ pub fn draw_empty_screen_window_content(
     });
 }
 
+pub fn get_end_of_path(path: &Path) -> String {
+    // Show last 5 components of the path.
+    let components = path.components().collect::<Vec<_>>();
+    let end_of_path = &components[std::cmp::max(0, components.len() - 5)..components.len()]
+        .iter()
+        .map(|c| PathBuf::from(c.as_os_str()))
+        .fold(PathBuf::new(), |a, b| a.join(b));
+    format!("{}", end_of_path.display())
+}
+
 pub fn draw_new_game_window_content(
     state: &mut EditorState,
     ui: &mut egui::Ui,
@@ -107,15 +117,9 @@ pub fn draw_new_game_window_content(
     ui.label(RichText::new("Create a new project").size(24.0));
     ui.add_space(8.0);
     {
-        let components = new_game_path.components().collect::<Vec<_>>();
-        // Show last 5 components of the path.
-        let end_of_path = &components[std::cmp::max(0, components.len() - 5)..components.len()]
-            .iter()
-            .map(|c| PathBuf::from(c.as_os_str()))
-            .fold(PathBuf::new(), |a, b| a.join(b));
-
-        let label = egui::Label::new(RichText::new(format!("{}", end_of_path.display())))
-            .wrap_mode(egui::TextWrapMode::Truncate);
+        let end_of_path = get_end_of_path(new_game_path);
+        let label =
+            egui::Label::new(RichText::new(end_of_path)).wrap_mode(egui::TextWrapMode::Truncate);
         ui.label(RichText::new("Game folder created in").strong());
         ui.add(label);
     }
@@ -370,13 +374,9 @@ pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
                                                     );
                                                     is_clicked |= label_response.clicked();
                                                 });
-                                                let label_response = ui.label(
-                                                    RichText::new(format!(
-                                                        "{}",
-                                                        project_file.display()
-                                                    ))
-                                                    .size(12.0),
-                                                );
+                                                let end_of_path = get_end_of_path(&project_file);
+                                                let label_response =
+                                                    ui.label(RichText::new(end_of_path).size(12.0));
                                                 is_clicked |= label_response.clicked();
                                             },
                                         );
