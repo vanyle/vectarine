@@ -6,8 +6,9 @@ use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
 use runtime::{
     RenderingBlock,
     game::drawable_screen_size,
-    init_audio, init_sdl,
+    init_sdl,
     io::{localfs::LocalFileSystem, time::now_ms},
+    sound::init_sound_system,
 };
 
 use crate::{
@@ -50,8 +51,7 @@ fn gui_main() {
             video_subsystem.gl_get_proc_address(name) as *const _
         })
     });
-    let _audio_subsystem = init_audio(&sdl);
-    // sdl2::mixer::close_audio(); // no need to clean up, the program will clean on exit.
+    init_sound_system(&sdl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 

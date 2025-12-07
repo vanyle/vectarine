@@ -11,7 +11,7 @@ fn main() {
         println!("cargo:rustc-link-arg=-sEXPORTED_RUNTIME_METHODS=ccall,cwrap,abort,FS");
         println!("cargo:rustc-link-arg=-sEXPORTED_FUNCTIONS=_main");
         println!("cargo:rustc-link-arg=-sUSE_WEBGL2=1");
-        println!("cargo:rustc-link-arg=-sUSE_SDL_MIXER=2");
+        // println!("cargo:rustc-link-arg=-sUSE_SDL_MIXER=2");
         println!("cargo:rustc-link-arg=-sASSERTIONS=1");
         println!("cargo:rustc-link-arg=-lidbfs.js");
 

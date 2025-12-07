@@ -67,32 +67,14 @@ If you are on linux and want to only compile for linux or the web, you can simpl
 
 ```bash
 # Replace apt with your package manager of choice
-sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-gfx-dev
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev
 # You might also need this, but it can already be installed
 sudo apt-get install libmp3lame-dev
 ```
 
 Otherwise, you'll need to install SDL2 through vcpkg.
-On MacOS and Windows, this is mandatory. First, install [vcpkg](https://github.com/microsoft/vcpkg):
 
 ```bash
-wind> cd $home
-unix> cd ~
-# We assume you are install vcpkg in your home folder, but you can put it anywhere on your computer
-both> git clone https://github.com/microsoft/vcpkg.git
-both> cd vcpkg
-
-wind> ./bootstrap-vcpkg.bat # Build it on windows
-unix> ./bootstrap-vcpkg.sh # Build it on Linux/MacOS
-
-# Add vcpkg to your PATH
-# On Windows, you can use the "Edit environment variables" utils to add a folder to your PATH
-unix> export PATH="$(pwd):$PATH"
-# Add VCPKG_ROOT to your path too:
-unix> export VCPKG_ROOT=$(pwd)
-wind> $env:VCPKG=(Get-Item .).FullName
-
-# Finally, you can setup the integration between vcpkg and cargo
 both> cd path/to/the/location/of/vectarine/runtime
 both> cargo install cargo-vcpkg
 both> cd runtime
@@ -111,7 +93,7 @@ You are now ready to build and run the engine and the runtime!
 > Assuming vcpkg is in your PATH, you can manually install them with:
 >
 > ```bash
-> vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixer sdl2-gfx --triplet x64-windows-static-md
+> vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-gfx --triplet x64-windows-static-md
 > ```
 
 ## Common commands
@@ -131,7 +113,7 @@ wind> ./emsdk/emsdk install 4.0.13
 wind> ./emsdk/emsdk activate 4.0.13
 wind> ./emsdk/emsdk_env.ps1 # once you have run activate once, you can use this as a shorthand
 both> cargo build -p runtime --target wasm32-unknown-emscripten
-both> uv run ./script/serve.py # Start this in another terminal.
+both> uv run ./scripts/serve.py # Start this in another terminal.
 # Open http://localhost:8000 in your browser
 ```
 

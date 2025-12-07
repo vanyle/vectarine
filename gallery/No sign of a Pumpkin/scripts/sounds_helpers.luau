@@ -12,12 +12,14 @@ local deathMusic = Loader.loadAudio("audio/death_music.wav")
 local creepySound = Loader.loadAudio("audio/creepy_sound.wav")
 local battleMusic = Loader.loadAudio("audio/battle_music.wav")
 
+local ambiantIsNotPlaying = true
+
 -- Set up background music to play when resource loads (must be immediate, not delayed)
 Event.getResourceLoadedEvent():on(function(r)
-	if r == ambiantMusic then
-		Debug.print("Playing background music from resource loaded event...")
+	if ambiantMusic:isReady() and ambiantIsNotPlaying then
 		ambiantMusic:play(true)
 		ambiantMusic:setVolume(0.2)
+		ambiantIsNotPlaying = false
 	end
 end)
 

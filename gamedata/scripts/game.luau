@@ -6,13 +6,13 @@ local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
-local Persist = require("@vectarine/persist")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 local V2 = Vec.V2
 
 --- Constants
-_G.BG_COLOR = { r = 132 / 255, g = 160 / 255, b = 189 / 255, a = 1 }
-local _SNAKE_COLOR = { r = 0.2, g = 0.8, b = 0, a = 1 }
+_G.BG_COLOR = Vec4.createColor(132 / 255, 160 / 255, 189 / 255, 1)
+local _SNAKE_COLOR = Vec4.createColor(0.2, 0.8, 0, 1)
 local HEAD_SNAKE_SEGMENT = { 1, 2, 3, 4 }
 local STRAIGHT_SNAKE_SEGMENT = { 9, 10 }
 local CORNER_SNAKE_SEGMENT = { 5, 6, 7, 8 }
@@ -28,9 +28,7 @@ local shaderResource = Loader.loadShader("shaders/base.glsl")
 local canvas = Canvas.createCanvas(1200, 800)
 canvas:setShader(shaderResource)
 
-local result = Persist.load("saved_value")
-Debug.print("Result: ", result)
-
+Io.setResizeable(true)
 -- Io.setWindowSize(800, 600)
 -- Io.centerWindow()
 
@@ -129,10 +127,13 @@ local function drawEnvironment()
 	environmentImage:draw(p1, size)
 end
 
+local function mod4(x: number)
+	return ((x - 1 + 4) % 4) + 1
+end
+
 local keyEvent = Event.getKeyDownEvent()
 keyEvent:on(function(key: string)
 	print("Key pressed: ", key)
-	Persist.save("saved_value", key)
 	if key == "Space" then
 		if _G.gameover and _G.paused then
 			_G.gameover = false
@@ -293,23 +294,13 @@ function Update(timeDelta: number)
 		if _G.paused then
 			if _G.gameover then
 				if fontResource:isReady() then
-					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, { r = 1, g = 1, b = 1, a = 1 })
-					fontResource:drawText(
-						"Score: " .. tostring(score),
-						V2(-0.2, 0.25),
-						0.15,
-						{ r = 1, g = 1, b = 1, a = 1 }
-					)
-					fontResource:drawText(
-						"Press SPACE to restart",
-						V2(-0.35, -0.1),
-						0.1,
-						{ r = 1, g = 1, b = 1, a = 1 }
-					)
+					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, Vec4.WHITE)
+					fontResource:drawText("Score: " .. tostring(score), V2(-0.2, 0.25), 0.15, Vec4.WHITE)
+					fontResource:drawText("Press SPACE to restart", V2(-0.35, -0.1), 0.1, Vec4.WHITE)
 				end
 			else
 				if fontResource:isReady() then
-					fontResource:drawText("PAUSED", V2(-0.3, 0.3), 0.3, { r = 1, g = 1, b = 1, a = 1 })
+					fontResource:drawText("PAUSED", V2(-0.3, 0.3), 0.3, Vec4.WHITE)
 				end
 			end
 		end

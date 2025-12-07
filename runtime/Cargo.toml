@@ -18,21 +18,23 @@ bincode = "1.3.3"
 serde_json = "1.0"
 regex = "1.12.2"
 noise = "0.9.0"
+symphonia = "0.5.5"
+num-traits = "0.2.19"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "use-vcpkg"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
 mlua = { version = "0.11.2", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "macos"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "use-vcpkg"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
 mlua = { version = "0.11.2", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer", "static-link", "bundled"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled"] }
 mlua = { version = "0.11.2", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["ttf", "image", "gfx", "mixer"] }
+sdl2 = { version = "0.38", default-features = false, features = [] }
 mlua = { version = "0.11.2", features = ["luau", "serde", "vendored"] }
 
 emscripten-val = { git = "https://github.com/vanyle/emscripten-val", package = "emscripten-val", rev = "2f77cc9" }
@@ -43,7 +45,7 @@ base64 = "0.22.1"
 winresource = "0.1.23"
 
 [package.metadata.vcpkg]
-dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "sdl2-gfx", "sdl2-mixer"]
+dependencies = ["sdl2"]
 git = "https://github.com/microsoft/vcpkg"
 
 # To check for a new release, check https://github.com/microsoft/vcpkg/releases

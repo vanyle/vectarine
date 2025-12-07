@@ -14,6 +14,7 @@ use crate::{
         MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
     },
     projectinfo::ProjectInfo,
+    sound,
 };
 
 pub struct Game {
@@ -64,6 +65,8 @@ impl Game {
             game.lua_env.lua.clone(),
             game.lua_env.default_events.resource_loaded_event.clone(),
         );
+        // New game means new sounds, so we discard the previous ones.
+        sound::flush_all_samples();
         callback(Ok(game));
     }
 
@@ -168,6 +171,10 @@ impl Game {
             // This is incorrect on the web.
             let gl = &self.gl;
             set_viewport(gl, framebuffer_width, framebuffer_height);
+        }
+
+        {
+            sound::update_sound_system()
         }
 
         {
