@@ -15,7 +15,7 @@ use crate::{
 };
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
-pub struct ImageResourceId(ResourceId);
+pub struct ImageResourceId(pub ResourceId);
 make_resource_lua_compatible!(ImageResourceId);
 
 pub fn setup_image_api(

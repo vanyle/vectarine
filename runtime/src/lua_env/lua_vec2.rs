@@ -63,6 +63,17 @@ impl Vec2 {
     pub fn from_angle(angle_rad: f32) -> Self {
         Self::new(angle_rad.cos(), angle_rad.sin())
     }
+
+    #[inline]
+    pub fn to_polar(self) -> Self {
+        Self::new(self.length(), self.angle())
+    }
+    #[inline]
+    pub fn to_cartesian(self) -> Self {
+        let length = self.x();
+        let angle = self.y();
+        Self::from_angle(angle) * length
+    }
 }
 
 impl mlua::UserData for Vec2 {
