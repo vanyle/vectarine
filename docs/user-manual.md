@@ -583,8 +583,8 @@ You can find more information about shaders in [the great book of shaders](https
 
 # 🚀 Performance Tips
 
-The golden rule of performance is to measure first! To do optimize code that is fast enough or you'll spend your time making your game fast instead of fun.
-Moreover, you need to measure to know if your changes actually make a difference.
+The golden rule of performance is to measure first! Don't optimize code that is fast enough or you'll spend your time making your game fast instead of fun.
+Moreover, you need tools to measure speed to know if your changes actually make a difference.
 
 Vectarine has a built-in profiler tool to help you understand what parts of your game are taking the most time.
 You can open it from the Tools menu or using <kbd>Ctrl</kbd>+<kbd>4</kbd>.
@@ -643,8 +643,10 @@ This will only create 2 metrics, "Loop Section A" and "Loop Section B". Because 
 
 ## Using fast list
 
-A `Fastlist` is just a list of `Vec2`. However, unlike regular Lua table,
+A `Fastlist` is just a list of `Vec2`. However, unlike regular Lua tables,
 they are very fast because they can only contain `Vec2` which allows for some optimizations.
+
+Rewriting code to use a fastlists is the simplest way to greatly improve performance.
 
 Let's compare 2 ways to draw a grid of 100x100 rectangles:
 
@@ -687,14 +689,17 @@ Debug.timed("With linspace", function()
 end)
 ```
 
-While fastlist are fast, they are less readable, so first write your code in a readable way and turn it to fastlist later.
+While fastlist are fast, they are less readable, so first write your code in a readable way and turn it to a fastlist later.
 A fastlist has the same functions as a `Vec` (`+`, `-`, `scale`, `max`, `dot`, etc...), so you can just change your types in the function signature and it will work.
+
+Moreover, fastlists have special functions to handle conditions, like `filterGtX`. Check `luau-api` to see all the available functions. 
 
 ## Using shaders
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.
 I don't really know why you'd want to draw that many rectangles.
-If you want to draw something on every pixel, use a Shader instead of called `graphics.drawRect` on a per-pixel basis!
+If you want to draw something on every pixel, use a canvas with a shader instead of called `graphics.drawRect` on a per-pixel basis!
+See the shader section above for more information on writing shaders.
 
 ## Reducing draw calls and using sprites
 
@@ -713,29 +718,6 @@ When you draw 2 different images, this counts as 2 different "kinds" of drawing,
 To have only one draw call, you should use one image and draw portions of it using the `image:drawPart` function.
 
 You can see the total number of draw calls performed in the profiler. Try to keep it below 1000 per frame.
-
-
-
-## Use Vectarine functions instead of rewriting your own
-
-While Luau is fast, it is not as fast as the native Vectarine functions. For example, when you
-are manipulating pairs of numbers, you should use the `Vec` object instead of 2 numbers or a table.
-
-```luau
--- ❌ Avoid
-function to_things(x: number, y: number)
-    local fx = math.floor(x)
-    local fy = math.floor(y)
-    Debug.print(fx, fy)
-end
-
--- ✅ Prefer
-function to_things(v: Vec)
-    local fx = v:floor()
-    Debug.print(fx)
-end
-```
-    
 
 # 📦 Release and distribute your game
 
