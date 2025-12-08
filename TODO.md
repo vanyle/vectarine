@@ -28,10 +28,6 @@
 - [ ] Bug fixes
   - [ ] Investigate special characters in text rendering (like å, ç, ...)
   - [ ] Antialiasing needs to work with hot reloading
-- [ ] Lua performance helper:
-  - [ ] Add a simple matrix API which ways to convert translation, scaling and rotation into matrices
-  - [ ] Add a lua function which computes AV + B for a list of V efficiently
-  - [ ] Add drawing functions that operate on lists of Lua objects and can perform common linear transformations before drawing
 - [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
@@ -77,6 +73,9 @@
 
 # Done
 
+- [x] Lua performance helper:
+  - [x] Add a lua function which computes AV + B for a list of V efficiently
+  - [x] Add drawing functions that operate on lists of Lua objects and can perform common linear transformations before drawing
 - [x] Generate true releases using the CI
   - [x] We need static linking
   - [x] The python script needs to produce 1 zip per platform and be more verbose.
