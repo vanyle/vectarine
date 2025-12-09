@@ -5,10 +5,6 @@
 - [ ] Animation system from multiple PNG files
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
 - [ ] In loader add a way to load a text resource
-- [ ] Add a help button to the editor menu with the options:
-  - [ ] Open Manual
-  - [ ] Open Github
-  - [ ] About (opens a popup with the version and the commit hash)
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
@@ -72,6 +68,10 @@
 
 # Done
 
+- [x] Add a help button to the editor menu with the options:
+  - [x] Open Manual
+  - [x] Open Github
+  - [x] About (opens a popup with the version and the commit hash)
 - [x] Add search in the resource window
 - [x] Allow opening the game folder in the resource window
 - [x] Lua performance helper:

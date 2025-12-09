@@ -16,6 +16,7 @@ use crate::{
     reload::reload_assets_if_needed,
 };
 
+pub mod buildinfo;
 pub mod editorinterface;
 pub mod egui_sdl2_platform;
 pub mod exportinterface;
