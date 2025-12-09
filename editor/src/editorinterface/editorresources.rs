@@ -14,7 +14,7 @@ pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
     };
 
     let mut is_shown = editor.config.borrow().is_resources_window_shown;
-    egui::Window::new("Resources")
+    let maybe_response = egui::Window::new("Resources")
         .default_width(400.0)
         .default_height(200.0)
         .open(&mut is_shown)
@@ -22,9 +22,17 @@ pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
             ScrollArea::vertical()
                 .auto_shrink([true, false])
                 .show(ui, |ui| {
+                    // TODO: Add search
+
                     draw_resource_table(editor, ui, &game);
                 });
         });
+    if let Some(response) = maybe_response {
+        let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
+        if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+            is_shown = false;
+        }
+    }
 
     editor.config.borrow_mut().is_resources_window_shown = is_shown;
 

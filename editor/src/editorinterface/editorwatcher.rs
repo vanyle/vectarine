@@ -15,13 +15,19 @@ const MAX_TABLE_INSPECTION_DEPTH: usize = 2;
 pub fn draw_editor_watcher(editor: &mut EditorState, ctx: &egui::Context) {
     let mut is_shown = editor.config.borrow().is_watcher_window_shown;
 
-    egui::Window::new("Watcher")
+    let maybe_response = egui::Window::new("Watcher")
         .default_width(400.0)
         .default_height(200.0)
         .open(&mut is_shown)
         .show(ctx, |ui| {
             draw_editor_watcher_window(ui, editor);
         });
+    if let Some(response) = maybe_response {
+        let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
+        if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+            is_shown = false;
+        }
+    }
     editor.config.borrow_mut().is_watcher_window_shown = is_shown;
 }
 

@@ -18,12 +18,11 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
     };
 
     if editor.config.borrow().is_console_shown {
-        egui::Window::new("Console")
+        let window = egui::Window::new("Console")
             .default_height(200.0)
             .default_width(300.0)
-            .vscroll(false)
-            .show(ctx, |ui| {
-
+            .vscroll(false);
+        let response = window.show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     let response = egui::TextEdit::singleline(&mut editor.text_command)
                         .hint_text("Enter command...")
@@ -64,7 +63,15 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                 egui::CentralPanel::default().show_inside(ui, |ui| {
                     draw_console_content(ui);
                 });
-            });
+        
+        });
+        if let Some(response) = response {
+            let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
+            if on_top
+                && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+                    editor.config.borrow_mut().is_console_shown = false;
+                }
+        }
     }
 }
 
