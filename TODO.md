@@ -3,9 +3,8 @@
 - [ ] Make the examples better looking
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
-- [ ] Add search in the resource window
-- [ ] Allow opening the game folder in the resource window
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
+- [ ] In loader add a way to load a text resource
 - [ ] Add a help button to the editor menu with the options:
   - [ ] Open Manual
   - [ ] Open Github
@@ -73,6 +72,8 @@
 
 # Done
 
+- [x] Add search in the resource window
+- [x] Allow opening the game folder in the resource window
 - [x] Lua performance helper:
   - [x] Add a lua function which computes AV + B for a list of V efficiently
   - [x] Add drawing functions that operate on lists of Lua objects and can perform common linear transformations before drawing

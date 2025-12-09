@@ -19,6 +19,7 @@ pub fn draw_editor_watcher(editor: &mut EditorState, ctx: &egui::Context) {
         .default_width(400.0)
         .default_height(200.0)
         .open(&mut is_shown)
+        .collapsible(false)
         .show(ctx, |ui| {
             draw_editor_watcher_window(ui, editor);
         });

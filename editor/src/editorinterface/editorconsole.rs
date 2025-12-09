@@ -11,6 +11,7 @@ use crate::editorinterface::EditorState;
 
 pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
     let mut project = editor.project.borrow_mut();
+    let mut is_shown = editor.config.borrow_mut().is_console_shown;
 
     let game = match project.as_mut() {
         Some(proj) => Some(&mut proj.game),
@@ -21,6 +22,8 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
         let window = egui::Window::new("Console")
             .default_height(200.0)
             .default_width(300.0)
+            .open(&mut is_shown)
+            .collapsible(false)
             .vscroll(false);
         let response = window.show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -63,15 +66,15 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                 egui::CentralPanel::default().show_inside(ui, |ui| {
                     draw_console_content(ui);
                 });
-        
         });
         if let Some(response) = response {
             let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
-            if on_top
-                && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
-                    editor.config.borrow_mut().is_console_shown = false;
-                }
+            if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+            {
+                is_shown = false;
+            }
         }
+        editor.config.borrow_mut().is_console_shown = is_shown;
     }
 }
 

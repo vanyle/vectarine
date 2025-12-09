@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{cell::RefCell, path::PathBuf, sync::Arc};
 
 use egui::ScrollArea;
 use egui_extras::{Column, TableBuilder};
@@ -13,19 +13,20 @@ pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
         None => None,
     };
 
+    let Some(game) = game else {
+        return;
+    };
+
     let mut is_shown = editor.config.borrow().is_resources_window_shown;
     let maybe_response = egui::Window::new("Resources")
         .default_width(400.0)
         .default_height(200.0)
         .open(&mut is_shown)
+        .collapsible(false)
         .show(ctx, |ui| {
             ScrollArea::vertical()
                 .auto_shrink([true, false])
-                .show(ui, |ui| {
-                    // TODO: Add search
-
-                    draw_resource_table(editor, ui, &game);
-                });
+                .show(ui, |ui| draw_scroll_area_content(editor, ui, game));
         });
     if let Some(response) = maybe_response {
         let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
@@ -36,9 +37,7 @@ pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
 
     editor.config.borrow_mut().is_resources_window_shown = is_shown;
 
-    if let Some(id) = editor.config.borrow().debug_resource_shown
-        && let Some(game) = game
-    {
+    if let Some(id) = editor.config.borrow().debug_resource_shown {
         let res = game.lua_env.resources.get_holder_by_id(id);
         egui::Window::new(format!(
             "Resource debug - {}",
@@ -51,7 +50,41 @@ pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
     };
 }
 
-fn draw_resource_table(editor: &EditorState, ui: &mut egui::Ui, game: &Option<&mut Game>) {
+fn draw_scroll_area_content(editor: &EditorState, ui: &mut egui::Ui, game: &mut Game) {
+    thread_local! {
+        static RESOURCE_SEARCH: RefCell<String> = const { RefCell::new(String::new()) };
+    }
+
+    ui.horizontal(|ui| {
+        if ui.button("Open game folder").clicked() {
+            let absolute_path = game.lua_env.resources.get_absolute_path(&PathBuf::new());
+            editor.config.borrow_mut().is_always_on_top = false;
+            editor.window.borrow_mut().set_always_on_top(false);
+            open::that(absolute_path).ok();
+        }
+
+        let resource_count = game.lua_env.resources.enumerate().count();
+        // No need to display the search if there are few resources
+        if resource_count > 3 {
+            RESOURCE_SEARCH.with_borrow_mut(|s| {
+                egui::TextEdit::singleline(s)
+                    .hint_text("Filter resources by path")
+                    .desired_width(200.0)
+                    .show(ui);
+            });
+        }
+    });
+    let search_query = RESOURCE_SEARCH.with_borrow(|s| s.clone());
+
+    draw_resource_table(editor, ui, game, &search_query);
+}
+
+fn draw_resource_table(
+    editor: &EditorState,
+    ui: &mut egui::Ui,
+    game: &mut Game,
+    search_query: &str,
+) {
     let available_height = ui.available_height();
     let table = TableBuilder::new(ui)
         .striped(true)
@@ -88,14 +121,16 @@ fn draw_resource_table(editor: &EditorState, ui: &mut egui::Ui, game: &Option<&m
             });
         })
         .body(|mut body| {
-            let Some(game) = game else {
-                return;
-            };
             for (id, res) in game.lua_env.resources.enumerate() {
                 let resources = game.lua_env.resources.clone();
                 let status_string = res.get_status().to_string();
                 let status_length = status_string.len();
                 let row_height = f32::max(20.0, status_length as f32 / 2.0);
+
+                let path = resources.get_absolute_path(res.get_path());
+                if !path.contains(search_query) {
+                    continue;
+                }
 
                 body.row(row_height, |mut row| {
                     row.col(|ui| {
