@@ -1,5 +1,6 @@
 # TO-DO
 
+- [ ] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
 - [ ] Make the examples better looking
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
@@ -8,7 +9,6 @@
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
-- [ ] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
 - [ ] Entity system
   - [ ] Add a concept of a 'PhysicsWorld2D'
   - [ ] Under the hood, this is a QuadTree
@@ -26,6 +26,7 @@
 - [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
+- [ ] Add a way to reduce the game viewport in the editor
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor
@@ -45,13 +46,12 @@
 - [ ] Add a basic code editor with syntax highlighting
   - [ ] See: https://github.com/p4ymak/egui_code_editor
 - [ ] Better errors:
-  - [ ] Fix bug where only 1 error is printed where there are 2 different errors
+  - [x] Fix bug where only 1 error is printed where there are 2 different errors
   - [ ] Show the line that produced the error instead of just the line number. Make the text clickable to open the file
   - [ ] Print errors to the terminal too as the terminal is also convenient
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
-- [ ] Monads for futures
 - [ ] The 3D API!!
   - [ ] See how Three.js does things.
   - [ ] Camera
@@ -62,6 +62,7 @@
   - [ ] Lights and shadows (set a max number of lights to 20 in the API)
   - [ ] Reflective objects like water
   - [ ] Drawing a depth buffer
+- [ ] Try using SDL3
 - [ ] Rewrite the sokoban using Vectarine
 - [ ] Joystick support
 - [ ] Android support

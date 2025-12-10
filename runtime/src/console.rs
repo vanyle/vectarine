@@ -111,7 +111,10 @@ impl Logger {
         let repeat_candidate = &mut self.messages[repeat_candidate_index];
         match (&message, repeat_candidate) {
             (ConsoleMessage::LuaError(message), ConsoleMessage::LuaError(candidate)) => {
-                if message.file == candidate.file && message.line == candidate.line {
+                if message.message == candidate.message
+                    && message.file == candidate.file
+                    && message.line == candidate.line
+                {
                     candidate.repeat_count += 1;
                     return;
                 }

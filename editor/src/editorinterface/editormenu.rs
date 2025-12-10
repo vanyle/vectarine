@@ -166,6 +166,12 @@ fn get_manual_path() -> Option<PathBuf> {
     if manual_path.exists() {
         return Some(manual_path);
     }
+    let executable_folder = executable_folder.parent()?; // on MacOS, we need to go up one more time as we are in the .app folder
+    let manual_path = executable_folder.join("vectarine-guide.pdf");
+    if manual_path.exists() {
+        return Some(manual_path);
+    }
+
     let cwd = std::env::current_dir().ok()?;
     let manual_path = cwd.join("docs/user-manual.pdf");
     if manual_path.exists() {
