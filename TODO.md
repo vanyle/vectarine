@@ -45,10 +45,6 @@
   - [ ] Timer event?
 - [ ] Add a basic code editor with syntax highlighting
   - [ ] See: https://github.com/p4ymak/egui_code_editor
-- [ ] Better errors:
-  - [x] Fix bug where only 1 error is printed where there are 2 different errors
-  - [ ] Show the line that produced the error instead of just the line number. Make the text clickable to open the file
-  - [ ] Print errors to the terminal too as the terminal is also convenient
 - [ ] Modding API
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
@@ -69,6 +65,9 @@
 
 # Done
 
+- [x] Better errors:
+  - [x] Fix bug where only 1 error is printed where there are 2 different errors
+  - [x] Show the line that produced the error instead of just the line number. Make the text clickable to open the file
 - [x] Add a help button to the editor menu with the options:
   - [x] Open Manual
   - [x] Open Github

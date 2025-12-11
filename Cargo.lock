@@ -717,6 +717,7 @@ dependencies = [
  "runtime",
  "sdl2-sys",
  "serde",
+ "which 8.0.0",
  "winresource",
  "zip",
 ]
@@ -1654,7 +1655,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "813bd31f2759443affa687c0d9c5eb5cf6cb0e898810ab197408431d746054bf"
 dependencies = [
  "cc",
- "which",
+ "which 7.0.3",
 ]
 
 [[package]]
@@ -3490,6 +3491,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24d643ce3fd3e5b54854602a080f34fb10ab75e0b813ee32d00ca2b44fa74762"
 dependencies = [
  "either",
+ "env_home",
+ "rustix",
+ "winsafe",
+]
+
+[[package]]
+name = "which"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3fabb953106c3c8eea8306e4393700d7657561cb43122571b172bbfb7c7ba1d"
+dependencies = [
  "env_home",
  "rustix",
  "winsafe",

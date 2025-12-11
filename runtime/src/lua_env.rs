@@ -221,7 +221,7 @@ pub fn run_file_and_display_error_from_lua_handle(
 
     match result {
         Err(error) => {
-            print_lua_error_from_error(&error, file_path.to_string_lossy().to_string());
+            print_lua_error_from_error(&error);
         }
         Ok(value) => {
             // Merge the table with the argument table if provided.
@@ -264,45 +264,44 @@ pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
     }
 }
 
-pub fn get_line_of_error(error: &mlua::Error) -> usize {
-    match error {
-        mlua::Error::CallbackError { traceback, cause } => {
-            // Code taken from mlua's error handling.
-            let (mut cause, mut full_traceback) = (cause, None);
-            while let mlua::Error::CallbackError {
-                cause: cause2,
-                traceback: traceback2,
-            } = &**cause
-            {
-                cause = cause2;
-                full_traceback = Some(traceback2);
-            }
-            let Some(full_traceback) = full_traceback else {
-                return 0;
-            };
-            let traceback = traceback.trim_start_matches("stack traceback:");
-            let traceback = traceback.trim_start().trim_end();
-            // Try to find local traceback within the full traceback
-            let Some(pos) = full_traceback.find(traceback) else {
-                return 0;
-            };
-            let rest = &full_traceback[pos..];
-            // Extract :number:
-            let re = Regex::new(r":(\d+):").expect("This regex is valid");
-            let Some(captures) = re.captures(rest) else {
-                return 0;
-            };
-            let Some(number_str) = captures.get(1) else {
-                return 0;
-            };
-            number_str
-                .as_str()
-                .parse::<usize>()
-                .ok()
-                .unwrap_or_default()
-        }
-        _ => 0,
+pub fn get_line_and_file_of_error(error: &mlua::Error) -> (usize, String) {
+    let error = error.to_string();
+    // An error looks either like this:
+    // Some text
+    // [C]: in ?
+    // path:line: message
+
+    // or like this: syntax error: path:line: message
+
+    if error.starts_with("syntax error") {
+        let re = Regex::new(r"syntax error: (.*):([0-9]+): (.*)").expect("The regex is valid");
+        let Some(captures) = re.captures(&error) else {
+            return (0, "".to_string());
+        };
+        let Some(line) = captures.get(2) else {
+            return (0, "".to_string());
+        };
+        let line = line.as_str().parse::<usize>().unwrap_or_default();
+        let file = captures.get(1).map(|s| s.as_str()).unwrap_or_default();
+        return (line, file.to_string());
     }
+
+    let search = "[C]: in ?";
+    if let Some(location) = error.find(search) {
+        let rest = &error[location + search.len()..].trim_start();
+        let re = Regex::new(r"(.*):([0-9]+): (.*)").expect("The regex is valid");
+        let Some(captures) = re.captures(rest) else {
+            return (0, "".to_string());
+        };
+        let Some(line) = captures.get(2) else {
+            return (0, "".to_string());
+        };
+        let line = line.as_str().parse::<usize>().unwrap_or_default();
+        let file = captures.get(1).map(|s| s.as_str()).unwrap_or_default();
+        return (line, file.to_string());
+    }
+
+    (0, "".to_string())
 }
 
 fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {
@@ -366,8 +365,8 @@ pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
         .expect("Failed to get lua internal table")
 }
 
-pub fn print_lua_error_from_error(error: &mlua::Error, file_path: String) {
+pub fn print_lua_error_from_error(error: &mlua::Error) {
     let error_msg = error.to_string();
-    let line = get_line_of_error(error);
+    let (line, file_path) = get_line_and_file_of_error(error);
     print_lua_error(error_msg, file_path, line);
 }

@@ -224,7 +224,7 @@ impl Game {
             if let Ok(update_fn) = update_fn {
                 let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
                 if let Err(err) = err {
-                    print_lua_error_from_error(&err, self.main_script_path.clone());
+                    print_lua_error_from_error(&err);
                 }
             } else {
                 print_warn("Update() function not found".to_string());
