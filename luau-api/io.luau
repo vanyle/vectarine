@@ -64,6 +64,12 @@ function module.setWindowTitle(title: string): ()
 	error("Not implemented")
 end
 
+--- Returns true if the window is currently minimized
+--- When this is the case, Vectarine will run a lot slower to save battery life and avoid draining the CPU.
+function module.isWindowMinimized(): boolean
+	error("Not implemented")
+end
+
 --- Set the window to fullscreen, windowed, or "desktop fullscreen" (also called fake fullscreen) mode
 --- true means "fullscreen", false means "windowed".
 --- Before calling this function, you can set the window size to the size of the screen to avoid black borders.

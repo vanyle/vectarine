@@ -153,6 +153,7 @@ impl Game {
             let (width, height) = drawable_screen_size(&window.borrow());
             env_state.window_width = width;
             env_state.window_height = height;
+            env_state.is_window_minimized = window.borrow().is_minimized();
             let aspect_ratio = width as f32 / height as f32;
             // This works in the editor, but not the runtime.
             // On the web, this is different, the aspect ratio needs to be squared??

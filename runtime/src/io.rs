@@ -21,6 +21,7 @@ pub struct IoEnvState {
     // Inputs
     pub window_width: u32,
     pub window_height: u32,
+    pub is_window_minimized: bool,
     pub screen_width: u32,
     pub screen_height: u32,
     pub px_ratio_x: f32,
@@ -46,6 +47,7 @@ impl Default for IoEnvState {
             window_height: 600,
             screen_width: 0,
             screen_height: 0,
+            is_window_minimized: false,
             px_ratio_x: 1.0,
             px_ratio_y: 1.0,
             mouse_state: MouseState::default(),

@@ -126,6 +126,11 @@ pub fn setup_io_api(
         }
     });
 
+    add_fn_to_table(lua, &io_module, "isWindowMinimized", {
+        let env_state = env_state.clone();
+        move |_, ()| Ok(env_state.borrow_mut().is_window_minimized)
+    });
+
     add_fn_to_table(lua, &io_module, "centerWindow", {
         let env_state = env_state.clone();
         move |_, ()| {

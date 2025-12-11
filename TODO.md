@@ -1,6 +1,5 @@
 # TO-DO
 
-- [ ] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
 - [ ] Make the examples better looking
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
@@ -65,6 +64,7 @@
 
 # Done
 
+- [x] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
 - [x] Better errors:
   - [x] Fix bug where only 1 error is printed where there are 2 different errors
   - [x] Show the line that produced the error instead of just the line number. Make the text clickable to open the file

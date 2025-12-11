@@ -184,7 +184,7 @@ local Vec4 = require('@vectarine/vec4')
 local V2 = Vec.V2
 
 function Update(time_delta)
-    Graphics.Clear(Vec4.WHITE)
+    Graphics.clear(Vec4.WHITE)
     local rectColor = Vec4.RED
 
     -- There are multiple ways to create a 'ScreenPosition' using the coordinate system you prefer
@@ -580,6 +580,40 @@ You can find more information about shaders in [the great book of shaders](https
 >   local v3 = Coord.pxVec(V2(1, 1), V2(1200, 800)) -- 1px of a 1200x800 area, same as v1
 > end)
 > ```
+
+# ⚛️ Physics
+
+Physics in games is a broad topic, but to make things simple, your objects have a position and a velocity.
+
+```lua
+local Graphics = require("@vectarine/graphics")
+local Vec = require("@vectarine/vec")
+local position = Vec.V2(0, 0)
+local velocity = Vec.V2(0, 0)
+
+function Update(delta_time: number)
+
+    -- Process physics
+    position = position + velocity.scale(delta_time)
+    
+    -- Draw the object
+    Graphics.drawCircle(position, 0.1, Vec4.RED)
+end
+```
+
+Notice that we are multiplying the velocity by `delta_time`. This is because when the computer is able to run the game at a higher fps,
+the update function will run more often and objects will move faster if we just did `position = position + velocity`. To offset this effect,
+we mutiply by `delta_time`.
+
+Be careful, when Vectarine is minimized, to save CPU performance (and battery life!), it enters sleep mode where it runs at a maximum of 10 FPS.
+
+This means that `delta_time` can get very big and break your simulation! Indeed, when the higher `delta_time` is, the less often `Update` is called and the less
+accurate the physics simulation is! You need to deal with this case in your code.
+
+You can several options.
+
+- If you are writing an Idle game, the idle behavior is important, so you need to write some custom logic to account for it.
+- For other types of games, you can just pause the update function when you detect that the window is minimized. You can do so using the `Io.isWindowMinimized` function.
 
 # 🚀 Performance Tips
 
