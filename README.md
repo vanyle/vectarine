@@ -68,14 +68,16 @@ We have a [Discord server](https://discord.gg/zPwg3VDydz) where you can discuss 
 
 ## 📸 Screenshots
 
-|  Snake   |  Procedural  |
+|  Snake   |  Little planet  |
 | --- | --- |
-|  ![snake](./assets/screenshots/snake.png)    |  ![procgen](./assets/screenshots/proc_gen.png) |
+|  ![snake](./assets/screenshots/snake.png)    |  ![little planet](./assets/screenshots/little_planet.png) |
 
 | The editor | Lighting |
 | --- | --- |
 | ![editor](./assets/screenshots/editor.png) | ![lighting](./assets/screenshots/lighting.png) |
 
-| Simple 3d |  Your project?  |
+| Simple 3d |  Procedural Generation  |
 | --- | --- |
-| TODO | Open a pull request to get your project featured! |
+| ![simple 3d](./assets/screenshots/simple_3d.png) | ![procedural generation](./assets/screenshots/proc_gen.png) |
+
+Want to your project to get featured? Open a pull request!

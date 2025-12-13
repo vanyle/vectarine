@@ -1,6 +1,5 @@
 # TO-DO
 
-- [ ] Make the examples better looking
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
 - [ ] Rework the resource API to use futures to prevent use of unloaded resources
