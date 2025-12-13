@@ -153,21 +153,25 @@ impl Platform {
                         let command = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
                             || (*keymod & Mod::LGUIMOD == Mod::LGUIMOD);
 
-                        // Handle Cut Copy and paste
-                        match key {
-                            egui::Key::C => self.raw_input.events.push(egui::Event::Copy),
-                            egui::Key::X => self.raw_input.events.push(egui::Event::Cut),
-                            egui::Key::V => {
-                                let clipboard = video.clipboard();
-                                if clipboard.has_clipboard_text() {
-                                    self.raw_input.events.push(egui::Event::Text(
-                                        clipboard
-                                            .clipboard_text()
-                                            .expect("Unable to get clipboard text"),
-                                    ));
+                        let mac_and_cmd_or_ctrl =
+                            (is_on_mac() && mac_cmd) || (!is_on_mac() && ctrl);
+
+                        if mac_and_cmd_or_ctrl {
+                            match key {
+                                egui::Key::C => self.raw_input.events.push(egui::Event::Copy),
+                                egui::Key::X => self.raw_input.events.push(egui::Event::Cut),
+                                egui::Key::V => {
+                                    let clipboard = video.clipboard();
+                                    if clipboard.has_clipboard_text() {
+                                        self.raw_input.events.push(egui::Event::Text(
+                                            clipboard
+                                                .clipboard_text()
+                                                .expect("Unable to get clipboard text"),
+                                        ));
+                                    }
                                 }
+                                _ => {}
                             }
-                            _ => {}
                         }
 
                         // Update the modifiers
@@ -317,4 +321,8 @@ impl Platform {
         self.egui_ctx
             .tessellate(full_output.shapes.clone(), self.egui_ctx.pixels_per_point())
     }
+}
+
+pub fn is_on_mac() -> bool {
+    cfg!(target_os = "macos")
 }

@@ -111,15 +111,13 @@ fn draw_search_variable_box(
 
     if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
         // Clear search box on enter
-        if search_results.len() == 1 {
-            content.clear();
-            watched_variable_names.with_borrow_mut(|vars| {
-                let key = search_results[0].clone();
-                if !vars.iter().any(|v| v == &key) {
-                    vars.push(key);
-                }
-            });
-        }
+        content.clear();
+        watched_variable_names.with_borrow_mut(|vars| {
+            let key = search_results[0].clone();
+            if !vars.iter().any(|v| v == &key) {
+                vars.push(key);
+            }
+        });
         response.request_focus(); // keep focus on enter
     }
 
