@@ -92,8 +92,8 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                         std::process::exit(0);
                     }
                 });
-                let popup_menu = Popup::menu(&ui.button("Tools"))
-                    .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside);
+                let popup_menu = Popup::menu(&ui.button("Tools"));
+                // .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside); // not convenient
 
                 popup_menu.show(|ui| {
                     if ui.button("Console (Ctrl+1)").clicked() {

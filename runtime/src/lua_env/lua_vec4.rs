@@ -59,7 +59,7 @@ impl Vec4 {
         self * k
     }
     #[inline]
-    pub fn cmul(self, other: Self) -> Self {
+    pub fn qmul(self, other: Self) -> Self {
         // Quaternion multiplication
         Self::new(
             self.0[0] * other.0[0]
@@ -74,6 +74,10 @@ impl Vec4 {
             self.0[0] * other.0[3] + self.0[1] * other.0[2] - self.0[2] * other.0[1]
                 + self.0[3] * other.0[0],
         )
+    }
+    pub fn from_rotation(axis: Self, angle: f32) -> Self {
+        let (sin, cos) = (angle / 2.0).sin_cos();
+        Self::new(cos, axis.0[0] * sin, axis.0[1] * sin, axis.0[2] * sin)
     }
 }
 
@@ -132,12 +136,13 @@ impl mlua::UserData for Vec4 {
             Ok((*vec - other).length())
         });
         methods.add_method("scale", |_, vec, (k,): (f32,)| Ok(*vec * k));
-        methods.add_method("cmul", |_, vec, (other,): (Vec4,)| Ok(vec.cmul(other)));
+        methods.add_method("qmul", |_, vec, (other,): (Vec4,)| Ok(vec.qmul(other)));
         methods.add_method("dot", |_, vec, (other,): (Vec4,)| Ok(vec.dot(&other)));
         methods.add_method("normalized", |_, vec, ()| Ok(vec.normalized()));
         methods.add_method("round", |_, vec, (digits_of_precision,): (Option<u32>,)| {
             Ok(vec.round(digits_of_precision))
         });
+        methods.add_method("abs", |_, vec, ()| Ok(vec.abs()));
         methods.add_method("floor", |_, vec, ()| Ok(vec.floor()));
         methods.add_method("ceil", |_, vec, ()| Ok(vec.ceil()));
         methods.add_method("max", |_, vec, (other,): (Vec4,)| Ok(vec.max(other)));
@@ -218,6 +223,13 @@ pub fn setup_vec_api(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
     vec4_module.set(
         "createColor",
         lua.create_function(|_lua, (r, g, b, a): (f32, f32, f32, f32)| Ok(Vec4::new(r, g, b, a)))?,
+    )?;
+
+    vec4_module.set(
+        "fromRotation",
+        lua.create_function(|_lua, (axis, angle): (Vec4, f32)| {
+            Ok(Vec4::from_rotation(axis, angle))
+        })?,
     )?;
 
     vec4_module.set("ZERO4", Vec4::zero())?;

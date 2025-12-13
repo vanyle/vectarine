@@ -121,6 +121,11 @@ impl mlua::UserData for Vec2 {
             |_, vec, ()| Ok(vec.normalized()),
         );
         methods.add_method(
+            "abs",
+            #[inline(always)]
+            |_, vec, ()| Ok(vec.abs()),
+        );
+        methods.add_method(
             "round",
             #[inline(always)]
             |_, vec, (digits_of_precision,): (Option<u32>,)| Ok(vec.round(digits_of_precision)),

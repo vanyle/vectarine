@@ -76,6 +76,11 @@ function Vec2Impl.normalized(v: Vec2): Vec2
 	error("Not implemented")
 end
 
+--- Returns a vector with all components absolute values
+function Vec2Impl.abs(v: Vec2): Vec2
+	error("Not implemented")
+end
+
 --- Returns a version of the vector rounded to the given number of digits of precision
 ---
 --- If `digits_of_precision` is not provided, it defaults to 0 (round to nearest integer)

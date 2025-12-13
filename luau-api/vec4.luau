@@ -23,11 +23,25 @@ export type Vec4 = typeof(setmetatable({} :: Vec4Data, Vec4Impl))
 
 --- Create a new 4D vector
 function module.V4(x: number, y: number, z: number, w: number): Vec4
-	return nil :: any
+	error("Not implemented")
+end
+
+--- Returns a quaternion representing a rotation of `angle` radians around the given axis
+--- The 4th component of the axis is ignored, it is treated as a 3d vector.
+--- The length of the result is always 1.
+function module.fromRotation(axis: Vec4, angle: number): Vec4
+	error("Not implemented")
 end
 
 --- Scales the vector by the given factor
 function Vec4Impl.scale(a: Vec4, k: number): Vec4
+	error("Not implemented")
+end
+
+--- Performs a quaternion multiplication of a and b, treating them as quaternions
+--- This is useful to apply rotations to 3D vectors
+--- Note that `a:qmul(b) != b:qmul(a)` in general
+function Vec4Impl.qmul(a: Vec4, b: Vec4): Vec4
 	error("Not implemented")
 end
 
@@ -55,6 +69,11 @@ end
 --- Returns a normalized version of the vector
 --- If the vector has zero length, returns a unit vector pointing in an arbitrary direction
 function Vec4Impl.normalized(v: Vec4): Vec4
+	error("Not implemented")
+end
+
+--- Returns a vector with all components absolute values
+function Vec4Impl.abs(v: Vec4): Vec4
 	error("Not implemented")
 end
 

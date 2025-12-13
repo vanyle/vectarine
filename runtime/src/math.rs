@@ -42,6 +42,10 @@ impl<const N: usize> Vect<N> {
     }
 
     #[inline]
+    pub fn abs(self) -> Self {
+        self.map(|x| x.abs())
+    }
+    #[inline]
     pub fn floor(self) -> Self {
         self.map(|x| x.floor())
     }
