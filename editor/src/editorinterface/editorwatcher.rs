@@ -48,7 +48,7 @@ fn draw_editor_watcher_window(ui: &mut egui::Ui, editor: &mut EditorState) {
 
     thread_local! {
         static SEARCH_BOX_CONTENT: RefCell<String> = const { RefCell::new(String::new()) };
-        static WATCHED_VARIABLES_NAMES: RefCell<Vec<mlua::Value>> = const { RefCell::new(Vec::new()) };
+        static WATCHED_VARIABLES_NAMES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
     }
 
     let watched_vars_len = WATCHED_VARIABLES_NAMES.with_borrow(|vars| vars.len());
@@ -77,7 +77,7 @@ fn draw_editor_watcher_window(ui: &mut egui::Ui, editor: &mut EditorState) {
                     .show(ui, |ui| {
                         WATCHED_VARIABLES_NAMES.with_borrow_mut(|vars| {
                             for idx in 0..vars.len() {
-                                draw_watched_variable(ui, &globals, vars, idx);
+                                draw_watched_variable(ui, &game.lua_env.lua, &globals, vars, idx);
                             }
                         });
                     });
@@ -89,7 +89,7 @@ fn draw_search_variable_box(
     ui: &mut egui::Ui,
     content: &mut String,
     globals: &mlua::Table,
-    watched_variable_names: &'static LocalKey<RefCell<Vec<mlua::Value>>>,
+    watched_variable_names: &'static LocalKey<RefCell<Vec<String>>>,
 ) {
     let search_results = globals
         .pairs::<mlua::Value, mlua::Value>()
@@ -113,7 +113,7 @@ fn draw_search_variable_box(
         // Clear search box on enter
         content.clear();
         watched_variable_names.with_borrow_mut(|vars| {
-            let key = search_results[0].clone();
+            let key = stringify_lua_value(&search_results[0]);
             if !vars.iter().any(|v| v == &key) {
                 vars.push(key);
             }
@@ -132,8 +132,8 @@ fn draw_search_variable_box(
                         ui.label(format!("Watch {}", key_str));
                         if ui.button("+").on_hover_text("Add to watch list").clicked() {
                             watched_variable_names.with_borrow_mut(|vars| {
-                                if !vars.iter().any(|v| v == result) {
-                                    vars.push(result.clone());
+                                if !vars.contains(&key_str) {
+                                    vars.push(key_str.clone());
                                 }
                             });
                         }
@@ -145,19 +145,25 @@ fn draw_search_variable_box(
 
 fn draw_watched_variable(
     ui: &mut egui::Ui,
+    lua: &mlua::Lua,
     globals: &mlua::Table,
-    var_keys: &mut Vec<mlua::Value>,
+    var_keys: &mut Vec<String>,
     idx: usize,
 ) {
     let var = var_keys.get(idx).cloned();
     let Some(var) = var else {
         return; // removed by another watcher
     };
-    let watched_value = globals.raw_get::<mlua::Value>(&var);
+    let lua_key = lua.create_string(var.clone());
+    let Ok(lua_key) = lua_key else {
+        return;
+    };
+    let lua_key = mlua::Value::String(lua_key);
+    let watched_value = globals.raw_get::<mlua::Value>(var.clone());
     let Ok(watched_value) = watched_value else {
         return;
     };
-    let var_name = stringify_lua_value(&var);
+    let var_name = &var;
     let var_type = watched_value.type_name();
 
     egui::CollapsingHeader::new(format!("{} - {}", var_name, var_type)).show(ui, |ui| {
@@ -170,7 +176,7 @@ fn draw_watched_variable(
         draw_any_watcher(
             ui,
             globals,
-            &var,
+            &lua_key,
             &watched_value,
             MAX_TABLE_INSPECTION_DEPTH,
         );
