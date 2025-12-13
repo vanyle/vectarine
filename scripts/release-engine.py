@@ -125,6 +125,7 @@ def make_linux_release(root_path: str) -> bool:
 
     copy_from_root(root_path, "target/x86_64-unknown-linux-gnu/release/vecta", "engine-release/vecta", chmodx=True)
     copy_runtime_files(root_path)
+    copy_lua_and_docs(root_path)
 
     shutil.rmtree(os.path.join(root_path, output_zip_name), ignore_errors=True)
     shutil.make_archive(
