@@ -4,6 +4,7 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 use mlua::ObjectLike;
 
 pub mod lua_audio;
+pub mod lua_camera;
 pub mod lua_canvas;
 pub mod lua_coord;
 pub mod lua_debug;
@@ -126,6 +127,10 @@ impl LuaEnvironment {
 
         let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();
         lua.register_module("@vectarine/io", io_module).unwrap();
+
+        let camera_module = lua_camera::setup_camera_api(&lua, &env_state).unwrap();
+        lua.register_module("@vectarine/camera", camera_module)
+            .unwrap();
 
         let debug_module = lua_debug::setup_debug_api(&lua, &metrics).unwrap();
         lua.register_module("@vectarine/debug", debug_module)

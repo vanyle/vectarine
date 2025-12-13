@@ -4,12 +4,6 @@
 --- Most of these functions do nothing in a production build.
 local module = {}
 
---- Add a value to the watcher in the editor
---- Watched values can be inspected and edited live.
-function module.watch(value: any, name: string?): any
-	error("Not implemented")
-end
-
 --- Print something to the editor console.
 ---
 --- Prints to the browser console on the web for when using debug builds.
