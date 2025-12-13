@@ -12,22 +12,19 @@ TilesetResourceImpl.__index = TilesetResourceImpl
 export type TilesetResource = typeof(setmetatable({}, TilesetResourceImpl)) & ResourceTypes.Resource
 
 --- Get the size of a tile in pixels
-function TilesetResourceImpl.getTileSize(): Vec.Vec2
+function TilesetResourceImpl:getTileSize(): Vec.Vec2
 	error("Not implemented")
 end
 
 --- Get the size of a tile, as the ratio of the full image.
 --- For example, if you have 8 tiles per row and column, this will return V2(1/8, 1/8)
-function TilesetResourceImpl.getTileRatio(): Vec.Vec2
+function TilesetResourceImpl:getTileRatio(): Vec.Vec2
 	error("Not implemented")
 end
 
 --- Get the position of a tile in the image.
 --- The position is returned as a ratio of the full image.
-function TilesetResourceImpl.getTile(
-	self: TilesetResource,
-	tileId: number
-): {
+function TilesetResourceImpl:getTile(tileId: number): {
 	pos: Vec.Vec2,
 	probability: number,
 	type: string,
@@ -36,7 +33,7 @@ function TilesetResourceImpl.getTile(
 end
 
 --- Return a list of tile ids defined in the tileset provided.
-function TilesetResourceImpl.getTiles(self: TilesetResource): { number }
+function TilesetResourceImpl:getTiles(): { number }
 	error("Not implemented")
 end
 
@@ -52,7 +49,7 @@ export type TilemapResource = typeof(setmetatable({}, TilemapResourceImpl)) & Re
 --- Returns the id of the tile at the location specified.
 ---
 --- Returns 0 if the tilemap is not defined at the provided location, the layer does not exist or if the layer is not a tile layer.
-function TilemapResourceImpl.getTile(self: TilemapResource, layer: number, x: number, y: number): number
+function TilemapResourceImpl:getTile(layer: number, x: number, y: number): number
 	error("Not implemented")
 end
 
@@ -62,8 +59,7 @@ end
 --- lowx <= x <= highx and lowy <= y <= highy
 ---
 --- If the layer does not exist or the coordinates are outside of where the tilemap is defined, the accessFunction might never be called.
-function TilemapResourceImpl.getTilemapPart(
-	self: TilemapResource,
+function TilemapResourceImpl:getTilemapPart(
 	layer: number,
 	lowx: number,
 	lowy: number,

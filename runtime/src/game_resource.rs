@@ -51,22 +51,9 @@ impl std::fmt::Display for ResourceId {
     }
 }
 
-impl mlua::FromLua for ResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
-                from: value.type_name(),
-                to: "ResourceId".to_string(),
-                message: Some("Expected ResourceId".to_string()),
-            }),
-        }
-    }
-}
-
-impl mlua::IntoLua for ResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
+impl ResourceId {
+    pub fn get_id(&self) -> usize {
+        self.0
     }
 }
 
@@ -134,8 +121,9 @@ impl ResourceHolder {
                 self.status.replace(resulting_status);
                 let _ = resource_event.trigger(
                     assigned_id
+                        .get_id()
                         .into_lua(&lua)
-                        .expect("Failed to convert ResourceId to Lua"),
+                        .expect("Failed to convert usize to Lua"),
                 );
             }),
         );

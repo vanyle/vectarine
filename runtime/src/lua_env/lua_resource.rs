@@ -13,8 +13,8 @@ pub fn register_resource_id_methods_on_type<T: ResourceIdWrapper>(
     resources: &Rc<ResourceManager>,
     registry: &mut UserDataRegistry<T>,
 ) {
-    registry.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (ResourceId,)| {
-        Ok(format!("{}", id))
+    registry.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (T,)| {
+        Ok(format!("Resource({})", id.to_resource_id().get_id()))
     });
     registry.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (T, T)| {
         Ok(id1 == id2)
@@ -29,6 +29,10 @@ pub fn register_resource_id_methods_on_type<T: ResourceIdWrapper>(
     registry.add_method("isReady", {
         let resources = resources.clone();
         move |_, id: &T, (): ()| Ok(resources.get_holder_by_id(id.to_resource_id()).is_loaded())
+    });
+
+    registry.add_method("getId", move |_, id: &T, (): ()| {
+        Ok(id.to_resource_id().get_id())
     });
 }
 

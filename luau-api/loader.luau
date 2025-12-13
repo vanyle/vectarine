@@ -20,6 +20,7 @@ end
 
 --- Load an image from a path
 --- If antialiasing is true, the image will be drawn with linear filtering, otherwise with nearest filtering.
+--- If you are using a pixel art style, you probably want antialiasing to be false.
 --- @param path string
 --- @return ImageResource
 function module.loadImage(path: string, antialiasing: boolean?): Image.ImageResource
@@ -31,6 +32,15 @@ end
 --- @return FontResource
 --- @nodiscard
 function module.loadFont(path: string): Text.FontResource
+	error("Not implemented")
+end
+
+--- Load text from a path.
+--- The path should be relative to the game.vecta file, like "./texts/mytext.txt"
+--- @param path string
+--- @return TextResource
+--- @nodiscard
+function module.loadText(path: string): Res.TextResource
 	error("Not implemented")
 end
 
@@ -53,6 +63,13 @@ end
 --- @param path string
 --- @return TilesetResource
 function module.loadTileset(path: string): Tile.TilesetResource
+	error("Not implemented")
+end
+
+--- Load a tilemap from a path
+--- @param path string
+--- @return TilemapResource
+function module.loadTilemap(path: string): Tile.TilemapResource
 	error("Not implemented")
 end
 

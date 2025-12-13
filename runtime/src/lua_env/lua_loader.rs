@@ -1,10 +1,15 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
+use mlua::UserDataMethods;
+use mlua::{FromLua, IntoLua};
+
+use crate::game_resource::tile_resource::TilemapResource;
+use crate::lua_env::lua_tile::TilemapResourceId;
 use crate::{
     game_resource::{
-        ResourceManager, audio_resource::AudioResource, font_resource::FontResource,
+        ResourceId, ResourceManager, audio_resource::AudioResource, font_resource::FontResource,
         image_resource::ImageResource, shader_resource::ShaderResource,
-        tile_resource::TilesetResource,
+        text_resource::TextResource, tile_resource::TilesetResource,
     },
     graphics::gltexture::ImageAntialiasing,
     lua_env::{
@@ -16,7 +21,12 @@ use crate::{
         lua_text::FontResourceId,
         lua_tile::TilesetResourceId,
     },
+    make_resource_lua_compatible,
 };
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub struct TextResourceId(ResourceId);
+make_resource_lua_compatible!(TextResourceId);
 
 pub fn setup_loader_api(
     lua: &Rc<mlua::Lua>,
@@ -27,6 +37,35 @@ pub fn setup_loader_api(
     lua.register_userdata_type::<ScriptResourceId>(|registry| {
         register_resource_id_methods_on_type(resources, registry);
     })?;
+
+    lua.register_userdata_type::<TextResourceId>(|registry| {
+        register_resource_id_methods_on_type(resources, registry);
+
+        registry.add_method("getText", {
+            let resources = resources.clone();
+            move |lua: &mlua::Lua, this: &TextResourceId, (): ()| {
+                let resource = resources.get_by_id::<TextResource>(this.0);
+                let Ok(resource) = resource else {
+                    return Ok(mlua::Nil);
+                };
+                let content = resource.content.borrow();
+                let Some(content) = content.as_ref() else {
+                    return Ok(mlua::Nil);
+                };
+                let content = String::from_utf8_lossy(content);
+                let content = lua.create_string(content.to_string())?;
+                Ok(mlua::Value::String(content))
+            }
+        });
+    })?;
+
+    add_fn_to_table(lua, &loader_module, "loadText", {
+        let resources = resources.clone();
+        move |_, path: String| {
+            let id = resources.schedule_load_resource::<TextResource>(Path::new(&path));
+            Ok(TextResourceId::from_id(id))
+        }
+    });
 
     add_fn_to_table(lua, &loader_module, "loadImage", {
         let resources = resources.clone();
@@ -77,6 +116,14 @@ pub fn setup_loader_api(
         move |_, path: String| {
             let id = resources.schedule_load_resource::<TilesetResource>(Path::new(&path));
             Ok(TilesetResourceId::from_id(id))
+        }
+    });
+
+    add_fn_to_table(lua, &loader_module, "loadTilemap", {
+        let resources = resources.clone();
+        move |_, path: String| {
+            let id = resources.schedule_load_resource::<TilemapResource>(Path::new(&path));
+            Ok(TilemapResourceId::from_id(id))
         }
     });
 

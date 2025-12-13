@@ -60,7 +60,8 @@ end
 
 --- Clear all previous subscriptions to the resource loaded event and return it.
 --- This event is triggered when a resource finishes loading and is ready to be used or if it failed to load.
-function module.getResourceLoadedEvent(): Event<Resource.Resource>
+--- The number is the ID of the resource loaded.
+function module.getResourceLoadedEvent(): Event<number>
 	error("Not implemented")
 end
 
