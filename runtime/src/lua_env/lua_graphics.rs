@@ -9,6 +9,7 @@ use crate::{
     lua_env::{
         add_fn_to_table,
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
+        lua_vec2::Vec2,
         lua_vec4::{BLACK, Vec4, WHITE},
     },
 };
@@ -46,6 +47,35 @@ pub fn setup_graphics_api(
             batch
                 .borrow_mut()
                 .draw_polygon(points, color.unwrap_or(BLACK).0);
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "drawLine", {
+        let batch = batch.clone();
+        move |_,
+              (pos1, pos2, color, thickness): (
+            AnyUserData,
+            AnyUserData,
+            Option<Vec4>,
+            Option<f32>,
+        )| {
+            let pos1 = get_pos_as_vec2(pos1)?;
+            let pos2 = get_pos_as_vec2(pos2)?;
+            let one_to_two = pos2 - pos1;
+            let ortho = one_to_two
+                .cmul(Vec2::new(0.0, 1.0))
+                .normalized()
+                .scale(thickness.unwrap_or(0.005));
+
+            let p1 = pos1 + ortho;
+            let p2 = pos2 + ortho;
+            let p3 = pos2 - ortho;
+            let p4 = pos1 - ortho;
+
+            batch
+                .borrow_mut()
+                .draw_polygon([p1, p2, p3, p4].into_iter(), color.unwrap_or(BLACK).0);
             Ok(())
         }
     });
