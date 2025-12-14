@@ -129,7 +129,7 @@ local Graphics = require('@vectarine/graphics')
 
 function Update(time_delta: number)
     -- Draw a white background.
-    local bgColor: Graphics.Color = Vec4.WHITE
+    local bgColor: Vec4.Vec4 = Vec4.WHITE
     Graphics.clear(bgColor)
 
     -- Draw a blue rectangle at the bottom right of the screen
