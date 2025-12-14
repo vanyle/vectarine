@@ -40,6 +40,9 @@ pub fn setup_text_api(
                 let Ok(font_resource) = font_resource else {
                     return Ok(());
                 };
+                
+                font_resource.enrich_atlas(batch.borrow().drawing_target.gl(), &text);
+
                 let font_resource = font_resource.font_rendering.borrow();
                 let Some(font_resource) = font_resource.as_ref() else {
                     return Ok(());

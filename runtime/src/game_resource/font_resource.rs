@@ -1,4 +1,10 @@
-use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc, sync::Arc};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    path::Path,
+    rc::Rc,
+    sync::Arc,
+};
 
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
@@ -48,62 +54,7 @@ impl Resource for FontResource {
 
         // Initialize the font atlas
         let chars: Vec<char> = CHARSET.chars().collect();
-
-        let mut char_data: Vec<(char, fontdue::Metrics, Vec<u8>)> = Vec::new();
-        let mut total_width = 0u32;
-        let mut max_height = 0u32;
-
-        for &c in &chars {
-            let (metrics, bitmap) = font.rasterize(c, FONT_DETAIL);
-            total_width += metrics.width as u32;
-            max_height = max_height.max(metrics.height as u32);
-            char_data.push((c, metrics, bitmap));
-        }
-
-        const PADDING: u32 = 2;
-
-        // Add some padding between characters and around the edges
-        let atlas_width = total_width + ((chars.len() + 1) as u32 * PADDING);
-        let atlas_height = max_height + PADDING * 2;
-
-        let mut atlas_data = vec![0u8; (atlas_width * atlas_height) as usize];
-        let mut current_x = PADDING;
-
-        let mut font_cache = HashMap::new();
-
-        for (c, metrics, bitmap) in char_data {
-            for y in 0..metrics.height {
-                for x in 0..metrics.width {
-                    let src_idx = y * metrics.width + x;
-                    let dst_idx =
-                        (y + PADDING as usize) * atlas_width as usize + current_x as usize + x;
-
-                    atlas_data[dst_idx] = bitmap[src_idx];
-                }
-            }
-
-            // Calculate normalized texture coordinates for this character
-            let atlas_x = current_x as f32 / atlas_width as f32;
-            let atlas_y = 0 as f32 / atlas_height as f32;
-            let atlas_width_norm = metrics.width as f32 / atlas_width as f32;
-            let atlas_height_norm = metrics.height as f32 / atlas_height as f32;
-
-            // Store character info with atlas coordinates
-            let char_info = CharacterInfo {
-                metrics,
-                atlas_x,
-                atlas_y,
-                atlas_width: atlas_width_norm,
-                atlas_height: atlas_height_norm,
-            };
-            font_cache.insert(c, char_info);
-
-            current_x += metrics.width as u32 + PADDING;
-        }
-
-        // Create the OpenGL texture from the atlas
-        let atlas_texture =
-            gltexture::Texture::new_grayscale(&gl, &atlas_data, atlas_width, atlas_height);
+        let (atlas_texture, font_cache) = initialize_cache_and_texture(&gl, &font, chars);
 
         // Store the results
         self.font_rendering.replace(Some(FontRenderingData {
@@ -128,6 +79,10 @@ impl Resource for FontResource {
         ));
 
         ui.label(format!("Font size: {:?}", font_data.font_size));
+        ui.label(format!(
+            "Available glyph count: {:?}",
+            font_data.font_cache.len()
+        ));
     }
 
     fn get_type_name(&self) -> &'static str {
@@ -172,4 +127,96 @@ impl FontResource {
             max_ascent * scale,
         )
     }
+
+    /// Given some text, rebuild the atlas to include any missing character from the text.
+    /// This function can be expensive, so try to use it rarely.
+    pub fn enrich_atlas(&self, gl: &Arc<glow::Context>, text: &str) {
+        let mut font_rendering_data = self.font_rendering.borrow_mut();
+        let font_rendering_data = font_rendering_data.as_mut();
+        let Some(font_rendering_data) = font_rendering_data else {
+            return;
+        };
+        // Note: we use chars and not glyphs. Support for non-Latin languages should not be too hard to add though.
+        let mut chars_to_include: HashSet<char> =
+            font_rendering_data.font_cache.keys().cloned().collect();
+        let initial_character_count = chars_to_include.len();
+        for c in text.chars() {
+            chars_to_include.insert(c);
+        }
+
+        if initial_character_count == chars_to_include.len() {
+            return;
+        }
+
+        let (atlas_texture, font_cache) =
+            initialize_cache_and_texture(gl, &font_rendering_data.font_loader, chars_to_include);
+
+        // Store the results
+        font_rendering_data.font_atlas = atlas_texture;
+        font_rendering_data.font_cache = font_cache;
+    }
+}
+
+fn initialize_cache_and_texture(
+    gl: &Arc<glow::Context>,
+    font: &fontdue::Font,
+    chars: impl IntoIterator<Item = char>,
+) -> (Arc<gltexture::Texture>, HashMap<char, CharacterInfo>) {
+    let mut char_data: Vec<(char, fontdue::Metrics, Vec<u8>)> = Vec::new();
+    let mut total_width = 0u32;
+    let mut max_height = 0u32;
+
+    for c in chars {
+        let (metrics, bitmap) = font.rasterize(c, FONT_DETAIL);
+        total_width += metrics.width as u32;
+        max_height = max_height.max(metrics.height as u32);
+        char_data.push((c, metrics, bitmap));
+    }
+
+    const PADDING: u32 = 2;
+
+    // Add some padding between characters and around the edges
+    let atlas_width = total_width + ((char_data.len() + 1) as u32 * PADDING);
+    let atlas_height = max_height + PADDING * 2;
+
+    let mut atlas_data = vec![0u8; (atlas_width * atlas_height) as usize];
+    let mut current_x = PADDING;
+
+    let mut font_cache = HashMap::new();
+
+    for (c, metrics, bitmap) in char_data {
+        for y in 0..metrics.height {
+            for x in 0..metrics.width {
+                let src_idx = y * metrics.width + x;
+                let dst_idx =
+                    (y + PADDING as usize) * atlas_width as usize + current_x as usize + x;
+
+                atlas_data[dst_idx] = bitmap[src_idx];
+            }
+        }
+
+        // Calculate normalized texture coordinates for this character
+        let atlas_x = current_x as f32 / atlas_width as f32;
+        let atlas_y = 0 as f32 / atlas_height as f32;
+        let atlas_width_norm = metrics.width as f32 / atlas_width as f32;
+        let atlas_height_norm = metrics.height as f32 / atlas_height as f32;
+
+        // Store character info with atlas coordinates
+        let char_info = CharacterInfo {
+            metrics,
+            atlas_x,
+            atlas_y,
+            atlas_width: atlas_width_norm,
+            atlas_height: atlas_height_norm,
+        };
+        font_cache.insert(c, char_info);
+
+        current_x += metrics.width as u32 + PADDING;
+    }
+
+    // Create the OpenGL texture from the atlas
+    let atlas_texture =
+        gltexture::Texture::new_grayscale(gl, &atlas_data, atlas_width, atlas_height);
+
+    (atlas_texture, font_cache)
 }

@@ -18,9 +18,7 @@
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
 - [ ] A low/no-code way to get started??
-- [ ] Bug fixes
-  - [ ] Investigate special characters in text rendering (like å, ç, ...)
-  - [ ] Antialiasing needs to work with hot reloading
+- [ ] Rework the resource API to use futures to prevent use of unloaded resources
 - [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
@@ -63,6 +61,8 @@
 
 # Done
 
+- [x] Investigate special characters in text rendering (like å, ç, ...)
+- [x] In loader add a way to load a text resource
 - [x] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
 - [x] Better errors:
   - [x] Fix bug where only 1 error is printed where there are 2 different errors
