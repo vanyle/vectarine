@@ -1,9 +1,10 @@
+use lazy_static::lazy_static;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     path::Path,
     rc::Rc,
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -29,6 +30,38 @@ pub struct FontRenderingData {
 
 pub struct FontResource {
     pub font_rendering: RefCell<Option<FontRenderingData>>,
+}
+
+pub fn use_default_font<F, R>(gl: &Arc<glow::Context>, f: F) -> R
+where
+    F: FnOnce(&mut FontRenderingData) -> R,
+{
+    lazy_static! {
+        static ref DEFAULT_FONT: Mutex<Option<FontRenderingData>> = Mutex::new(None);
+    }
+
+    let mut default_font = DEFAULT_FONT
+        .lock()
+        .expect("Failed to acquire lock on the default font.");
+
+    if let Some(default_font) = default_font.as_mut() {
+        return f(default_font);
+    }
+
+    let font_bytes = include_bytes!("../../../assets/Roboto-Regular.ttf");
+    let font = fontdue::Font::from_bytes(font_bytes.as_ref(), fontdue::FontSettings::default())
+        .expect("The default font file contains a valid font.");
+    let chars: Vec<char> = CHARSET.chars().collect();
+    let (atlas_texture, font_cache) = initialize_cache_and_texture(gl, &font, chars);
+    let mut font = FontRenderingData {
+        font_atlas: atlas_texture,
+        font_cache,
+        font_loader: font,
+        font_size: FONT_DETAIL,
+    };
+    let result = f(&mut font);
+    *default_font = Some(font);
+    result
 }
 
 const CHARSET: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/\\`~ \n";
@@ -99,20 +132,14 @@ impl Resource for FontResource {
     }
 }
 
-impl FontResource {
+impl FontRenderingData {
     pub fn measure_text(&self, text: &str, font_size: f32, aspect_ratio: f32) -> (f32, f32, f32) {
-        let font_rendering_data = self.font_rendering.borrow();
-        let font_rendering_data = font_rendering_data.as_ref();
-        let Some(font_rendering_data) = font_rendering_data else {
-            return (0.0, 0.0, 0.0);
-        };
-
         let mut width = 0.0;
         let mut height = 0.0;
         let mut max_ascent = 0.0;
 
         for c in text.chars() {
-            if let Some(char_info) = font_rendering_data.font_cache.get(&c) {
+            if let Some(char_info) = self.font_cache.get(&c) {
                 let bounds = char_info.metrics.bounds;
                 width += char_info.metrics.advance_width;
                 max_ascent = f32::max(max_ascent, bounds.height - bounds.ymin);
@@ -120,7 +147,7 @@ impl FontResource {
             }
         }
 
-        let scale = font_size / font_rendering_data.font_size;
+        let scale = font_size / self.font_size;
         (
             width * scale / aspect_ratio,
             height * scale,
@@ -130,15 +157,9 @@ impl FontResource {
 
     /// Given some text, rebuild the atlas to include any missing character from the text.
     /// This function can be expensive, so try to use it rarely.
-    pub fn enrich_atlas(&self, gl: &Arc<glow::Context>, text: &str) {
-        let mut font_rendering_data = self.font_rendering.borrow_mut();
-        let font_rendering_data = font_rendering_data.as_mut();
-        let Some(font_rendering_data) = font_rendering_data else {
-            return;
-        };
+    pub fn enrich_atlas(&mut self, gl: &Arc<glow::Context>, text: &str) {
         // Note: we use chars and not glyphs. Support for non-Latin languages should not be too hard to add though.
-        let mut chars_to_include: HashSet<char> =
-            font_rendering_data.font_cache.keys().cloned().collect();
+        let mut chars_to_include: HashSet<char> = self.font_cache.keys().cloned().collect();
         let initial_character_count = chars_to_include.len();
         for c in text.chars() {
             chars_to_include.insert(c);
@@ -149,11 +170,11 @@ impl FontResource {
         }
 
         let (atlas_texture, font_cache) =
-            initialize_cache_and_texture(gl, &font_rendering_data.font_loader, chars_to_include);
+            initialize_cache_and_texture(gl, &self.font_loader, chars_to_include);
 
         // Store the results
-        font_rendering_data.font_atlas = atlas_texture;
-        font_rendering_data.font_cache = font_cache;
+        self.font_atlas = atlas_texture;
+        self.font_cache = font_cache;
     }
 }
 

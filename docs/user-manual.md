@@ -375,6 +375,29 @@ To represent this, `loadImage` returns a _resource handle_ which you can use to 
 
 All functions inside `Loader` behave this way. You can load scripts, shaders, fonts, and other resources using the same pattern.
 
+## Text
+
+To draw text, you can either load your own font or use the default font.
+
+```lua
+local Loader = require("@vectarine/loader")
+local Text = require("@vectarine/text")
+local Vec = require("@vectarine/vec")
+
+local fontResource = Loader.loadImage("fonts/my_font.ttf")
+
+function Update()
+    if not fontResource:isReady() then
+        return
+    end
+    -- Using your own font:
+    fontResource:drawText("Hello", Vec.V2(0, 0), 0.16)
+
+    -- Using the default font
+    Text.font:drawText("world", Vec.V2(0, -0.16), 0.16)
+end
+```
+
 ## Sound and Music
 
 Loading sounds works just like Images, but you call the `loadAudio` function instead of `loadImage`.

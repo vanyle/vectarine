@@ -17,7 +17,7 @@ pub fn register_resource_id_methods_on_type<T: ResourceIdWrapper>(
         Ok(format!("Resource({})", id.to_resource_id().get_id()))
     });
     registry.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (T, T)| {
-        Ok(id1 == id2)
+        Ok(id1.to_resource_id().get_id() == id2.to_resource_id().get_id())
     });
     registry.add_method("getStatus", {
         let resources = resources.clone();

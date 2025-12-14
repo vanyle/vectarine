@@ -16,7 +16,7 @@ type Size = number | Coord.ScreenVec
 --- If size is a number, it is in OpenGL coordinate (2 = height of the screen)
 --- If size is a ScreenVec, only the y component is used
 --- This is sometimes called the line height.
-function FontResourceImpl.drawText(self: FontResource, text: string, pos: Pos, size: Size, color: Vec4.Vec4): () end
+function FontResourceImpl.drawText(self: FontResource, text: string, pos: Pos, size: Size, color: Vec4.Vec4?): () end
 
 --- Measures how much space the text will take when drawn
 --- height will always be less than size.
@@ -28,5 +28,13 @@ function FontResourceImpl.measureText(
 ): { width: number, height: number, bearingY: number }
 	error("Not implemented")
 end
+
+local function getDefaultFontPrivate(): FontResource
+	error("Not implemented")
+end
+
+--- The default font (Roboto) you can use to draw without needed to load a `.ttf` file
+--- It is not a true resource and is always loaded.
+module.font = getDefaultFontPrivate()
 
 return module

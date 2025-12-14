@@ -169,6 +169,17 @@ pub fn draw_new_game_window_content(
     exit_new_game_window
 }
 
+pub static DEFAULT_CODE: &str = "local Debug = require('@vectarine/debug')
+local Graphics = require('@vectarine/graphics')
+local Vec4 = require('@vectarine/vec4')
+local Vec = require('@vectarine/vec')
+Debug.print(\"Loaded.\")
+function Update(deltaTime: number)
+    Graphics.clear(Vec4.WHITE)
+    Graphics.drawSplashScreen(\"Empty game\", 0.0)
+    Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
+end";
+
 pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_path: &Path) {
     let project_folder = game_path.join(game_name);
     let project_file_path = project_folder.join("game.vecta");
@@ -186,20 +197,7 @@ pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_pa
         let serialized = toml::to_string(&project_info).unwrap_or_default();
         setup_failed = setup_failed.or(fs::write(&project_file_path, serialized).err());
     }
-    setup_failed = setup_failed.or(fs::write(
-        &main_script_path,
-        "
-local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
-Debug.print(\"Loaded.\")
-function Update(deltaTime: number)
-    Graphics.clear(Vec4.WHITE)
-    Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
-end
-    ",
-    )
-    .err());
+    setup_failed = setup_failed.or(fs::write(&main_script_path, DEFAULT_CODE).err());
 
     if let Some(setup_failed) = setup_failed {
         println!(

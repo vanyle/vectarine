@@ -2,11 +2,11 @@
 
 - [ ] Open-source the project
 - [ ] Animation system from multiple PNG files
-- [ ] Rework the resource API to use futures to prevent use of unloaded resources
-- [ ] In loader add a way to load a text resource
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
+- [ ] Show resources in a nicer way (draw_debug_gui)
+- [ ] Add more types in the watcher
 - [ ] Entity system
   - [ ] Add a concept of a 'PhysicsWorld2D'
   - [ ] Under the hood, this is a QuadTree
@@ -18,8 +18,6 @@
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.
 - [ ] A low/no-code way to get started??
-- [ ] Rework the resource API to use futures to prevent use of unloaded resources
-- [ ] Splash screen depending on the loading_animation field in the manifest
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
 - [ ] Add a way to reduce the game viewport in the editor
@@ -61,6 +59,8 @@
 
 # Done
 
+- [x] Rework the resource API to use futures to prevent use of unloaded resources
+- [x] Splash screen depending on the loading_animation field in the manifest
 - [x] Investigate special characters in text rendering (like å, ç, ...)
 - [x] In loader add a way to load a text resource
 - [x] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
