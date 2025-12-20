@@ -36,6 +36,8 @@ local fontResource = Loader.loadFont("fonts/arial.ttf")
 
 local circle = Persist.onReload(Vec4.createColor(0, 0, 0, 1), "circle")
 
+Io.setResizeable(true) -- The base window size can be small for some people
+
 function drawTextCentered(
 	text: string,
 	position: Coord.ScreenPosition,
@@ -259,8 +261,8 @@ function Update(time_delta: number)
 		Io.setFullscreen("desktop")
 		Io.setWindowSize(screen.x, screen.y)
 	else
+		-- Io.setWindowSize(800, 600)
 		Io.setFullscreen(false)
-		Io.setWindowSize(800, 600)
 	end
 
 	mouse_position.x = Io.getMouse().x
