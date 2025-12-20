@@ -245,6 +245,12 @@ function Update()
     if isSpacePressed then
         Graphics.drawRect(Vec.V2(0, 0), Vec.V2(0.1, 0.2), Vec4.RED)
     end
+
+    -- If you need to perform something only once when a key is pressed, you can use `isKeyJustPressed`
+    if Io.isKeyJustPressed("r") then
+        Debug.print("R was just pressed!")
+    end
+
     -- Print pressed keys
     Debug.fprint(Io.getKeysDown())
     -- Print which mouse buttons are pressed
@@ -356,13 +362,13 @@ local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 local Coord = require("@vectarine/coord")
 
-local imageResource = Loader.loadImage("textures/my_image.png")
+local myImage = Loader.loadImage("textures/my_image.png")
 
 function Update()
-    if imageResource:isReady() then
+    if myImage:isReady() then
         -- Draw the image at the center of the screen with size 200x200 pixels
         local size = Coord.pxDelta(Vec.V2(200, 200))
-        imageResource.draw(Coord.gl(Vec.ZERO2) - size:scale(0.5), size)
+        myImage:draw(Coord.gl(Vec.ZERO2) - size:scale(0.5), size)
     end
 end
 ```
@@ -384,7 +390,7 @@ local Loader = require("@vectarine/loader")
 local Text = require("@vectarine/text")
 local Vec = require("@vectarine/vec")
 
-local fontResource = Loader.loadImage("fonts/my_font.ttf")
+local fontResource = Loader.loadFont("fonts/my_font.ttf")
 
 function Update()
     if not fontResource:isReady() then
@@ -393,14 +399,14 @@ function Update()
     -- Using your own font:
     fontResource:drawText("Hello", Vec.V2(0, 0), 0.16)
 
-    -- Using the default font
+    -- Or using the default font (Roboto)
     Text.font:drawText("world", Vec.V2(0, -0.16), 0.16)
 end
 ```
 
 ## Sound and Music
 
-Loading sounds works just like Images, but you call the `loadAudio` function instead of `loadImage`.
+Loading sounds works just like images, but you call the `loadAudio` function instead of `loadImage`.
 
 # ✂️ Splitting and organizing your code
 
