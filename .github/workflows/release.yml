@@ -75,11 +75,11 @@ jobs:
             name: ⚙️ Setup Rust
             with:
                 target: x86_64-unknown-linux-gnu
-                cache-all-crates: true
-                cache-workspace-crates: true
+                cache-all-crates: false
+                cache-workspace-crates: false
 
           - name: ⚙️ Install dependencies
-            run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libmp3lame-dev
+            run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libmp3lame-dev libjack-dev libpipewire-0.3-dev
 
           - name: 🏗️ Build runtime (linux)
             run: cargo build -p runtime --target=x86_64-unknown-linux-gnu --release
@@ -257,11 +257,11 @@ jobs:
           ls -R ./windows
           ls -R ./macos
           ls -R ./web
-          mv ./linux/* ./target/x86_64-unknown-linux-gnu/release/
-          mv ./windows/* ./target/x86_64-pc-windows-msvc/release/
-          mv ./macos/* ./target/aarch64-apple-darwin/release/
-          mv ./web/docs/user-manual.pdf ./docs/
-          mv ./web/* .
+          mv -f ./linux/* ./target/x86_64-unknown-linux-gnu/release/
+          mv -f ./windows/* ./target/x86_64-pc-windows-msvc/release/
+          mv -f ./macos/* ./target/aarch64-apple-darwin/release/
+          mv -f ./web/docs/* ./docs/
+          mv -f ./web/target/wasm32-unknown-emscripten/release/* ./target/wasm32-unknown-emscripten/release/
         continue-on-error: true
 
       - name: 📦 Generate release files

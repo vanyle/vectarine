@@ -58,6 +58,9 @@
 			"editor.defaultFormatter": "tamasfe.even-better-toml",
 			"editor.formatOnSave": true
 		},
+		"[github-actions-workflow]": {
+			"editor.formatOnSave": false
+		},
 		"[markdown]": {
 			"editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
 			"prettier.tabWidth": 2,

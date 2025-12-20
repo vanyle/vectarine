@@ -205,7 +205,7 @@ end
 
 > ⚠️ `Coord.pxVec(Vec.V2(1,1))` points towards the bottom-right whereas `Coord.glVec(Vec.V2(1,1))` points towards the top-right!
 
-`Graphics` contains a lot of other functions to draw images, text, arrows, or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
+`Graphics` contains a lot of other functions to draw images, arrows, or polygons. See [luau-api/graphics.luau](./luau-api/graphics.luau) for the full list.
 All functions can use `Vec` or `ScreenPosition` / `ScreenVec` when relevant to draw things. Use the style you prefer!
 
 # ⌨️ Interacting with the user
