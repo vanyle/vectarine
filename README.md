@@ -51,7 +51,7 @@ There are plenty of ways to contribute to the engine!
 
 - You can document individual functions inside `luau-api`
 - You can clarify and add sections of [the manual](./docs/user-manual.md)
-- You can add new examples to the [gallery](./gallery/README.md)
+- You can add new examples to the [gallery](./gallery/)
 
 ### You can change the engine itself
 
