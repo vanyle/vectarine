@@ -113,7 +113,10 @@ fn draw_search_variable_box(
         // Clear search box on enter
         content.clear();
         watched_variable_names.with_borrow_mut(|vars| {
-            let key = stringify_lua_value(&search_results[0]);
+            let Some(first_key) = search_results.first() else {
+                return;
+            };
+            let key = stringify_lua_value(first_key);
             if !vars.iter().any(|v| v == &key) {
                 vars.push(key);
             }
