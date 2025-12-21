@@ -262,7 +262,7 @@ fn get_project_files(project_path: &Path) -> impl Iterator<Item = (PathBuf, Stri
         .parent()
         .expect("Failed to get game data folder");
     let unexported_folder_names = [
-        "release", "game", "output", "build", "debug", "export", "private",
+        "release", "game", "output", "build", "debug", "export", "private", "luau-api",
     ];
     // Add game data folder
     // Adding .vecta file as executable as you can run it using a shebang.
