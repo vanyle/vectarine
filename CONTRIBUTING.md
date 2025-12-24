@@ -43,11 +43,11 @@ To make commands shorter, you need to [activate mise in your shell](https://mise
 
 ```bash
 # Clone this repository
-git clone ...
-cd vectarine-enhanced
+git clone https://github.com/vanyle/vectarine.git
+cd vectarine
 # Install all dependencies
 mise install
-# Add the emscripten target to the rust compiler
+# (optional) Add the emscripten target to the rust compiler
 rustup target add wasm32-unknown-emscripten
 ```
 
@@ -67,9 +67,9 @@ If you are on linux and want to only compile for linux or the web, you can simpl
 
 ```bash
 # Replace apt with your package manager of choice
-sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-gfx-dev
+sudo apt-get install -y libsdl2-dev
 # You might also need this, but it can already be installed
-sudo apt-get install libmp3lame-dev
+sudo apt-get install -y libmp3lame-dev
 ```
 
 Otherwise, you'll need to install SDL2 through vcpkg.
