@@ -2,7 +2,7 @@
     <img src="./assets/logo.png" alt="Vectarine logo" width="200" align="center"/>
 </p>
 
-<h1 align="center"> 🍊 Vectarine</h1>
+<h1 align="center">Vectarine</h1>
 
 <p align="center">
 <a href="https://github.com/vanyle/vectarine/actions/workflows/test.yml"><img src="https://github.com/vanyle/vectarine/actions/workflows/test.yml/badge.svg" alt="Build & Test CI status badge"></a>
@@ -12,23 +12,23 @@
 
 *Vectarine is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
 
-## 🎯 Goals by importance
+## Goals by importance
 
-- ⏰️ Your time is valuable
-  - 🛠️ Luau scripting: Instant reload and strong typing
-  - 🎨 Assets built into the engine for fast testing
-  - 🖼️ Gallery of example: start with working templates
-  - 🐛 Powerful debugging tools: waste less time on bugs
-- 👾 Don't limit creativity
-  - 🏭 Access to low-level primitives
-  - 📐 3d & 2d support
-  - 🚀 Performance: Render millions of entities at 60 fps
-- 🌍 Reach a wide audience
-  - 🌐 Supports the Web, Windows, Linux, MacOS
-  - 📦 Distribute your game by sharing a zip with a small size footprint.
-  - 📖 Free and open-source
+- Your time is valuable
+  - Luau scripting: Instant reload and strong typing
+  - Assets built into the engine for fast testing
+  - Gallery of example: start with working templates
+  - Powerful debugging tools: waste less time on bugs
+- Don't limit creativity
+  - Access to low-level primitives
+  - 3d & 2d support
+  - Performance: Render millions of entities at 60 fps
+- Reach a wide audience
+  - Supports the Web, Windows, Linux, MacOS
+  - Distribute your game by sharing a zip with a small size footprint.
+  - Free and open-source
 
-## 🌱 Getting started making games
+## Getting started making games
 
 Download [the latest build](https://github.com/vanyle/vectarine/releases/latest) of the engine from the [releases](https://github.com/vanyle/vectarine/releases) page.
 
@@ -45,7 +45,7 @@ Feel free to join our [Discord server](https://discord.gg/zPwg3VDydz) if you hav
 
 Below are information on how to work and improve the engine.
 
-## ⚙️ Helping out on the engine
+## Helping out on the engine
 
 There are plenty of ways to contribute to the engine!
 
