@@ -71,7 +71,7 @@ end
 ---     }, "Starting...") then
 ---         return
 ---     end
----     -- Your game code requirement the resources here
+---     -- Your game code requiring the resources here
 --- end
 --- ```
 function module.drawSplashScreenIfNeeded(resourcesToWaitFor: { Resource.Resource }, loadingText: string?): boolean

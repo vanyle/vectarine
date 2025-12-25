@@ -39,6 +39,8 @@ Additionally, you'll need:
 
 See **[The manual](./docs/user-manual.md)** for detailed information on how to make games with vectarine
 
+If you prefer watching rather than reading, there is a **[video presentation](https://www.youtube.com/watch?v=KwckT9mbj10)** to get started.
+
 Feel free to join our [Discord server](https://discord.gg/zPwg3VDydz) if you have any questions or want to chat with other developers.
 
 Below are information on how to work and improve the engine.
