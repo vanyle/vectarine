@@ -55,10 +55,6 @@ impl Vec4 {
         Self([self.0[0], self.0[1], self.0[2], w])
     }
     #[inline]
-    pub fn scale(self, k: f32) -> Self {
-        self * k
-    }
-    #[inline]
     pub fn qmul(self, other: Self) -> Self {
         // Quaternion multiplication
         Self::new(
