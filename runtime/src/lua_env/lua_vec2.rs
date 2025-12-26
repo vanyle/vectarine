@@ -3,10 +3,6 @@ use noise::{NoiseFn, Simplex, Worley};
 use crate::math::Vect;
 
 pub type Vec2 = Vect<2>;
-use std::{
-    cmp::{self, Ordering},
-    ops,
-};
 
 impl mlua::FromLua for Vec2 {
     fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
