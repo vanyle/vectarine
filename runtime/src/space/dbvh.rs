@@ -10,7 +10,11 @@ struct DbvhBounds<const N: usize> {
 #[derive(Clone, Copy)]
 struct DbvhNode<const N: usize> {
     // TODO: store a reference to the entity linked with the node
+    // TODO: WIP
+    #[allow(dead_code)]
     entity: Option<usize>,
+    // TODO: WIP
+    #[allow(dead_code)]
     index: Option<usize>,
     parent_index: Option<usize>,
     child1: Option<usize>,
@@ -35,10 +39,10 @@ impl<const N: usize> DbvhBounds<N> {
             self.position + self.volume.scale(0.5),
             other.position + other.volume.scale(0.5),
         );
-        return Self {
+        Self {
             position: (min_corner + max_corner).scale(0.5),
             volume: max_corner - min_corner,
-        };
+        }
     }
 
     pub fn intersection(&self, other: Self) -> Self {
@@ -51,15 +55,15 @@ impl<const N: usize> DbvhBounds<N> {
             Vect::zero(),
             Vect::min(self_max_corner, other_max_corner) - position,
         );
-        return Self { position, volume };
+        Self { position, volume }
     }
 
-    pub fn strictlyIncludes(&self, other: Self) -> bool {
+    pub fn strictly_includes(&self, other: Self) -> bool {
         let self_min_corner = self.position - self.volume.scale(0.5);
         let self_max_corner = self.position + self.volume.scale(0.5);
         let other_min_corner = other.position - other.volume.scale(0.5);
         let other_max_corner = other.position + other.volume.scale(0.5);
-        return self_min_corner < other_min_corner && self_max_corner > other_max_corner;
+        self_min_corner < other_min_corner && self_max_corner > other_max_corner
     }
 
     pub fn overlaps(&self, other: Self) -> bool {
@@ -67,18 +71,17 @@ impl<const N: usize> DbvhBounds<N> {
         let self_max_corner = self.position + self.volume.scale(0.5);
         let other_min_corner = other.position - other.volume.scale(0.5);
         let other_max_corner = other.position + other.volume.scale(0.5);
-        return Vect::min(self_max_corner, other_max_corner)
-            > Vect::max(self_min_corner, other_min_corner);
+        Vect::min(self_max_corner, other_max_corner) > Vect::max(self_min_corner, other_min_corner)
     }
 
     pub fn volume(&self) -> f32 {
-        return self.volume.hvolume();
+        self.volume.hvolume()
     }
 
     fn cost(&self) -> f32 {
         // 	 For ray casting the best is to use harea (in 2d it's the perimeter)
         // 	 For space partitionning only, it is best to use hvolume (in 2d it's the area)
-        return self.volume();
+        self.volume()
     }
 }
 
@@ -96,9 +99,9 @@ impl<const N: usize> DbvhTree<N> {
         let Some(node_index) = node_index else {
             return true;
         };
-        return self.nodes[node_index]
+        self.nodes[node_index]
             .bounds
-            .strictlyIncludes(DbvhBounds { position, volume });
+            .strictly_includes(DbvhBounds { position, volume })
     }
 
     // TODO: update when space/entity structure is defined to have node position and volume
@@ -128,7 +131,7 @@ impl<const N: usize> DbvhTree<N> {
         {
             return cost;
         }
-        return cost + self.tree_cost(self.nodes[index].parent_index);
+        cost + self.tree_cost(self.nodes[index].parent_index)
     }
 
     fn delta_cost(&mut self, index: Option<usize>, bounds: DbvhBounds<N>) -> f32 {
@@ -152,7 +155,7 @@ impl<const N: usize> DbvhTree<N> {
         {
             return delta;
         }
-        return delta + self.delta_cost(self.nodes[index].parent_index, new_bounds);
+        delta + self.delta_cost(self.nodes[index].parent_index, new_bounds)
     }
 
     fn minimize_dbvh_sub_tree(&mut self, grand_parent_index: Option<usize>) {
@@ -459,13 +462,11 @@ impl<const N: usize> DbvhTree<N> {
         if self.free_spaces.is_empty() {
             self.allocate_node();
         }
-        let Some(node_index) = self.free_spaces.pop() else {
-            return None;
-        };
+        let node_index = self.free_spaces.pop()?;
         self.nodes[node_index].parent_index = parent_index;
         self.nodes[node_index].child1 = entity_id;
         self.nodes[node_index].is_leaf = entity_id.is_some();
-        return Some(node_index);
+        Some(node_index)
     }
 
     pub fn insert_dbvh_leaf(
@@ -480,17 +481,11 @@ impl<const N: usize> DbvhTree<N> {
         // to       G |-> P |-> node
         //                  |-> sibling
         //
-        let Some(node_index) = node_index else {
-            return None;
-        };
-        let Some(sibling_index) = sibling_index else {
-            return None;
-        };
+        let node_index = node_index?;
+        let sibling_index = sibling_index?;
         let grand_parent_index = self.nodes[sibling_index].parent_index;
         let parent_index = self.instantiate_node(grand_parent_index, None);
-        let Some(parent_index) = parent_index else {
-            return None;
-        };
+        let parent_index = parent_index?;
         self.nodes[sibling_index].parent_index = Some(parent_index);
         self.nodes[node_index].parent_index = Some(parent_index);
         self.nodes[parent_index].child1 = Some(sibling_index);
@@ -503,9 +498,7 @@ impl<const N: usize> DbvhTree<N> {
             self.root_index = Some(parent_index);
             return self.root_index;
         }
-        let Some(grand_parent_index) = grand_parent_index else {
-            return None;
-        };
+        let grand_parent_index = grand_parent_index?;
         if self.nodes[grand_parent_index]
             .child1
             .is_some_and(|child1| child1 == sibling_index)
@@ -514,7 +507,7 @@ impl<const N: usize> DbvhTree<N> {
         } else {
             self.nodes[grand_parent_index].child2 = Some(parent_index);
         }
-        return Some(parent_index);
+        Some(parent_index)
     }
 
     pub fn delete_dbvh_leaf(&mut self, node_index: Option<usize>) -> bool {
@@ -569,7 +562,9 @@ impl<const N: usize> DbvhTree<N> {
             return true;
         }
         // 2) Add sibling to grandparent
-        let grand_parent_index = self.nodes[parent_index].parent_index.unwrap();
+        let grand_parent_index = self.nodes[parent_index]
+            .parent_index
+            .expect("Error during DBVH node deletion: the node had no grand-parent, it was not connected to the main tree");
         self.nodes[sibling_index].parent_index = Some(grand_parent_index);
         if self.nodes[grand_parent_index]
             .child1
@@ -583,7 +578,7 @@ impl<const N: usize> DbvhTree<N> {
         self.free_node(Some(parent_index));
         // 4) Refit tree
         self.refit_dbvh_tree(Some(grand_parent_index));
-        return true;
+        true
     }
 
     // TODO: update when space/entity structure is defined to have
@@ -601,9 +596,7 @@ impl<const N: usize> DbvhTree<N> {
             self.root_index = node_index;
             return self.root_index;
         }
-        let Some(node_index) = node_index else {
-            return None;
-        };
+        let node_index = node_index?;
         // 1) Search for best position based on area cost
         let new_node_cost = self.nodes[node_index].bounds.cost();
         let mut best_cost: f32 = f32::MAX;
@@ -634,8 +627,16 @@ impl<const N: usize> DbvhTree<N> {
             if candidates[i].is_some_and(|candidate| !self.nodes[candidate].is_leaf)
                 && new_node_cost + delta < best_cost
             {
-                candidates.push(self.nodes[candidates[i].unwrap()].child1);
-                candidates.push(self.nodes[candidates[i].unwrap()].child2);
+                candidates.push(
+                    self.nodes
+                        [candidates[i].expect("error with `is_some_and`, it should allow unwrap")]
+                    .child1,
+                );
+                candidates.push(
+                    self.nodes
+                        [candidates[i].expect("error with `is_some_and`, it should allow unwrap")]
+                    .child2,
+                );
             }
             i += 1;
         }
@@ -644,6 +645,6 @@ impl<const N: usize> DbvhTree<N> {
 
         // 3) Propagate change
         self.refit_dbvh_tree(Some(node_index));
-        return Some(node_index);
+        Some(node_index)
     }
 }

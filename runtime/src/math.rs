@@ -91,7 +91,7 @@ impl<const N: usize> Vect<N> {
     #[inline]
     pub fn harea(self) -> f32 {
         2.0 * std::array::from_fn::<f32, N, _>(|i| {
-            std::array::from_fn::<f32, N, _>(|j| if i == j { return 1.0 } else { return self.0[j] })
+            std::array::from_fn::<f32, N, _>(|j| if i == j { 1.0 } else { self.0[j] })
                 .iter()
                 .product()
         })
@@ -163,6 +163,6 @@ impl<const N: usize> cmp::PartialOrd for Vect<N> {
         if is_greater {
             return Some(Ordering::Greater);
         }
-        return None;
+        None
     }
 }
