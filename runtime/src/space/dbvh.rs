@@ -1,15 +1,14 @@
-use crate::lua_env::lua_vec2::Vec2;
+use crate::math::Vect;
 
-// TODO: generalize with vec3
 // TODO: generalize with area-based/volume-based cost
 #[derive(PartialEq, Clone, Copy)]
-struct DbvhBounds {
-    position: Vec2,
-    volume: Vec2,
+struct DbvhBounds<const N: usize> {
+    position: Vect<N>,
+    volume: Vect<N>,
 }
 
 #[derive(Clone, Copy)]
-struct DbvhNode {
+struct DbvhNode<const N: usize> {
     // TODO: store a reference to the entity linked with the node
     entity: Option<usize>,
     index: Option<usize>,
@@ -17,24 +16,22 @@ struct DbvhNode {
     child1: Option<usize>,
     child2: Option<usize>,
     is_leaf: bool,
-    bounds: DbvhBounds,
+    bounds: DbvhBounds<N>,
 }
 
-pub struct DbvhTree {
+pub struct DbvhTree<const N: usize> {
     root_index: Option<usize>,
-    nodes: Vec<DbvhNode>,
+    nodes: Vec<DbvhNode<N>>,
     free_spaces: Vec<usize>,
 }
 
-// TODO: generalize with vec3
-impl DbvhBounds {
+impl<const N: usize> DbvhBounds<N> {
     pub fn union(&self, other: Self) -> Self {
-        // TODO: generalize with vec3
-        let min_corner = Vec2::min(
+        let min_corner = Vect::min(
             self.position - self.volume.scale(0.5),
             other.position - other.volume.scale(0.5),
         );
-        let max_corner = Vec2::max(
+        let max_corner = Vect::max(
             self.position + self.volume.scale(0.5),
             other.position + other.volume.scale(0.5),
         );
@@ -49,11 +46,10 @@ impl DbvhBounds {
         let self_max_corner = self.position + self.volume.scale(0.5);
         let other_min_corner = other.position - other.volume.scale(0.5);
         let other_max_corner = other.position + other.volume.scale(0.5);
-        // TODO: generalize with vec3
-        let position = Vec2::max(self_min_corner, other_min_corner);
-        let volume = Vec2::max(
-            Vec2::zero(),
-            Vec2::min(self_max_corner, other_max_corner) - position,
+        let position = Vect::max(self_min_corner, other_min_corner);
+        let volume = Vect::max(
+            Vect::zero(),
+            Vect::min(self_max_corner, other_max_corner) - position,
         );
         return Self { position, volume };
     }
@@ -71,33 +67,31 @@ impl DbvhBounds {
         let self_max_corner = self.position + self.volume.scale(0.5);
         let other_min_corner = other.position - other.volume.scale(0.5);
         let other_max_corner = other.position + other.volume.scale(0.5);
-        // TODO: generalize with vec3
-        return Vec2::min(self_max_corner, other_max_corner)
-            > Vec2::max(self_min_corner, other_min_corner);
+        return Vect::min(self_max_corner, other_max_corner)
+            > Vect::max(self_min_corner, other_min_corner);
     }
 
     pub fn volume(&self) -> f32 {
-        return self.volume.volume();
+        return self.volume.hvolume();
     }
 
     fn cost(&self) -> f32 {
-        // 	 For ray casting the best is to use area (in 2d it's the perimeter)
-        // 	 For space partitionning only, it is best to use volume (in 2d it's the area)
+        // 	 For ray casting the best is to use harea (in 2d it's the perimeter)
+        // 	 For space partitionning only, it is best to use hvolume (in 2d it's the area)
         return self.volume();
     }
 }
 
-impl DbvhNode {}
+impl<const N: usize> DbvhNode<N> {}
 
-impl DbvhTree {
+impl<const N: usize> DbvhTree<N> {
     // TODO: update when space/entity structure is defined to have
     // node_index, position and volume in a single object
-    // TODO: generalize with vec3
     pub fn is_entity_up_to_date(
         &self,
         node_index: Option<usize>,
-        position: Vec2,
-        volume: Vec2,
+        position: Vect<N>,
+        volume: Vect<N>,
     ) -> bool {
         let Some(node_index) = node_index else {
             return true;
@@ -109,12 +103,11 @@ impl DbvhTree {
 
     // TODO: update when space/entity structure is defined to have node position and volume
     // in a single object
-    // TODO: generalize with vec3
     fn align_dbvh_leaf_with_entity(
         &mut self,
         node_index: Option<usize>,
-        position: Vec2,
-        volume: Vec2,
+        position: Vect<N>,
+        volume: Vect<N>,
     ) {
         let Some(node_index) = node_index else {
             return;
@@ -138,7 +131,7 @@ impl DbvhTree {
         return cost + self.tree_cost(self.nodes[index].parent_index);
     }
 
-    fn delta_cost(&mut self, index: Option<usize>, bounds: DbvhBounds) -> f32 {
+    fn delta_cost(&mut self, index: Option<usize>, bounds: DbvhBounds<N>) -> f32 {
         // Compute the additional cost for the whole tree if the node
         // at `index` were to be resized to include the `bounds`
         let Some(index) = index else {
@@ -437,8 +430,8 @@ impl DbvhTree {
             child2: None,
             is_leaf: false,
             bounds: DbvhBounds {
-                position: Vec2::zero(),
-                volume: Vec2::zero(),
+                position: Vect::zero(),
+                volume: Vect::zero(),
             },
         };
         self.nodes.push(new_node);
@@ -595,12 +588,11 @@ impl DbvhTree {
 
     // TODO: update when space/entity structure is defined to have
     // entity_id, position and volume in a single object
-    // TODO: generalize with vec3
     pub fn create_dbvh_leaf(
         &mut self,
         entity_id: Option<usize>,
-        position: Vec2,
-        volume: Vec2,
+        position: Vect<N>,
+        volume: Vect<N>,
     ) -> Option<usize> {
         let node_index = self.instantiate_node(None, entity_id);
         self.align_dbvh_leaf_with_entity(node_index, position, volume);

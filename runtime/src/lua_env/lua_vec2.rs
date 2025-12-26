@@ -8,12 +8,6 @@ use std::{
     ops,
 };
 
-#[derive(Clone, Debug, Default, PartialEq, Copy)]
-pub struct Vec2 {
-    pub x: f32,
-    pub y: f32,
-}
-
 impl mlua::FromLua for Vec2 {
     fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
@@ -48,18 +42,6 @@ impl Vec2 {
     pub const fn with_y(self, y: f32) -> Self {
         Self([self.0[0], y])
     }
-    // hyper-area in n dimensions where n is 2
-    pub fn area(self) -> f32 {
-        self.x + self.y + self.x + self.y
-    }
-    // hyper-volume in n dimensions where n is 2
-    pub fn volume(self) -> f32 {
-        self.x * self.y
-    }
-    #[inline]
-    pub fn scale(self, k: f32) -> Self {
-        self * k
-    }
     #[inline]
     pub fn cmul(self, other: Self) -> Self {
         Self::new(
@@ -91,66 +73,6 @@ impl Vec2 {
         let length = self.x();
         let angle = self.y();
         Self::from_angle(angle) * length
-    pub fn normalized(self) -> Self {
-        let len = self.length();
-        if len == 0.0 {
-            Self { x: 0.0, y: 0.0 }
-        } else {
-            self.scale(1.0 / len)
-        }
-    }
-    pub fn min(self, other: Self) -> Self {
-        Self {
-            x: f32::min(self.x, other.x),
-            y: f32::min(self.y, other.y),
-        }
-    }
-    pub fn max(self, other: Self) -> Self {
-        Self {
-            x: f32::max(self.x, other.x),
-            y: f32::max(self.y, other.y),
-        }
-    }
-}
-
-impl ops::Add for Vec2 {
-    type Output = Self;
-    fn add(self, other: Self) -> Self {
-        Self {
-            x: self.x + other.x,
-            y: self.y + other.y,
-        }
-    }
-}
-
-impl ops::Sub for Vec2 {
-    type Output = Self;
-    fn sub(self, other: Self) -> Self {
-        Self {
-            x: self.x - other.x,
-            y: self.y - other.y,
-        }
-    }
-}
-
-impl ops::Mul for Vec2 {
-    type Output = Self;
-    fn mul(self, other: Self) -> Self {
-        Self {
-            x: self.x * other.x,
-            y: self.y * other.y,
-        }
-    }
-}
-
-impl cmp::PartialOrd for Vec2 {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.x < other.x && self.y < other.y {
-            return Some(Ordering::Less);
-        } else if self.x > other.x && self.y > other.y {
-            return Some(Ordering::Greater);
-        }
-        return None;
     }
 }
 
