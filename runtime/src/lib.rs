@@ -34,6 +34,7 @@ pub struct RenderingBlock {
     pub event_pump: EventPump,
     pub sdl: Sdl,
     pub gl: Arc<glow::Context>,
+    pub gl_context: ManuallyDrop<sdl2::video::GLContext>,
 }
 
 pub fn get_shader_version() -> &'static str {
@@ -91,11 +92,13 @@ where
         .event_pump()
         .expect("Failed to create event pump");
 
-    let _gl_context = ManuallyDrop::new(
+    let gl_context = ManuallyDrop::new(
         window
             .gl_create_context()
             .expect("Failed to create GL context"),
     );
+
+    // window.gl_make_current(&_gl_context);
 
     let gl = make_gl_from_video_system(&video_subsystem);
     let gl: Arc<glow::Context> = Arc::new(gl);
@@ -107,6 +110,7 @@ where
         video: Rc::new(RefCell::new(video_subsystem)),
         window: Rc::new(RefCell::new(window)),
         event_pump,
+        gl_context,
         gl,
     }
 }
@@ -144,6 +148,7 @@ pub fn lib_main() {
         window,
         mut event_pump,
         gl,
+        ..
     } = init_sdl(|video_subsystem| unsafe {
         glow::Context::from_loader_function(|name| {
             video_subsystem.gl_get_proc_address(name) as *const _

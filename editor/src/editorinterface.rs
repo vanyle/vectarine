@@ -15,18 +15,20 @@ use notify_debouncer_full::{
 use runtime::{
     anyhow::{self},
     game::drawable_screen_size,
-    game_resource::ResourceId,
     io::{
         fs::{FileSystem, ReadOnlyFileSystem},
         localfs::LocalFileSystem,
     },
+    sdl2::video::Window,
     toml,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::{
-    editorinterface::emptyscreen::draw_empty_screen, egui_sdl2_platform,
-    exportinterface::draw_editor_export, projectstate::ProjectState,
+    editorconfig::{EDITOR_CONFIG_FILE, EditorConfig, WindowStyle},
+    editorinterface::emptyscreen::draw_empty_screen,
+    egui_sdl2_platform,
+    exportinterface::draw_editor_export,
+    projectstate::ProjectState,
 };
 use editorconsole::draw_editor_console;
 use editormenu::draw_editor_menu;
@@ -41,21 +43,6 @@ pub mod editorresources;
 pub mod editorwatcher;
 pub mod emptyscreen;
 
-const EDITOR_CONFIG_FILE: &str = "vectarine-config.toml";
-
-#[derive(Clone, Default, Debug, Serialize, Deserialize)]
-pub struct EditorConfig {
-    pub is_console_shown: bool,
-    pub is_resources_window_shown: bool,
-    pub is_watcher_window_shown: bool,
-    pub is_profiler_window_shown: bool,
-    pub is_export_window_shown: bool,
-    pub is_always_on_top: bool,
-    pub debug_resource_shown: Option<ResourceId>,
-
-    pub opened_project_path: Option<String>,
-}
-
 pub struct EditorState {
     pub config: Rc<RefCell<EditorConfig>>,
     pub text_command: String,
@@ -67,6 +54,8 @@ pub struct EditorState {
     pub window: Rc<RefCell<sdl2::video::Window>>,
     pub gl: Arc<glow::Context>,
 
+    pub editor_specific_window: sdl2::video::Window,
+    //pub editor_interface: EditorInterfaceWithGl,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 }
 
@@ -137,6 +126,7 @@ impl EditorState {
         video: Rc<RefCell<sdl2::VideoSubsystem>>,
         window: Rc<RefCell<sdl2::video::Window>>,
         gl: Arc<glow::Context>,
+        editor_window: sdl2::video::Window,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
     ) -> Self {
         Self {
@@ -147,6 +137,7 @@ impl EditorState {
             video,
             window,
             gl,
+            editor_specific_window: editor_window,
             debouncer: Rc::new(RefCell::new(
                 new_debouncer(
                     Duration::from_millis(10),
@@ -253,10 +244,15 @@ impl EditorState {
                 let paint_jobs = platform.tessellate(&full_output);
                 let pj = paint_jobs.as_slice();
 
-                // Render the editor interface on top of the game.
-                let size = drawable_screen_size(&self.window.borrow());
+                let window_with_editor = match self.config.borrow().window_style {
+                    WindowStyle::GameSeparateFromEditor => &self.editor_specific_window,
+                    WindowStyle::GameWithEditor => &self.window.borrow(),
+                };
 
-                let pixel_per_point = size.0 as f32 / self.window.borrow().size().0 as f32;
+                // Render the editor interface on top of the game.
+                let size = drawable_screen_size(window_with_editor);
+
+                let pixel_per_point = size.0 as f32 / window_with_editor.size().0 as f32;
 
                 painter.paint_and_update_textures(
                     [size.0, size.1],
@@ -274,15 +270,70 @@ impl EditorState {
     }
 }
 
-pub fn process_events_when_no_game(latest_events: &[sdl2::event::Event], gl: &glow::Context) {
+pub fn handle_close_events(latest_events: &[sdl2::event::Event]) {
+    for event in latest_events {
+        if let sdl2::event::Event::Window { win_event, .. } = event
+            && matches!(win_event, sdl2::event::WindowEvent::Close)
+        {
+            std::process::exit(0);
+        }
+        if let sdl2::event::Event::Quit { .. } = event {
+            std::process::exit(0);
+        }
+    }
+}
+
+pub fn clear_and_draw_when_no_game(gl: &glow::Context) {
     unsafe {
         gl.clear_color(0.1, 0.1, 0.1, 1.0);
         gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
     }
+}
 
-    for event in latest_events {
-        if let sdl2::event::Event::Quit { .. } = event {
-            std::process::exit(0);
-        }
+pub struct EditorInterfaceWithGl {
+    pub platform: egui_sdl2_platform::Platform,
+    pub painter: egui_glow::Painter,
+    pub gl: Arc<glow::Context>,
+}
+
+pub fn make_gl_context(video_subsystem: &runtime::sdl2::VideoSubsystem) -> glow::Context {
+    unsafe {
+        egui_glow::painter::Context::from_loader_function(|name| {
+            video_subsystem.gl_get_proc_address(name) as *const _
+        })
+    }
+}
+
+/// Create an SDL2 Window to display the editor without the game.
+/// This window is hidden by default and is show when the WindowStyle is set to GameSeparateFromEditor.
+pub fn create_specific_editor_window(
+    video_subsystem: &runtime::sdl2::VideoSubsystem,
+    gl: &Arc<glow::Context>,
+) -> (Window, EditorInterfaceWithGl) {
+    let editor_window: Window = video_subsystem
+        .window("Vectarine Editor", 800, 600)
+        .opengl()
+        .allow_highdpi() // For Retina displays on macOS
+        .resizable()
+        // .hidden() // hidden by default
+        .build()
+        .expect("Failed to create window");
+    let interface =
+        EditorInterfaceWithGl::new(&editor_window, gl).expect("Failed to create editor interface");
+    (editor_window, interface)
+}
+
+impl EditorInterfaceWithGl {
+    pub fn new(window: &Window, gl: &Arc<glow::Context>) -> anyhow::Result<Self> {
+        let painter =
+            egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
+        let platform = egui_sdl2_platform::Platform::new(drawable_screen_size(window))
+            .expect("Failed to create platform");
+
+        Ok(Self {
+            platform,
+            painter,
+            gl: gl.clone(),
+        })
     }
 }
