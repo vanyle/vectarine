@@ -18,7 +18,6 @@ pub use toml;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
-use glow::HasContext;
 use sdl2::{
     EventPump, Sdl, VideoSubsystem,
     video::{SwapInterval, Window, gl_attr::GLAttr},
@@ -102,15 +101,6 @@ where
     let gl: Arc<glow::Context> = Arc::new(gl);
 
     let _ = video_subsystem.gl_set_swap_interval(SwapInterval::VSync);
-
-    unsafe {
-        gl.enable(glow::BLEND);
-        gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
-        //gl.blend_func(glow::SRC_ALPHA_SATURATE, glow::ONE);
-        gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE);
-        //gl.enable(glow::POLYGON_SMOOTH);
-        gl.enable(glow::MULTISAMPLE);
-    }
 
     RenderingBlock {
         sdl: sdl_context,

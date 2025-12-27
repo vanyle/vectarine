@@ -216,6 +216,16 @@ impl Game {
             framebuffer_height as f32,
         );
 
+        // 2D Settings
+        unsafe {
+            let gl = self.gl.as_ref();
+            gl.enable(glow::BLEND);
+            gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+            gl.disable(glow::DEPTH_TEST);
+            // gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE); // Not needed for 2D.
+            gl.enable(glow::MULTISAMPLE);
+        }
+
         // Update screen transitions
         lua_screen::update_screen_transition(&self.lua_env.lua, delta_time.as_secs_f32());
 
