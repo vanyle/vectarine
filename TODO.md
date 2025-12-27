@@ -1,6 +1,6 @@
 # TO-DO
 
-- [ ] Open-source the project
+- [ ] Allow having the debug GUI in a detachable window or have a way to make them translucent?
 - [ ] Animation system from multiple PNG files
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
@@ -59,6 +59,7 @@
 
 # Done
 
+- [x] Open-source the project
 - [x] Rework the resource API to use futures to prevent use of unloaded resources
 - [x] Splash screen depending on the loading_animation field in the manifest
 - [x] Investigate special characters in text rendering (like å, ç, ...)
