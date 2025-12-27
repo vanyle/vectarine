@@ -1,0 +1,167 @@
+---
+title: Create your first game
+description: Making a simple pong game in vectarine
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import ScrollyGettingStarted from '../../../components/ScrollyGettingStarted.astro';
+
+In this step-by-step guide, we'll see how you can create a *PONG* game using Vectarine.
+
+## Setup Vectarine
+
+First, download [Vectarine from Github](https://github.com/vanyle/vectarine/releases). You need to download the zip file for your platform.
+You can unzip it anywhere you like and run "vecta" executable to get started.
+
+<Aside type='caution'>
+On MacOS, executables from the internet are quarantined by default. You might see this message
+when attempting to run vecta.app: "This app is damaged".
+
+You need to run this command to allow the execution: <pre>xattr -d com.apple.quarantine ./vecta.app</pre>
+</Aside>
+
+You can press *Create a new project* to select the location where you want to create your project.
+
+Once you created your project, you will see a black screen with the vectarine logo and the text "Empty Game".
+
+This is normal, as no code has been written yet. You can open the resources tab from the tools menu or with <kbd>Ctrl</kbd>+<kbd>2</kbd> to see the files of your project.
+
+![The empty game project](../../../assets/emptygame.png)
+
+Your game has only one resource, the main script, `scripts/game.luau`. `game.luau` is the first file loaded by any Vectarine game. It's job is to set up the game
+and load all of the other files needed.
+
+You can press on the blue link to open the script in your default `luau` editor. You can also open the game folder to open the `.luau` file manually.
+
+An empty game script looks like this:
+
+```luau
+local Debug = require('@vectarine/debug')
+local Graphics = require('@vectarine/graphics')
+local Vec4 = require('@vectarine/vec4')
+local Vec = require('@vectarine/vec')
+Debug.print("Loaded.")
+function Update(deltaTime: number)
+    Graphics.clear(Vec4.WHITE)
+    Graphics.drawSplashScreen("Empty game", 0.0)
+    Debug.fprint("Rendered in ", deltaTime, "sec")
+end
+```
+
+Try to replace "Empty game" with "Hello Vectarine!" and save the file. You should see the change in the editor immediately without needing to restart the game.
+
+## Editing Luau code
+
+You can use any text or code editor to edit `.luau` files, but for the best experience, I recommend using [Visual Studio Code](https://code.visualstudio.com/) with
+the following extensions:
+
+[Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp): Provides autocompletion, type checking and error highlighting for Luau code. This is a must have
+as it shown you available functions and their documentation as you type.
+
+[StyLua](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.stylua): A code formatter for Luau. It automatically formats your code when you save the file, making it more readable and consistent. This
+is less important than Luau Language Server, but it can be nice to have.
+
+If both extensions are installed, your code should be colored, errors should be highlighted, and you should see function suggestions when you type a dot after a module name:
+
+![VSCode with Luau extensions](../../../assets/vsluau.png)
+
+Pressing <kbd>Ctrl</kbd> while clicking on a Vectarine function should take you to its definition with documentation.
+Hovering over a function should also show you its documentation and parameters.
+
+## Writing game code
+
+<ScrollyGettingStarted />
+
+## Final version
+
+In the end, the code looks like this:
+
+```luau
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+local Io = require("@vectarine/Io")
+local Persist = require("@vectarine/persist")
+local Text = require("@vectarine/text")
+
+local Ball = Persist.onReload({
+	position = Vec.V2(0, 0),
+	velocity = Vec.V2(1, 1.5),
+}, "ball")
+
+local Player = Persist.onReload({
+	position = 0,
+	score = 0,
+}, "player")
+
+local Opponent = Persist.onReload({
+	position = 0,
+	score = 0,
+}, "opponent")
+
+local racketSize = 0.4
+
+function resetBall()
+	Ball.position = Vec.V2(0, 0)
+	Ball.velocity.y = math.random() * 2
+end
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+	-- Drawing
+	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
+	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+
+	local scoreText = Player.score .. " - " .. Opponent.score
+	local measurements = Text.font:measureText(scoreText, 0.2)
+	Text.font:drawText(scoreText, Vec.V2(-measurements.width / 2, 0), 0.2)
+
+	-- Player input
+	if Io.isKeyDown("Up") then
+		Player.position += deltaTime
+	end
+	if Io.isKeyDown("Down") then
+		Player.position -= deltaTime
+	end
+
+	-- Opponent movement
+	if Ball.position.y < Opponent.position + racketSize / 2 then
+		Opponent.position -= deltaTime / 1.1
+	end
+	if Ball.position.y > Opponent.position + racketSize / 2 then
+		Opponent.position += deltaTime / 1.1
+	end
+
+	-- Physics
+	Ball.position += Ball.velocity:scale(deltaTime)
+	if Ball.position.y < -1 then
+		Ball.velocity.y = math.abs(Ball.velocity.y)
+	end
+	if Ball.position.y > 1 then
+		Ball.velocity.y = -math.abs(Ball.velocity.y)
+	end
+
+	if Ball.position.x < -1 then
+		Opponent.score += 1
+		resetBall()
+	elseif Ball.position.x < -0.8 then
+		if Ball.position.y > Player.position and Ball.position.y < Player.position + racketSize then
+			Ball.velocity.x = math.abs(Ball.velocity.x)
+			Ball.velocity.y = 2 * math.random()
+		end
+	end
+
+	if Ball.position.x > 1 then
+		Player.score += 1
+		resetBall()
+	elseif Ball.position.x > 0.8 then
+		if Ball.position.y > Opponent.position and Ball.position.y < Opponent.position + racketSize then
+			Ball.velocity.x = -math.abs(Ball.velocity.x)
+			Ball.velocity.y = 2 * math.random()
+		end
+	end
+end
+```
+
+You now have a fully functional pong game! You can add more features, like sound effects, a start screen, items, etc.

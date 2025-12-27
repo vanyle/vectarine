@@ -1,0 +1,27 @@
+{
+	"name": "vectarine-docs",
+	"type": "module",
+	"version": "0.0.1",
+	"scripts": {
+		"dev": "astro dev",
+		"start": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro"
+	},
+	"dependencies": {
+		"@astrojs/mdx": "^5.0.2",
+		"@astrojs/react": "^5.0.1",
+		"@astrojs/starlight": "^0.38.2",
+		"@fortawesome/fontawesome-free": "^7.2.0",
+		"astro": "^6.0.8",
+		"codehike": "^1.1.0",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4",
+		"sharp": "^0.34.2",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.14"
+	}
+}

@@ -1,0 +1,179 @@
+---
+title: Optimizing your game
+description: Understand how Vectarine's fastlist work and how they can be used to optimize game performance
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Is your game slow? This guide will show you how to find and fix performance issues.
+
+<Aside type="tip">
+If your game is not slow, do not optimize it! Focus on gameplay and making it fun!
+Nobody will play a game that is not fun, even if it runs smoothly. Optimize if your game is fun, but laggy.
+</Aside>
+
+## Understanding FPS
+
+A vectarine game will always try to run at a divisor of the display's refresh rate, usually 60 FPS. This is because
+rendering more often is wasteful, consumes more battery and heat's the CPU for no reason.
+
+Thus, when optimizing performance, we don't care about the FPS, but about the time it takes to render a frame. As long as this time
+is below 16.67ms (1000ms / 60), the game will run at 60 FPS. If it takes more than that, the game will drop to 30 FPS, then 15 FPS, etc.
+
+## Profiling
+
+To know what to optimize, you need to know what is taking time.
+
+Vectarine has a built in profiler that shows you how long it takes to render a frame as well as other performance information.
+
+![The Vectarine Profiler Tool](.././../../assets/profiler.png)
+
+- `total_lua_script_time` is how long your Luau code took to run this frame.
+
+- `total_frame_time` is how long the entire frame took. This includes Luau code, plugins and some extra background work done by the engine.
+
+- `Draw` and `Update` are custom timers added to measure how long a part of the code takes.
+
+
+```luau
+function Update(deltaTime: number)
+    Debug.timed("Update", function()
+        updateWorld()
+    end)
+
+    Debug.timed("Draw", function()
+        drawWorld()
+    end)
+end
+```
+
+You can put `timed` blocks inside one another and inside loops to understand what parts of the code take for most time:
+
+```luau
+function Update(deltaTime: number)
+    Debug.timed("Total", function()
+        for i, obj in ipairs(game_objects) do
+            Debug.timed("Update", function()
+                updateObject(obj)
+            end)
+            Debug.timed("Draw", function()
+                drawObject(obj)
+            end)
+        end
+    end)
+end
+```
+
+## Avoiding excessive work
+
+The best way to increase performance is to reduce the total amount of work being done. For example,
+you don't need to draw objects outside of the screen or do physics computation for objects that are far away from the player.
+
+You can also use better algorithms to do the same work. For example, if you want to remove duplicates from a list, instead of doing:
+
+```luau
+--- Slow version, notice that we have a nested loop, which makes the algorithm O(n^2)
+function removeDuplicates(list)
+    local result = {}
+    for i, v in ipairs(list) do
+        local found = false
+        for j, w in ipairs(result) do
+            if v == w then
+                found = true
+                break
+            end
+        end
+        if not found then
+            table.insert(result, v)
+        end
+    end
+    return result
+end
+```
+
+Do the following instead:
+
+```luau
+--- Fast version, we use a set to keep track of seen values, which makes the algorithm O(n)
+function removeDuplicates(list)
+    local result = {}
+    local seen = {}
+    for i, v in ipairs(list) do
+        if not seen[v] then
+            table.insert(result, v)
+            seen[v] = true
+        end
+    end
+    return result
+end
+```
+
+## Fastlists
+
+Fastlists are the simplest way to increase the performance of your game. A fastlist is a list of `Vec.Vec2` where all operation are fast. They are inspired by [numpy](https://numpy.org/) arrays from Python.
+
+Let's consider the following code that updates the position of a list of objects:
+
+```luau
+-- Let's imagine that something fills this list with objects that have a position and a velocity
+local objects = {
+    {
+        position = Vec.V2(0, 0),
+        velocity = Vec.V2(1, 1),
+    }
+}
+
+function UpdateObject(object, deltaTime: number)
+    object.position += object.velocity * deltaTime
+
+    if object.position.x < 0 then
+        object.position.x = 0
+        object.velocity.x = -object.velocity.x
+    end
+end
+
+function ProcessObjects(deltaTime: number)
+    for i, object in ipairs(objects) do
+        UpdateObject(object, deltaTime)
+    end
+end
+```
+
+Let's convert this code to use fastlists:
+
+```luau
+local FastList = require("@vectarine/fastlist")
+
+local objects = {
+    position = FastList.fromTable({Vec.V2(0, 0)}),
+    velocity = FastList.fromTable({Vec.V2(1, 1)}),
+}
+
+function ProcessObjects(deltaTime: number)
+    -- We can to operation on the whole list at once without loops.
+    -- All operations on vectors exists on fastlists.
+    objects.position += objects.velocity * deltaTime
+
+    -- We can use filterBetweenX to modify elements in a fastlist based on a condition.
+    local negativePosition = objects.position:filterBetweenX(objects.position, -math.huge, 0)
+    local velocityWherePositionNegative = objects.velocity:filterBetweenX(objects.position, -math.huge, 0)
+    objects.position = (negativePosition * Vec.V2(0, 1)):otherwise(objects.position)
+    -- Multiply the velocity by (-1, 1) element-wise for elements where the corresponding position was negative.
+    objects.velocity.x = (velocityWherePositionNegative * Vec.V2(-1, 1)):otherwise(objects.velocity.x)
+end
+```
+
+You can expect code using fastlists to run 10 to 100 times faster.
+
+You can use fastlists to draw objects efficiently too using `drawImages`:
+
+```luau
+-- Let's assume we have a fastlist of positions named 'positions'.
+local screenSize = Io.getWindowSize()
+local positionsScaled = positions * Vec.V2(1 / screenSize.x, 1 / screenSize.y) + Vec.V2(-1, -1)
+-- We create a fastlist of sizes with the same length as positions, where all values are the same (size).
+local sizes = Fastlist.fromValue(size:gl(), #positions)
+-- We can weave the 2 fastlists together to get a fastlist of position and size, which is what drawImages needs.
+local positionWithSizes = positionsScaled:weave({ sizes })
+positionWithSizes:drawImages(myImage, Vec4.WHITE)
+```

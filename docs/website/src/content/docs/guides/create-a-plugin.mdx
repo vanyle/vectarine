@@ -1,0 +1,142 @@
+---
+title: Create a native Rust Plugin
+description: Make your own Rust Plugin to extend the capabilities of Vectarine
+---
+
+import { Code } from "@astrojs/starlight/components";
+
+Vectarine can be extended with native plugins. In this guide, we'll see how to create a simple Rust plugin for vectarine.
+In this guide, we will see how to create a simple plugin that adds a new function to square a number.
+
+## Setting up the plugin
+
+First, clone the vectarine repository:
+
+```bash
+git clone https://github.com/vanyle/vectarine/
+cd vectarine/vectarine-plugin-template
+```
+
+Making a plugin requires to have the Rust toolchain installed as well as uv.
+
+The plugin needs to be compiled using the same version of Rust as the one used by Vectarine.
+You can check the version of Rust used by Vectarine in `rust-toolchain.toml` file.
+
+You can use [mise](https://github.com/jdx/mise) which can install Rust and uv for you and makes sure you have the same version as vectarine.
+
+## Building the plugin
+
+You can build the plugin with this command:
+
+```bash
+uv run bundle.py
+```
+
+This will produce a `plugin.vectaplugin` file that you can copy to the `plugins` folder of the editor to use it.
+
+You can automatically copy the resulting plugin to the editor using `uv run bundle.py --install` to quickly iterate.
+
+## Adding Luau functions to your plugin
+
+First, write the Luau API documentation for your function. It will be bundled in your plugin and be available for users to import.
+
+export const luauCode = `
+local module = {}
+
+-- Providing a version in your plugin.luau and your native code can be useful so that people can easily know what version they are using
+-- and if there is a mismatch between their .luau file and the native code (which should never happen!!)
+module.VERSION = 2
+module.NAME = "Plugin Template"
+
+--- Returns the square of a number
+--- @param n number
+--- @return number
+function module.square(n: number): number
+	return n * n
+end
+
+return module
+`;
+
+<Code lang="luau" title="plugin.luau" code={luauCode}/>
+
+
+Then, you can implement this function in Rust.
+
+export const rustCode = `use vectarine_plugin_sdk::{
+    egui,
+    mlua::ffi,
+    plugininterface::{EditorPluginInterface, PluginInterface},
+};
+
+unsafe extern "C-unwind" fn square_number(state: *mut ffi::lua_State) -> i32 {
+    unsafe {
+        let n = ffi::luaL_checknumber(state, 1);
+        ffi::lua_pushnumber(state, n * n); // square the number and push it to the stack
+        1
+    }
+}
+
+/// The init_hook is called when the game is loaded. You can use it to register custom lua functions, variables, etc...
+#[unsafe(no_mangle)]
+pub extern "C" fn init_hook(plugin_interface: PluginInterface) {
+    let lua = plugin_interface.lua;
+    let value = lua.create_table().expect("Failed to create Lua table");
+
+    let _ = value.set("VERSION", 2);
+    let _ = value.set("NAME", "Plugin Template");
+
+    unsafe {
+        // Due to how mlua works, we need to use "create_c_function" instead of "create_function".
+        let square_fn = lua
+            .create_c_function(square_number)
+            .expect("Failed to create Lua c-function");
+
+        let _ = value.set("square", square_fn);
+    }
+
+    let _ = lua.register_module("@vectarine/plugin_template", value);
+}`;
+
+<Code lang="rust" title="src/lib.rs" code={rustCode}/>
+
+## The name and filename of your plugin
+
+The name of your plugin, as specified in the `manifest.toml` needs to be unique enough: It is not possible for somebody to use two plugins
+with the same name in one game. This name is used to generate the `.luau` api file for example.
+
+If you add Lua APIs using your plugins, you should make it so that these APIs can be imported using:
+
+`require("@vectarine/your_unique_name")`
+
+Your name can have spaces and upper case letters, but these will be replaced with underscores and lowercase when importing.
+
+The filename of your plugin is what needs to go inside the `plugin` list inside the `game.vecta` and is what will be the name of the dynamic libraries
+
+Basically, the name of your plugin is only useful to the editor (it is shown in the GUI and for the Luau API), the runtime cares little about it.
+
+## Distributing your plugin
+
+To share your plugin, simply share the `your_plugin_name.vectaplugin` file.
+You should distribute the release version of your plugin, the one produced by `uv run bundle.py --release`
+
+## Platform support
+
+Vectarine comes bundled with a runtime that is precompiled for all the major platforms.
+However, as plugins contain native code, you will need to manually compile them for the platforms you want to support.
+
+For example, if you don't compile a Mac version of your plugin, games using it won't be able to run on Mac.
+
+As there is no single platform that can compile for all platforms, if you have a windows specific and a linux version of your plugin, you can
+merge them using `uv run bundle.py windows_version.vectaplugin linux_version.vectaplugin` to get a version that supports both platforms.
+
+## Lua API
+
+If your plugin extends the Lua, you should provide inside `plugin.luau` a list of the function you define, with documentation comments and proper types.
+
+## Plugin capabilities
+
+As vectarine plugins are written in Rust, they can do pretty much anything, as long as the platform they are compiled for supports it.
+
+Moreover, plugins use the SDK as a dependency to be able to access and create Luau functions for users.
+
