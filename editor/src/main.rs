@@ -8,6 +8,7 @@ use runtime::{
     game::drawable_screen_size,
     init_sdl,
     io::{localfs::LocalFileSystem, time::now_ms},
+    sdl2::video::Window,
     sound::init_sound_system,
 };
 
@@ -17,6 +18,7 @@ use crate::{
 };
 
 pub mod buildinfo;
+pub mod editorconfig;
 pub mod editorinterface;
 pub mod egui_sdl2_platform;
 pub mod exportinterface;
@@ -47,12 +49,16 @@ fn gui_main() {
         window,
         mut event_pump,
         gl,
+        gl_context,
     } = init_sdl(|video_subsystem| unsafe {
         egui_glow::painter::Context::from_loader_function(|name| {
             video_subsystem.gl_get_proc_address(name) as *const _
         })
     });
     init_sound_system(&sdl);
+
+    let (editor_window, editor_interface) =
+        editorinterface::create_specific_editor_window(&video.borrow(), &gl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 
@@ -68,6 +74,8 @@ fn gui_main() {
         video.clone(),
         window.clone(),
         gl.clone(),
+        editor_window,
+        editor_interface,
         debounce_event_sender,
     );
 
@@ -99,6 +107,11 @@ fn gui_main() {
     let mut start_of_frame = now_ms();
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
+
+        window
+            .borrow_mut()
+            .gl_make_current(&gl_context)
+            .expect("Failed to make context current");
 
         if window.borrow().is_minimized() {
             // Preserve CPU when minimized
@@ -133,5 +146,7 @@ fn gui_main() {
 
         editor_state.draw_editor_interface(&mut platform, &sdl, &latest_events, &mut painter);
         window.borrow().gl_swap_window();
+
+        editor_state.editor_window.gl_swap_window();
     }
 }

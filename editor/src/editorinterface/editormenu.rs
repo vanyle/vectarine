@@ -1,6 +1,6 @@
 use std::{cell::Cell, path::PathBuf};
 
-use crate::buildinfo;
+use crate::{buildinfo, editorconfig::WindowStyle};
 use egui::{Modal, Popup, RichText, UiBuilder};
 use runtime::console;
 
@@ -112,6 +112,9 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                         let mut config = editor.config.borrow_mut();
                         config.is_profiler_window_shown = !config.is_profiler_window_shown;
                     }
+                });
+
+                ui.menu_button("Preferences", |ui| {
                     {
                         let mut config = editor.config.borrow_mut();
                         if ui
@@ -124,7 +127,21 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                                 .set_always_on_top(config.is_always_on_top);
                         }
                     }
-                    if ui.button("Save editor config").clicked() {
+                    {
+                        let mut config = editor.config.borrow_mut();
+                        let mut window_style = config.window_style == WindowStyle::GameWithEditor;
+                        if ui
+                            .checkbox(&mut window_style, "Merge editor and game windows")
+                            .clicked()
+                        {
+                            config.window_style = if window_style {
+                                WindowStyle::GameWithEditor
+                            } else {
+                                WindowStyle::GameSeparateFromEditor
+                            };
+                        }
+                    }
+                    if ui.button("Save preferences").clicked() {
                         editor.save_config();
                     }
                 });
