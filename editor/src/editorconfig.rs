@@ -18,6 +18,7 @@ pub struct EditorConfig {
     pub is_profiler_window_shown: bool,
     pub is_export_window_shown: bool,
     pub is_always_on_top: bool,
+    pub is_editor_always_on_top: bool,
     pub debug_resource_shown: Option<ResourceId>,
 
     pub window_style: WindowStyle,

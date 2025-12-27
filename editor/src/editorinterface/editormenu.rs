@@ -118,13 +118,24 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                     {
                         let mut config = editor.config.borrow_mut();
                         if ui
-                            .checkbox(&mut config.is_always_on_top, "Always on top")
+                            .checkbox(&mut config.is_always_on_top, "Game always on top")
                             .clicked()
                         {
                             editor
                                 .window
                                 .borrow_mut()
                                 .set_always_on_top(config.is_always_on_top);
+                        }
+                    }
+                    if editor.config.borrow().window_style == WindowStyle::GameSeparateFromEditor {
+                        let mut config = editor.config.borrow_mut();
+                        if ui
+                            .checkbox(&mut config.is_editor_always_on_top, "Editor always on top")
+                            .clicked()
+                        {
+                            editor
+                                .editor_specific_window
+                                .set_always_on_top(config.is_editor_always_on_top);
                         }
                     }
                     {

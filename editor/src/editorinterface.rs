@@ -24,7 +24,7 @@ use runtime::{
 };
 
 use crate::{
-    editorconfig::{EDITOR_CONFIG_FILE, EditorConfig},
+    editorconfig::{EDITOR_CONFIG_FILE, EditorConfig, WindowStyle},
     editorinterface::emptyscreen::draw_empty_screen,
     egui_sdl2_platform,
     exportinterface::draw_editor_export,
@@ -54,8 +54,8 @@ pub struct EditorState {
     pub window: Rc<RefCell<sdl2::video::Window>>,
     pub gl: Arc<glow::Context>,
 
-    pub editor_window: sdl2::video::Window,
-    pub editor_interface: EditorInterfaceWithGl,
+    pub editor_specific_window: sdl2::video::Window,
+    //pub editor_interface: EditorInterfaceWithGl,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 }
 
@@ -127,7 +127,6 @@ impl EditorState {
         window: Rc<RefCell<sdl2::video::Window>>,
         gl: Arc<glow::Context>,
         editor_window: sdl2::video::Window,
-        editor_interface: EditorInterfaceWithGl,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
     ) -> Self {
         Self {
@@ -138,8 +137,7 @@ impl EditorState {
             video,
             window,
             gl,
-            editor_window,
-            editor_interface,
+            editor_specific_window: editor_window,
             debouncer: Rc::new(RefCell::new(
                 new_debouncer(
                     Duration::from_millis(10),
@@ -246,10 +244,15 @@ impl EditorState {
                 let paint_jobs = platform.tessellate(&full_output);
                 let pj = paint_jobs.as_slice();
 
-                // Render the editor interface on top of the game.
-                let size = drawable_screen_size(&self.window.borrow());
+                let window_with_editor = match self.config.borrow().window_style {
+                    WindowStyle::GameSeparateFromEditor => &self.editor_specific_window,
+                    WindowStyle::GameWithEditor => &self.window.borrow(),
+                };
 
-                let pixel_per_point = size.0 as f32 / self.window.borrow().size().0 as f32;
+                // Render the editor interface on top of the game.
+                let size = drawable_screen_size(window_with_editor);
+
+                let pixel_per_point = size.0 as f32 / window_with_editor.size().0 as f32;
 
                 painter.paint_and_update_textures(
                     [size.0, size.1],
@@ -267,16 +270,23 @@ impl EditorState {
     }
 }
 
-pub fn process_events_when_no_game(latest_events: &[sdl2::event::Event], gl: &glow::Context) {
-    unsafe {
-        gl.clear_color(0.1, 0.1, 0.1, 1.0);
-        gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-    }
-
+pub fn handle_close_events(latest_events: &[sdl2::event::Event]) {
     for event in latest_events {
+        if let sdl2::event::Event::Window { win_event, .. } = event
+            && matches!(win_event, sdl2::event::WindowEvent::Close)
+        {
+            std::process::exit(0);
+        }
         if let sdl2::event::Event::Quit { .. } = event {
             std::process::exit(0);
         }
+    }
+}
+
+pub fn clear_and_draw_when_no_game(gl: &glow::Context) {
+    unsafe {
+        gl.clear_color(0.1, 0.1, 0.1, 1.0);
+        gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
     }
 }
 

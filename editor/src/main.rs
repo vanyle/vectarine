@@ -3,17 +3,18 @@
 use std::{path::PathBuf, sync::mpsc::channel};
 
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
+use glow::HasContext;
 use runtime::{
     RenderingBlock,
     game::drawable_screen_size,
     init_sdl,
     io::{localfs::LocalFileSystem, time::now_ms},
-    sdl2::video::Window,
     sound::init_sound_system,
 };
 
 use crate::{
-    editorinterface::{EditorState, process_events_when_no_game},
+    editorconfig::WindowStyle,
+    editorinterface::{EditorState, clear_and_draw_when_no_game},
     reload::reload_assets_if_needed,
 };
 
@@ -57,16 +58,14 @@ fn gui_main() {
     });
     init_sound_system(&sdl);
 
-    let (editor_window, editor_interface) =
+    let (editor_window, mut editor_interface) =
         editorinterface::create_specific_editor_window(&video.borrow(), &gl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 
-    // Setup the editor interface
     let mut painter =
         egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
 
-    // Create the egui + sdl2 platform
     let mut platform = egui_sdl2_platform::Platform::new(drawable_screen_size(&window.borrow()))
         .expect("Failed to create platform");
 
@@ -75,7 +74,6 @@ fn gui_main() {
         window.clone(),
         gl.clone(),
         editor_window,
-        editor_interface,
         debounce_event_sender,
     );
 
@@ -107,6 +105,9 @@ fn gui_main() {
     let mut start_of_frame = now_ms();
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
+        let (game_window_events, editor_window_events): (Vec<_>, Vec<_>) = latest_events
+            .into_iter()
+            .partition(|e| e.get_window_id() == Some(editor_state.window.borrow().id()));
 
         window
             .borrow_mut()
@@ -115,7 +116,7 @@ fn gui_main() {
 
         if window.borrow().is_minimized() {
             // Preserve CPU when minimized
-            process_events_when_no_game(&latest_events, &gl);
+            clear_and_draw_when_no_game(&gl);
             window.borrow().gl_swap_window();
             std::thread::sleep(std::time::Duration::from_millis(100));
             continue;
@@ -125,6 +126,10 @@ fn gui_main() {
         let delta_duration =
             std::time::Duration::from_micros(((now_instant - start_of_frame) * 1000.0) as u64);
         start_of_frame = now_instant;
+
+        // Handle basic events
+        editorinterface::handle_close_events(&game_window_events);
+        editorinterface::handle_close_events(&editor_window_events);
 
         if let Some(project) = editor_state.project.borrow_mut().as_mut() {
             let game = &mut project.game;
@@ -137,16 +142,75 @@ fn gui_main() {
                 &debounce_receiver,
             );
 
+            window
+                .borrow_mut()
+                .gl_make_current(&gl_context)
+                .expect("Failed to make context current");
+            unsafe {
+                let window_size = window.borrow().size();
+                gl.viewport(0, 0, window_size.0 as i32, window_size.1 as i32);
+            }
+
             // Render the game
-            game.main_loop(&latest_events, &window, delta_duration, true);
+            game.main_loop(&game_window_events, &window, delta_duration, true);
         } else {
             // Clear the screen when no project is loaded
-            process_events_when_no_game(&latest_events, &gl);
+            {
+                window
+                    .borrow()
+                    .gl_make_current(&gl_context)
+                    .expect("Failed to make context current");
+                clear_and_draw_when_no_game(&gl);
+            }
+            {
+                editor_state
+                    .editor_specific_window
+                    .gl_make_current(&gl_context)
+                    .expect("Failed to make context current");
+                clear_and_draw_when_no_game(&gl);
+            }
         }
 
-        editor_state.draw_editor_interface(&mut platform, &sdl, &latest_events, &mut painter);
-        window.borrow().gl_swap_window();
+        let window_style = editor_state.config.borrow().window_style;
+        // We finished drawing the game. If it is separate from the editor, we can swap.
+        if matches!(window_style, WindowStyle::GameSeparateFromEditor) {
+            window.borrow().gl_swap_window();
+        }
 
-        editor_state.editor_window.gl_swap_window();
+        match window_style {
+            WindowStyle::GameSeparateFromEditor => {
+                editor_state.editor_specific_window.show();
+                unsafe {
+                    let window_size = editor_state.editor_specific_window.size();
+                    gl.viewport(0, 0, window_size.0 as i32, window_size.1 as i32);
+                }
+                editor_state
+                    .editor_specific_window
+                    .gl_make_current(&gl_context)
+                    .expect("Failed to make context current");
+                let platform = &mut editor_interface.platform;
+                let painter = &mut editor_interface.painter;
+                editor_state.draw_editor_interface(platform, &sdl, &editor_window_events, painter);
+            }
+            WindowStyle::GameWithEditor => {
+                editor_state.editor_specific_window.hide();
+                window
+                    .borrow()
+                    .gl_make_current(&gl_context)
+                    .expect("Failed to make context current");
+                editor_state.draw_editor_interface(
+                    &mut platform,
+                    &sdl,
+                    &game_window_events,
+                    &mut painter,
+                );
+            }
+        }
+
+        if matches!(window_style, WindowStyle::GameSeparateFromEditor) {
+            editor_state.editor_specific_window.gl_swap_window();
+        } else {
+            window.borrow().gl_swap_window();
+        }
     }
 }
