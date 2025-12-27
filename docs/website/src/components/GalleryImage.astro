@@ -1,0 +1,44 @@
+---
+const { src, alt } = Astro.props;
+---
+
+<figure class="gallery-item">
+    <img src={src} alt={alt} loading="lazy" />
+    <figcaption><slot /></figcaption>
+</figure>
+
+<style>
+    .gallery-item {
+        margin: 0;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--sl-color-gray-5);
+        background: var(--sl-color-bg-sidebar);
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .gallery-item:hover {
+        border-color: var(--sl-color-accent);
+        box-shadow: 0 4px 24px
+            color-mix(in srgb, var(--sl-color-accent) 15%, transparent);
+    }
+
+    .gallery-item img {
+        overflow: hidden;
+        width: 120%;
+        margin-left: -10%; /* Hide image borders */
+        height: 250px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+
+    .gallery-item figcaption {
+        padding: 0.75rem 1rem;
+        font-size: var(--sl-text-sm);
+        color: var(--sl-color-gray-2);
+        line-height: 1.5;
+    }
+</style>

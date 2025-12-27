@@ -1,0 +1,92 @@
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+
+:root {
+    /* Titles are meant to be big */
+    --sl-text-5xl: 3.5rem;
+    --sl-text-6xl: 5rem;
+
+    /* Wider content, narrower TOC */
+    --sl-content-width: 65rem;
+    --sl-sidebar-width: 16rem;
+}
+
+/* Scrollycoding layout */
+.scrollycoding {
+    display: flex;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.scrollycoding-steps {
+    flex: 1;
+    min-width: 0;
+}
+
+.scrollycoding-sticker {
+    flex: 1;
+    position: sticky;
+    top: 4rem;
+    align-self: flex-start;
+    max-height: calc(100vh - 6rem);
+    overflow: auto;
+}
+
+.scrollycoding-sticker pre {
+    margin: 0;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.scrollycoding-step {
+    padding: 1rem;
+    min-height: 50vh;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.scrollycoding-step[data-selected="true"] {
+    opacity: 1;
+    border-left-color: var(--sl-color-accent);
+}
+
+.scrollycoding-step:hover {
+    opacity: 0.7;
+}
+
+.scrollycoding-step[data-selected="true"]:hover {
+    opacity: 1;
+}
+
+.scrollycoding-step-title {
+    margin-top: 0;
+    font-size: 1.25rem;
+}
+
+/* Theme-aware code highlighting */
+:root[data-theme="light"] .ch-theme-dark,
+:root[data-theme="dark"] .ch-theme-light {
+    display: none;
+}
+
+:root:not([data-theme]) .ch-theme-light {
+    display: none;
+}
+
+/* Responsive: stack on narrow screens */
+@media (max-width: 768px) {
+    .scrollycoding {
+        flex-direction: column;
+    }
+
+    .scrollycoding-sticker {
+        position: static;
+        max-height: none;
+    }
+
+    .scrollycoding-step {
+        min-height: auto;
+    }
+}

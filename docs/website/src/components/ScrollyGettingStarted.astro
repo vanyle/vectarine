@@ -1,0 +1,44 @@
+---
+import { highlight, type RawCode } from "codehike/code";
+import stepsRaw from "../data/getting-started-steps.md?raw";
+import ScrollycodingUI from "./ScrollycodingUI.tsx";
+
+function parseSteps(
+    raw: string,
+): { title: string; description: string; code: RawCode }[] {
+    const sections = raw.split(/^## /m).filter((s) => s.trim());
+    return sections.map((section) => {
+        const lines = section.split("\n");
+        const title = lines[0].trim();
+
+        const codeStart = lines.findIndex((l) => l.startsWith("```"));
+        const codeEnd = lines.findIndex(
+            (l, i) => i > codeStart && l.startsWith("```"),
+        );
+
+        const description = lines.slice(1, codeStart).join("\n").trim();
+
+        const metaLine = lines[codeStart];
+        const metaMatch = metaLine.match(/^```(\w+)\s*(.*)?$/);
+        const lang = metaMatch?.[1] ?? "text";
+        const meta = metaMatch?.[2]?.trim() ?? "";
+
+        const value = lines.slice(codeStart + 1, codeEnd).join("\n");
+
+        return { title, description, code: { value, lang, meta } };
+    });
+}
+
+const steps = parseSteps(stepsRaw);
+
+const highlightedSteps = await Promise.all(
+    steps.map(async (step) => ({
+        title: step.title,
+        description: step.description,
+        codeDark: await highlight(step.code, "github-dark"),
+        codeLight: await highlight(step.code, "github-light"),
+    })),
+);
+---
+
+<ScrollycodingUI steps={highlightedSteps} client:load />

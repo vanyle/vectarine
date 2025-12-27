@@ -1,0 +1,51 @@
+---
+const { href, label, icon, color, textColor = "#fff" } = Astro.props;
+---
+
+<a
+    class="community-btn"
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={`--btn-color: ${color}; --btn-text: ${textColor};`}
+>
+    <i class={icon}></i>
+    {label}
+</a>
+
+<style>
+    .community-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6em;
+        background: var(--btn-color);
+        color: var(--btn-text);
+        font-size: 1.15rem;
+        font-weight: 700;
+        padding: 0.85em 2em;
+        border-radius: 9999px;
+        text-decoration: none;
+        transition:
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
+        box-shadow: 0 4px 16px
+            color-mix(in srgb, var(--btn-color) 40%, transparent);
+    }
+
+    .community-btn:hover {
+        transform: scale(1.06);
+        box-shadow: 0 6px 24px
+            color-mix(in srgb, var(--btn-color) 55%, transparent);
+        color: var(--btn-text);
+    }
+
+    .community-btn:active {
+        transform: scale(0.97);
+        box-shadow: 0 2px 8px
+            color-mix(in srgb, var(--btn-color) 30%, transparent);
+    }
+
+    .community-btn i {
+        font-size: 1.2em;
+    }
+</style>

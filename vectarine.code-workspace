@@ -3,6 +3,10 @@
 		{
 			"path": ".",
 			"name": "Vectarine"
+		},
+		{
+			"path": "./docs/website",
+			"name": "Website"
 		}
 	],
 	"extensions": {

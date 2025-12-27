@@ -1,0 +1,54 @@
+---
+const { title, icon } = Astro.props;
+---
+
+<div class="feature-box">
+    {icon && <div class="feature-box-icon"><i class={icon} /></div>}
+    <p class="feature-box-title">{title}</p>
+    <p class="feature-box-content"><slot /></p>
+</div>
+
+<style>
+    .feature-box {
+        background: var(--sl-color-bg-sidebar);
+        border: 1px solid var(--sl-color-gray-5);
+        border-radius: 0.75rem;
+        padding: 1.75rem 2rem;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .feature-box:hover {
+        border-color: var(--sl-color-accent);
+        box-shadow: 0 4px 24px
+            color-mix(in srgb, var(--sl-color-accent) 15%, transparent);
+    }
+
+    .feature-box-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.5rem;
+        background: color-mix(in srgb, var(--sl-color-accent) 18%, transparent);
+        color: var(--sl-color-accent);
+        font-size: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .feature-box-title {
+        font-size: var(--sl-text-xl);
+        font-weight: 700;
+        color: var(--sl-color-white);
+        margin: 0 0 0.6rem;
+    }
+
+    .feature-box-content {
+        color: var(--sl-color-gray-2);
+        font-size: var(--sl-text-base);
+        line-height: 1.7;
+        margin: 0;
+    }
+</style>
