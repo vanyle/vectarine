@@ -12,6 +12,8 @@ pub mod sound;
 
 // Re-export commonly used crates for the editor
 pub use anyhow;
+pub use egui;
+pub use egui_glow;
 pub use mlua;
 pub use sdl2;
 pub use toml;

@@ -74,6 +74,7 @@ pub fn setup_loader_api(
                 Path::new(&path),
                 || ImageResource {
                     texture: RefCell::new(None),
+                    egui_id: RefCell::new(None),
                     antialiasing: antialiasing.map(|is_antialiasing| {
                         if is_antialiasing {
                             ImageAntialiasing::Linear

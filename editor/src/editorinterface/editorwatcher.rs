@@ -1,6 +1,7 @@
 use std::{cell::RefCell, thread::LocalKey};
 
-use egui::RichText;
+use runtime::egui;
+use runtime::egui::RichText;
 use egui_extras::{Size, StripBuilder};
 use runtime::{
     lua_env::{lua_vec2::Vec2, lua_vec4::Vec4, stringify_lua_value},

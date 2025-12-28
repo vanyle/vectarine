@@ -4,7 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
+use runtime::egui;
+use runtime::egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
 use egui_extras::{Size, StripBuilder};
 use regex::Regex;
 use runtime::{

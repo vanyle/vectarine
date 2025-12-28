@@ -5,7 +5,7 @@ use std::{path::PathBuf, sync::mpsc::channel};
 use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
 use glow::HasContext;
 use runtime::{
-    RenderingBlock,
+    RenderingBlock, egui_glow,
     game::drawable_screen_size,
     init_sdl,
     io::{localfs::LocalFileSystem, time::now_ms},

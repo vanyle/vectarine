@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-egui = "0.32.2"
 egui_extras = "0.32.3"
-egui_glow = "0.32.2"
 glow = "0.16.0"
 lazy_static = "1.5.0"
 notify-debouncer-full = "0.6.0"

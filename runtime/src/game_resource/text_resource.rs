@@ -21,7 +21,7 @@ impl Resource for TextResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
         ui.label("Text Resource");
         let content = self.content.borrow();
         if let Some(data) = &*content {

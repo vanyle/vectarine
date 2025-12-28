@@ -1,4 +1,5 @@
-use egui::Key;
+use runtime::egui;
+use runtime::egui::Key;
 use runtime::sdl2::keyboard::Keycode;
 
 /// A trait that adds a method to convert to an egui key

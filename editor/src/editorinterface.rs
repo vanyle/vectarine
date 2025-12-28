@@ -14,6 +14,7 @@ use notify_debouncer_full::{
 };
 use runtime::{
     anyhow::{self},
+    egui_glow,
     game::drawable_screen_size,
     io::{
         fs::{FileSystem, ReadOnlyFileSystem},
@@ -227,7 +228,7 @@ impl EditorState {
 
         draw_editor_menu(self, &ctx);
         draw_editor_console(self, &ctx);
-        draw_editor_resources(self, &ctx);
+        draw_editor_resources(self, painter, &ctx);
         draw_editor_watcher(self, &ctx);
         draw_editor_profiler(self, &ctx);
         draw_editor_export(self, &ctx);

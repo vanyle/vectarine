@@ -7,6 +7,7 @@ use crate::{
 
 pub struct ImageResource {
     pub texture: RefCell<Option<Arc<gltexture::Texture>>>,
+    pub egui_id: RefCell<Option<egui::TextureId>>,
     pub antialiasing: Option<ImageAntialiasing>,
 }
 
@@ -36,10 +37,11 @@ impl Resource for ImageResource {
             image.height(),
             self.antialiasing.unwrap_or(ImageAntialiasing::Linear),
         )));
+        self.egui_id.replace(None);
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
         ui.label("Image Details:");
         let tex = self.texture.borrow();
         let Some(tex) = tex.as_ref() else {
@@ -50,6 +52,31 @@ impl Resource for ImageResource {
         ui.label(format!("Height: {}", tex.height()));
         ui.label(format!("Antialiasing: {:?}", self.antialiasing));
         ui.label(format!("OpenGL ID: {}", tex.id().0));
+
+        let mut egui_id = self.egui_id.borrow_mut();
+        let texture_id = match egui_id.as_mut() {
+            Some(id) => *id,
+            None => {
+                let native_tex = painter.register_native_texture(tex.id());
+                *egui_id = Some(native_tex);
+                native_tex
+            }
+        };
+
+        let sized_texture = egui::load::SizedTexture::new(
+            texture_id,
+            egui::vec2(tex.width() as f32, tex.height() as f32),
+        );
+        let size = get_desired_size(
+            egui::vec2(tex.width() as f32, tex.height() as f32),
+            200.0,
+            200.0,
+        );
+
+        let image = egui::Image::from_texture(sized_texture)
+            .max_size(size)
+            .corner_radius(5);
+        ui.add(image);
     }
 
     fn default() -> Self
@@ -58,7 +85,16 @@ impl Resource for ImageResource {
     {
         Self {
             texture: RefCell::new(None),
+            egui_id: RefCell::new(None),
             antialiasing: None,
         }
     }
+}
+
+/// Preserves the aspect ratio of the image.
+fn get_desired_size(actual_size: egui::Vec2, max_width: f32, max_height: f32) -> egui::Vec2 {
+    let width_scale = max_width / actual_size.x;
+    let height_scale = max_height / actual_size.y;
+    let scale = width_scale.min(height_scale);
+    egui::Vec2::new(actual_size.x * scale, actual_size.y * scale)
 }

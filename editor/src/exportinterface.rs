@@ -8,7 +8,8 @@ use std::sync::Mutex;
 use std::thread;
 use std::{cell::RefCell, env, fs, path::PathBuf};
 
-use egui::{Color32, RichText, TextBuffer, Widget};
+use runtime::egui;
+use runtime::egui::{Color32, RichText, TextBuffer, Widget};
 use zip::write::SimpleFileOptions;
 
 use crate::editorinterface::EditorState;

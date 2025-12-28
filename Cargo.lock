@@ -705,9 +705,7 @@ name = "editor"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "egui",
  "egui_extras",
- "egui_glow",
  "glow",
  "lazy_static",
  "notify-debouncer-full",
@@ -2528,6 +2526,7 @@ dependencies = [
  "base64",
  "bincode",
  "egui",
+ "egui_glow",
  "emscripten-functions",
  "emscripten-val",
  "fontdue",

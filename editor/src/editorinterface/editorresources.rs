@@ -1,12 +1,17 @@
 use std::{cell::RefCell, path::PathBuf, sync::Arc};
 
-use egui::ScrollArea;
 use egui_extras::{Column, TableBuilder};
+use runtime::egui::ScrollArea;
 use runtime::game::Game;
+use runtime::{egui, egui_glow};
 
 use crate::editorinterface::EditorState;
 
-pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
+pub fn draw_editor_resources(
+    editor: &EditorState,
+    painter: &mut egui_glow::Painter,
+    ctx: &egui::Context,
+) {
     let mut project = editor.project.borrow_mut();
     let game = match project.as_mut() {
         Some(proj) => Some(&mut proj.game),
@@ -45,7 +50,7 @@ pub fn draw_editor_resources(editor: &EditorState, ctx: &egui::Context) {
         ))
         .resizable(true)
         .show(ctx, |ui| {
-            res.draw_debug_gui(ui);
+            res.draw_debug_gui(painter, ui);
         });
     };
 }

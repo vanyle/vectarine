@@ -26,7 +26,7 @@ impl Resource for ScriptResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
         // If we wanted a script editor, it would be here.
         ui.label("[TODO] Script Resource debug gui");
     }

@@ -1,5 +1,6 @@
 use crate::editorinterface::EditorState;
-use egui::RichText;
+use runtime::egui;
+use runtime::egui::RichText;
 use runtime::metrics::{METRICS_STORAGE_DURATION, Measurable, Metric};
 use std::cell::{Cell, RefCell};
 

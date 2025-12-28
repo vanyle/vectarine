@@ -19,7 +19,6 @@
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
-- [ ] Add a way to reduce the game viewport in the editor
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor

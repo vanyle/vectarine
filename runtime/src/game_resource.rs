@@ -145,8 +145,8 @@ impl ResourceHolder {
         Ok(res)
     }
 
-    pub fn draw_debug_gui(&self, ui: &mut egui::Ui) {
-        self.resource.draw_debug_gui(ui);
+    pub fn draw_debug_gui(&self, painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+        self.resource.draw_debug_gui(painter, ui);
     }
 
     pub fn get_path(&self) -> &Path {
@@ -455,7 +455,7 @@ pub trait Resource: ResourceToAny {
     ) -> Status;
 
     /// Draw an interface with information about the resource.
-    fn draw_debug_gui(&self, ui: &mut egui::Ui);
+    fn draw_debug_gui(&self, painter: &mut egui_glow::Painter, ui: &mut egui::Ui);
 
     /// A human-friendly name for this type of Resource.
     /// This is usually the name of the struct implementing the trait.

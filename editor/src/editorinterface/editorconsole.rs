@@ -2,11 +2,11 @@ use std::path::Path;
 use std::process::Command;
 use std::sync::{LazyLock, Mutex};
 
-use egui::RichText;
-use egui::Widget;
 use runtime::console;
 use runtime::console::ConsoleMessage;
 use runtime::console::LuaError;
+use runtime::egui;
+use runtime::egui::{RichText, Widget};
 use runtime::game::Game;
 use runtime::lua_env::to_lua;
 

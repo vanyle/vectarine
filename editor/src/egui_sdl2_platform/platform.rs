@@ -1,4 +1,5 @@
-use egui::{Modifiers, Pos2};
+use runtime::egui;
+use runtime::egui::{Modifiers, Pos2};
 use runtime::anyhow;
 use runtime::sdl2;
 use runtime::sdl2::{

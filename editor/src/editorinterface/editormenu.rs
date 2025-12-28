@@ -1,8 +1,9 @@
 use std::{cell::Cell, path::PathBuf};
 
 use crate::{buildinfo, editorconfig::WindowStyle};
-use egui::{Modal, Popup, RichText, UiBuilder};
 use runtime::console;
+use runtime::egui;
+use runtime::egui::{Modal, Popup, RichText, UiBuilder};
 
 use crate::editorinterface::{EditorState, emptyscreen::open_file_dialog_and_load_project};
 

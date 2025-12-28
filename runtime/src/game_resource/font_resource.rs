@@ -99,7 +99,7 @@ impl Resource for FontResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
         let font_data = self.font_rendering.borrow();
         let font_data = font_data.as_ref();
         let Some(font_data) = font_data else {

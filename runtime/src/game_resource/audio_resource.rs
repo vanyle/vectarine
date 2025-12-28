@@ -98,7 +98,7 @@ impl Resource for AudioResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
         ui.label("[TODO] Audio Resource");
         let c = self.currently_used_channel.borrow();
         let c = c.as_ref();
