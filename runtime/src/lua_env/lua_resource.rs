@@ -74,7 +74,6 @@ macro_rules! make_resource_lua_compatible {
 }
 
 /// This macro automatically implements IntoLua and FromLua for a given struct.
-/// The struct needs to implement clone for this to work.
 /// The second parameter of the macro is the name of the struct in conversion error messages
 #[macro_export]
 macro_rules! auto_impl_lua {
@@ -88,7 +87,7 @@ macro_rules! auto_impl_lua {
         impl FromLua for $struct_name {
             fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
                 match value {
-                    mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
+                    mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
                     _ => Err(mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
                         to: stringify!($friendly_name).to_string(),
@@ -117,7 +116,7 @@ macro_rules! auto_impl_lua_copy {
             #[inline(always)]
             fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
                 match value {
-                    mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+                    mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
                     _ => Err(mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
                         to: stringify!($friendly_name).to_string(),

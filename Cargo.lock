@@ -2810,6 +2810,7 @@ dependencies = [
  "image",
  "lazy_static",
  "mlua",
+ "nalgebra",
  "noise",
  "num-traits",
  "rapier2d",
