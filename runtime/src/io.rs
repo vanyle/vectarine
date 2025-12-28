@@ -3,6 +3,7 @@ use mlua::IntoLua;
 use sdl2::{event::Event, keyboard::Keycode, video::FullscreenType};
 use std::collections::HashMap;
 
+pub mod dummyfs;
 pub mod fs;
 pub mod localfs;
 pub mod time;

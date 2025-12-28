@@ -16,6 +16,7 @@ use runtime::{
     anyhow::{self},
     egui_glow,
     game::drawable_screen_size,
+    graphics::batchdraw::BatchDraw2d,
     io::{
         fs::{FileSystem, ReadOnlyFileSystem},
         localfs::LocalFileSystem,
@@ -56,7 +57,7 @@ pub struct EditorState {
     pub gl: Arc<glow::Context>,
 
     pub editor_specific_window: sdl2::video::Window,
-    //pub editor_interface: EditorInterfaceWithGl,
+    pub editor_batch_draw: BatchDraw2d,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 }
 
@@ -130,11 +131,13 @@ impl EditorState {
         editor_window: sdl2::video::Window,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
     ) -> Self {
+        let editor_batch_draw = BatchDraw2d::new(&gl).expect("Failed to create editor batch draw");
         Self {
             config: Rc::new(RefCell::new(EditorConfig::default())),
             text_command: String::new(),
             start_time: Instant::now(),
             project: Rc::new(RefCell::new(None)),
+            editor_batch_draw,
             video,
             window,
             gl,
@@ -291,50 +294,10 @@ pub fn clear_and_draw_when_no_game(gl: &glow::Context) {
     }
 }
 
-pub struct EditorInterfaceWithGl {
-    pub platform: egui_sdl2_platform::Platform,
-    pub painter: egui_glow::Painter,
-    pub gl: Arc<glow::Context>,
-}
-
 pub fn make_gl_context(video_subsystem: &runtime::sdl2::VideoSubsystem) -> glow::Context {
     unsafe {
         egui_glow::painter::Context::from_loader_function(|name| {
             video_subsystem.gl_get_proc_address(name) as *const _
-        })
-    }
-}
-
-/// Create an SDL2 Window to display the editor without the game.
-/// This window is hidden by default and is show when the WindowStyle is set to GameSeparateFromEditor.
-pub fn create_specific_editor_window(
-    video_subsystem: &runtime::sdl2::VideoSubsystem,
-    gl: &Arc<glow::Context>,
-) -> (Window, EditorInterfaceWithGl) {
-    let editor_window: Window = video_subsystem
-        .window("Vectarine Editor", 800, 600)
-        .opengl()
-        .allow_highdpi() // For Retina displays on macOS
-        .resizable()
-        // .hidden() // hidden by default
-        .build()
-        .expect("Failed to create window");
-    let interface =
-        EditorInterfaceWithGl::new(&editor_window, gl).expect("Failed to create editor interface");
-    (editor_window, interface)
-}
-
-impl EditorInterfaceWithGl {
-    pub fn new(window: &Window, gl: &Arc<glow::Context>) -> anyhow::Result<Self> {
-        let painter =
-            egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
-        let platform = egui_sdl2_platform::Platform::new(drawable_screen_size(window))
-            .expect("Failed to create platform");
-
-        Ok(Self {
-            platform,
-            painter,
-            gl: gl.clone(),
         })
     }
 }

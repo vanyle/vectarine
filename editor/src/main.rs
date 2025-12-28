@@ -7,6 +7,7 @@ use glow::HasContext;
 use runtime::{
     RenderingBlock, egui_glow,
     game::drawable_screen_size,
+    game_resource::{ResourceManager, font_resource},
     init_sdl,
     io::{localfs::LocalFileSystem, time::now_ms},
     sound::init_sound_system,
@@ -20,6 +21,7 @@ use crate::{
 
 pub mod buildinfo;
 pub mod editorconfig;
+pub mod editorextrawindow;
 pub mod editorinterface;
 pub mod egui_sdl2_platform;
 pub mod exportinterface;
@@ -59,7 +61,7 @@ fn gui_main() {
     init_sound_system(&sdl);
 
     let (editor_window, mut editor_interface) =
-        editorinterface::create_specific_editor_window(&video.borrow(), &gl);
+        editorextrawindow::create_specific_editor_window(&video.borrow(), &gl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 
@@ -172,25 +174,20 @@ fn gui_main() {
         }
 
         let window_style = editor_state.config.borrow().window_style;
-        // We finished drawing the game. If it is separate from the editor, we can swap.
-        if matches!(window_style, WindowStyle::GameSeparateFromEditor) {
-            window.borrow().gl_swap_window();
-        }
 
         match window_style {
             WindowStyle::GameSeparateFromEditor => {
-                editor_state.editor_specific_window.show();
-                unsafe {
-                    let window_size = editor_state.editor_specific_window.size();
-                    gl.viewport(0, 0, window_size.0 as i32, window_size.1 as i32);
-                }
-                editor_state
-                    .editor_specific_window
-                    .gl_make_current(&gl_context)
-                    .expect("Failed to make context current");
-                let platform = &mut editor_interface.platform;
-                let painter = &mut editor_interface.painter;
-                editor_state.draw_editor_interface(platform, &sdl, &editor_window_events, painter);
+                // We finished drawing the game. If it is separate from the editor, we can swap.
+                window.borrow().gl_swap_window();
+                editorextrawindow::render_editor_in_extra_window(
+                    &sdl,
+                    &gl,
+                    &gl_context,
+                    &mut editor_state,
+                    &mut editor_interface,
+                    &editor_window_events,
+                );
+                editor_state.editor_specific_window.gl_swap_window();
             }
             WindowStyle::GameWithEditor => {
                 editor_state.editor_specific_window.hide();
@@ -204,13 +201,8 @@ fn gui_main() {
                     &game_window_events,
                     &mut painter,
                 );
+                window.borrow().gl_swap_window();
             }
-        }
-
-        if matches!(window_style, WindowStyle::GameSeparateFromEditor) {
-            editor_state.editor_specific_window.gl_swap_window();
-        } else {
-            window.borrow().gl_swap_window();
         }
     }
 }

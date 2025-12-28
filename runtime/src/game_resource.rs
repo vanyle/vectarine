@@ -10,7 +10,8 @@ use mlua::IntoLua;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game_resource::script_resource::ScriptResource, io::fs::ReadOnlyFileSystem,
+    game_resource::script_resource::ScriptResource,
+    io::{dummyfs::DummyFileSystem, fs::ReadOnlyFileSystem},
     lua_env::lua_event::EventType,
 };
 
@@ -224,6 +225,14 @@ impl ResourceManager {
             resources: RefCell::new(Vec::new()),
             base_path: base_path.to_path_buf(),
             file_system,
+        }
+    }
+
+    pub fn dummy_manager() -> Self {
+        Self {
+            resources: RefCell::new(Vec::new()),
+            base_path: PathBuf::new(),
+            file_system: Box::new(DummyFileSystem {}),
         }
     }
 
