@@ -3,7 +3,6 @@ use std::sync::Arc;
 use glow::HasContext;
 
 use crate::{
-    console::print_warn,
     get_shader_version,
     graphics::{
         gltypes::DataLayout,
@@ -19,6 +18,11 @@ pub struct GLProgram {
     pub vertex_layout: DataLayout,
     pub uniform_layout: DataLayout,
     gl: Arc<glow::Context>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UniformNotFoundWarning {
+    pub uniform_name: String,
 }
 
 impl GLProgram {
@@ -93,17 +97,17 @@ impl GLProgram {
     }
 
     /// Assumes that the program is already in use.
-    pub fn set_uniforms(&self, uniforms: &Uniforms) {
+    pub fn set_uniforms(&self, uniforms: &Uniforms) -> Vec<UniformNotFoundWarning> {
         let gl = self.gl.as_ref();
+        let mut warnings = Vec::new();
         for (uniform_name, uniform_value) in &uniforms.data {
             unsafe {
                 let location = gl.get_uniform_location(self.program, uniform_name.as_str());
                 let Some(location) = location else {
                     // Uniform not found, maybe it was optimized out.
-                    print_warn(format!(
-                        "Uniform {} not found in shader, maybe it was unused and optimized out?",
-                        uniform_name
-                    ));
+                    warnings.push(UniformNotFoundWarning {
+                        uniform_name: uniform_name.clone(),
+                    });
                     continue;
                 };
 
@@ -142,6 +146,7 @@ impl GLProgram {
                 }
             }
         }
+        warnings
     }
 }
 

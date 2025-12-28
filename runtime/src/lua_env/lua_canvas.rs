@@ -4,6 +4,7 @@ use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     auto_impl_lua,
+    console::print_warn,
     game_resource::{self, ResourceId, shader_resource::ShaderResource},
     graphics::{
         batchdraw, glframebuffer,
@@ -113,7 +114,13 @@ pub fn setup_canvas_api(
                 shader.shader.use_program();
                 let mut uniforms = Uniforms::new();
                 uniforms.add(&name, UniformValue::Float(value));
-                shader.shader.set_uniforms(&uniforms);
+                let warnings = shader.shader.set_uniforms(&uniforms);
+                for warning in warnings {
+                    print_warn(format!(
+                        "Uniform {} not found in shader, maybe it was unused and optimized out?",
+                        warning.uniform_name
+                    ));
+                }
                 Ok(())
             }
         });
