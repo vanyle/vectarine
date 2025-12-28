@@ -7,7 +7,6 @@ use glow::HasContext;
 use runtime::{
     RenderingBlock, egui_glow,
     game::drawable_screen_size,
-    game_resource::{ResourceManager, font_resource},
     init_sdl,
     io::{localfs::LocalFileSystem, time::now_ms},
     sound::init_sound_system,

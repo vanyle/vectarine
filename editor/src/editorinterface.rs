@@ -21,7 +21,6 @@ use runtime::{
         fs::{FileSystem, ReadOnlyFileSystem},
         localfs::LocalFileSystem,
     },
-    sdl2::video::Window,
     toml,
 };
 

@@ -80,14 +80,21 @@ pub fn render_editor_in_extra_window(
 
     // Draw extras for the editor interface
     font_resource::use_default_font(gl, |font_data| {
-        editor_state.editor_batch_draw.draw_text(
-            0.0,
-            0.0,
-            "Editor window",
-            [1.0f32, 1.0, 1.0, 1.0],
-            0.16,
-            font_data,
-        );
+        let text = "This is the editor\nYour game is in another window\n\nUse preferences to merge the editor\n and the game if you prefer.";
+        let font_size = 0.13;
+
+        for (i, line) in text.lines().enumerate() {
+            let (width, _height, _max_ascent) =
+                font_data.measure_text(line, font_size, aspect_ratio);
+            editor_state.editor_batch_draw.draw_text(
+                -width / 2.0,
+                0.5 - (i as f32 * font_size),
+                line,
+                [1.0f32, 1.0, 1.0, 1.0],
+                font_size,
+                font_data,
+            );
+        }
     });
     editor_state
         .editor_batch_draw
