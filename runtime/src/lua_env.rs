@@ -15,6 +15,7 @@ pub mod lua_image;
 pub mod lua_io;
 pub mod lua_loader;
 pub mod lua_persist;
+pub mod lua_physics;
 pub mod lua_resource;
 pub mod lua_screen;
 pub mod lua_text;
@@ -138,6 +139,10 @@ impl LuaEnvironment {
 
         let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
         lua.register_module("@vectarine/audio", audio_module)
+            .unwrap();
+
+        let physics_module = lua_physics::setup_physics_api(&lua).unwrap();
+        lua.register_module("@vectarine/physics", physics_module)
             .unwrap();
 
         let tile_module = lua_tile::setup_tile_api(&lua, &resources).unwrap();
@@ -368,6 +373,13 @@ pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
     globals
         .raw_get(UNSAFE_INTERNALS_KEY)
         .expect("Failed to get lua internal table")
+}
+
+pub fn is_valid_data_type<T: 'static>(value: &mlua::Value) -> bool {
+    match value {
+        mlua::Value::UserData(ud) => ud.is::<T>(),
+        _ => false,
+    }
 }
 
 pub fn print_lua_error_from_error(error: &mlua::Error) {

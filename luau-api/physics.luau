@@ -2,84 +2,100 @@ local Camera2 = require("@vectarine/camera")
 local Vec = require("@vectarine/vec")
 local module = {}
 
-local PhysicsWorld2Impl = { type = "physicsworld2", objects = {} }
-PhysicsWorld2Impl.__index = PhysicsWorld2Impl
-export type PhysicsWorld2 = typeof(setmetatable({}, PhysicsWorld2Impl))
+local World2Impl = { type = "physicsworld2" }
+World2Impl.__index = World2Impl
+
+type WorldData = {
+	--- A camera to show debugging information like colliders and make objects clickable and draggable
+	camera: Camera2.Camera2?,
+	--- The gravity of the world that will be applied to all objects
+	--- Set to 0 if you want to control the gravity separately for each object
+	gravity: Vec.Vec2,
+}
+
+export type World2 = typeof(setmetatable({} :: WorldData, World2Impl))
 
 --- Create a new physics world
---- A physics world is a collection of objects
+--- A world is a collection of objects that can interact with each other
 --- You can optionally pass a camera to show debugging information like colliders and make objects clickable and draggable
---- @return PhysicsWorld2
-function module.newWorld(camera: Camera2.Camera2?): PhysicsWorld2
+--- @return World2
+function module.newWorld2(gravity: Vec.Vec2?, camera: Camera2.Camera2?): World2
 	error("Not implemented")
 end
 
---MARK: Shape
-
---- Represents a 2d shape. Used for collisions
-local ShapeImpl = { type = "shape" }
-ShapeImpl.__index = ShapeImpl
-export type Shape = typeof(setmetatable({}, ShapeImpl))
-
---- Create a polygon shape
---- @param points Vec2[]
---- @return Shape
-function module.newPolygonShape(points: { Vec.Vec2 }): Shape
+--- Remove an object from the world
+--- @param object Object
+function World2Impl:removeObject(object: Object2)
 	error("Not implemented")
 end
 
---- Create a rectangle shape, this is a shorthand for newPolygonShape as rectangles are very common
+--- Step the physics simulation forward in time
+--- If you don't call this, nothing will move!
+--- @param delta_time number
+function World2Impl:step(delta_time: number)
+	error("Not implemented")
+end
+
+--- Get all objects containing the given tags. Returns all objects if no tags are given.
+--- @param tags string[]?
+--- @return Object2[]
+function World2Impl:getObjects(tags: { string }?): { Object2 }
+	error("Not implemented")
+end
+
+--MARK: Collider
+
+--- Represents a 2d collider. Used for collisions
+local Collider2Impl = { type = "collider2" }
+Collider2Impl.__index = Collider2Impl
+export type Collider2 = typeof(setmetatable({}, Collider2Impl))
+
+--- Create a rectangle collider, this is a shorthand for newPolygonShape as rectangles are very common
 --- @param size Vec2
---- @return Shape
-function module.newRectangleShape(size: Vec.Vec2): Shape
+--- @return Collider2
+function module.newRectangleCollider(size: Vec.Vec2): Collider2
 	error("Not implemented")
 end
 
---- Create a circle shape
---- @param radius number
---- @return Shape
-function module.newCircleShape(radius: number): Shape
-	error("Not implemented")
-end
+--MARK: Object2
 
---- Get the area of the shape
---- @return number
-function ShapeImpl:area(): number
-	error("Not implemented")
-end
-
---- Get the center of gravity of the shape
---- Usually, you want this to be zero
---- @return Vec.Vec2
-function ShapeImpl:centerOfGravity(): Vec.Vec2
-	error("Not implemented")
-end
-
---MARK: Object
-
-local ObjectImpl = {
-	type = "object",
-	position = Vec.ZERO2,
-	rotation = 0,
-	scale = Vec.ZERO2,
-	speed = Vec.ZERO2,
-	shape = nil,
-	tags = {},
-}
-ObjectImpl.__index = ObjectImpl
-export type Object = typeof(setmetatable({}, ObjectImpl))
-
---- Create a new object
---- @param position Vec2
---- @param shape Shape
---- @param tags string[]
---- @return Object
-function module.createObject(
+local Object2Impl = { type = "object2" }
+Object2Impl.__index = Object2Impl
+type Object2Type = {
 	position: Vec.Vec2,
-	shape: Shape,
+	speed: Vec.Vec2,
+	rotation: number,
+	rotationSpeed: number,
+	tags: { string },
+	extra: any,
+}
+export type Object2 = typeof(setmetatable({} :: Object2Type, Object2Impl))
+
+--- Return the points of the collider in the object space
+--- @return Vec2[]
+function Object2Impl:getPoints(): { Vec.Vec2 }
+	error("Not implemented")
+end
+
+--- Create a new object into the world. Objects are specific to a given world.
+--- You can give the object tags to find it later
+--- Objects can have 3 body types:
+--- - static: objects that don't move and don't react to collisions (like the ground)
+--- - dynamic: objects that move and react to collisions
+--- - kinematic: objects that can be manually moved with code but don't react to collisions (like moving platforms or elevators)
+--- @param position Vec2
+--- @param mass number Must be greater than 0
+--- @param collider Collider
+--- @param tags string[]
+--- @param bodyType "static" | "dynamic" | "kinematic"
+--- @return Object2
+function World2Impl:createObject(
+	position: Vec.Vec2,
+	mass: number,
+	collider: Collider2,
 	tags: { string },
 	bodyType: "static" | "dynamic" | "kinematic"
-): Object
+): Object2
 	error("Not implemented")
 end
 

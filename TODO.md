@@ -6,13 +6,15 @@
   - [ ] Load Aseprite files as tilesets
 - [ ] Show resources in a nicer way (draw_debug_gui)
 - [ ] Add more types in the watcher
+- [ ] Fix bugs in separate window mode:
+  - [ ] Game not cleared when closing project
+  - [ ] Project interface not centered when closing project
 - [ ] Entity system
-  - [ ] Add a concept of a 'PhysicsWorld2D'
-  - [ ] Under the hood, this is a QuadTree
+  - [x] Add a concept of a 'PhysicsWorld2D'
   - [ ] You can add 'objects' to the physics world (circles, rectangles, etc...)
-  - [ ] The objects can have 'tags' (player, enemy, projectile, etc...)
-  - [ ] You can easily move and resize objects in the physics world
-  - [ ] You can efficiently get objects by tag
+  - [x] The objects can have 'tags' (player, enemy, projectile, etc...)
+  - [x] You can easily move and rotate objects in the physics world
+  - [x] You can 'efficiently' get objects by tag
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
   - [ ] You can efficiently get all objects that collide with one object
   - [ ] You can efficiently see what objects collide with a ray.

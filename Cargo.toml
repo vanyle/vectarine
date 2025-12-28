@@ -10,6 +10,9 @@ debug = true
 debug-assertions = true
 overflow-checks = true
 
+[profile.dev.package.rapier2d]
+opt-level = 3
+
 [profile.release]
 # Extra 
 lto = "fat"

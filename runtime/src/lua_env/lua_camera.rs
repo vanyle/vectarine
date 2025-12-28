@@ -20,7 +20,7 @@ impl mlua::IntoLua for Camera2 {
 impl mlua::FromLua for Camera2 {
     fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
-            mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
+            mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
             _ => Err(mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "Camera2".to_string(),
