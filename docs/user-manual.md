@@ -429,7 +429,7 @@ local Loader = require('@vectarine/loader')
 local Event = require('@vectarine/event')
 
 local otherScriptResource = Loader.loadScript("scripts/other_script.luau")
-local resourceReadyEvent = Event.getResourceReadyEvent()
+local resourceReadyEvent = Event.getResourceLoadedEvent()
 
 resourceReadyEvent:on(function(resource_handle)
     if otherScriptResource == resource_handle then
