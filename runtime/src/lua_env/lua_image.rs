@@ -10,6 +10,7 @@ use crate::{
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
         lua_vec2::Vec2,
+        lua_vec4::{Vec4, WHITE},
     },
     make_resource_lua_compatible,
 };
@@ -53,7 +54,9 @@ pub fn setup_image_api(
         registry.add_method("draw", {
             let batch = batch.clone();
             let resources = resources.clone();
-            move |_lua, image_resource_id, (mpos, msize): (AnyUserData, AnyUserData)| {
+            move |_lua,
+                  image_resource_id,
+                  (mpos, msize, color): (AnyUserData, AnyUserData, Option<Vec4>)| {
                 let pos = get_pos_as_vec2(mpos)?;
                 let size = get_size_as_vec2(msize)?;
                 let tex = resources.get_by_id::<ImageResource>(image_resource_id.0);
@@ -64,9 +67,14 @@ pub fn setup_image_api(
                 let Some(tex) = tex.as_ref() else {
                     return Ok(());
                 };
-                batch
-                    .borrow_mut()
-                    .draw_image(pos.x(), pos.y(), size.x(), size.y(), tex);
+                batch.borrow_mut().draw_image(
+                    pos.x(),
+                    pos.y(),
+                    size.x(),
+                    size.y(),
+                    tex,
+                    color.unwrap_or(WHITE).0,
+                );
                 Ok(())
             }
         });
@@ -76,13 +84,14 @@ pub fn setup_image_api(
             let resources = resources.clone();
             move |_,
                   image_resource_id,
-                  (mp1, mp2, mp3, mp4, src_pos, src_size): (
+                  (mp1, mp2, mp3, mp4, src_pos, src_size, color): (
                 AnyUserData,
                 AnyUserData,
                 AnyUserData,
                 AnyUserData,
                 Vec2,
                 Vec2,
+                Option<Vec4>,
             )| {
                 let p1 = get_pos_as_vec2(mp1)?;
                 let p2 = get_pos_as_vec2(mp2)?;
@@ -97,9 +106,13 @@ pub fn setup_image_api(
                     return Ok(());
                 };
                 let quad = Quad { p1, p2, p3, p4 };
-                batch
-                    .borrow_mut()
-                    .draw_image_part(quad, tex, src_pos, src_size);
+                batch.borrow_mut().draw_image_part(
+                    quad,
+                    tex,
+                    src_pos,
+                    src_size,
+                    color.unwrap_or(WHITE).0,
+                );
                 Ok(())
             }
         });

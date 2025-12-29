@@ -263,15 +263,29 @@ impl BatchDraw2d {
         );
     }
 
-    pub fn draw_image(&mut self, x: f32, y: f32, width: f32, height: f32, texture: &Arc<Texture>) {
+    pub fn draw_image(
+        &mut self,
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        texture: &Arc<Texture>,
+        color: [f32; 4],
+    ) {
         let uv_pos = Vec2::new(0.0, 0.0);
         let uv_size = Vec2::new(1.0, 1.0);
-        self.draw_image_part(make_rect(x, y, width, height), texture, uv_pos, uv_size);
+        self.draw_image_part(
+            make_rect(x, y, width, height),
+            texture,
+            uv_pos,
+            uv_size,
+            color,
+        );
     }
 
     #[rustfmt::skip]
     pub fn draw_image_part(
-        &mut self, pos_size: Quad, texture: &Arc<Texture>, uv_pos: Vec2, uv_size: Vec2,
+        &mut self, pos_size: Quad, texture: &Arc<Texture>, uv_pos: Vec2, uv_size: Vec2, color: [f32; 4]
     ) {
         let uv_x1 = uv_pos.x();
         let uv_y1 = uv_pos.y();
@@ -290,6 +304,7 @@ impl BatchDraw2d {
         let mut uniforms = Uniforms::new();
 
         uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
+        uniforms.add("tint_color", UniformValue::Vec4([color[0], color[1], color[2], color[3]]));
 
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, BatchShader::Texture);
     }
@@ -341,6 +356,8 @@ impl BatchDraw2d {
         let shader_to_use = if let Some(id) = custom_shader {
             BatchShader::Custom(id)
         } else {
+            // If we use the Texture Shader, add default white as color
+            uniforms.add("tint_color", UniformValue::Vec4([1.0, 1.0, 1.0, 1.0]));
             BatchShader::Texture
         };
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, shader_to_use);

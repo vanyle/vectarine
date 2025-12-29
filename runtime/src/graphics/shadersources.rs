@@ -26,9 +26,10 @@ pub const TEX_VERTEX_SHADER_SOURCE: &str = r#"
 pub const TEX_FRAG_SHADER_SOURCE: &str = r#"precision mediump float;
     in vec2 uv;
     uniform sampler2D tex;
+    uniform vec4 tint_color;
     out vec4 frag_color;
     void main() {
-        frag_color = texture(tex, uv);
+        frag_color = texture(tex, uv) * tint_color;
     }"#;
 
 pub const FONT_VERTEX_SHADER_SOURCE: &str = r#"
