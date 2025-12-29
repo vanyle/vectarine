@@ -12,6 +12,8 @@ type Pos = Coord.ScreenPosition | Vec.Vec2
 type Direction = Coord.ScreenVec | Vec.Vec2
 
 --- Draws the image at the position and with the size given
+--- You can optionally tint the image with the given color. The color of the pixels of the image
+--- are multiplied by the tint.
 function ImageResourceImpl.draw(self: ImageResource, pos: Pos, size: Direction, color: Vec4.Vec4?): ()
 	error("Not implemented")
 end
