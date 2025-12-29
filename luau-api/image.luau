@@ -1,6 +1,7 @@
 local Coord = require("@vectarine/coord")
 local ResourceTypes = require("@vectarine/resource")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 local module = {}
 
 local ImageResourceImpl = { image = true }
@@ -11,7 +12,7 @@ type Pos = Coord.ScreenPosition | Vec.Vec2
 type Direction = Coord.ScreenVec | Vec.Vec2
 
 --- Draws the image at the position and with the size given
-function ImageResourceImpl.draw(self: ImageResource, pos: Pos, size: Direction): ()
+function ImageResourceImpl.draw(self: ImageResource, pos: Pos, size: Direction, color: Vec4.Vec4?): ()
 	error("Not implemented")
 end
 
@@ -26,7 +27,8 @@ function ImageResourceImpl.drawPart(
 	dest_p3: Pos,
 	dest_p4: Pos,
 	src_pos: Vec.Vec2,
-	src_size: Vec.Vec2
+	src_size: Vec.Vec2,
+	color: Vec4.Vec4?
 ): Vec.Vec2
 	error("Not implemented")
 end

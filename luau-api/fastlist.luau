@@ -1,5 +1,6 @@
 local Image = require("@vectarine/image")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 
 --[[
 A module for writing high performance code by storing data in a compact way
@@ -212,14 +213,14 @@ end
 --- Take the fastlist by groups of 2 Vec2 (pos and size).
 --- For each of these groups, perform the same operation as `image:drawImage(pos, size)`
 --- This is a lot faster than calling `image:drawImage(pos, size)` in a loop
-function FastListImpl.drawImages(self: FastList, image: Image.ImageResource)
+function FastListImpl.drawImages(self: FastList, image: Image.ImageResource, color: Vec4.Vec4?)
 	error("Not implemented")
 end
 
 --- Take the fastlist by groups of 6 Vec2 (p1, p2, p3, p4, src_pos and src_size).
 --- For each of these groups, perform the same operation as `image:drawImagePart(p1, p2, p3, p4, src_pos, src_size)`
 --- This is a lot faster than calling `image:drawImagePart(p1, p2, p3, p4, src_pos, src_size)` in a loop
-function FastListImpl.drawImageParts(self: FastList, image: Image.ImageResource)
+function FastListImpl.drawImageParts(self: FastList, image: Image.ImageResource, color: Vec4.Vec4?)
 	error("Not implemented")
 end
 

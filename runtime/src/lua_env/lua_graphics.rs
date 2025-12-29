@@ -199,7 +199,7 @@ pub fn setup_graphics_api(
             let size = Vec2::new(scale * 2.0, scale * 2.0 * aspect);
             {
                 let mut batch = batch.borrow_mut();
-                batch.draw_image(pos.x(), pos.y(), size.x(), size.y(), &logo);
+                batch.draw_image(pos.x(), pos.y(), size.x(), size.y(), &logo, WHITE.0);
 
                 let progress_bar_pos = Vec2::new(
                     -progress_bar_length / 2.0,

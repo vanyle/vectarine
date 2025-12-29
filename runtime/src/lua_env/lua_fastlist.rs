@@ -7,7 +7,11 @@ use noise::{NoiseFn, Simplex, Worley};
 use crate::{
     game_resource::{self, image_resource::ImageResource},
     graphics::{batchdraw, shape::Quad},
-    lua_env::{lua_image::ImageResourceId, lua_vec2::Vec2},
+    lua_env::{
+        lua_image::ImageResourceId,
+        lua_vec2::Vec2,
+        lua_vec4::{Vec4, WHITE},
+    },
 };
 
 #[derive(Clone, Debug)]
@@ -373,7 +377,7 @@ pub fn setup_fastlist_api(
         registry.add_method("drawImages", {
             let batch = batch.clone();
             let resources = resources.clone();
-            move |_, this: &FastList, image_id: ImageResourceId| {
+            move |_, this: &FastList, (image_id, color): (ImageResourceId, Option<Vec4>)| {
                 let image = resources.get_by_id::<ImageResource>(image_id.0);
                 let Ok(image) = image else {
                     return Ok(());
@@ -390,7 +394,14 @@ pub fn setup_fastlist_api(
                     }
                     let pos = chunk[0];
                     let size = chunk[1];
-                    batch.draw_image(pos.x(), pos.y(), size.x(), size.y(), tex);
+                    batch.draw_image(
+                        pos.x(),
+                        pos.y(),
+                        size.x(),
+                        size.y(),
+                        tex,
+                        color.unwrap_or(WHITE).0,
+                    );
                 }
                 Ok(())
             }
@@ -399,7 +410,7 @@ pub fn setup_fastlist_api(
         registry.add_method("drawImageParts", {
             let batch = batch.clone();
             let resources = resources.clone();
-            move |_, this: &FastList, image_id: ImageResourceId| {
+            move |_, this: &FastList, (image_id, color): (ImageResourceId, Option<Vec4>)| {
                 let image = resources.get_by_id::<ImageResource>(image_id.0);
                 let Ok(image) = image else {
                     return Ok(());
@@ -421,7 +432,7 @@ pub fn setup_fastlist_api(
                     let src_pos = chunk[4];
                     let src_size = chunk[5];
                     let quad = Quad { p1, p2, p3, p4 };
-                    batch.draw_image_part(quad, tex, src_pos, src_size);
+                    batch.draw_image_part(quad, tex, src_pos, src_size, color.unwrap_or(WHITE).0);
                 }
                 Ok(())
             }
