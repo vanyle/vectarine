@@ -87,6 +87,7 @@ macro_rules! auto_impl_lua {
         impl FromLua for $struct_name {
             fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
                 match value {
+                    // this is probably buggy, take can cause issues.
                     mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
                     _ => Err(mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
@@ -116,7 +117,7 @@ macro_rules! auto_impl_lua_copy {
             #[inline(always)]
             fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
                 match value {
-                    mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
+                    mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
                     _ => Err(mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
                         to: stringify!($friendly_name).to_string(),

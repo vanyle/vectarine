@@ -649,9 +649,12 @@ function Update(deltaTime: number)
 
 	local objects = world:getObjects()
 	for _, obj in pairs(objects) do
+        -- We can use getPoints() to get the collision shape of the object
+        -- Get points is only available for connected colliders
 		Graphics.drawPolygon(obj:getPoints(), obj.extra.color)
 	end
 
+    -- Don't forget to call step to move the simulation forward in time
 	world:step(deltaTime)
 end
 
