@@ -11,12 +11,18 @@
   - [ ] Project interface not centered when closing project
 - [ ] Entity system
   - [x] Add a concept of a 'PhysicsWorld2D'
-  - [ ] You can add 'objects' to the physics world (circles, rectangles, etc...)
+  - [ ] You can add 'objects' to the physics world
+    - [x] Rectangles
+    - [ ] Circles
+    - [ ] Convex polygons
   - [x] The objects can have 'tags' (player, enemy, projectile, etc...)
   - [x] You can easily move and rotate objects in the physics world
   - [x] You can 'efficiently' get objects by tag
+  - [ ] Fix the memory ownership bug preventing collider reuse 
   - [ ] You can efficiently get the nearest object to a position / list objects by distance
-  - [ ] You can efficiently get all objects that collide with one object
+  - [ ] You can efficiently get all objects that are inside a rectangular area
+  - [ ] You can efficiently get all objects that are inside a point
+  - [ ] You can efficiently get all objects that touch another object
   - [ ] You can efficiently see what objects collide with a ray.
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
