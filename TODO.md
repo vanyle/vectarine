@@ -18,12 +18,13 @@
   - [x] The objects can have 'tags' (player, enemy, projectile, etc...)
   - [x] You can easily move and rotate objects in the physics world
   - [x] You can 'efficiently' get objects by tag
-  - [ ] Fix the memory ownership bug preventing collider reuse 
-  - [ ] You can efficiently get the nearest object to a position / list objects by distance
+  - [x] Fix the memory ownership bug preventing collider reuse 
+  - [x] You can efficiently get all objects that are inside a point
   - [ ] You can efficiently get all objects that are inside a rectangular area
-  - [ ] You can efficiently get all objects that are inside a point
   - [ ] You can efficiently get all objects that touch another object
   - [ ] You can efficiently see what objects collide with a ray.
+  - [ ] Allow locking rotation of objects
+  - [ ] Check if there are other easy to implement method (like forces, impulse, etc...)
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor

@@ -11,7 +11,7 @@ use rapier2d::{
     prelude::{
         CCDSolver, Collider, ColliderBuilder, ColliderSet, DefaultBroadPhase, ImpulseJointSet,
         IntegrationParameters, IslandManager, MultibodyJointSet, NarrowPhase, PhysicsPipeline,
-        RigidBody, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
+        QueryFilter, RigidBody, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
     },
 };
 
@@ -112,6 +112,29 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             let camera = if camera.is_nil() { None } else { Some(camera) };
             let world = PhysicsWorld2::new(camera, gravity.unwrap_or(Vec2::new(0.0, 0.0)))?;
             Ok(LuaPhysicsWorld2(Rc::new(RefCell::new(world))))
+        }
+    });
+
+    add_fn_to_table(lua, &physics_module, "getObjectsAtPoint", {
+        move |_, (lua_world, point): (LuaPhysicsWorld2, Vec2)| {
+            let world = lua_world.0.borrow();
+            let world = &*world;
+            let filter = QueryFilter::default();
+            let query_pipeline = world.broad_phase.as_query_pipeline(
+                world.narrow_phase.query_dispatcher(),
+                &world.rigid_body_set,
+                &world.collider_set,
+                filter,
+            );
+            let matches =
+                query_pipeline.intersect_point(rapier2d::prelude::point![point.x(), point.y()]);
+            Ok(matches
+                .filter_map(|m| m.1.parent())
+                .map(|parent| Object2 {
+                    rigid_body_handle: parent,
+                    world: Rc::downgrade(&lua_world.0),
+                })
+                .collect::<Vec<_>>())
         }
     });
 

@@ -43,6 +43,13 @@ function World2Impl:getObjects(tags: { string }?): { Object2 }
 	error("Not implemented")
 end
 
+--- Get all objects at a given point
+--- @param point Vec2
+--- @return Object2[]
+function World2Impl:getObjectsAtPoint(point: Vec.Vec2): { Object2 }
+	error("Not implemented")
+end
+
 --MARK: Collider
 
 --- Represents a 2d collider. Used for collisions
