@@ -75,8 +75,14 @@ macro_rules! make_resource_lua_compatible {
 
 /// This macro automatically implements IntoLua and FromLua for a given struct.
 /// The second parameter of the macro is the name of the struct in conversion error messages
+/// It does so by taking ownership from Lua when passing the data to Rust.
+/// This is unsafe. If you use this, never us this data as an direct argument to Lua function, only methods.
+/// ```lua
+/// taking_object:my_method("hello", 1) -- This is OK
+/// my_function(taking_object, "hello", 1) -- You need to be careful with this! You'll need to manually borrow userdata.
+/// ```
 #[macro_export]
-macro_rules! auto_impl_lua {
+macro_rules! auto_impl_lua_take {
     ($struct_name:ident, $friendly_name:ident) => {
         impl IntoLua for $struct_name {
             fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
@@ -89,6 +95,31 @@ macro_rules! auto_impl_lua {
                 match value {
                     // this is probably buggy, take can cause issues.
                     mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
+                    _ => Err(mlua::Error::FromLuaConversionError {
+                        from: value.type_name(),
+                        to: stringify!($friendly_name).to_string(),
+                        message: Some(format!("Expected {} userdata", stringify!($friendly_name))),
+                    }),
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! auto_impl_lua_clone {
+    ($struct_name:ident, $friendly_name:ident) => {
+        impl IntoLua for $struct_name {
+            fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+                lua.create_any_userdata(self).map(mlua::Value::UserData)
+            }
+        }
+
+        impl FromLua for $struct_name {
+            fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+                match value {
+                    // this is probably buggy, take can cause issues.
+                    mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?.clone()),
                     _ => Err(mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
                         to: stringify!($friendly_name).to_string(),

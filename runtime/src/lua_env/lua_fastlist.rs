@@ -29,8 +29,10 @@ impl FromLua for FastList {
     #[inline(always)]
     fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
-            // Performance: Notice that there is a clone here! Maybe we should use refs for fastlists?
-            mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
+            // Note that we are taking and not cloning the data here.
+            // This means that any function that takes a FastList as argument consumes it.
+            // It is thus forbidden !!! Instead use Userdata as an argument and perform the borrowing manually.
+            mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
             _ => Err(mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "FastList".to_string(),
@@ -68,11 +70,14 @@ pub enum FastListOrVec {
     Vec(Vec2),
 }
 
-fn parse_fastlist_or_vec(ud: mlua::AnyUserData) -> mlua::Result<FastListOrVec> {
+fn parse_fastlist_or_vec_with_cb<F, T>(ud: mlua::AnyUserData, f: F) -> mlua::Result<T>
+where
+    F: Fn(&FastListOrVec) -> mlua::Result<T>,
+{
     if let Ok(vec) = ud.borrow::<Vec2>() {
-        Ok(FastListOrVec::Vec(*vec))
+        f(&FastListOrVec::Vec(*vec))
     } else if let Ok(list) = ud.borrow::<FastList>() {
-        Ok(FastListOrVec::List(list.clone()))
+        f(&FastListOrVec::List(list.clone()))
     } else {
         Err(mlua::Error::RuntimeError(
             "Expected FastList or Vec2".to_string(),
@@ -81,7 +86,7 @@ fn parse_fastlist_or_vec(ud: mlua::AnyUserData) -> mlua::Result<FastListOrVec> {
 }
 
 /// Helper function to apply a binary operation element-wise between a FastList and either another FastList or a Vec2
-fn apply_binary_op<F>(this: &FastList, other: FastListOrVec, op: F) -> FastList
+fn apply_binary_op<F>(this: &FastList, other: &FastListOrVec, op: F) -> FastList
 where
     F: Fn(Vec2, Vec2) -> Vec2,
 {
@@ -95,7 +100,7 @@ where
         }
         FastListOrVec::Vec(vec) => {
             for v in &this.data {
-                data.push(op(*v, vec));
+                data.push(op(*v, *vec));
             }
         }
     }
@@ -182,7 +187,8 @@ pub fn setup_fastlist_api(
 
         registry.add_method(
             "filterGtX",
-            |_, this, (mask, threshold): (FastList, f32)| {
+            |_, this, (maybe_mask, threshold): (mlua::AnyUserData, f32)| {
+                let mask = maybe_mask.borrow::<FastList>()?;
                 let filtered_data: Vec<Vec2> = this
                     .data
                     .iter()
@@ -197,31 +203,25 @@ pub fn setup_fastlist_api(
         registry.add_meta_method(
             mlua::MetaMethod::Add,
             |_, this, other: mlua::AnyUserData| {
-                Ok(apply_binary_op(
-                    this,
-                    parse_fastlist_or_vec(other)?,
-                    |a, b| a + b,
-                ))
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a + b))
+                })
             },
         );
         registry.add_meta_method(
             mlua::MetaMethod::Sub,
             |_, this, other: mlua::AnyUserData| {
-                Ok(apply_binary_op(
-                    this,
-                    parse_fastlist_or_vec(other)?,
-                    |a, b| a - b,
-                ))
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a - b))
+                })
             },
         );
         registry.add_meta_method(
             mlua::MetaMethod::Mul,
             |_, this, other: mlua::AnyUserData| {
-                Ok(apply_binary_op(
-                    this,
-                    parse_fastlist_or_vec(other)?,
-                    |a, b| a * b,
-                ))
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a * b))
+                })
             },
         );
 
@@ -231,22 +231,18 @@ pub fn setup_fastlist_api(
         });
 
         registry.add_method("cmul", |_, this, other: mlua::AnyUserData| {
-            Ok(apply_binary_op(
-                this,
-                parse_fastlist_or_vec(other)?,
-                |a, b| a.cmul(b),
-            ))
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.cmul(b)))
+            })
         });
 
         registry.add_method("dot", |_, this, other: mlua::AnyUserData| {
-            Ok(apply_binary_op(
-                this,
-                parse_fastlist_or_vec(other)?,
-                |a, b| {
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| {
                     let d = a.dot(&b);
                     Vec2::new(d, d)
-                },
-            ))
+                }))
+            })
         });
 
         registry.add_method("normalized", |_, this, ()| {
@@ -270,19 +266,15 @@ pub fn setup_fastlist_api(
         });
 
         registry.add_method("max", |_, this, other: mlua::AnyUserData| {
-            Ok(apply_binary_op(
-                this,
-                parse_fastlist_or_vec(other)?,
-                |a, b| a.max(b),
-            ))
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.max(b)))
+            })
         });
 
         registry.add_method("min", |_, this, other: mlua::AnyUserData| {
-            Ok(apply_binary_op(
-                this,
-                parse_fastlist_or_vec(other)?,
-                |a, b| a.min(b),
-            ))
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.min(b)))
+            })
         });
 
         registry.add_method("toPolar", |_, this, ()| {
@@ -296,11 +288,9 @@ pub fn setup_fastlist_api(
         });
 
         registry.add_method("lerp", |_, this, (other, k): (mlua::AnyUserData, f32)| {
-            Ok(apply_binary_op(
-                this,
-                parse_fastlist_or_vec(other)?,
-                |a, b| a.lerp(b, k),
-            ))
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.lerp(b, k)))
+            })
         });
 
         registry.add_method("sign", |_, this, ()| {

@@ -4,7 +4,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use mlua::{FromLua, IntoLua, UserDataFields, UserDataMethods};
+use mlua::{FromLua, IntoLua, UserData, UserDataFields, UserDataMethods};
 use nalgebra::Isometry2;
 use rapier2d::{
     math::Vector,
@@ -16,7 +16,7 @@ use rapier2d::{
 };
 
 use crate::{
-    auto_impl_lua,
+    auto_impl_lua_take,
     lua_env::{add_fn_to_table, is_valid_data_type, lua_camera::Camera2, lua_vec2::Vec2},
 };
 
@@ -80,14 +80,14 @@ impl PhysicsWorld2 {
 
 #[derive(Clone)]
 pub struct LuaPhysicsWorld2(Rc<RefCell<PhysicsWorld2>>);
-auto_impl_lua!(LuaPhysicsWorld2, LuaPhysicsWorld2);
+auto_impl_lua_take!(LuaPhysicsWorld2, LuaPhysicsWorld2);
 
 // MARK: Collider2
 
 struct Collider2 {
-    collider: Rc<Collider>,
+    collider: Collider,
 }
-auto_impl_lua!(Collider2, Collider2);
+auto_impl_lua_take!(Collider2, Collider2);
 
 // MARK: Object2
 
@@ -101,7 +101,7 @@ struct ExtraObjectData {
     extra_custom: mlua::Value,
 }
 
-auto_impl_lua!(Object2, Object2);
+auto_impl_lua_take!(Object2, Object2);
 
 pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     let physics_module = lua.create_table()?;
@@ -168,13 +168,14 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         registry.add_method_mut("createObject", {
             move |_,
                   lua_world,
-                  (position, mass, collider, tags, body_type): (
+                  (position, mass, maybe_collider, tags, body_type): (
                 Vec2,
                 f32,
-                Collider2,
+                mlua::AnyUserData,
                 mlua::Table,
                 String,
             )| {
+                let collider = maybe_collider.borrow::<Collider2>()?;
                 let mut world = lua_world.0.borrow_mut();
                 let world = &mut *world;
 
@@ -198,7 +199,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                     .additional_mass(mass)
                     .build();
                 let body_handle = world.rigid_body_set.insert(body);
-                let collider = (*collider.collider).clone(); // Allow collider reuse
+                let collider = collider.collider.clone();
                 world.collider_set.insert_with_parent(
                     collider,
                     body_handle,
@@ -220,6 +221,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             }
         });
 
+        // We pass object directly here because we WANT to take ownership (the object is invalid afterwards)
         registry.add_method_mut("removeObject", |_, world, object: Object2| {
             let mut world = world.0.borrow_mut();
             let world = &mut *world;
@@ -267,9 +269,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     add_fn_to_table(lua, &physics_module, "newRectangleCollider", {
         move |_, size: Vec2| {
             let collider = ColliderBuilder::cuboid(size.x(), size.y()).build();
-            Ok(Collider2 {
-                collider: Rc::new(collider),
-            })
+            Ok(Collider2 { collider })
         }
     });
 

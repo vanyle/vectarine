@@ -3,7 +3,7 @@ use std::{cell::RefCell, ops::Deref, rc::Rc};
 use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
-    auto_impl_lua,
+    auto_impl_lua_clone,
     console::print_warn,
     game_resource::{self, ResourceId, shader_resource::ShaderResource},
     graphics::{
@@ -31,7 +31,7 @@ pub struct RcFramebuffer {
     buffer: Rc<glframebuffer::Framebuffer>,
     shader: RefCell<Option<ShaderResourceId>>,
 }
-auto_impl_lua!(RcFramebuffer, Framebuffer);
+auto_impl_lua_clone!(RcFramebuffer, Framebuffer);
 
 impl RcFramebuffer {
     fn new(fb: glframebuffer::Framebuffer) -> Self {

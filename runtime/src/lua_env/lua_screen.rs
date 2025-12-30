@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use crate::{
-    auto_impl_lua,
+    auto_impl_lua_clone,
     game_resource::{self, ResourceManager},
     graphics::{batchdraw, glstencil::draw_with_mask},
     io,
@@ -16,7 +16,7 @@ pub struct Screen {
     name: String,
     draw_fn: mlua::Function,
 }
-auto_impl_lua!(Screen, Screen);
+auto_impl_lua_clone!(Screen, Screen);
 
 #[derive(Default)]
 pub struct ScreenState {

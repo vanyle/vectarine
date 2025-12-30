@@ -2,7 +2,7 @@ use std::hash::Hash;
 use std::rc::Weak;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{auto_impl_lua, lua_env::add_fn_to_table};
+use crate::{auto_impl_lua_clone, lua_env::add_fn_to_table};
 use mlua::FromLua;
 use mlua::IntoLua;
 use mlua::UserDataFields;
@@ -10,7 +10,7 @@ use mlua::UserDataMethods;
 
 #[derive(Clone, Debug)]
 pub struct EventType(usize, Weak<RefCell<EventManager>>);
-auto_impl_lua!(EventType, EventType);
+auto_impl_lua_clone!(EventType, EventType);
 
 impl Hash for EventType {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -26,7 +26,7 @@ impl Eq for EventType {}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SubscriptionId(usize, EventType);
-auto_impl_lua!(SubscriptionId, SubscriptionId);
+auto_impl_lua_clone!(SubscriptionId, SubscriptionId);
 
 #[derive(Default)]
 pub struct EventSubscriptions {
@@ -43,7 +43,7 @@ struct EventManager {
 #[derive(Clone)]
 pub struct EventManagerRc(Rc<RefCell<EventManager>>);
 
-auto_impl_lua!(EventManagerRc, EventManager);
+auto_impl_lua_clone!(EventManagerRc, EventManager);
 
 impl Default for EventManagerRc {
     fn default() -> Self {
