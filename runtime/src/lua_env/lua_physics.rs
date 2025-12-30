@@ -4,7 +4,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use mlua::{FromLua, IntoLua, UserData, UserDataFields, UserDataMethods};
+use mlua::{FromLua, IntoLua, UserDataFields, UserDataMethods};
 use nalgebra::Isometry2;
 use rapier2d::{
     math::Vector,

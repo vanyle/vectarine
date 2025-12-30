@@ -4,6 +4,10 @@ function module.onReload<T>(defaultValue: T, globalName: string): T
 	error("Not implemented")
 end
 
+function module.onReloadWithProvider<T>(provider: () -> T, globalName: string): T
+	error("Not implemented")
+end
+
 --- Save `value` so that it is persisted across restarts.
 --- You can obtain saved values using `load`.
 --- Saving can take some time, so calling `save` followed by `load` might not give the expected result.

@@ -85,6 +85,21 @@ pub fn setup_persist_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         }
     });
 
+    add_fn_to_table(lua, &persist_module, "onReloadWithProvider", {
+        move |lua, (provider, global_name): (mlua::Function, String)| {
+            let g = lua.globals();
+            let value = g.raw_get::<mlua::Value>(global_name.clone());
+            if let Ok(value) = value
+                && !value.is_nil()
+            {
+                return Ok(value);
+            }
+            let default_value: mlua::Value = provider.call(())?;
+            let _ = g.raw_set(global_name, default_value.clone());
+            Ok(default_value)
+        }
+    });
+
     add_fn_to_table(lua, &persist_module, "load", {
         move |lua, (key,): (String,)| {
             let data = load_data_from_kv_store(key);
