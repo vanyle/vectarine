@@ -7,28 +7,6 @@ struct DbvhBounds<const N: usize> {
     volume: Vect<N>,
 }
 
-#[derive(Clone, Copy)]
-struct DbvhNode<const N: usize> {
-    // TODO: store a reference to the entity linked with the node
-    // TODO: WIP
-    #[allow(dead_code)]
-    entity: Option<usize>,
-    // TODO: WIP
-    #[allow(dead_code)]
-    index: Option<usize>,
-    parent_index: Option<usize>,
-    child1: Option<usize>,
-    child2: Option<usize>,
-    is_leaf: bool,
-    bounds: DbvhBounds<N>,
-}
-
-pub struct DbvhTree<const N: usize> {
-    root_index: Option<usize>,
-    nodes: Vec<DbvhNode<N>>,
-    free_spaces: Vec<usize>,
-}
-
 impl<const N: usize> DbvhBounds<N> {
     pub fn union(&self, other: Self) -> Self {
         let min_corner = Vect::min(
@@ -85,7 +63,27 @@ impl<const N: usize> DbvhBounds<N> {
     }
 }
 
-impl<const N: usize> DbvhNode<N> {}
+#[derive(Clone, Copy)]
+pub struct DbvhNode<const N: usize> {
+    entity_id: Option<usize>,
+    parent_index: Option<usize>,
+    child1: Option<usize>,
+    child2: Option<usize>,
+    is_leaf: bool,
+    bounds: DbvhBounds<N>,
+}
+
+impl<const N: usize> DbvhNode<N> {
+    pub fn get_entity_id(self) -> Option<usize> {
+        self.entity_id
+    }
+}
+
+pub struct DbvhTree<const N: usize> {
+    root_index: Option<usize>,
+    nodes: Vec<DbvhNode<N>>,
+    free_spaces: Vec<usize>,
+}
 
 impl<const N: usize> DbvhTree<N> {
     // TODO: update when space/entity structure is defined to have
@@ -120,42 +118,42 @@ impl<const N: usize> DbvhTree<N> {
         self.nodes[node_index].bounds.volume = volume.scale(1.2);
     }
 
-    fn tree_cost(&mut self, index: Option<usize>) -> f32 {
-        let Some(index) = index else {
+    fn tree_cost(&mut self, node_index: Option<usize>) -> f32 {
+        let Some(node_index) = node_index else {
             return 0.0;
         };
-        let cost = self.nodes[index].bounds.cost();
+        let cost = self.nodes[node_index].bounds.cost();
         if self
             .root_index
-            .is_some_and(|root_index| index == root_index)
+            .is_some_and(|root_index| node_index == root_index)
         {
             return cost;
         }
-        cost + self.tree_cost(self.nodes[index].parent_index)
+        cost + self.tree_cost(self.nodes[node_index].parent_index)
     }
 
-    fn delta_cost(&mut self, index: Option<usize>, bounds: DbvhBounds<N>) -> f32 {
+    fn delta_cost(&mut self, node_index: Option<usize>, bounds: DbvhBounds<N>) -> f32 {
         // Compute the additional cost for the whole tree if the node
-        // at `index` were to be resized to include the `bounds`
-        let Some(index) = index else {
+        // at `node_index` were to be resized to include the `bounds`
+        let Some(node_index) = node_index else {
             return 0.0;
         };
         // For ray casting the best is to use area (in 2d it's the perimeter)
         // For space partitionning only, it is best to use volume (in 2d it's the area)
-        let new_bounds = self.nodes[index].bounds.union(bounds);
-        if new_bounds == self.nodes[index].bounds {
+        let new_bounds = self.nodes[node_index].bounds.union(bounds);
+        if new_bounds == self.nodes[node_index].bounds {
             return 0.0;
         }
-        let curent_cost = self.nodes[index].bounds.cost();
+        let curent_cost = self.nodes[node_index].bounds.cost();
         let new_cost = new_bounds.cost();
         let delta = new_cost - curent_cost;
         if self
             .root_index
-            .is_some_and(|root_index| index == root_index)
+            .is_some_and(|root_index| node_index == root_index)
         {
             return delta;
         }
-        delta + self.delta_cost(self.nodes[index].parent_index, new_bounds)
+        delta + self.delta_cost(self.nodes[node_index].parent_index, new_bounds)
     }
 
     fn minimize_dbvh_sub_tree(&mut self, grand_parent_index: Option<usize>) {
@@ -426,8 +424,7 @@ impl<const N: usize> DbvhTree<N> {
     pub fn allocate_node(&mut self) {
         let node_index = self.nodes.len();
         let new_node = DbvhNode {
-            entity: None,
-            index: Some(node_index),
+            entity_id: None,
             parent_index: None,
             child1: None,
             child2: None,
@@ -624,19 +621,12 @@ impl<const N: usize> DbvhTree<N> {
             // because it will necessarily increased its parent cost by delta
             // and the created child node will include the new node s its cost
             // will be of at least new_node_cost
-            if candidates[i].is_some_and(|candidate| !self.nodes[candidate].is_leaf)
+            if let Some(candidate) = candidates[i]
+                && !self.nodes[candidate].is_leaf
                 && new_node_cost + delta < best_cost
             {
-                candidates.push(
-                    self.nodes
-                        [candidates[i].expect("error with `is_some_and`, it should allow unwrap")]
-                    .child1,
-                );
-                candidates.push(
-                    self.nodes
-                        [candidates[i].expect("error with `is_some_and`, it should allow unwrap")]
-                    .child2,
-                );
+                candidates.push(self.nodes[candidate].child1);
+                candidates.push(self.nodes[candidate].child2);
             }
             i += 1;
         }
