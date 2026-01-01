@@ -100,9 +100,47 @@ auto_impl_lua_take!(Joint2, Joint2);
 
 // MARK: Object2
 
-struct Object2 {
-    rigid_body_handle: RigidBodyHandle,
-    world: Weak<RefCell<PhysicsWorld2>>,
+pub struct Object2 {
+    pub rigid_body_handle: RigidBodyHandle,
+    pub world: Weak<RefCell<PhysicsWorld2>>,
+}
+
+impl Object2 {
+    pub fn is_out_of_world(&self) -> bool {
+        self.world.upgrade().is_none()
+    }
+    pub fn position(&self) -> Option<Vec2> {
+        let world = self.world.upgrade()?;
+        let world = world.borrow();
+        let world = &*world;
+        let rigid_body = world.rigid_body_set.get(self.rigid_body_handle)?;
+        let position = rigid_body.position();
+        Some(Vec2::new(position.translation.x, position.translation.y))
+    }
+    pub fn velocity(&self) -> Option<Vec2> {
+        let world = self.world.upgrade()?;
+        let world = world.borrow();
+        let world = &*world;
+        let rigid_body = world.rigid_body_set.get(self.rigid_body_handle)?;
+        let velocity = rigid_body.linvel();
+        Some(Vec2::new(velocity.x, velocity.y))
+    }
+    pub fn set_position(&self, position: Vec2) -> Option<()> {
+        let world = self.world.upgrade()?;
+        let mut world = world.borrow_mut();
+        let world = &mut *world;
+        let rigid_body = world.rigid_body_set.get_mut(self.rigid_body_handle)?;
+        rigid_body.set_translation(nalgebra::vector![position.x(), position.y()], true);
+        Some(())
+    }
+    pub fn set_velocity(&self, velocity: Vec2) -> Option<()> {
+        let world = self.world.upgrade()?;
+        let mut world = world.borrow_mut();
+        let world = &mut *world;
+        let rigid_body = world.rigid_body_set.get_mut(self.rigid_body_handle)?;
+        rigid_body.set_linvel(nalgebra::vector![velocity.x(), velocity.y()], true);
+        Some(())
+    }
 }
 
 struct ExtraObjectData {

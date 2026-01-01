@@ -1,9 +1,10 @@
 use std::{cell::RefCell, thread::LocalKey};
 
+use egui_extras::{Size, StripBuilder};
 use runtime::egui;
 use runtime::egui::RichText;
-use egui_extras::{Size, StripBuilder};
 use runtime::{
+    lua_env::lua_physics::Object2,
     lua_env::{lua_vec2::Vec2, lua_vec4::Vec4, stringify_lua_value},
     mlua,
 };
@@ -227,7 +228,13 @@ fn draw_any_watcher(
         }
         let maybe_vec = ud.borrow_mut::<Vec4>();
         if let Ok(mut vec) = maybe_vec {
-            draw_vec4_watcher(ui, &mut vec);
+            let var_name = stringify_lua_value(value_global_name);
+            draw_vec4_watcher(ui, &mut vec, var_name.contains("color"));
+            return;
+        }
+        let maybe_object = ud.borrow_mut::<Object2>();
+        if let Ok(mut object) = maybe_object {
+            draw_object_watcher(ui, &mut object);
             return;
         }
     }
@@ -304,35 +311,61 @@ fn draw_vec2_watcher(ui: &mut egui::Ui, vec: &mut Vec2) {
     });
 }
 
-fn draw_vec4_watcher(ui: &mut egui::Ui, vec: &mut Vec4) {
+fn draw_vec4_watcher(ui: &mut egui::Ui, vec: &mut Vec4, is_color: bool) {
     ui.horizontal(|ui| {
         let mut x = vec.0[0];
         let mut y = vec.0[1];
         let mut z = vec.0[2];
         let mut w = vec.0[3];
-        if ui
-            .add(egui::DragValue::new(&mut x).prefix("x: ").speed(0.1))
-            .changed()
-        {
-            vec.0[0] = x;
-        }
-        if ui
-            .add(egui::DragValue::new(&mut y).prefix("y: ").speed(0.1))
-            .changed()
-        {
-            vec.0[1] = y;
-        }
-        if ui
-            .add(egui::DragValue::new(&mut z).prefix("z: ").speed(0.1))
-            .changed()
-        {
-            vec.0[2] = z;
-        }
-        if ui
-            .add(egui::DragValue::new(&mut w).prefix("w: ").speed(0.1))
-            .changed()
-        {
-            vec.0[3] = w;
+        if is_color {
+            ui.color_edit_button_rgba_unmultiplied(&mut vec.0);
+        } else {
+            if ui
+                .add(egui::DragValue::new(&mut x).prefix("x: ").speed(0.1))
+                .changed()
+            {
+                vec.0[0] = x;
+            }
+            if ui
+                .add(egui::DragValue::new(&mut y).prefix("y: ").speed(0.1))
+                .changed()
+            {
+                vec.0[1] = y;
+            }
+            if ui
+                .add(egui::DragValue::new(&mut z).prefix("z: ").speed(0.1))
+                .changed()
+            {
+                vec.0[2] = z;
+            }
+            if ui
+                .add(egui::DragValue::new(&mut w).prefix("w: ").speed(0.1))
+                .changed()
+            {
+                vec.0[3] = w;
+            }
         }
     });
+}
+
+fn draw_object_watcher(ui: &mut egui::Ui, object: &mut Object2) {
+    if object.is_out_of_world() {
+        ui.label("Object is out of world");
+    } else if let Some(position) = object.position()
+        && let Some(velocity) = object.velocity()
+    {
+        let mut position = position;
+        let mut velocity = velocity;
+        ui.horizontal(|ui| {
+            ui.label("Position");
+            draw_vec2_watcher(ui, &mut position);
+        });
+        ui.horizontal(|ui| {
+            ui.label("Velocity");
+            draw_vec2_watcher(ui, &mut velocity);
+        });
+        // TODO: Rotation, tags, and extras could also be shown here.
+        object.set_position(position);
+        object.set_velocity(velocity);
+    }
 }

@@ -5,7 +5,6 @@
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
 - [ ] Show resources in a nicer way (draw_debug_gui)
-- [ ] Add more types in the watcher
 - [ ] Debug tooling for physics?
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
@@ -48,6 +47,7 @@
 
 # Done
 
+- [x] Add more types in the watcher
 - [x] Entity system
   - [x] Add a concept of a 'PhysicsWorld2D'
   - [x] You can add 'objects' to the physics world

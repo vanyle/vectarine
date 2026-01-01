@@ -34,7 +34,7 @@ local logoResource = Loader.loadImage("textures/logo.png")
 local _missing = Loader.loadImage("textures/this_file_is_missing.png")
 local fontResource = Loader.loadFont("fonts/arial.ttf")
 
-local circle = Persist.onReload(Vec4.createColor(0, 0, 0, 1), "circle")
+local circle = Persist.onReload(Vec4.createColor(0, 0, 0, 1), "circle_color")
 
 Io.setResizeable(true) -- The base window size can be small for some people
 
