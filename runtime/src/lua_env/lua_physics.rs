@@ -296,6 +296,25 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         }
     });
 
+    add_fn_to_table(lua, &physics_module, "newCircleCollider", {
+        move |_, radius: f32| {
+            let collider = ColliderBuilder::ball(radius).build();
+            Ok(Collider2 { collider })
+        }
+    });
+
+    add_fn_to_table(lua, &physics_module, "newPolygonCollider", {
+        move |_, points: Vec<Vec2>| {
+            let converted_points = points // We could probably transmute here, but we won't.
+                .iter()
+                .map(|p| nalgebra::Point::from(nalgebra::vector![p.x(), p.y()]))
+                .collect::<Vec<_>>();
+            let indices = (0..points.len() as u32 - 1).map(|i| [i, i + 1]).collect();
+            let collider = ColliderBuilder::polyline(converted_points, Some(indices)).build();
+            Ok(Collider2 { collider })
+        }
+    });
+
     lua.register_userdata_type::<Object2>(|registry| {
         registry.add_field_method_get("position", |_, object| {
             let translation: Vector<f32> =
@@ -397,7 +416,21 @@ fn get_points_of_collider(collider: &Collider) -> Vec<Vec2> {
             .collect()
     } else if let Some(shape) = shape.as_ball() {
         shape
-            .to_polyline(20)
+            .to_polyline(32)
+            .iter()
+            .map(|p| collider.position() * p)
+            .map(|p| Vec2::new(p.x, p.y))
+            .collect()
+    } else if let Some(shape) = shape.as_polyline() {
+        shape
+            .vertices()
+            .iter()
+            .map(|p| collider.position() * p)
+            .map(|p| Vec2::new(p.x, p.y))
+            .collect()
+    } else if let Some(shape) = shape.as_convex_polygon() {
+        shape
+            .points()
             .iter()
             .map(|p| collider.position() * p)
             .map(|p| Vec2::new(p.x, p.y))
