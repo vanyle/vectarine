@@ -9,22 +9,7 @@
 - [ ] Fix bugs in separate window mode:
   - [ ] Game not cleared when closing project
   - [ ] Project interface not centered when closing project
-- [ ] Entity system
-  - [x] Add a concept of a 'PhysicsWorld2D'
-  - [x] You can add 'objects' to the physics world
-    - [x] Rectangles
-    - [x] Circles
-    - [x] Convex polygons
-  - [x] The objects can have 'tags' (player, enemy, projectile, etc...)
-  - [x] You can easily move and rotate objects in the physics world
-  - [x] You can 'efficiently' get objects by tag
-  - [x] Fix the memory ownership bug preventing collider reuse 
-  - [x] You can efficiently get all objects that are inside a point
-  - [ ] You can efficiently get all objects that are inside a rectangular area
-  - [ ] You can efficiently get all objects that touch another object
-  - [ ] You can efficiently see what objects collide with a ray.
-  - [ ] Allow locking rotation of objects
-  - [ ] Check if there are other easy to implement method (like forces, impulse, etc...)
+- [ ] Debug tooling for physics?
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
@@ -66,6 +51,21 @@
 
 # Done
 
+- [x] Entity system
+  - [x] Add a concept of a 'PhysicsWorld2D'
+  - [x] You can add 'objects' to the physics world
+    - [x] Rectangles
+    - [x] Circles
+    - [x] Convex polygons
+  - [x] The objects can have 'tags' (player, enemy, projectile, etc...)
+  - [x] You can easily move and rotate objects in the physics world
+  - [x] You can 'efficiently' get objects by tag
+  - [x] Fix the memory ownership bug preventing collider reuse 
+  - [x] You can efficiently get all objects that are inside a point
+  - [x] You can efficiently get all objects that are inside a rectangular area
+  - [x] You can efficiently get all objects that touch another object
+  - [x] You can efficiently see what objects collide with a ray.
+  - [x] Allow locking rotation of objects
 - [x] Allow having the debug GUI in a detachable window or have a way to make them translucent?
 - [x] Open-source the project
 - [x] Rework the resource API to use futures to prevent use of unloaded resources

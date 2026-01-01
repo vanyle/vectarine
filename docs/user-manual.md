@@ -628,6 +628,9 @@ local Vec4 = require("@vectarine/vec4")
 -- You can add gravity to the world by setting the gravity property.
 local world = Persist.onReload(Physics.newWorld2(Vec.V2(0, -0.3)), "world")
 
+local boxCollider = Physics.newRectangleCollider(Vec.V2(0.1, 0.1))
+local circleCollider = Physics.newCircleCollider(0.1)
+
 -- Objects are given shape using colliders.
 local groundCollider = Physics.newRectangleCollider(Vec.V2(10, 0.1))
 
@@ -641,16 +644,15 @@ function Update(deltaTime: number)
 	Graphics.clear(Vec4.BLACK)
 
 	if Io.isKeyJustPressed("space") then
-		local box = Physics.newRectangleCollider(Vec.V2(0.1, 0.1))
         -- Dynamic objects react to collisions and move
-		local object = world:createObject(Vec.V2(math.random(), 0), 1, box, { "box" }, "dynamic")
+        -- Try replacing boxCollider with circleCollider, or using newPolygonCollider!
+		local object = world:createObject(Vec.V2(math.random(), 0), 1, boxCollider, { "box" }, "dynamic")
 		object.extra = { color = Vec4.createColor(math.random(), math.random(), math.random(), 1) }
 	end
 
 	local objects = world:getObjects()
 	for _, obj in pairs(objects) do
         -- We can use getPoints() to get the collision shape of the object
-        -- Get points is only available for connected colliders
 		Graphics.drawPolygon(obj:getPoints(), obj.extra.color)
 	end
 
@@ -659,6 +661,8 @@ function Update(deltaTime: number)
 end
 
 ```
+
+You can manually modify the position, velocity, rotation, etc... of objects in the world using `o.position`, `o.velocity`, `o.linearDamping`, `o.rotation`, `o.rotationSpeed`...
 
 **Be careful**, when Vectarine is minimized, to save CPU performance (and battery life!), it enters sleep mode where it runs at a maximum of 10 FPS.
 

@@ -9,9 +9,10 @@ use nalgebra::Isometry2;
 use rapier2d::{
     math::Vector,
     prelude::{
-        CCDSolver, Collider, ColliderBuilder, ColliderSet, DefaultBroadPhase, ImpulseJointSet,
-        IntegrationParameters, IslandManager, MultibodyJointSet, NarrowPhase, PhysicsPipeline,
-        QueryFilter, RigidBody, RigidBodyBuilder, RigidBodyHandle, RigidBodySet,
+        CCDSolver, Collider, ColliderBuilder, ColliderSet, DefaultBroadPhase, ImpulseJointHandle,
+        ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet, NarrowPhase,
+        PhysicsPipeline, QueryFilter, RevoluteJointBuilder, RigidBody, RigidBodyBuilder,
+        RigidBodyHandle, RigidBodySet,
     },
 };
 
@@ -89,11 +90,19 @@ struct Collider2 {
 }
 auto_impl_lua_take!(Collider2, Collider2);
 
+// MARK: Joint2
+
+struct Joint2 {
+    joint: ImpulseJointHandle,
+    world: Weak<RefCell<PhysicsWorld2>>,
+}
+auto_impl_lua_take!(Joint2, Joint2);
+
 // MARK: Object2
 
 struct Object2 {
     rigid_body_handle: RigidBodyHandle,
-    world: Weak<RefCell<PhysicsWorld2>>, // maybe weak is better?
+    world: Weak<RefCell<PhysicsWorld2>>,
 }
 
 struct ExtraObjectData {
@@ -112,29 +121,6 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             let camera = if camera.is_nil() { None } else { Some(camera) };
             let world = PhysicsWorld2::new(camera, gravity.unwrap_or(Vec2::new(0.0, 0.0)))?;
             Ok(LuaPhysicsWorld2(Rc::new(RefCell::new(world))))
-        }
-    });
-
-    add_fn_to_table(lua, &physics_module, "getObjectsAtPoint", {
-        move |_, (lua_world, point): (LuaPhysicsWorld2, Vec2)| {
-            let world = lua_world.0.borrow();
-            let world = &*world;
-            let filter = QueryFilter::default();
-            let query_pipeline = world.broad_phase.as_query_pipeline(
-                world.narrow_phase.query_dispatcher(),
-                &world.rigid_body_set,
-                &world.collider_set,
-                filter,
-            );
-            let matches =
-                query_pipeline.intersect_point(rapier2d::prelude::point![point.x(), point.y()]);
-            Ok(matches
-                .filter_map(|m| m.1.parent())
-                .map(|parent| Object2 {
-                    rigid_body_handle: parent,
-                    world: Rc::downgrade(&lua_world.0),
-                })
-                .collect::<Vec<_>>())
         }
     });
 
@@ -179,7 +165,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                 &mut world.rigid_body_set,
                 &mut world.collider_set,
                 &mut world.impulse_joint_set,
-                &mut world.multibody_joint_set,
+                &mut world.multibody_joint_set, // unused, impulse joints are better for our use-case.
                 &mut world.ccd_solver,
                 &physics_hooks,
                 &event_handler,
@@ -187,7 +173,6 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             Ok(())
         });
 
-        // MARK: Object2 fn
         registry.add_method_mut("createObject", {
             move |_,
                   lua_world,
@@ -286,6 +271,168 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                 Ok(objects)
             },
         );
+
+        registry.add_method_mut("getObjectsAtPoint", {
+            move |_, lua_world, (point,): (Vec2,)| {
+                let world = lua_world.0.borrow();
+                let world = &*world;
+                let filter = QueryFilter::default();
+                let query_pipeline = world.broad_phase.as_query_pipeline(
+                    world.narrow_phase.query_dispatcher(),
+                    &world.rigid_body_set,
+                    &world.collider_set,
+                    filter,
+                );
+                let matches =
+                    query_pipeline.intersect_point(rapier2d::prelude::point![point.x(), point.y()]);
+                Ok(matches
+                    .filter_map(|m| m.1.parent())
+                    .map(|parent| Object2 {
+                        rigid_body_handle: parent,
+                        world: Rc::downgrade(&lua_world.0),
+                    })
+                    .collect::<Vec<_>>())
+            }
+        });
+
+        registry.add_method_mut("getObjectsInArea", {
+            move |_, lua_world, (position, size): (Vec2, Vec2)| {
+                let world = lua_world.0.borrow();
+                let world = &*world;
+                let filter = QueryFilter::default();
+                let query_pipeline = world.broad_phase.as_query_pipeline(
+                    world.narrow_phase.query_dispatcher(),
+                    &world.rigid_body_set,
+                    &world.collider_set,
+                    filter,
+                );
+                let mins = rapier2d::prelude::point![position.x(), position.y()];
+                let maxs =
+                    rapier2d::prelude::point![position.x() + size.x(), position.y() + size.y()];
+                let aabb = rapier2d::prelude::Aabb::new(mins, maxs);
+                let matches = query_pipeline.intersect_aabb_conservative(aabb);
+                Ok(matches
+                    .filter_map(|m| m.1.parent())
+                    .map(|parent| Object2 {
+                        rigid_body_handle: parent,
+                        world: Rc::downgrade(&lua_world.0),
+                    })
+                    .collect::<Vec<_>>())
+            }
+        });
+
+        registry.add_method_mut("getObjectsIntersectingRay", {
+            move |lua, lua_world, (position, direction, max_length): (Vec2, Vec2, Option<f32>)| {
+                let world = lua_world.0.borrow();
+                let world = &*world;
+                let filter = QueryFilter::default();
+                let query_pipeline = world.broad_phase.as_query_pipeline(
+                    world.narrow_phase.query_dispatcher(),
+                    &world.rigid_body_set,
+                    &world.collider_set,
+                    filter,
+                );
+                let position = rapier2d::prelude::point![position.x(), position.y()];
+                let direction = rapier2d::prelude::vector![direction.x(), direction.y()];
+                let ray = rapier2d::prelude::Ray::new(position, direction);
+                let matches =
+                    query_pipeline.intersect_ray(ray, max_length.unwrap_or(10000.0), true);
+                Ok(matches
+                    .filter_map(|(_, collider, intersection)| {
+                        let parent = collider.parent()?;
+                        let o = Object2 {
+                            rigid_body_handle: parent,
+                            world: Rc::downgrade(&lua_world.0),
+                        };
+                        let table = lua.create_table().ok()?;
+                        table.raw_set("object", o).ok()?;
+                        table
+                            .raw_set("timeOfImpact", intersection.time_of_impact)
+                            .ok()?;
+                        Some(table)
+                    })
+                    .collect::<Vec<_>>())
+            }
+        });
+
+        registry.add_method_mut("getJoints", {
+            move |_, lua_world, (): ()| {
+                let world = lua_world.0.borrow();
+                let world = &*world;
+                let handles = world
+                    .impulse_joint_set
+                    .iter()
+                    .map(|(joint_handle, _)| Joint2 {
+                        joint: joint_handle,
+                        world: Rc::downgrade(&lua_world.0),
+                    })
+                    .collect::<Vec<_>>();
+                Ok(handles)
+            }
+        });
+
+        // MARK: Joint2 fn
+        registry.add_method_mut("createDistanceJoint", {
+            move |_, lua_world, (object1, object2): (Object2, Object2)| {
+                let mut world = lua_world.0.borrow_mut();
+                let world = &mut *world;
+                let joint = RevoluteJointBuilder::new()
+                    .local_anchor1(nalgebra::point![0.0, 1.0])
+                    .local_anchor2(nalgebra::point![0.0, -3.0])
+                    .build();
+                let join_handle = world.impulse_joint_set.insert(
+                    object1.rigid_body_handle,
+                    object2.rigid_body_handle,
+                    joint,
+                    true,
+                );
+                Ok(Joint2 {
+                    joint: join_handle,
+                    world: Rc::downgrade(&lua_world.0),
+                })
+            }
+        });
+    })?;
+
+    // MARK: Join2 fn
+    lua.register_userdata_type::<Joint2>(|registry| {
+        registry.add_method_mut("remove", |_, joint, (): ()| {
+            let Some(world) = joint.world.upgrade() else {
+                return Ok(());
+            };
+            let mut world = world.borrow_mut();
+            let world = &mut *world;
+            world.impulse_joint_set.remove(joint.joint, true);
+            Ok(())
+        });
+        registry.add_method_mut("getObject1", |_, joint, (): ()| {
+            let Some(world) = joint.world.upgrade() else {
+                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+            };
+            let mut world = world.borrow_mut();
+            let world = &mut *world;
+            let Some(j) = world.impulse_joint_set.get(joint.joint) else {
+                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+            };
+            Ok(Object2 {
+                rigid_body_handle: j.body1,
+                world: joint.world.clone(),
+            })
+        });
+        registry.add_method_mut("getObject2", |_, joint, (): ()| {
+            let Some(world) = joint.world.upgrade() else {
+                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+            };
+            let mut world = world.borrow_mut();
+            let world = &mut *world;
+            let Some(j) = world.impulse_joint_set.get(joint.joint) else {
+                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+            };
+            Ok(Object2 {
+                rigid_body_handle: j.body2,
+                world: joint.world.clone(),
+            })
+        });
     })?;
 
     // MARK: Collider2 fn
@@ -315,50 +462,83 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         }
     });
 
+    // MARK: Object2 fn
     lua.register_userdata_type::<Object2>(|registry| {
         registry.add_field_method_get("position", |_, object| {
             let translation: Vector<f32> =
-                access_rigid_body(object, |_, rigid_body| *rigid_body.translation())?;
+                access_rigid_body_mut(object, |_, rigid_body| *rigid_body.translation())?;
             let result = Vec2::new(translation.x, translation.y);
             Ok(result)
         });
         registry.add_field_method_set("position", |_, object, position: Vec2| {
-            access_rigid_body(object, |_, rigid_body| {
+            access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.set_translation(nalgebra::vector![position.x(), position.y()], true);
             })?;
             Ok(())
         });
         registry.add_field_method_get("speed", |_, object| {
-            let speed = access_rigid_body(object, |_, rigid_body| *rigid_body.linvel())?;
+            let speed = access_rigid_body_mut(object, |_, rigid_body| *rigid_body.linvel())?;
             let result = Vec2::new(speed.x, speed.y);
             Ok(result)
         });
         registry.add_field_method_set("speed", |_, object, speed: Vec2| {
-            access_rigid_body(object, |_, rigid_body| {
+            access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.set_linvel(nalgebra::vector![speed.x(), speed.y()], true);
             })?;
             Ok(())
         });
         registry.add_field_method_get("rotation", |_, object| {
-            let rotation =
-                access_rigid_body(object, |_, rigid_body| rigid_body.rotation().angle())?;
-            Ok(rotation)
+            access_rigid_body_mut(object, |_, rigid_body| rigid_body.rotation().angle())
         });
         registry.add_field_method_set("rotation", |_, object, rotation: f32| {
-            access_rigid_body(object, |_, rigid_body| {
+            access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.set_rotation(rapier2d::math::Rotation::new(rotation), true);
             })
         });
         registry.add_field_method_get("rotationSpeed", |_, object| {
-            let rotation_speed = access_rigid_body(object, |_, rigid_body| rigid_body.angvel())?;
-            Ok(rotation_speed)
+            access_rigid_body_mut(object, |_, rigid_body| rigid_body.angvel())
         });
         registry.add_field_method_set("rotationSpeed", |_, object, rotation_speed: f32| {
-            access_rigid_body(object, |_, rigid_body| {
+            access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.set_angvel(rotation_speed, true);
             })?;
             Ok(())
         });
+        registry.add_field_method_set("linearDamping", |_, object, damping: f32| {
+            access_rigid_body_mut(object, |_, rigid_body| {
+                rigid_body.set_linear_damping(damping);
+            })?;
+            Ok(())
+        });
+        registry.add_field_method_get("linearDamping", |_, object| {
+            access_rigid_body_mut(object, |_, rigid_body| rigid_body.linear_damping())
+        });
+        registry.add_field_method_set("angularDamping", |_, object, damping: f32| {
+            access_rigid_body_mut(object, |_, rigid_body| {
+                rigid_body.set_angular_damping(damping);
+            })?;
+            Ok(())
+        });
+        registry.add_field_method_get("angularDamping", |_, object| {
+            access_rigid_body_mut(object, |_, rigid_body| rigid_body.angular_damping())
+        });
+
+        registry.add_method("setLockRotation", |_, object, lock: bool| {
+            access_rigid_body_mut(object, |_, rigid_body| {
+                rigid_body.lock_rotations(lock, true)
+            })?;
+            Ok(())
+        });
+
+        registry.add_method("setLockTranslation", |_, object, lock: bool| {
+            access_rigid_body_mut(object, |_, rigid_body| {
+                rigid_body.lock_translations(lock, true)
+            })?;
+            Ok(())
+        });
+
+        // ---
+
         registry.add_field_method_get("tags", |_lua, object| {
             access_extras(object, |extra_object_data| {
                 Ok(extra_object_data.tags.clone())
@@ -382,7 +562,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             })
         });
         registry.add_method("getPoints", |lua, object, (): ()| {
-            let points = access_rigid_body(object, |collider_set, rigid_body| {
+            let points = access_rigid_body_mut(object, |collider_set, rigid_body| {
                 rigid_body
                     .colliders()
                     .iter()
@@ -399,6 +579,39 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                 table.raw_push(point)?;
             }
             Ok(table)
+        });
+        registry.add_method("getContacts", |_, object, (): ()| {
+            let touching_objects = access_rigid_body(object, |world, rigid_body| {
+                let filter = QueryFilter::default();
+                let query_pipeline = world.broad_phase.as_query_pipeline(
+                    world.narrow_phase.query_dispatcher(),
+                    &world.rigid_body_set,
+                    &world.collider_set,
+                    filter,
+                );
+
+                let mut touching_objects = rigid_body
+                    .colliders()
+                    .iter()
+                    .filter_map(|collider| {
+                        let c = world.collider_set.get(*collider)?;
+                        let intersections =
+                            query_pipeline.intersect_shape(*rigid_body.position(), c.shape());
+                        Some(intersections.filter_map(|(_, collider)| collider.parent()))
+                    })
+                    .flatten()
+                    .collect::<Vec<_>>();
+                touching_objects.sort_by(|a, b| a.0.cmp(&b.0));
+                touching_objects.dedup();
+                touching_objects
+                    .iter()
+                    .map(|handle| Object2 {
+                        rigid_body_handle: *handle,
+                        world: object.world.clone(),
+                    })
+                    .collect::<Vec<_>>()
+            })?;
+            Ok(touching_objects)
         });
     })?;
 
@@ -447,7 +660,7 @@ fn get_points_of_collider(collider: &Collider) -> Vec<Vec2> {
     }
 }
 
-fn access_rigid_body<F, T>(object: &Object2, f: F) -> mlua::Result<T>
+fn access_rigid_body_mut<F, T>(object: &Object2, f: F) -> mlua::Result<T>
 where
     F: FnOnce(&mut ColliderSet, &mut RigidBody) -> T,
 {
@@ -464,6 +677,25 @@ where
         ));
     };
     Ok(f(&mut world.collider_set, rigid_body))
+}
+
+fn access_rigid_body<F, T>(object: &Object2, f: F) -> mlua::Result<T>
+where
+    F: FnOnce(&PhysicsWorld2, &RigidBody) -> T,
+{
+    let maybe_world = object.world.upgrade();
+    let Some(world) = maybe_world else {
+        return Err(mlua::Error::RuntimeError(
+            "Object2 is out of this world".to_string(),
+        ));
+    };
+    let world = &*world.borrow();
+    let Some(rigid_body) = world.rigid_body_set.get(object.rigid_body_handle) else {
+        return Err(mlua::Error::RuntimeError(
+            "Object2 is out of this world".to_string(),
+        ));
+    };
+    Ok(f(world, rigid_body))
 }
 
 fn access_extras<F, T>(object: &Object2, f: F) -> mlua::Result<T>
