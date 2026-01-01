@@ -1,5 +1,8 @@
 local Camera2 = require("@vectarine/camera")
 local Vec = require("@vectarine/vec")
+--- A Physics API for 2D
+---
+--- This API is experimental and can change.
 local module = {}
 
 local World2Impl = { type = "physicsworld2" }
@@ -18,35 +21,52 @@ export type World2 = typeof(setmetatable({} :: WorldData, World2Impl))
 --- Create a new physics world
 --- A world is a collection of objects that can interact with each other
 --- You can optionally pass a camera to show debugging information like colliders and make objects clickable and draggable
---- @return World2
 function module.newWorld2(gravity: Vec.Vec2?, camera: Camera2.Camera2?): World2
 	error("Not implemented")
 end
 
 --- Remove an object from the world
---- @param object Object
+--- Also removes all joints attached to the object
 function World2Impl:removeObject(object: Object2)
 	error("Not implemented")
 end
 
 --- Step the physics simulation forward in time
 --- If you don't call this, nothing will move!
---- @param delta_time number
 function World2Impl:step(delta_time: number)
 	error("Not implemented")
 end
 
 --- Get all objects containing the given tags. Returns all objects if no tags are given.
---- @param tags string[]?
---- @return Object2[]
 function World2Impl:getObjects(tags: { string }?): { Object2 }
 	error("Not implemented")
 end
 
 --- Get all objects at a given point
---- @param point Vec2
---- @return Object2[]
+--- Most of the time, there will only be 0 or 1 object at a given point
 function World2Impl:getObjectsAtPoint(point: Vec.Vec2): { Object2 }
+	error("Not implemented")
+end
+
+--- Get all objects in a given rectangular area
+function World2Impl:getObjectsInArea(position: Vec.Vec2, size: Vec.Vec2): { Object2 }
+	error("Not implemented")
+end
+
+--- Get all objects intersecting a ray. The direction does not have to be normalized and represents the "velocity" of the ray.
+--- For performance reasons, you should set a maximum time of impact which is the maximum time the ray will travel at its speed.
+--- The time of impact is the time the ray will travel to reach the object. For normalized directions, this is the distance.
+function World2Impl:getObjectsIntersectingRay(
+	position: Vec.Vec2,
+	direction: Vec.Vec2,
+	max_time_of_impact: number?
+): { { object: Object2, timeOfImpact: number } }
+	error("Not implemented")
+end
+
+--- Get all joints in the world
+--- @return { Joint2 }
+function World2Impl:getJoints(): { Joint2 }
 	error("Not implemented")
 end
 
@@ -86,8 +106,12 @@ Object2Impl.__index = Object2Impl
 type Object2Type = {
 	position: Vec.Vec2,
 	speed: Vec.Vec2,
+	-- How much friction the object has. 0 is no friction, 1> like moving in a fluid.
+	linearDamping: number,
 	rotation: number,
 	rotationSpeed: number,
+	--- How much the object resists to rotation. 0 is no resistance
+	angularDamping: number,
 	tags: { string },
 	extra: any,
 }
@@ -95,8 +119,25 @@ export type Object2 = typeof(setmetatable({} :: Object2Type, Object2Impl))
 
 --- Return the points of the collider in the object space
 --- If the collider is not a polygon (for example a circle), return a close approximation.
---- @return Vec2[]
+--- @return { Vec2 }
 function Object2Impl:getPoints(): { Vec.Vec2 }
+	error("Not implemented")
+end
+
+--- Returns all objects that are touching this object
+function Object2Impl:getContacts(): { Object2 }
+	error("Not implemented")
+end
+
+--- Prevents an object from rotating (objects can rotate by default)
+--- It can still move around. Useful for characters that shouldn't fall over.
+function Object2Impl:setLockRotation(lock: boolean)
+	error("Not implemented")
+end
+
+--- Prevents an object from moving (objects can move by default)
+--- It can still rotate. Useful for rotating platforms that shouldn't move.
+function Object2Impl:setLockTranslation(lock: boolean)
 	error("Not implemented")
 end
 
@@ -109,7 +150,7 @@ end
 --- @param position Vec2
 --- @param mass number Must be greater than 0
 --- @param collider Collider
---- @param tags string[]
+--- @param tags { string }
 --- @param bodyType "static" | "dynamic" | "kinematic"
 --- @return Object2
 function World2Impl:createObject(
@@ -119,6 +160,42 @@ function World2Impl:createObject(
 	tags: { string },
 	bodyType: "static" | "dynamic" | "kinematic"
 ): Object2
+	error("Not implemented")
+end
+
+--MARK: Joint2
+
+local Joint2Impl = { type = "object2" }
+Joint2Impl.__index = Joint2Impl
+type Joint2Type = {}
+export type Joint2 = typeof(setmetatable({} :: Joint2Type, Joint2Impl))
+
+--- Create a distance joint between two objects
+--- Once the joint is created, the distance between the objects will be fixed.
+--- This can be used to create pendulums, or wheels.
+--- @param object1 Object2
+--- @param object2 Object2
+--- @return Joint2
+function World2Impl:createDistanceJoint(object1: Object2, object2: Object2): Joint2
+	error("Not implemented")
+end
+
+--- Get the first object of the joint.
+--- Throws an error if the joint is invalid.
+--- @return Object2
+function Joint2Impl:getObject1(): Object2
+	error("Not implemented")
+end
+
+--- Get the second object of the joint
+--- Throws an error if the joint is invalid.
+--- @return Object2
+function Joint2Impl:getObject2(): Object2
+	error("Not implemented")
+end
+
+--- Remove the joint from the world, destroying it.
+function Joint2Impl:remove()
 	error("Not implemented")
 end
 
