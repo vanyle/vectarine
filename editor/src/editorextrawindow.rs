@@ -7,7 +7,11 @@ use runtime::{
     anyhow, egui_glow,
     game::drawable_screen_size,
     game_resource::{ResourceManager, font_resource},
-    sdl2::video::{GLContext, Window},
+    graphics::batchdraw::BatchDraw2d,
+    sdl2::{
+        event::{Event, WindowEvent},
+        video::{GLContext, Window},
+    },
 };
 
 use crate::{editorinterface::EditorState, egui_sdl2_platform};
@@ -16,7 +20,6 @@ pub struct EditorInterfaceWithGl {
     pub platform: egui_sdl2_platform::Platform,
     pub painter: egui_glow::Painter,
     pub gl: Arc<glow::Context>,
-    pub dummy_manager: runtime::game_resource::ResourceManager,
 }
 
 /// Create an SDL2 Window to display the editor without the game.
@@ -48,7 +51,6 @@ impl EditorInterfaceWithGl {
         Ok(Self {
             platform,
             painter,
-            dummy_manager: ResourceManager::dummy_manager(),
             gl: gl.clone(),
         })
     }
@@ -78,15 +80,67 @@ pub fn render_editor_in_extra_window(
         gl.viewport(0, 0, width as i32, height as i32);
     }
 
+    if editor_state.project.borrow().is_some() {
+        let text = "This is the editor\nYour game is in another window\n\nUse preferences to merge or split\nthe editor and game windows.";
+        let font_size = 0.13;
+        draw_centered_text(
+            gl,
+            &mut editor_state.editor_batch_draw,
+            aspect_ratio,
+            text,
+            font_size,
+        );
+    }
+
+    let platform = &mut editor_interface.platform;
+    let painter = &mut editor_interface.painter;
+    editor_state.draw_editor_interface(platform, sdl, editor_window_events, painter);
+}
+
+pub fn draw_info_in_empty_game_window(
+    gl: &Arc<glow::Context>,
+    game_window: &Window,
+    batch_draw: &mut BatchDraw2d,
+) {
+    let (width, height) = drawable_screen_size(game_window);
+    let aspect_ratio = width as f32 / height as f32;
+    batch_draw.set_aspect_ratio(aspect_ratio);
+
+    let text = "No game is loaded\nUse the editor window\nto load or create a game.";
+    let font_size = 0.13;
+    draw_centered_text(gl, batch_draw, aspect_ratio, text, font_size);
+}
+
+pub fn send_window_resize_sync_event(
+    sdl: &runtime::sdl2::Sdl,
+    video: &runtime::sdl2::VideoSubsystem,
+    window: &Window,
+    platform: &mut egui_sdl2_platform::Platform,
+) {
+    let (width, height) = window.size();
+    let event: Event = Event::Window {
+        timestamp: 0,
+        window_id: window.id(),
+        win_event: WindowEvent::Resized(width as i32, height as i32),
+    };
+    platform.handle_event(&event, sdl, video);
+}
+
+pub fn draw_centered_text(
+    gl: &Arc<glow::Context>,
+    batch_draw: &mut BatchDraw2d,
+    aspect_ratio: f32,
+    text: &str,
+    font_size: f32,
+) {
     // Draw extras for the editor interface
     font_resource::use_default_font(gl, |font_data| {
-        let text = "This is the editor\nYour game is in another window\n\nUse preferences to merge the editor\n and the game if you prefer.";
-        let font_size = 0.13;
+        let dummy_manager = ResourceManager::dummy_manager();
 
         for (i, line) in text.lines().enumerate() {
             let (width, _height, _max_ascent) =
                 font_data.measure_text(line, font_size, aspect_ratio);
-            editor_state.editor_batch_draw.draw_text(
+            batch_draw.draw_text(
                 -width / 2.0,
                 0.5 - (i as f32 * font_size),
                 line,
@@ -95,12 +149,6 @@ pub fn render_editor_in_extra_window(
                 font_data,
             );
         }
+        batch_draw.draw(&dummy_manager, true);
     });
-    editor_state
-        .editor_batch_draw
-        .draw(&editor_interface.dummy_manager, true);
-
-    let platform = &mut editor_interface.platform;
-    let painter = &mut editor_interface.painter;
-    editor_state.draw_editor_interface(platform, sdl, editor_window_events, painter);
 }

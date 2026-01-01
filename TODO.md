@@ -6,9 +6,6 @@
   - [ ] Load Aseprite files as tilesets
 - [ ] Show resources in a nicer way (draw_debug_gui)
 - [ ] Add more types in the watcher
-- [ ] Fix bugs in separate window mode:
-  - [ ] Game not cleared when closing project
-  - [ ] Project interface not centered when closing project
 - [ ] Debug tooling for physics?
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor

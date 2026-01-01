@@ -2,7 +2,6 @@
 
 use std::{path::PathBuf, sync::mpsc::channel};
 
-use egui_sdl2_platform::sdl2::event::{Event, WindowEvent};
 use glow::HasContext;
 use runtime::{
     RenderingBlock, egui_glow,
@@ -14,7 +13,8 @@ use runtime::{
 
 use crate::{
     editorconfig::WindowStyle,
-    editorinterface::{EditorState, clear_and_draw_when_no_game},
+    editorextrawindow::{draw_info_in_empty_game_window, send_window_resize_sync_event},
+    editorinterface::{EditorState, clear_window},
     reload::reload_assets_if_needed,
 };
 
@@ -94,13 +94,13 @@ fn gui_main() {
 
     // Send a fake resize event to egui to initialize drawable area size
     // This is needed on high-DPI screen where the drawable size is greater than window size
-    let (width, height) = window.borrow().size();
-    let event: Event = Event::Window {
-        timestamp: 0,
-        window_id: 0,
-        win_event: WindowEvent::Resized(width as i32, height as i32),
-    };
-    platform.handle_event(&event, &sdl, &video.borrow());
+    send_window_resize_sync_event(&sdl, &video.borrow(), &window.borrow(), &mut platform);
+    send_window_resize_sync_event(
+        &sdl,
+        &video.borrow(),
+        &editor_state.editor_specific_window,
+        &mut editor_interface.platform,
+    );
 
     // The main loop
     let mut start_of_frame = now_ms();
@@ -117,7 +117,7 @@ fn gui_main() {
 
         if window.borrow().is_minimized() {
             // Preserve CPU when minimized
-            clear_and_draw_when_no_game(&gl);
+            clear_window(&gl);
             window.borrow().gl_swap_window();
             std::thread::sleep(std::time::Duration::from_millis(100));
             continue;
@@ -131,6 +131,8 @@ fn gui_main() {
         // Handle basic events
         editorinterface::handle_close_events(&game_window_events);
         editorinterface::handle_close_events(&editor_window_events);
+
+        let window_style = editor_state.config.borrow().window_style;
 
         if let Some(project) = editor_state.project.borrow_mut().as_mut() {
             let game = &mut project.game;
@@ -156,28 +158,32 @@ fn gui_main() {
             game.main_loop(&game_window_events, &window, delta_duration, true);
         } else {
             // Clear the screen when no project is loaded
-            {
-                window
-                    .borrow()
-                    .gl_make_current(&gl_context)
-                    .expect("Failed to make context current");
-                clear_and_draw_when_no_game(&gl);
-            }
-            {
-                editor_state
-                    .editor_specific_window
-                    .gl_make_current(&gl_context)
-                    .expect("Failed to make context current");
-                clear_and_draw_when_no_game(&gl);
+            window
+                .borrow()
+                .gl_make_current(&gl_context)
+                .expect("Failed to make context current");
+            clear_window(&gl);
+
+            if window_style == WindowStyle::GameSeparateFromEditor {
+                draw_info_in_empty_game_window(
+                    &gl,
+                    &window.borrow(),
+                    &mut editor_state.editor_batch_draw,
+                );
             }
         }
-
-        let window_style = editor_state.config.borrow().window_style;
 
         match window_style {
             WindowStyle::GameSeparateFromEditor => {
                 // We finished drawing the game. If it is separate from the editor, we can swap.
                 window.borrow().gl_swap_window();
+
+                editor_state
+                    .editor_specific_window
+                    .gl_make_current(&gl_context)
+                    .expect("Failed to make context current");
+                clear_window(&gl);
+
                 editorextrawindow::render_editor_in_extra_window(
                     &sdl,
                     &gl,

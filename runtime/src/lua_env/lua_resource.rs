@@ -119,7 +119,7 @@ macro_rules! auto_impl_lua_clone {
             fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
                 match value {
                     // this is probably buggy, take can cause issues.
-                    mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?.clone()),
+                    mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
                     _ => Err(mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
                         to: stringify!($friendly_name).to_string(),

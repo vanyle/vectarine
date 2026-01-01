@@ -94,7 +94,8 @@ pub fn setup_screen_api(
 
     add_fn_to_table(lua, &screen_module, "setCurrentScreen", {
         let screen_state = screen_state.clone();
-        move |_, (screen, transition): (Screen, Option<mlua::Table>)| {
+        move |_, (maybe_screen, transition): (mlua::AnyUserData, Option<mlua::Table>)| {
+            let screen = maybe_screen.borrow::<Screen>()?;
             let mut state = screen_state.borrow_mut();
 
             let transition_state = if let Some(trans_table) = transition {
@@ -138,7 +139,7 @@ pub fn setup_screen_api(
                 state.previous_screen = state.current_screen.clone();
             }
 
-            state.current_screen = Some(screen);
+            state.current_screen = Some(screen.clone());
             state.transition = transition_state;
 
             Ok(())

@@ -65,8 +65,8 @@ impl Default for FastList {
 }
 
 #[derive(Clone, Debug)]
-pub enum FastListOrVec {
-    List(FastList),
+pub enum FastListOrVec<'a> {
+    List(&'a FastList),
     Vec(Vec2),
 }
 
@@ -77,7 +77,7 @@ where
     if let Ok(vec) = ud.borrow::<Vec2>() {
         f(&FastListOrVec::Vec(*vec))
     } else if let Ok(list) = ud.borrow::<FastList>() {
-        f(&FastListOrVec::List(list.clone()))
+        f(&FastListOrVec::List(&list))
     } else {
         Err(mlua::Error::RuntimeError(
             "Expected FastList or Vec2".to_string(),

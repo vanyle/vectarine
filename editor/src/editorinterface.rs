@@ -286,7 +286,7 @@ pub fn handle_close_events(latest_events: &[sdl2::event::Event]) {
     }
 }
 
-pub fn clear_and_draw_when_no_game(gl: &glow::Context) {
+pub fn clear_window(gl: &glow::Context) {
     unsafe {
         gl.clear_color(0.1, 0.1, 0.1, 1.0);
         gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
