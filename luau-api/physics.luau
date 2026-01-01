@@ -64,6 +64,21 @@ function module.newRectangleCollider(size: Vec.Vec2): Collider2
 	error("Not implemented")
 end
 
+--- Create a circle collider
+--- @param radius number
+--- @return Collider2
+function module.newCircleCollider(radius: number): Collider2
+	error("Not implemented")
+end
+
+--- Create a polygon collider
+--- Polygon colliders are more expensive than circle or rectangle colliders
+--- @param points Vec2[]
+--- @return Collider2
+function module.newPolygonCollider(points: { Vec.Vec2 }): Collider2
+	error("Not implemented")
+end
+
 --MARK: Object2
 
 local Object2Impl = { type = "object2" }
@@ -79,6 +94,7 @@ type Object2Type = {
 export type Object2 = typeof(setmetatable({} :: Object2Type, Object2Impl))
 
 --- Return the points of the collider in the object space
+--- If the collider is not a polygon (for example a circle), return a close approximation.
 --- @return Vec2[]
 function Object2Impl:getPoints(): { Vec.Vec2 }
 	error("Not implemented")

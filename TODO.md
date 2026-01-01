@@ -11,10 +11,10 @@
   - [ ] Project interface not centered when closing project
 - [ ] Entity system
   - [x] Add a concept of a 'PhysicsWorld2D'
-  - [ ] You can add 'objects' to the physics world
+  - [x] You can add 'objects' to the physics world
     - [x] Rectangles
-    - [ ] Circles
-    - [ ] Convex polygons
+    - [x] Circles
+    - [x] Convex polygons
   - [x] The objects can have 'tags' (player, enemy, projectile, etc...)
   - [x] You can easily move and rotate objects in the physics world
   - [x] You can 'efficiently' get objects by tag
