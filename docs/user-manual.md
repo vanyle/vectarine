@@ -613,6 +613,7 @@ You can find more information about shaders in [the great book of shaders](https
 # ⚛️ Physics
 
 Vectarine provides a simple physics system to handle collisions and object interactions.
+[Rapier](https://rapier.rs/) is used under the hood, but you don't need to understand Rapier to use Vectarine's physics system.
 
 Let's looks at an example:
 
