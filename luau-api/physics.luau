@@ -129,6 +129,12 @@ function Object2Impl:getContacts(): { Object2 }
 	error("Not implemented")
 end
 
+--- Set the mass of the object
+--- @param mass number Must be greater than 0
+function Object2Impl:setMass(mass: number)
+	error("Not implemented")
+end
+
 --- Prevents an object from rotating (objects can rotate by default)
 --- It can still move around. Useful for characters that shouldn't fall over.
 function Object2Impl:setLockRotation(lock: boolean)
@@ -138,6 +144,10 @@ end
 --- Prevents an object from moving (objects can move by default)
 --- It can still rotate. Useful for rotating platforms that shouldn't move.
 function Object2Impl:setLockTranslation(lock: boolean)
+	error("Not implemented")
+end
+
+function Object2Impl:setRestitution(restitution: number)
 	error("Not implemented")
 end
 

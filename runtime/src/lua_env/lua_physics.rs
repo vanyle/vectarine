@@ -490,11 +490,12 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
 
     add_fn_to_table(lua, &physics_module, "newPolygonCollider", {
         move |_, points: Vec<Vec2>| {
-            let converted_points = points // We could probably transmute here, but we won't.
+            let mut converted_points = points // We could probably transmute here, but we won't.
                 .iter()
                 .map(|p| nalgebra::Point::from(nalgebra::vector![p.x(), p.y()]))
                 .collect::<Vec<_>>();
-            let indices = (0..points.len() as u32 - 1).map(|i| [i, i + 1]).collect();
+            converted_points.push(converted_points[0]);
+            let indices = (0..(points.len() as u32)).map(|i| [i, i + 1]).collect();
             let collider = ColliderBuilder::polyline(converted_points, Some(indices)).build();
             Ok(Collider2 { collider })
         }
@@ -561,13 +562,37 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             access_rigid_body_mut(object, |_, rigid_body| rigid_body.angular_damping())
         });
 
+        registry.add_method_mut("setRestitution", |_, object, restitution: f32| {
+            access_rigid_body_mut(object, |collider_set, rigid_body| {
+                rigid_body.colliders().iter().for_each(|collider_handle| {
+                    let Some(collider) = collider_set.get_mut(*collider_handle) else {
+                        return;
+                    };
+                    collider.set_restitution(restitution);
+                });
+            })?;
+            Ok(())
+        });
+
+        registry.add_method_mut("setMass", |_, object, mass: f32| {
+            access_rigid_body_mut(object, |collider_set, rigid_body| {
+                rigid_body.colliders().iter().for_each(|collider_handle| {
+                    let Some(collider) = collider_set.get_mut(*collider_handle) else {
+                        return;
+                    };
+                    // Under the assumption one collider per body
+                    collider.set_mass(mass);
+                });
+            })?;
+            Ok(())
+        });
+
         registry.add_method("setLockRotation", |_, object, lock: bool| {
             access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.lock_rotations(lock, true)
             })?;
             Ok(())
         });
-
         registry.add_method("setLockTranslation", |_, object, lock: bool| {
             access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.lock_translations(lock, true)
