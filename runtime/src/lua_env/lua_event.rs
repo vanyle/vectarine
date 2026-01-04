@@ -138,6 +138,7 @@ pub fn create_event_constant_in_event_module(
 pub struct DefaultEvents {
     pub keydown_event: EventType,
     pub keyup_event: EventType,
+    pub text_input_event: EventType,
 
     pub mouse_down_event: EventType,
     pub mouse_up_event: EventType,
@@ -212,6 +213,8 @@ pub fn setup_event_api(
         create_event_constant_in_event_module(&event_manager, lua, "keyDown", &event_module)?;
     let keyup_event =
         create_event_constant_in_event_module(&event_manager, lua, "keyUp", &event_module)?;
+    let text_input_event =
+        create_event_constant_in_event_module(&event_manager, lua, "textInput", &event_module)?;
 
     let mouse_down_event =
         create_event_constant_in_event_module(&event_manager, lua, "mouseDown", &event_module)?;
@@ -240,6 +243,7 @@ pub fn setup_event_api(
         mouse_click_event,
         resource_loaded_event,
         console_command_event,
+        text_input_event,
     };
 
     Ok((event_module, default_events, event_manager))

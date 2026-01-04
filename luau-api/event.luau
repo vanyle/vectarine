@@ -65,6 +65,14 @@ function module.getResourceLoadedEvent(): Event<number>
 	error("Not implemented")
 end
 
+--- Clear all previous subscriptions to the text input event and return it.
+--- This event is triggered when a key is pressed and the key is a printable character.
+--- The string is the character that was pressed, with modifiers like shift or option.
+--- You can use this function to implement text input.
+function module.getTextInputEvent(): Event<string>
+	error("Not implemented")
+end
+
 --- Clear all previous subscriptions to the key up event and return it.
 function module.getKeyUpEvent(): Event<string>
 	error("Not implemented")

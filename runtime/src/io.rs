@@ -100,7 +100,6 @@ pub fn process_events(
                 let Some(scancode) = scancode else {
                     return;
                 };
-                println!("Keydown: {}", scancode.name());
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 env_state.keyboard_state.insert(*scancode, true);
                 env_state
@@ -112,6 +111,14 @@ pub fn process_events(
                         .name()
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert Keycode to Lua"),
+                );
+            }
+            Event::TextInput { text, .. } => {
+                let lua = &game.lua_env.lua;
+                let _ = game.lua_env.default_events.text_input_event.trigger(
+                    text.clone()
+                        .into_lua(lua)
+                        .expect("Failed to convert text to Lua"),
                 );
             }
             Event::MouseButtonUp { mouse_btn, .. } => {
