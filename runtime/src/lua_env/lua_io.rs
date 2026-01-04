@@ -74,8 +74,10 @@ pub fn setup_io_api(
         move |lua, ()| {
             let mouse_state = env_state.borrow().mouse_state.clone();
             let table = lua.create_table()?;
-            let _ = table.set("is_left_down", mouse_state.is_left_down);
-            let _ = table.set("is_right_down", mouse_state.is_right_down);
+            let _ = table.set("isLeftDown", mouse_state.is_left_down);
+            let _ = table.set("isRightDown", mouse_state.is_right_down);
+            let _ = table.set("isLeftJustPressed", mouse_state.is_left_just_pressed);
+            let _ = table.set("isRightJustPressed", mouse_state.is_right_just_pressed);
             Ok(table)
         }
     });

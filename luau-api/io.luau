@@ -252,8 +252,12 @@ function module.getMouse(): Vec.Vec2
 end
 
 --- Get the current mouse state
---- @return {is_left_down: boolean, is_right_down: boolean}
-function module.getMouseState(): { is_left_down: boolean, is_right_down: boolean }
+function module.getMouseState(): {
+	isLeftDown: boolean,
+	isRightDown: boolean,
+	isLeftJustPressed: boolean,
+	isRightJustPressed: boolean,
+}
 	error("Not implemented")
 end
 

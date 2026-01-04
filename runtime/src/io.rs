@@ -15,6 +15,8 @@ pub struct MouseState {
     pub y: f32,
     pub is_left_down: bool,
     pub is_right_down: bool,
+    pub is_left_just_pressed: bool,
+    pub is_right_just_pressed: bool,
 }
 
 #[derive(Debug)]
@@ -75,6 +77,8 @@ pub fn process_events(
     {
         let mut env_state = game.lua_env.env_state.borrow_mut();
         env_state.keyboard_just_pressed_state.clear();
+        env_state.mouse_state.is_left_just_pressed = false;
+        env_state.mouse_state.is_right_just_pressed = false;
     }
 
     for event in events.iter() {
@@ -144,8 +148,10 @@ pub fn process_events(
                     let mouse_state = &mut env_state.mouse_state;
                     if *mouse_btn == sdl2::mouse::MouseButton::Left {
                         mouse_state.is_left_down = true;
+                        mouse_state.is_left_just_pressed = true;
                     } else if *mouse_btn == sdl2::mouse::MouseButton::Right {
                         mouse_state.is_right_down = true;
+                        mouse_state.is_right_just_pressed = true;
                     }
                 }
                 let mouse_button = mouse_button_to_str(*mouse_btn);
