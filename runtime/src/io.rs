@@ -1,6 +1,6 @@
 use crate::game::Game;
 use mlua::IntoLua;
-use sdl2::{event::Event, keyboard::Keycode, video::FullscreenType};
+use sdl2::{event::Event, keyboard::Scancode, video::FullscreenType};
 use std::collections::HashMap;
 
 pub mod dummyfs;
@@ -28,8 +28,8 @@ pub struct IoEnvState {
     pub px_ratio_x: f32,
     pub px_ratio_y: f32,
     pub mouse_state: MouseState,
-    pub keyboard_state: HashMap<Keycode, bool>,
-    pub keyboard_just_pressed_state: HashMap<Keycode, bool>,
+    pub keyboard_state: HashMap<Scancode, bool>,
+    pub keyboard_just_pressed_state: HashMap<Scancode, bool>,
 
     pub start_time: std::time::Instant,
 
@@ -82,30 +82,33 @@ pub fn process_events(
             Event::Quit { .. } => {
                 std::process::exit(0);
             }
-            Event::KeyUp { keycode, .. } => {
-                let Some(keycode) = keycode else {
+            Event::KeyUp { scancode, .. } => {
+                let Some(scancode) = scancode else {
                     return;
                 };
                 let mut env_state = game.lua_env.env_state.borrow_mut();
-                env_state.keyboard_state.insert(*keycode, false);
+                env_state.keyboard_state.insert(*scancode, false);
 
                 let _ = game.lua_env.default_events.keyup_event.trigger(
-                    keycode
+                    scancode
                         .name()
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert Keycode to Lua"),
                 );
             }
-            Event::KeyDown { keycode, .. } => {
-                let Some(keycode) = keycode else {
+            Event::KeyDown { scancode, .. } => {
+                let Some(scancode) = scancode else {
                     return;
                 };
+                println!("Keydown: {}", scancode.name());
                 let mut env_state = game.lua_env.env_state.borrow_mut();
-                env_state.keyboard_state.insert(*keycode, true);
-                env_state.keyboard_just_pressed_state.insert(*keycode, true);
+                env_state.keyboard_state.insert(*scancode, true);
+                env_state
+                    .keyboard_just_pressed_state
+                    .insert(*scancode, true);
 
                 let _ = game.lua_env.default_events.keydown_event.trigger(
-                    keycode
+                    scancode
                         .name()
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert Keycode to Lua"),

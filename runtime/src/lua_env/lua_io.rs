@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use sdl2::keyboard::Keycode;
+use sdl2::keyboard::Scancode;
 
 use crate::{
     io::IoEnvState,
@@ -19,7 +19,7 @@ pub fn setup_io_api(
     add_fn_to_table(lua, &io_module, "isKeyDown", {
         let env_state = env_state.clone();
         move |_, keycode_name: String| {
-            let keycode = Keycode::from_name(&keycode_name);
+            let keycode = Scancode::from_name(&keycode_name);
             let Some(keycode) = keycode else {
                 return Ok(false);
             };
@@ -35,7 +35,7 @@ pub fn setup_io_api(
     add_fn_to_table(lua, &io_module, "isKeyJustPressed", {
         let env_state = env_state.clone();
         move |_, keycode_name: String| {
-            let keycode = Keycode::from_name(&keycode_name);
+            let keycode = Scancode::from_name(&keycode_name);
             let Some(keycode) = keycode else {
                 return Ok(false);
             };
