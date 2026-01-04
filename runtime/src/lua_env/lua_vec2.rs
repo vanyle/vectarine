@@ -39,10 +39,6 @@ impl Vec2 {
         Self([self.0[0], y])
     }
     #[inline]
-    pub fn scale(self, k: f32) -> Self {
-        self * k
-    }
-    #[inline]
     pub fn cmul(self, other: Self) -> Self {
         Self::new(
             self.0[0] * other.0[0] - self.0[1] * other.0[1],

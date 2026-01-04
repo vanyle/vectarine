@@ -9,6 +9,7 @@ pub mod math;
 pub mod metrics;
 pub mod projectinfo;
 pub mod sound;
+pub mod space;
 
 // Re-export commonly used crates for the editor
 pub use anyhow;
