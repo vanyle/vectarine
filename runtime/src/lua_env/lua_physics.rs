@@ -587,6 +587,18 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             Ok(())
         });
 
+        registry.add_method_mut("setFriction", |_, object, friction: f32| {
+            access_rigid_body_mut(object, |collider_set, rigid_body| {
+                rigid_body.colliders().iter().for_each(|collider_handle| {
+                    let Some(collider) = collider_set.get_mut(*collider_handle) else {
+                        return;
+                    };
+                    collider.set_friction(friction);
+                });
+            })?;
+            Ok(())
+        });
+
         registry.add_method("setLockRotation", |_, object, lock: bool| {
             access_rigid_body_mut(object, |_, rigid_body| {
                 rigid_body.lock_rotations(lock, true)

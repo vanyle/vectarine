@@ -147,7 +147,14 @@ function Object2Impl:setLockTranslation(lock: boolean)
 	error("Not implemented")
 end
 
+--- Set the restitution of the object. Higher values make objects bounce more.
 function Object2Impl:setRestitution(restitution: number)
+	error("Not implemented")
+end
+
+--- Set the friction of the object. Higher values make objects slide less.
+--- Defaults to 0.5
+function Object2Impl:setFriction(friction: number)
 	error("Not implemented")
 end
 
