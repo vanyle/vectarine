@@ -5,17 +5,20 @@ use notify_debouncer_full::{
     notify::{EventKind, event::ModifyKind},
 };
 use runtime::{
-    game_resource::{ResourceManager, Status},
+    game_resource::{ResourceManager, Status, script_resource::ScriptResource},
     lua_env::LuaEnvironment,
 };
 
 // Reload assets corresponding to changed file as needed without blocking
+// Returns true if any script resource was reloaded
 pub fn reload_assets_if_needed(
     gl: &Arc<glow::Context>,
     resources: &Rc<ResourceManager>,
     lua_for_reload: &LuaEnvironment,
     debounce_receiver: &std::sync::mpsc::Receiver<DebouncedEvent>,
-) {
+) -> bool {
+    let mut script_reloaded = false;
+
     for event in debounce_receiver.try_iter() {
         // Only file modification matters, no creation, deletion, etc...
         let EventKind::Modify(modify) = event.kind else {
@@ -36,6 +39,11 @@ pub fn reload_assets_if_needed(
                     res_status,
                     Status::Unloaded | Status::Loaded | Status::Error(_)
                 ) {
+                    // Check if this is a script resource
+                    if resources.get_by_id::<ScriptResource>(res_id).is_ok() {
+                        script_reloaded = true;
+                    }
+
                     resources.reload(
                         res_id,
                         gl.clone(),
@@ -46,4 +54,6 @@ pub fn reload_assets_if_needed(
             }
         }
     }
+
+    script_reloaded
 }

@@ -58,6 +58,8 @@ pub struct EditorState {
     pub editor_specific_window: sdl2::video::Window,
     pub editor_batch_draw: BatchDraw2d,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
+
+    pub game_error: Option<crate::luau::InfiniteLoopError>,
 }
 
 impl EditorState {
@@ -154,6 +156,7 @@ impl EditorState {
                 )
                 .expect("Failed to create debouncer"),
             )),
+            game_error: None,
         }
     }
 

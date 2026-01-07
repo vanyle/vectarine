@@ -13,7 +13,9 @@ use runtime::{
 
 use crate::{
     editorconfig::WindowStyle,
-    editorextrawindow::{draw_info_in_empty_game_window, send_window_resize_sync_event},
+    editorextrawindow::{
+        draw_error_in_game_window, draw_info_in_empty_game_window, send_window_resize_sync_event,
+    },
     editorinterface::{EditorState, clear_window},
     reload::reload_assets_if_needed,
 };
@@ -24,6 +26,7 @@ pub mod editorextrawindow;
 pub mod editorinterface;
 pub mod egui_sdl2_platform;
 pub mod exportinterface;
+pub mod luau;
 pub mod projectstate;
 pub mod reload;
 
@@ -138,24 +141,44 @@ fn gui_main() {
             let game = &mut project.game;
 
             game.load_resource_as_needed();
-            reload_assets_if_needed(
+            let script_reloaded = reload_assets_if_needed(
                 &gl,
                 &game.lua_env.resources,
                 &game.lua_env,
                 &debounce_receiver,
             );
 
+            if script_reloaded {
+                editor_state.game_error = None;
+                *project.hook_error.borrow_mut() = None;
+            }
+
             window
                 .borrow_mut()
                 .gl_make_current(&gl_context)
                 .expect("Failed to make context current");
             unsafe {
-                let window_size = window.borrow().size();
-                gl.viewport(0, 0, window_size.0 as i32, window_size.1 as i32);
+                let (w, h) = drawable_screen_size(&window.borrow());
+                gl.viewport(0, 0, w as i32, h as i32);
             }
 
-            // Render the game
-            game.main_loop(&game_window_events, &window, delta_duration, true);
+            if let Some(ref error) = editor_state.game_error {
+                clear_window(&gl);
+                draw_error_in_game_window(
+                    &gl,
+                    &window.borrow(),
+                    &mut editor_state.editor_batch_draw,
+                    error,
+                );
+            } else {
+                *project.hook_timing.borrow_mut() = Some(std::time::Instant::now());
+                game.main_loop(&game_window_events, &window, delta_duration, true);
+                *project.hook_timing.borrow_mut() = None;
+
+                if let Some(error) = project.hook_error.borrow_mut().take() {
+                    editor_state.game_error = Some(error);
+                }
+            }
         } else {
             // Clear the screen when no project is loaded
             window

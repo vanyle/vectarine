@@ -64,6 +64,10 @@ pub fn render_editor_in_extra_window(
     editor_interface: &mut EditorInterfaceWithGl,
     editor_window_events: &[runtime::sdl2::event::Event],
 ) {
+    editor_state
+        .editor_batch_draw
+        .drawing_target
+        .enable_multisampling();
     editor_state.editor_specific_window.show();
 
     editor_state
@@ -102,6 +106,7 @@ pub fn draw_info_in_empty_game_window(
     game_window: &Window,
     batch_draw: &mut BatchDraw2d,
 ) {
+    batch_draw.drawing_target.enable_multisampling();
     let (width, height) = drawable_screen_size(game_window);
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
@@ -109,6 +114,61 @@ pub fn draw_info_in_empty_game_window(
     let text = "No game is loaded\nUse the editor window\nto load or create a game.";
     let font_size = 0.13;
     draw_centered_text(gl, batch_draw, aspect_ratio, text, font_size);
+}
+
+pub fn draw_error_in_game_window(
+    gl: &Arc<glow::Context>,
+    game_window: &Window,
+    batch_draw: &mut BatchDraw2d,
+    error: &crate::luau::InfiniteLoopError,
+) {
+    batch_draw.drawing_target.enable_multisampling();
+    let (width, height) = drawable_screen_size(game_window);
+    let aspect_ratio = width as f32 / height as f32;
+    batch_draw.set_aspect_ratio(aspect_ratio);
+
+    let title = "Infinite loop detected";
+    let location = format!("{}:{}", error.file, error.line);
+    let hint = "Fix the code and save to resume";
+
+    font_resource::use_default_font(gl, |font_data| {
+        let dummy_manager = ResourceManager::dummy_manager();
+
+        let title_size = 0.20;
+        let detail_size = 0.08;
+
+        let (title_width, _, _) = font_data.measure_text(title, title_size, aspect_ratio);
+        batch_draw.draw_text(
+            -title_width / 2.0,
+            0.3,
+            title,
+            [1.0, 0.2, 0.2, 1.0],
+            title_size,
+            font_data,
+        );
+
+        let (loc_width, _, _) = font_data.measure_text(&location, detail_size, aspect_ratio);
+        batch_draw.draw_text(
+            -loc_width / 2.0,
+            0.05,
+            &location,
+            [1.0, 1.0, 1.0, 1.0],
+            detail_size,
+            font_data,
+        );
+
+        let (hint_width, _, _) = font_data.measure_text(hint, detail_size, aspect_ratio);
+        batch_draw.draw_text(
+            -hint_width / 2.0,
+            -0.15,
+            hint,
+            [0.8, 0.8, 0.8, 1.0],
+            detail_size,
+            font_data,
+        );
+
+        batch_draw.draw(&dummy_manager, true);
+    });
 }
 
 pub fn send_window_resize_sync_event(

@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
+    time::Instant,
 };
 
 use runtime::{
@@ -14,12 +15,16 @@ use runtime::{
 };
 use runtime::{io::localfs::LocalFileSystem, sdl2};
 
+use crate::luau;
+
 pub struct ProjectState {
     pub project_path: PathBuf,
     pub project_info: ProjectInfo,
     pub game: Game,
     pub video: Rc<RefCell<sdl2::VideoSubsystem>>,
     pub window: Rc<RefCell<sdl2::video::Window>>,
+    pub hook_timing: Rc<RefCell<Option<Instant>>>,
+    pub hook_error: Rc<RefCell<Option<luau::InfiniteLoopError>>>,
 }
 
 impl ProjectState {
@@ -36,6 +41,9 @@ impl ProjectState {
                 let Ok(game) = result else {
                     return;
                 };
+                let (hook_timing, hook_error) = luau::setup_luau_hooks(&game.lua_env.lua);
+                self.hook_timing = hook_timing;
+                self.hook_error = hook_error;
                 self.game = game;
             },
         );
@@ -83,12 +91,15 @@ impl ProjectState {
                     )));
                     return;
                 };
+                let (hook_timing, hook_error) = luau::setup_luau_hooks(&game.lua_env.lua);
                 callback(Ok(Self {
                     project_path: project_path.to_path_buf(),
                     project_info,
                     game,
                     video,
                     window,
+                    hook_timing,
+                    hook_error,
                 }));
             },
         );

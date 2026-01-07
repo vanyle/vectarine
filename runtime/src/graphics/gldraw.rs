@@ -64,4 +64,14 @@ impl DrawingTarget {
     pub fn reset_draw_call_counter(&self) {
         *self.draw_call_counter.borrow_mut() = 0;
     }
+
+    pub fn enable_multisampling(&self) {
+        unsafe {
+            self.gl.as_ref().enable(glow::BLEND);
+            self.gl
+                .as_ref()
+                .blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+            self.gl.as_ref().enable(glow::MULTISAMPLE);
+        }
+    }
 }
