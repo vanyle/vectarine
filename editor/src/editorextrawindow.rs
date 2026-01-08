@@ -127,9 +127,9 @@ pub fn draw_error_in_game_window(
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
 
-    let title = "Infinite loop detected";
+    let title = "Abnormally long frame";
     let location = format!("{}:{}", error.file, error.line);
-    let hint = "Fix the code and save to resume";
+    let hint = "You might have an infinite loop in your code.";
 
     font_resource::use_default_font(gl, |font_data| {
         let dummy_manager = ResourceManager::dummy_manager();

@@ -47,7 +47,9 @@ pub fn setup_luau_hooks(lua: &mlua::Lua) -> (HookTiming, HookError) {
 
             *hook_error_for_hook.borrow_mut() = Some(InfiniteLoopError { file, line });
 
-            return Err(mlua::Error::RuntimeError("Infinite loop detected".into()));
+            return Err(mlua::Error::RuntimeError(
+                "Abnormally long frame (more than 500ms). Stopping execution.".into(),
+            ));
         }
         Ok(mlua::VmState::Continue)
     });
