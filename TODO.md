@@ -9,6 +9,12 @@
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
+- [ ] Modular system
+  - [ ] Module work for MacOS
+  - [ ] Module work for Linux
+  - [ ] Module work for Windows
+  - [ ] Module work for the Web
+- [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor

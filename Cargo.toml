@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["editor", "runtime"]
+members = ["editor", "runtime", "editor-plugin-template"]
 
 [profile.dev]
 # Emscripten does not like -O2 + debug info
