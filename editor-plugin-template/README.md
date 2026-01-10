@@ -15,7 +15,15 @@ If you don't have a Mac, you won't be able to support MacOS users for example.
 
 ## Distributing your plugin
 
-You can share plugins as vectarine is able to load them from a (git) URL.
+Vectarine can load plugins in 2 ways:
+
+- From a local file
+- From the plugin registry
+
+Plugins can have 2 formats:
+
+- Unpackage plugins are the main format for plugin developpers, it is just the path to the shared library with the plugin
+- Package plugins are the format for end users, a zip file with the shared libraries with the different platforms an documentation.
 
 If your plugin extends the Lua, you should provide a `luau-api` folder to document the APIs you provide as well as a `README.md` file
 for a description of your plugin, an **examples** on how to use it.
