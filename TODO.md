@@ -10,10 +10,20 @@
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
 - [ ] Modular system
-  - [ ] Module work for MacOS
-  - [ ] Module work for Linux
-  - [ ] Module work for Windows
-  - [ ] Module work for the Web
+  - [x] Load shared library
+  - [x] Make shared library be able to access and edit Lua
+  - [ ] Move plugin interface to an SDK rust module as otherwise: "This may cause spurious casting failures and mysterious crashes"
+  - [ ] Add all runtime hooks (preframe, postframe, load, unload)
+  - [ ] Add all editor hooks (menu, resource reload)
+  - [ ] Show plugins in the editor
+  - [ ] Reload plugins in the editor
+  - [ ] Show supported platforms in the editor
+  - [ ] Add ability to load/unload plugins from the editor from the filesystem
+  - [ ] Add ability to download plugins from the editor
+  - [ ] Add documentation on how to create and use plugins
+  - [ ] Test that it works on Linux
+  - [ ] Test that it works on Windows
+  - [ ] Emscripten compatibility using JS as a bridge
 - [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
@@ -31,6 +41,10 @@
   - [ ] Action system (you map actions to keys and actions to functions)
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
   - [ ] Timer event?
+- [ ] Borderless window & better styling
+  - [ ] See https://github.com/OlaProeis/Ferrite/ for how to do it using egui.
+  - [ ] Borderless window
+  - [ ] Customize theme
 - [ ] Add a basic code editor with syntax highlighting
   - [ ] See: https://github.com/p4ymak/egui_code_editor
 - [ ] Modding API

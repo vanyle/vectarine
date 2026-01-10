@@ -7,6 +7,7 @@ pub mod loader;
 pub mod lua_env;
 pub mod math;
 pub mod metrics;
+pub mod native_plugin;
 pub mod projectinfo;
 pub mod sound;
 
@@ -27,6 +28,7 @@ use sdl2::{
 
 use crate::{
     game_resource::audio_resource::{AUDIO_CHANNELS, AUDIO_SAMPLE_FREQUENCY},
+    native_plugin::{NativePlugin, plugininterface::PluginInterface},
     sound::init_sound_system,
 };
 
@@ -161,6 +163,9 @@ pub fn lib_main() {
     // Initialize IDBFS for persistent storage on Emscripten
     init_fs();
 
+    let native_plugin = NativePlugin::load("libeditor_plugin_template.dylib")
+        .expect("The plugin could not be loaded");
+
     loader(move |(project_path, project_info, fs)| {
         Game::from_project(
             &project_path,
@@ -174,6 +179,9 @@ pub fn lib_main() {
                     panic!("Failed to load the game project at {:?}", project_path);
                 };
                 let mut now = now_ms();
+
+                let plugin_interface = PluginInterface::new(&game.lua_env.lua, 3);
+                native_plugin.call_init_hook(plugin_interface);
 
                 set_main_loop_wrapper(move || {
                     let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
