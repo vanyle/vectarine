@@ -7,6 +7,7 @@ pub mod loader;
 pub mod lua_env;
 pub mod math;
 pub mod metrics;
+pub mod native_plugin;
 pub mod projectinfo;
 pub mod sound;
 
@@ -27,6 +28,7 @@ use sdl2::{
 
 use crate::{
     game_resource::audio_resource::{AUDIO_CHANNELS, AUDIO_SAMPLE_FREQUENCY},
+    native_plugin::load_native_plugin,
     sound::init_sound_system,
 };
 
@@ -160,6 +162,8 @@ pub fn lib_main() {
 
     // Initialize IDBFS for persistent storage on Emscripten
     init_fs();
+
+    load_native_plugin("lol i dunno");
 
     loader(move |(project_path, project_info, fs)| {
         Game::from_project(
