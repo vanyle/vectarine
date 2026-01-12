@@ -6,13 +6,13 @@ use crate::lua_env::{add_fn_to_table, stringify_lua_value};
 use crate::metrics::MetricsHolder;
 
 pub fn setup_debug_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     metrics: &Rc<RefCell<MetricsHolder>>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let debug_module = lua.create_table()?;
 
     add_fn_to_table(lua, &debug_module, "fprint", {
-        move |_, args: mlua::Variadic<mlua::Value>| {
+        move |_, args: vectarine_plugin_sdk::mlua::Variadic<vectarine_plugin_sdk::mlua::Value>| {
             let msg = args
                 .iter()
                 .map(stringify_lua_value)
@@ -24,7 +24,7 @@ pub fn setup_debug_api(
     });
 
     add_fn_to_table(lua, &debug_module, "print", {
-        move |_, args: mlua::Variadic<mlua::Value>| {
+        move |_, args: vectarine_plugin_sdk::mlua::Variadic<vectarine_plugin_sdk::mlua::Value>| {
             let msg = args
                 .iter()
                 .map(stringify_lua_value)
@@ -37,7 +37,7 @@ pub fn setup_debug_api(
 
     add_fn_to_table(lua, &debug_module, "timed", {
         let metrics = metrics.clone();
-        move |_, (name, callback): (String, mlua::Function)| {
+        move |_, (name, callback): (String, vectarine_plugin_sdk::mlua::Function)| {
             let start = std::time::Instant::now();
             callback.call::<()>(())?;
             let elapsed = start.elapsed();

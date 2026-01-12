@@ -1,7 +1,8 @@
-use anyhow::Result;
-use serde::{Deserialize, Serialize};
+use vectarine_plugin_sdk::anyhow::Result;
+use vectarine_plugin_sdk::serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(crate = "vectarine_plugin_sdk::serde")]
 pub struct ProjectInfo {
     pub title: String,
     pub main_script_path: String,
@@ -29,11 +30,11 @@ impl Default for ProjectInfo {
 }
 
 pub fn get_project_info(project_manifest_content: &str) -> Result<ProjectInfo> {
-    let r = toml::from_str::<ProjectInfo>(project_manifest_content);
+    let r = vectarine_plugin_sdk::toml::from_str::<ProjectInfo>(project_manifest_content);
     if let Ok(r) = r {
         return Ok(r);
     }
-    let manifest = project_manifest_content.parse::<toml::Table>()?;
+    let manifest = project_manifest_content.parse::<vectarine_plugin_sdk::toml::Table>()?;
 
     let get_str_or_default = |key: &str, default: &str| {
         manifest

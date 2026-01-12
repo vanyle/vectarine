@@ -1,6 +1,6 @@
 use std::{cell::RefCell, ops::Deref, rc::Rc};
 
-use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     auto_impl_lua_clone,
@@ -49,11 +49,11 @@ impl RcFramebuffer {
 }
 
 pub fn setup_canvas_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let canvas_module = lua.create_table()?;
 
     add_fn_to_table(lua, &canvas_module, "createCanvas", {
@@ -84,7 +84,7 @@ pub fn setup_canvas_api(
         registry.add_method("paint", {
             let batch = batch.clone();
             let resources = resources.clone();
-            move |_, canvas, (func,): (mlua::Function,)| {
+            move |_, canvas, (func,): (vectarine_plugin_sdk::mlua::Function,)| {
                 let mut result = Ok(());
                 batch.borrow_mut().draw(&resources, true); // flush before changing framebuffer
                 canvas.gl().using(|| {

@@ -4,11 +4,11 @@ use crate::math::Vect;
 
 pub type Vec2 = Vect<2>;
 
-impl mlua::FromLua for Vec2 {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+impl vectarine_plugin_sdk::mlua::FromLua for Vec2 {
+    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
+            vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "Vec2".to_string(),
                 message: Some("expected Vec2 userdata".to_string()),
@@ -76,8 +76,8 @@ impl Vec2 {
     }
 }
 
-impl mlua::UserData for Vec2 {
-    fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
+impl vectarine_plugin_sdk::mlua::UserData for Vec2 {
+    fn add_fields<F: vectarine_plugin_sdk::mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("x", |_, v| Ok(v.0[0]));
         fields.add_field_method_get("y", |_, v| Ok(v.0[1]));
         fields.add_field_method_set("x", |_, vec, v| {
@@ -89,7 +89,7 @@ impl mlua::UserData for Vec2 {
             Ok(())
         });
     }
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+    fn add_methods<M: vectarine_plugin_sdk::mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method(
             "length",
             #[inline(always)]
@@ -189,24 +189,24 @@ impl mlua::UserData for Vec2 {
             |_, vec, (other,): (Vec2,)| Ok((*vec - other).length()),
         );
         methods.add_meta_function(
-            mlua::MetaMethod::Add,
+            vectarine_plugin_sdk::mlua::MetaMethod::Add,
             #[inline(always)]
             |_, (vec, other): (Vec2, Vec2)| Ok(vec + other),
         );
         methods.add_meta_function(
-            mlua::MetaMethod::Sub,
+            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
             #[inline(always)]
             |_, (vec, other): (Vec2, Vec2)| Ok(vec - other),
         );
         methods.add_meta_function(
-            mlua::MetaMethod::Mul,
+            vectarine_plugin_sdk::mlua::MetaMethod::Mul,
             #[inline(always)]
             |_, (vec, other): (Vec2, Vec2)| Ok(vec * other),
         );
         methods.add_meta_method(
-            mlua::MetaMethod::ToString,
+            vectarine_plugin_sdk::mlua::MetaMethod::ToString,
             #[inline(always)]
-            |_, vec, _any: mlua::Value| Ok(format!("V2({}, {})", vec.0[0], vec.0[1])),
+            |_, vec, _any: vectarine_plugin_sdk::mlua::Value| Ok(format!("V2({}, {})", vec.0[0], vec.0[1])),
         );
 
         // In-place methods
@@ -249,7 +249,7 @@ impl mlua::UserData for Vec2 {
     }
 }
 
-pub fn setup_vec_api(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+pub fn setup_vec_api(lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let vec2_module = lua.create_table()?;
     vec2_module.set(
         "V2",

@@ -12,12 +12,14 @@ pub mod projectinfo;
 pub mod sound;
 
 // Re-export commonly used crates for the editor
-pub use anyhow;
-pub use egui;
-pub use egui_glow;
-pub use mlua;
-pub use sdl2;
-pub use toml;
+pub use vectarine_plugin_sdk::anyhow;
+pub use vectarine_plugin_sdk::egui;
+pub use vectarine_plugin_sdk::egui_glow;
+pub use vectarine_plugin_sdk::lazy_static;
+pub use vectarine_plugin_sdk::mlua;
+pub use vectarine_plugin_sdk::rapier2d;
+pub use vectarine_plugin_sdk::serde;
+pub use vectarine_plugin_sdk::toml;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
@@ -28,9 +30,10 @@ use sdl2::{
 
 use crate::{
     game_resource::audio_resource::{AUDIO_CHANNELS, AUDIO_SAMPLE_FREQUENCY},
-    native_plugin::{NativePlugin, plugininterface::PluginInterface},
+    native_plugin::NativePlugin,
     sound::init_sound_system,
 };
+use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
 pub struct RenderingBlock {
     pub video: Rc<RefCell<VideoSubsystem>>,
@@ -69,7 +72,7 @@ pub fn set_opengl_attributes(gl_attr: GLAttr) {
     gl_attr.set_multisample_buffers(1);
     gl_attr.set_multisample_samples(4);
     gl_attr.set_stencil_size(8); // Request 8-bit stencil buffer
-    // gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
+    // gl_attr.set_context_profile(vectarine_plugin_sdk::sdl2::video::GLProfile::Core);
 }
 
 pub fn init_sdl<F>(make_gl_from_video_system: F) -> RenderingBlock
@@ -180,7 +183,7 @@ pub fn lib_main() {
                 };
                 let mut now = now_ms();
 
-                let plugin_interface = PluginInterface::new(&game.lua_env.lua, 3);
+                let plugin_interface = PluginInterface::new(&game.lua_env.lua);
                 native_plugin.call_init_hook(plugin_interface);
 
                 set_main_loop_wrapper(move || {

@@ -34,7 +34,7 @@ impl Resource for ShaderResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: &Rc<mlua::Lua>,
+        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -62,7 +62,7 @@ impl Resource for ShaderResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
         ui.label("Shader Details:");
         let tex = self.shader.borrow();
         let Some(shader) = tex.as_ref() else {

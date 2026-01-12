@@ -1,0 +1,28 @@
+[package]
+name = "vectarine-plugin-sdk"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+anyhow = "1.0.100"
+egui = "0.32.2"
+egui_glow = "0.32.2"
+toml = "0.9.8"
+rapier2d = "0.31.0"
+lazy_static = "1.5.0"
+serde = { version = "1.0.219", features = ["derive"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+mlua = { version = "0.11.5", features = ["luau-jit", "serde", "vendored"] }
+
+[target.'cfg(any(target_os = "macos"))'.dependencies]
+mlua = { version = "0.11.5", features = ["luau-jit", "serde", "vendored"] }
+
+[target.'cfg(any(target_os = "linux"))'.dependencies]
+mlua = { version = "0.11.5", features = ["luau-jit", "serde", "vendored"] }
+
+[target.'cfg(target_os = "emscripten")'.dependencies]
+mlua = { version = "0.11.5", features = ["luau", "serde", "vendored"] }

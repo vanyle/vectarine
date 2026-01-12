@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use mlua::{FromLua, IntoLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     game_resource::{
@@ -42,9 +42,9 @@ pub struct TilemapResourceId(ResourceId);
 make_resource_lua_compatible!(TilemapResourceId);
 
 pub fn setup_tile_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let tile_module = lua.create_table()?;
 
     lua.register_userdata_type::<TilesetResourceId>(|registry| {
@@ -67,18 +67,18 @@ pub fn setup_tile_api(
                     let user_type = tile
                         .user_type
                         .clone()
-                        .and_then(|s| lua.create_string(s).ok().map(mlua::Value::String))
-                        .unwrap_or(mlua::Nil);
+                        .and_then(|s| lua.create_string(s).ok().map(vectarine_plugin_sdk::mlua::Value::String))
+                        .unwrap_or(vectarine_plugin_sdk::mlua::Nil);
 
                     let result = lua.create_table().ok()?;
                     result.set("pos", Vec2::new(x, y)).ok()?;
                     result.set("probability", tile.probability).ok()?;
                     result.set("type", user_type).ok()?;
-                    Some(mlua::Value::Table(result))
+                    Some(vectarine_plugin_sdk::mlua::Value::Table(result))
                 },
             ) {
                 Some(value) => Ok(value),
-                None => Ok(mlua::Nil),
+                None => Ok(vectarine_plugin_sdk::mlua::Nil),
             }
         });
 
@@ -170,7 +170,7 @@ pub fn setup_tile_api(
                 i32,
                 i32,
                 i32,
-                mlua::Function,
+                vectarine_plugin_sdk::mlua::Function,
             )| {
                 let tileset_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
                 let Ok(tileset_res) = tileset_res else {

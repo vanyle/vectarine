@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{UserDataFields, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{UserDataFields, UserDataMethods};
 
 use crate::{io::IoEnvState, lua_env::lua_fastlist::FastList, lua_env::lua_vec2::Vec2};
 
@@ -11,17 +11,17 @@ pub struct Camera2 {
     pub zoom: f32,
 }
 
-impl mlua::IntoLua for Camera2 {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
+impl vectarine_plugin_sdk::mlua::IntoLua for Camera2 {
+    fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+        lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
     }
 }
 
-impl mlua::FromLua for Camera2 {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+impl vectarine_plugin_sdk::mlua::FromLua for Camera2 {
+    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
-            mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
+            vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
+            _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "Camera2".to_string(),
                 message: Some("Expected Camera2 userdata".to_string()),
@@ -77,9 +77,9 @@ impl Default for Camera2 {
 }
 
 pub fn setup_camera_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     env_state: &Rc<RefCell<IoEnvState>>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     lua.register_userdata_type::<Camera2>(|registry| {
         registry.add_field_method_get("position", |_, camera| Ok(camera.position));
         registry.add_field_method_set("position", |_, camera, position: Vec2| {

@@ -1,5 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
+use sdl2;
 use sdl2::keyboard::Scancode;
 
 use crate::{
@@ -11,9 +12,9 @@ use crate::{
 /// For example, the keyboard, the mouse, the window, etc...
 /// This is called the IO API.
 pub fn setup_io_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     env_state: &Rc<RefCell<IoEnvState>>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let io_module = lua.create_table()?;
 
     add_fn_to_table(lua, &io_module, "isKeyDown", {
@@ -143,7 +144,7 @@ pub fn setup_io_api(
 
     add_fn_to_table(lua, &io_module, "setFullscreen", {
         let env_state = env_state.clone();
-        move |_, (fullscreen,): (mlua::Value,)| {
+        move |_, (fullscreen,): (vectarine_plugin_sdk::mlua::Value,)| {
             if let Some(fullscreen_bool) = fullscreen.as_boolean() {
                 let fullscreen_mode = if fullscreen_bool {
                     sdl2::video::FullscreenType::True

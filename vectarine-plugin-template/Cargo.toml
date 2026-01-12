@@ -1,0 +1,10 @@
+[package]
+name = "vectarine-plugin-template"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+vectarine-plugin-sdk = { path = "../vectarine-plugin-sdk", version = "0.1.0" }

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
-use mlua::{AnyUserData, ObjectLike};
+use vectarine_plugin_sdk::mlua::{AnyUserData, ObjectLike};
 
 use crate::{
     game_resource::{self, font_resource::use_default_font},
@@ -19,11 +19,11 @@ use crate::{
 };
 
 pub fn setup_graphics_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let graphics_module = lua.create_table()?;
 
     add_fn_to_table(lua, &graphics_module, "drawRect", {
@@ -145,7 +145,7 @@ pub fn setup_graphics_api(
         let batch = batch.clone();
         let resources = resources.clone();
         let gl = batch.borrow().drawing_target.gl().clone();
-        move |_lua, (draw_fn, mask_fn): (mlua::Function, mlua::Function)| {
+        move |_lua, (draw_fn, mask_fn): (vectarine_plugin_sdk::mlua::Function, vectarine_plugin_sdk::mlua::Function)| {
             draw_with_mask(
                 &gl,
                 || {
@@ -274,9 +274,9 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "drawSplashScreenIfNeeded", {
         let draw_splash_screen = get_draw_splash_screen_fn();
-        move |_, (resources_to_wait_for, loading_text): (mlua::Table, Option<String>)| {
+        move |_, (resources_to_wait_for, loading_text): (vectarine_plugin_sdk::mlua::Table, Option<String>)| {
             let ready_count = resources_to_wait_for
-                .pairs::<mlua::Value, mlua::Value>()
+                .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
                 .map(|res| {
                     let Ok(res) = res else {
                         return false;
@@ -284,7 +284,7 @@ pub fn setup_graphics_api(
                     let Some(res) = res.1.as_userdata() else {
                         return false;
                     };
-                    let is_ready_fn = res.get::<mlua::Function>("isReady");
+                    let is_ready_fn = res.get::<vectarine_plugin_sdk::mlua::Function>("isReady");
                     let Ok(is_ready_fn) = is_ready_fn else {
                         return false;
                     };

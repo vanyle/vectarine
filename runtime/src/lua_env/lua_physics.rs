@@ -4,9 +4,9 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use mlua::{FromLua, IntoLua, UserDataFields, UserDataMethods};
 use nalgebra::Isometry2;
-use rapier2d::{
+use vectarine_plugin_sdk::mlua::{FromLua, IntoLua, UserDataFields, UserDataMethods};
+use vectarine_plugin_sdk::rapier2d::{
     math::Vector,
     prelude::{
         CCDSolver, Collider, ColliderBuilder, ColliderSet, DefaultBroadPhase, ImpulseJointHandle,
@@ -36,14 +36,16 @@ pub struct PhysicsWorld2 {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
-    camera: Option<mlua::Value>,
+    camera: Option<vectarine_plugin_sdk::mlua::Value>,
 
     extras: HashMap<RigidBodyHandle, ExtraObjectData>,
 }
 
-pub fn ensure_camera_is_valid(maybe_camera: &mlua::Value) -> mlua::Result<()> {
+pub fn ensure_camera_is_valid(
+    maybe_camera: &vectarine_plugin_sdk::mlua::Value,
+) -> vectarine_plugin_sdk::mlua::Result<()> {
     if !is_valid_data_type::<Camera2>(maybe_camera) {
-        return Err(mlua::Error::ToLuaConversionError {
+        return Err(vectarine_plugin_sdk::mlua::Error::ToLuaConversionError {
             from: maybe_camera.type_name().to_string(),
             to: "Camera2",
             message: Some("Invalid camera when creating World2".to_string()),
@@ -53,7 +55,10 @@ pub fn ensure_camera_is_valid(maybe_camera: &mlua::Value) -> mlua::Result<()> {
 }
 
 impl PhysicsWorld2 {
-    fn new(camera: Option<mlua::Value>, gravity: Vec2) -> mlua::Result<Self> {
+    fn new(
+        camera: Option<vectarine_plugin_sdk::mlua::Value>,
+        gravity: Vec2,
+    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
         let camera = if let Some(camera) = camera {
             ensure_camera_is_valid(&camera)?;
             Some(camera)
@@ -144,18 +149,20 @@ impl Object2 {
 }
 
 struct ExtraObjectData {
-    tags: mlua::Table,
-    extra_custom: mlua::Value,
+    tags: vectarine_plugin_sdk::mlua::Table,
+    extra_custom: vectarine_plugin_sdk::mlua::Value,
 }
 
 auto_impl_lua_take!(Object2, Object2);
 
-pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
+pub fn setup_physics_api(
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let physics_module = lua.create_table()?;
 
     // MARK: World2 fn
     add_fn_to_table(lua, &physics_module, "newWorld2", {
-        move |_, (gravity, camera): (Option<Vec2>, mlua::Value)| {
+        move |_, (gravity, camera): (Option<Vec2>, vectarine_plugin_sdk::mlua::Value)| {
             let camera = if camera.is_nil() { None } else { Some(camera) };
             let world = PhysicsWorld2::new(camera, gravity.unwrap_or(Vec2::new(0.0, 0.0)))?;
             Ok(LuaPhysicsWorld2(Rc::new(RefCell::new(world))))
@@ -167,10 +174,10 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             let cam = world.0.borrow().camera.clone();
             match cam {
                 Some(cam) => Ok(cam),
-                None => Ok(mlua::Nil),
+                None => Ok(vectarine_plugin_sdk::mlua::Nil),
             }
         });
-        registry.add_field_method_set("camera", |_, world, new_camera: mlua::Value| {
+        registry.add_field_method_set("camera", |_, world, new_camera: vectarine_plugin_sdk::mlua::Value| {
             if new_camera.is_nil() {
                 world.0.borrow_mut().camera = None;
             } else {
@@ -191,7 +198,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             let physics_hooks = ();
             let event_handler = ();
 
-            let rapier_gravity = rapier2d::prelude::vector![world.gravity.x(), world.gravity.y()];
+            let rapier_gravity = vectarine_plugin_sdk::rapier2d::prelude::vector![world.gravity.x(), world.gravity.y()];
             world.integration_parameters.dt = dt;
 
             world.physics_pipeline.step(
@@ -217,8 +224,8 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                   (position, mass, maybe_collider, tags, body_type): (
                 Vec2,
                 f32,
-                mlua::AnyUserData,
-                mlua::Table,
+                vectarine_plugin_sdk::mlua::AnyUserData,
+                vectarine_plugin_sdk::mlua::Table,
                 String,
             )| {
                 let collider = maybe_collider.borrow::<Collider2>()?;
@@ -230,7 +237,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                     "static" => RigidBodyBuilder::fixed(),
                     "kinematic" => RigidBodyBuilder::kinematic_velocity_based(),
                     _ => {
-                        return Err(mlua::Error::FromLuaConversionError {
+                        return Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
                             from: "string",
                             to: "RigidBodyType".to_string(),
                             message: Some(
@@ -260,7 +267,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                     body_handle,
                     ExtraObjectData {
                         tags,
-                        extra_custom: mlua::Nil,
+                        extra_custom: vectarine_plugin_sdk::mlua::Nil,
                     },
                 );
                 Ok(object)
@@ -285,7 +292,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
 
         registry.add_method_mut(
             "getObjects",
-            |_, lua_world, tags: Option<Vec<mlua::Value>>| {
+            |_, lua_world, tags: Option<Vec<vectarine_plugin_sdk::mlua::Value>>| {
                 let tags = tags.unwrap_or_default();
                 let mut world = lua_world.0.borrow_mut();
                 let world = &mut *world;
@@ -296,7 +303,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                         tags.iter().all(|queried_tag| {
                             extra
                                 .tags
-                                .pairs::<mlua::Value, mlua::Value>()
+                                .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
                                 .filter_map(|o| o.ok())
                                 .any(|(_, object_tag)| object_tag == *queried_tag)
                         })
@@ -322,7 +329,7 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                     filter,
                 );
                 let matches =
-                    query_pipeline.intersect_point(rapier2d::prelude::point![point.x(), point.y()]);
+                    query_pipeline.intersect_point(vectarine_plugin_sdk::rapier2d::prelude::point![point.x(), point.y()]);
                 Ok(matches
                     .filter_map(|m| m.1.parent())
                     .map(|parent| Object2 {
@@ -344,10 +351,10 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                     &world.collider_set,
                     filter,
                 );
-                let mins = rapier2d::prelude::point![position.x(), position.y()];
+                let mins = vectarine_plugin_sdk::rapier2d::prelude::point![position.x(), position.y()];
                 let maxs =
-                    rapier2d::prelude::point![position.x() + size.x(), position.y() + size.y()];
-                let aabb = rapier2d::prelude::Aabb::new(mins, maxs);
+                    vectarine_plugin_sdk::rapier2d::prelude::point![position.x() + size.x(), position.y() + size.y()];
+                let aabb = vectarine_plugin_sdk::rapier2d::prelude::Aabb::new(mins, maxs);
                 let matches = query_pipeline.intersect_aabb_conservative(aabb);
                 Ok(matches
                     .filter_map(|m| m.1.parent())
@@ -370,9 +377,9 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
                     &world.collider_set,
                     filter,
                 );
-                let position = rapier2d::prelude::point![position.x(), position.y()];
-                let direction = rapier2d::prelude::vector![direction.x(), direction.y()];
-                let ray = rapier2d::prelude::Ray::new(position, direction);
+                let position = vectarine_plugin_sdk::rapier2d::prelude::point![position.x(), position.y()];
+                let direction = vectarine_plugin_sdk::rapier2d::prelude::vector![direction.x(), direction.y()];
+                let ray = vectarine_plugin_sdk::rapier2d::prelude::Ray::new(position, direction);
                 let matches =
                     query_pipeline.intersect_ray(ray, max_length.unwrap_or(10000.0), true);
                 Ok(matches
@@ -445,12 +452,16 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         });
         registry.add_method_mut("getObject1", |_, joint, (): ()| {
             let Some(world) = joint.world.upgrade() else {
-                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Joint is invalid".to_string(),
+                ));
             };
             let mut world = world.borrow_mut();
             let world = &mut *world;
             let Some(j) = world.impulse_joint_set.get(joint.joint) else {
-                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Joint is invalid".to_string(),
+                ));
             };
             Ok(Object2 {
                 rigid_body_handle: j.body1,
@@ -459,12 +470,16 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         });
         registry.add_method_mut("getObject2", |_, joint, (): ()| {
             let Some(world) = joint.world.upgrade() else {
-                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Joint is invalid".to_string(),
+                ));
             };
             let mut world = world.borrow_mut();
             let world = &mut *world;
             let Some(j) = world.impulse_joint_set.get(joint.joint) else {
-                return Err(mlua::Error::RuntimeError("Joint is invalid".to_string()));
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Joint is invalid".to_string(),
+                ));
             };
             Ok(Object2 {
                 rigid_body_handle: j.body2,
@@ -531,7 +546,10 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         });
         registry.add_field_method_set("rotation", |_, object, rotation: f32| {
             access_rigid_body_mut(object, |_, rigid_body| {
-                rigid_body.set_rotation(rapier2d::math::Rotation::new(rotation), true);
+                rigid_body.set_rotation(
+                    vectarine_plugin_sdk::rapier2d::math::Rotation::new(rotation),
+                    true,
+                );
             })
         });
         registry.add_field_method_get("rotationSpeed", |_, object| {
@@ -620,22 +638,28 @@ pub fn setup_physics_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
             })
             .flatten()
         });
-        registry.add_field_method_set("tags", |_, object, tags: mlua::Table| {
-            access_extras(object, |extra_object_data| {
-                extra_object_data.tags = tags;
-            })
-        });
+        registry.add_field_method_set(
+            "tags",
+            |_, object, tags: vectarine_plugin_sdk::mlua::Table| {
+                access_extras(object, |extra_object_data| {
+                    extra_object_data.tags = tags;
+                })
+            },
+        );
         registry.add_field_method_get("extra", |_lua, object| {
             access_extras(object, |extra_object_data| {
                 Ok(extra_object_data.extra_custom.clone())
             })
             .flatten()
         });
-        registry.add_field_method_set("extra", |_, object, extra: mlua::Value| {
-            access_extras(object, |extra_object_data| {
-                extra_object_data.extra_custom = extra;
-            })
-        });
+        registry.add_field_method_set(
+            "extra",
+            |_, object, extra: vectarine_plugin_sdk::mlua::Value| {
+                access_extras(object, |extra_object_data| {
+                    extra_object_data.extra_custom = extra;
+                })
+            },
+        );
         registry.add_method("getPoints", |lua, object, (): ()| {
             let points = access_rigid_body_mut(object, |collider_set, rigid_body| {
                 rigid_body
@@ -735,58 +759,58 @@ fn get_points_of_collider(collider: &Collider) -> Vec<Vec2> {
     }
 }
 
-fn access_rigid_body_mut<F, T>(object: &Object2, f: F) -> mlua::Result<T>
+fn access_rigid_body_mut<F, T>(object: &Object2, f: F) -> vectarine_plugin_sdk::mlua::Result<T>
 where
     F: FnOnce(&mut ColliderSet, &mut RigidBody) -> T,
 {
     let maybe_world = object.world.upgrade();
     let Some(world) = maybe_world else {
-        return Err(mlua::Error::RuntimeError(
+        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Object2 is out of this world".to_string(),
         ));
     };
     let world = &mut *world.borrow_mut();
     let Some(rigid_body) = world.rigid_body_set.get_mut(object.rigid_body_handle) else {
-        return Err(mlua::Error::RuntimeError(
+        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Object2 is out of this world".to_string(),
         ));
     };
     Ok(f(&mut world.collider_set, rigid_body))
 }
 
-fn access_rigid_body<F, T>(object: &Object2, f: F) -> mlua::Result<T>
+fn access_rigid_body<F, T>(object: &Object2, f: F) -> vectarine_plugin_sdk::mlua::Result<T>
 where
     F: FnOnce(&PhysicsWorld2, &RigidBody) -> T,
 {
     let maybe_world = object.world.upgrade();
     let Some(world) = maybe_world else {
-        return Err(mlua::Error::RuntimeError(
+        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Object2 is out of this world".to_string(),
         ));
     };
     let world = &*world.borrow();
     let Some(rigid_body) = world.rigid_body_set.get(object.rigid_body_handle) else {
-        return Err(mlua::Error::RuntimeError(
+        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Object2 is out of this world".to_string(),
         ));
     };
     Ok(f(world, rigid_body))
 }
 
-fn access_extras<F, T>(object: &Object2, f: F) -> mlua::Result<T>
+fn access_extras<F, T>(object: &Object2, f: F) -> vectarine_plugin_sdk::mlua::Result<T>
 where
     F: FnOnce(&mut ExtraObjectData) -> T,
 {
     let maybe_world = object.world.upgrade();
     let Some(world) = maybe_world else {
-        return Err(mlua::Error::RuntimeError(
+        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Object2 is out of this world".to_string(),
         ));
     };
     let world = &mut *world.borrow_mut();
     let extras = world.extras.get_mut(&object.rigid_body_handle);
     let Some(extras) = extras else {
-        return Err(mlua::Error::RuntimeError(
+        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Object2 is out of this world".to_string(),
         ));
     };
