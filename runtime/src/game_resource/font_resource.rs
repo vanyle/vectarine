@@ -1,4 +1,3 @@
-use lazy_static::lazy_static;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -6,6 +5,7 @@ use std::{
     rc::Rc,
     sync::{Arc, Mutex},
 };
+use vectarine_plugin_sdk::lazy_static::lazy_static;
 
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
@@ -72,7 +72,7 @@ impl Resource for FontResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: &Rc<mlua::Lua>,
+        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -99,7 +99,11 @@ impl Resource for FontResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(
+        &self,
+        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        ui: &mut vectarine_plugin_sdk::egui::Ui,
+    ) {
         let font_data = self.font_rendering.borrow();
         let font_data = font_data.as_ref();
         let Some(font_data) = font_data else {

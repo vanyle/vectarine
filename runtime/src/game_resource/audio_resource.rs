@@ -42,7 +42,7 @@ impl Resource for AudioResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<mlua::Lua>,
+        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -98,7 +98,11 @@ impl Resource for AudioResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(
+        &self,
+        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        ui: &mut vectarine_plugin_sdk::egui::Ui,
+    ) {
         ui.label("[TODO] Audio Resource");
         let c = self.currently_used_channel.borrow();
         let c = c.as_ref();

@@ -1,4 +1,4 @@
-use runtime::native_plugin::plugininterface::PluginInterface;
+use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn init_hook(plugin_interface: PluginInterface) {
@@ -13,6 +13,6 @@ pub extern "C" fn init_hook(plugin_interface: PluginInterface) {
 // We need an SDK module and to have it as dependency for our DLLs.
 
 #[unsafe(no_mangle)]
-pub extern "C" fn release_hook(plugin_interface: PluginInterface) {
+pub extern "C" fn release_hook(_plugin_interface: PluginInterface) {
     println!("I was unloaded!");
 }

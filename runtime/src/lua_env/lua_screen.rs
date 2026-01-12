@@ -7,14 +7,14 @@ use crate::{
     io,
     lua_env::{add_fn_to_table, get_internals},
 };
-use mlua::IntoLua;
-use mlua::{FromLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::IntoLua;
+use vectarine_plugin_sdk::mlua::{FromLua, UserDataMethods};
 
 /// Represents a screen in the game (menu, gameplay, pause, etc.)
 #[derive(Clone, PartialEq)]
 pub struct Screen {
     name: String,
-    draw_fn: mlua::Function,
+    draw_fn: vectarine_plugin_sdk::mlua::Function,
 }
 auto_impl_lua_clone!(Screen, Screen);
 
@@ -37,23 +37,23 @@ pub enum TransitionStyle {
     SlideUp,
     SlideDown,
     Toon,
-    Custom(mlua::Function),
+    Custom(vectarine_plugin_sdk::mlua::Function),
 }
 
 pub struct RcScreenState(pub Rc<RefCell<ScreenState>>);
-impl mlua::UserData for RcScreenState {}
+impl vectarine_plugin_sdk::mlua::UserData for RcScreenState {}
 
 const SCREEN_STATE_KEY: &str = "__screen_state";
-pub fn get_screen_state(lua: &mlua::Lua) -> Option<Rc<RefCell<ScreenState>>> {
+pub fn get_screen_state(lua: &vectarine_plugin_sdk::mlua::Lua) -> Option<Rc<RefCell<ScreenState>>> {
     let internals = get_internals(lua);
-    let value: mlua::Value = internals.raw_get(SCREEN_STATE_KEY).ok()?;
+    let value: vectarine_plugin_sdk::mlua::Value = internals.raw_get(SCREEN_STATE_KEY).ok()?;
     let rc_screen_state = value.as_userdata()?;
     let rc_screen_state = rc_screen_state.borrow::<RcScreenState>().ok()?;
     Some(rc_screen_state.0.clone())
 }
 
 /// Updates the screen transition state. Should be called each frame with delta_time.
-pub fn update_screen_transition(lua: &mlua::Lua, delta_time: f32) {
+pub fn update_screen_transition(lua: &vectarine_plugin_sdk::mlua::Lua, delta_time: f32) {
     let Some(screen_state) = get_screen_state(lua) else {
         // Indicates that the Lua code tampered with the internals.
         return;
@@ -67,11 +67,11 @@ pub fn update_screen_transition(lua: &mlua::Lua, delta_time: f32) {
 }
 
 pub fn setup_screen_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     _env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let screen_module = lua.create_table()?;
 
     let screen_state = Rc::new(RefCell::new(ScreenState::default()));
@@ -83,27 +83,27 @@ pub fn setup_screen_api(
         registry.add_method("name", |_, this, ()| Ok(this.name.clone()));
         registry.add_method("draw", |_, this, ()| this.draw_fn.call::<()>(()));
         registry.add_meta_function(
-            mlua::MetaMethod::Eq,
+            vectarine_plugin_sdk::mlua::MetaMethod::Eq,
             |_lua, (id1, id2): (Screen, Screen)| Ok(id1 == id2),
         );
     })?;
 
     add_fn_to_table(lua, &screen_module, "newScreen", {
-        move |_, (name, draw_fn): (String, mlua::Function)| Ok(Screen { name, draw_fn })
+        move |_, (name, draw_fn): (String, vectarine_plugin_sdk::mlua::Function)| Ok(Screen { name, draw_fn })
     });
 
     add_fn_to_table(lua, &screen_module, "setCurrentScreen", {
         let screen_state = screen_state.clone();
-        move |_, (maybe_screen, transition): (mlua::AnyUserData, Option<mlua::Table>)| {
+        move |_, (maybe_screen, transition): (vectarine_plugin_sdk::mlua::AnyUserData, Option<vectarine_plugin_sdk::mlua::Table>)| {
             let screen = maybe_screen.borrow::<Screen>()?;
             let mut state = screen_state.borrow_mut();
 
             let transition_state = if let Some(trans_table) = transition {
                 let duration = trans_table.get::<f32>("duration")?;
-                let style_value: mlua::Value = trans_table.get("transition_style")?;
+                let style_value: vectarine_plugin_sdk::mlua::Value = trans_table.get("transition_style")?;
 
                 let style = match style_value {
-                    mlua::Value::String(s) => {
+                    vectarine_plugin_sdk::mlua::Value::String(s) => {
                         let style_str = s.to_str()?;
                         if style_str == "slide_up" {
                             TransitionStyle::SlideUp
@@ -112,15 +112,15 @@ pub fn setup_screen_api(
                         } else if style_str == "toon" {
                             TransitionStyle::Toon
                         } else {
-                            return Err(mlua::Error::RuntimeError(format!(
+                            return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(format!(
                                 "Unknown transition style: {}",
                                 style_str
                             )));
                         }
                     }
-                    mlua::Value::Function(f) => TransitionStyle::Custom(f),
+                    vectarine_plugin_sdk::mlua::Value::Function(f) => TransitionStyle::Custom(f),
                     _ => {
-                        return Err(mlua::Error::RuntimeError(
+                        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
                             "transition_style must be a string or function".to_string(),
                         ));
                     }
@@ -170,7 +170,7 @@ fn draw_current_screen_impl(
     screen_state: &Rc<RefCell<ScreenState>>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<()> {
+) -> vectarine_plugin_sdk::mlua::Result<()> {
     // Update progress and determine if in transition
     let (has_transition, progress, old_screen, new_screen, style) = (|| {
         let mut state = screen_state.borrow_mut();

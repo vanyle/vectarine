@@ -1,5 +1,6 @@
-use lazy_static::lazy_static;
-use std::{collections::VecDeque, sync::Mutex};
+use std::collections::VecDeque;
+use std::sync::Mutex;
+use vectarine_plugin_sdk::lazy_static::lazy_static;
 
 #[derive(Debug, Clone)]
 pub struct LuaError {

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     game_resource::{self, ResourceId, image_resource::ImageResource},
@@ -20,11 +20,11 @@ pub struct ImageResourceId(pub ResourceId);
 make_resource_lua_compatible!(ImageResourceId);
 
 pub fn setup_image_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     _env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let image_module = lua.create_table()?;
 
     lua.register_userdata_type::<ImageResourceId>(|registry| {
@@ -36,13 +36,13 @@ pub fn setup_image_api(
                 let image_resource = resources
                     .get_by_id::<game_resource::image_resource::ImageResource>(image_resource_id.0);
                 let Ok(image_resource) = image_resource else {
-                    return Err(mlua::Error::RuntimeError(
+                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
                         "ImageResource not found".to_string(),
                     ));
                 };
                 let image_resource = image_resource.texture.borrow();
                 let Some(image_texture) = image_resource.as_ref() else {
-                    return Err(mlua::Error::RuntimeError(
+                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
                         "ImageResource texture not loaded".to_string(),
                     ));
                 };

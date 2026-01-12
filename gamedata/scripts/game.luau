@@ -123,7 +123,7 @@ end
 local function drawEnvironment()
 	local p1 = gamePosToScreen(V2(-1, -1))
 	local size = Vec.V2(scalingFactor / aspectRatio, scalingFactor):scale(8)
-	fprint("drawn.")
+	-- fprint("drawn.")
 	environmentImage:draw(p1, size)
 end
 
@@ -147,6 +147,7 @@ keyEvent:on(function(key: string)
 end)
 
 function Update(timeDelta: number)
+	Debug.fprint("v = ", _G.lua_plugin_template_version)
 	timer = timer + timeDelta
 
 	if applyShaderEffectForFrames > 0 then
@@ -226,7 +227,7 @@ function Update(timeDelta: number)
 			drawSnake(Vec.V2(segment.x, segment.y), segmentType)
 		end
 
-		fprint("SPOS: ", Snake[1])
+		--fprint("SPOS: ", Snake[1])
 
 		-- Draw the next direction
 		local head = Snake[1]

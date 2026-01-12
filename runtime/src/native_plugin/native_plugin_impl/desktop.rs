@@ -1,10 +1,11 @@
 use libloading::{Library, Symbol};
 
-use crate::native_plugin::plugininterface::{EditorPluginInterface, PluginInterface};
+use vectarine_plugin_sdk::{anyhow, plugininterface::PluginInterface};
 
 pub(crate) struct NativePlugin {
     // Note: library NEEDS to be private or else it could be moved to weird ways leading to the symbols
     // pointing to invalid memory.
+    #[allow(dead_code)] // needed for the destructor
     library: Library,
 
     // We require an init_hook. This is to make sure to be able to provide errors for the plugin creator if they forget
@@ -13,8 +14,6 @@ pub(crate) struct NativePlugin {
     release_hook: Option<Symbol<'static, unsafe extern "C" fn(PluginInterface)>>,
     pre_lua_hook: Option<Symbol<'static, unsafe extern "C" fn(PluginInterface)>>,
     post_lua_hook: Option<Symbol<'static, unsafe extern "C" fn(PluginInterface)>>,
-
-    editor_hooks: Option<Symbol<'static, unsafe extern "C" fn(EditorPluginInterface)>>,
 }
 
 impl NativePlugin {
@@ -22,11 +21,15 @@ impl NativePlugin {
     ///
     /// This function is unsafe because it loads a native module. On some platforms, native module can run code when loaded.
     /// Such a module can run any code and is inherently unsafe.
-    pub unsafe fn load(path: &str) -> anyhow::Result<Self> {
+    pub unsafe fn load(path: &str) -> vectarine_plugin_sdk::anyhow::Result<Self> {
         let lib = unsafe { Library::new(path) };
         let lib = match lib {
             Ok(lib) => lib,
-            Err(err) => return Err(anyhow::anyhow!("Failed to load library at {path}: {err}")),
+            Err(err) => {
+                return Err(vectarine_plugin_sdk::anyhow::anyhow!(
+                    "Failed to load library at {path}: {err}"
+                ));
+            }
         };
         let init_hook = load_symbol::<unsafe extern "C" fn(PluginInterface)>(&lib, "init_hook")?;
         let release_hook =
@@ -42,6 +45,7 @@ impl NativePlugin {
             release_hook,
             pre_lua_hook,
             post_lua_hook,
+            // editor_hooks: None, // this is the runtime.
         })
     }
 

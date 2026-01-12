@@ -1,7 +1,7 @@
 use crate::game::Game;
-use mlua::IntoLua;
-use sdl2::{event::Event, keyboard::Scancode, video::FullscreenType};
+use sdl2::{self, event::Event, keyboard::Scancode, video::FullscreenType};
 use std::collections::HashMap;
+use vectarine_plugin_sdk::mlua::IntoLua;
 
 pub mod dummyfs;
 pub mod fs;

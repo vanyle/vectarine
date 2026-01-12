@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::UserDataMethods;
-use mlua::{FromLua, IntoLua};
+use vectarine_plugin_sdk::mlua::UserDataMethods;
+use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 use noise::{NoiseFn, Simplex, Worley};
 
 use crate::{
@@ -20,20 +20,20 @@ pub struct FastList {
 }
 impl IntoLua for FastList {
     #[inline(always)]
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
+    fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+        lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
     }
 }
 
 impl FromLua for FastList {
     #[inline(always)]
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
             // Note that we are taking and not cloning the data here.
             // This means that any function that takes a FastList as argument consumes it.
             // It is thus forbidden !!! Instead use Userdata as an argument and perform the borrowing manually.
-            mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
+            vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
+            _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "FastList".to_string(),
                 message: Some("Expected FastList userdata".to_string()),
@@ -70,16 +70,16 @@ pub enum FastListOrVec<'a> {
     Vec(Vec2),
 }
 
-fn parse_fastlist_or_vec_with_cb<F, T>(ud: mlua::AnyUserData, f: F) -> mlua::Result<T>
+fn parse_fastlist_or_vec_with_cb<F, T>(ud: vectarine_plugin_sdk::mlua::AnyUserData, f: F) -> vectarine_plugin_sdk::mlua::Result<T>
 where
-    F: Fn(&FastListOrVec) -> mlua::Result<T>,
+    F: Fn(&FastListOrVec) -> vectarine_plugin_sdk::mlua::Result<T>,
 {
     if let Ok(vec) = ud.borrow::<Vec2>() {
         f(&FastListOrVec::Vec(*vec))
     } else if let Ok(list) = ud.borrow::<FastList>() {
         f(&FastListOrVec::List(&list))
     } else {
-        Err(mlua::Error::RuntimeError(
+        Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
             "Expected FastList or Vec2".to_string(),
         ))
     }
@@ -108,12 +108,12 @@ where
 }
 
 pub fn setup_fastlist_api(
-    lua: &mlua::Lua,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     lua.register_userdata_type::<FastList>(|registry| {
-        registry.add_meta_method(mlua::MetaMethod::Len, |_, this, ()| Ok(this.data.len()));
+        registry.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::Len, |_, this, ()| Ok(this.data.len()));
 
         registry.add_method("get", |_, this, index: usize| {
             if index == 0 || index > this.data.len() {
@@ -130,7 +130,7 @@ pub fn setup_fastlist_api(
 
         registry.add_method("toTable", |_, this, ()| Ok(this.data.clone()));
 
-        registry.add_method_mut("forEach", |_, this, func: mlua::Function| {
+        registry.add_method_mut("forEach", |_, this, func: vectarine_plugin_sdk::mlua::Function| {
             for (i, vec) in this.data.iter_mut().enumerate() {
                 // 1-indexed for Lua
                 *vec = func.call::<Vec2>((*vec, i + 1))?;
@@ -187,7 +187,7 @@ pub fn setup_fastlist_api(
 
         registry.add_method(
             "filterGtX",
-            |_, this, (maybe_mask, threshold): (mlua::AnyUserData, f32)| {
+            |_, this, (maybe_mask, threshold): (vectarine_plugin_sdk::mlua::AnyUserData, f32)| {
                 let mask = maybe_mask.borrow::<FastList>()?;
                 let filtered_data: Vec<Vec2> = this
                     .data
@@ -201,24 +201,24 @@ pub fn setup_fastlist_api(
         );
 
         registry.add_meta_method(
-            mlua::MetaMethod::Add,
-            |_, this, other: mlua::AnyUserData| {
+            vectarine_plugin_sdk::mlua::MetaMethod::Add,
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
                 parse_fastlist_or_vec_with_cb(other, |parsed| {
                     Ok(apply_binary_op(this, parsed, |a, b| a + b))
                 })
             },
         );
         registry.add_meta_method(
-            mlua::MetaMethod::Sub,
-            |_, this, other: mlua::AnyUserData| {
+            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
                 parse_fastlist_or_vec_with_cb(other, |parsed| {
                     Ok(apply_binary_op(this, parsed, |a, b| a - b))
                 })
             },
         );
         registry.add_meta_method(
-            mlua::MetaMethod::Mul,
-            |_, this, other: mlua::AnyUserData| {
+            vectarine_plugin_sdk::mlua::MetaMethod::Mul,
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
                 parse_fastlist_or_vec_with_cb(other, |parsed| {
                     Ok(apply_binary_op(this, parsed, |a, b| a * b))
                 })
@@ -230,13 +230,13 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method("cmul", |_, this, other: mlua::AnyUserData| {
+        registry.add_method("cmul", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
             parse_fastlist_or_vec_with_cb(other, |parsed| {
                 Ok(apply_binary_op(this, parsed, |a, b| a.cmul(b)))
             })
         });
 
-        registry.add_method("dot", |_, this, other: mlua::AnyUserData| {
+        registry.add_method("dot", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
             parse_fastlist_or_vec_with_cb(other, |parsed| {
                 Ok(apply_binary_op(this, parsed, |a, b| {
                     let d = a.dot(&b);
@@ -265,13 +265,13 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method("max", |_, this, other: mlua::AnyUserData| {
+        registry.add_method("max", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
             parse_fastlist_or_vec_with_cb(other, |parsed| {
                 Ok(apply_binary_op(this, parsed, |a, b| a.max(b)))
             })
         });
 
-        registry.add_method("min", |_, this, other: mlua::AnyUserData| {
+        registry.add_method("min", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
             parse_fastlist_or_vec_with_cb(other, |parsed| {
                 Ok(apply_binary_op(this, parsed, |a, b| a.min(b)))
             })
@@ -287,7 +287,7 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method("lerp", |_, this, (other, k): (mlua::AnyUserData, f32)| {
+        registry.add_method("lerp", |_, this, (other, k): (vectarine_plugin_sdk::mlua::AnyUserData, f32)| {
             parse_fastlist_or_vec_with_cb(other, |parsed| {
                 Ok(apply_binary_op(this, parsed, |a, b| a.lerp(b, k)))
             })
@@ -435,7 +435,7 @@ pub fn setup_fastlist_api(
         "newLinspace",
         lua.create_function(|_lua, (min, max, step): (Vec2, Vec2, Vec2)| {
             if step.x() <= 0.0 || step.y() <= 0.0 {
-                return Err(mlua::Error::RuntimeError(
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
                     "step components must be positive".to_string(),
                 ));
             }

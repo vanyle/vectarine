@@ -15,7 +15,7 @@ impl Resource for TilesetResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<mlua::Lua>,
+        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -44,7 +44,7 @@ impl Resource for TilesetResource {
         }
     }
 
-    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
         ui.label("Tileset Resource");
         let content = self.content.borrow();
         if let Some(data) = &*content {
@@ -82,7 +82,7 @@ impl Resource for TilemapResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<mlua::Lua>,
+        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -104,7 +104,7 @@ impl Resource for TilemapResource {
         }
     }
 
-    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
         ui.label("Tilemap Resource");
         let content = self.content.borrow();
         if let Some(data) = &*content {

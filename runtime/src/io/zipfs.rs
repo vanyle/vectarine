@@ -1,6 +1,6 @@
-use anyhow::Result;
 use std::cell::RefCell;
 use std::io::{Cursor, Read};
+use vectarine_plugin_sdk::anyhow::Result;
 use zip::ZipArchive;
 
 use crate::io::fs::ReadOnlyFileSystem;

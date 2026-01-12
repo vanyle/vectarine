@@ -7,7 +7,7 @@ use crate::{
 
 pub struct ImageResource {
     pub texture: RefCell<Option<Arc<gltexture::Texture>>>,
-    pub egui_id: RefCell<Option<egui::TextureId>>,
+    pub egui_id: RefCell<Option<vectarine_plugin_sdk::egui::TextureId>>,
     pub antialiasing: Option<ImageAntialiasing>,
 }
 
@@ -19,7 +19,7 @@ impl Resource for ImageResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: &Rc<mlua::Lua>,
+        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -41,7 +41,11 @@ impl Resource for ImageResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(
+        &self,
+        painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        ui: &mut vectarine_plugin_sdk::egui::Ui,
+    ) {
         ui.label("Image Details:");
         let tex = self.texture.borrow();
         let Some(tex) = tex.as_ref() else {
@@ -63,17 +67,17 @@ impl Resource for ImageResource {
             }
         };
 
-        let sized_texture = egui::load::SizedTexture::new(
+        let sized_texture = vectarine_plugin_sdk::egui::load::SizedTexture::new(
             texture_id,
-            egui::vec2(tex.width() as f32, tex.height() as f32),
+            vectarine_plugin_sdk::egui::vec2(tex.width() as f32, tex.height() as f32),
         );
         let size = get_desired_size(
-            egui::vec2(tex.width() as f32, tex.height() as f32),
+            vectarine_plugin_sdk::egui::vec2(tex.width() as f32, tex.height() as f32),
             200.0,
             200.0,
         );
 
-        let image = egui::Image::from_texture(sized_texture)
+        let image = vectarine_plugin_sdk::egui::Image::from_texture(sized_texture)
             .max_size(size)
             .corner_radius(5);
         ui.add(image);
@@ -92,9 +96,13 @@ impl Resource for ImageResource {
 }
 
 /// Preserves the aspect ratio of the image.
-fn get_desired_size(actual_size: egui::Vec2, max_width: f32, max_height: f32) -> egui::Vec2 {
+fn get_desired_size(
+    actual_size: vectarine_plugin_sdk::egui::Vec2,
+    max_width: f32,
+    max_height: f32,
+) -> vectarine_plugin_sdk::egui::Vec2 {
     let width_scale = max_width / actual_size.x;
     let height_scale = max_height / actual_size.y;
     let scale = width_scale.min(height_scale);
-    egui::Vec2::new(actual_size.x * scale, actual_size.y * scale)
+    vectarine_plugin_sdk::egui::Vec2::new(actual_size.x * scale, actual_size.y * scale)
 }
