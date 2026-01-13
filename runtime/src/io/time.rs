@@ -28,7 +28,8 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_os = "emscripten"))]
     {
         use std::time::Instant;
-        lazy_static::lazy_static! {
+        use vectarine_plugin_sdk::lazy_static::lazy_static;
+        lazy_static! {
             static ref START_INSTANT: Instant = Instant::now();
         }
         START_INSTANT.elapsed().as_micros() as f64 / 1000.0

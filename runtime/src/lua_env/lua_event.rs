@@ -3,10 +3,10 @@ use std::rc::Weak;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{auto_impl_lua_clone, lua_env::add_fn_to_table};
-use mlua::FromLua;
-use mlua::IntoLua;
-use mlua::UserDataFields;
-use mlua::UserDataMethods;
+use vectarine_plugin_sdk::mlua::FromLua;
+use vectarine_plugin_sdk::mlua::IntoLua;
+use vectarine_plugin_sdk::mlua::UserDataFields;
+use vectarine_plugin_sdk::mlua::UserDataMethods;
 
 #[derive(Clone, Debug)]
 pub struct EventType(usize, Weak<RefCell<EventManager>>);
@@ -32,7 +32,7 @@ auto_impl_lua_clone!(SubscriptionId, SubscriptionId);
 pub struct EventSubscriptions {
     next_id: usize,
     name: String,
-    subscriptions: HashMap<SubscriptionId, mlua::Function>,
+    subscriptions: HashMap<SubscriptionId, vectarine_plugin_sdk::mlua::Function>,
 }
 
 struct EventManager {
@@ -55,7 +55,7 @@ impl Default for EventManagerRc {
 }
 
 impl EventType {
-    pub fn trigger(&self, data: mlua::Value) -> mlua::Result<()> {
+    pub fn trigger(&self, data: vectarine_plugin_sdk::mlua::Value) -> vectarine_plugin_sdk::mlua::Result<()> {
         // Maybe no-op instead of panic?
         let event_manager = self.1.upgrade().expect("Event manager should exist");
         let event_manager = event_manager.borrow();
@@ -64,7 +64,7 @@ impl EventType {
             return Ok(());
         };
         for callback in subscription.subscriptions.values() {
-            let _ = callback.call::<mlua::Value>(data.clone());
+            let _ = callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone());
         }
         Ok(())
     }
@@ -82,9 +82,9 @@ impl EventType {
 
 pub fn create_event(
     event_manager: &EventManagerRc,
-    _lua: &mlua::Lua,
+    _lua: &vectarine_plugin_sdk::mlua::Lua,
     name: String,
-) -> mlua::Result<EventType> {
+) -> vectarine_plugin_sdk::mlua::Result<EventType> {
     let mut em = event_manager.0.borrow_mut();
     {
         let entry = em.registered_events.get(&name).cloned();
@@ -109,10 +109,10 @@ pub fn create_event(
 
 pub fn create_event_constant_in_event_module(
     event_manager: &EventManagerRc,
-    lua: &mlua::Lua,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     name: &str,
-    event_module_table: &mlua::Table,
-) -> mlua::Result<EventType> {
+    event_module_table: &vectarine_plugin_sdk::mlua::Table,
+) -> vectarine_plugin_sdk::mlua::Result<EventType> {
     let name_with_uppercase_first = format!(
         "{}{}",
         name.chars().next().unwrap_or_default().to_uppercase(),
@@ -149,8 +149,8 @@ pub struct DefaultEvents {
 }
 
 pub fn setup_event_api(
-    lua: &Rc<mlua::Lua>,
-) -> mlua::Result<(mlua::Table, DefaultEvents, EventManagerRc)> {
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+) -> vectarine_plugin_sdk::mlua::Result<(vectarine_plugin_sdk::mlua::Table, DefaultEvents, EventManagerRc)> {
     let event_module = lua.create_table()?;
     let event_manager = EventManagerRc::default();
 
@@ -166,7 +166,7 @@ pub fn setup_event_api(
             }
         });
         registry.add_method("dispatch", {
-            move |_lua, event_type, data: mlua::Value| event_type.trigger(data)
+            move |_lua, event_type, data: vectarine_plugin_sdk::mlua::Value| event_type.trigger(data)
         });
         registry.add_method("clear", {
             move |_lua, event_type, ()| {
@@ -176,7 +176,7 @@ pub fn setup_event_api(
         });
         registry.add_method("on", {
             let event_manager = event_manager.clone();
-            move |_lua, event_type, callback: mlua::Function| {
+            move |_lua, event_type, callback: vectarine_plugin_sdk::mlua::Function| {
                 // We can access the outside using lua.globals()
                 let mut subscriptions = event_manager.0.borrow_mut();
                 let subscriptions = &mut subscriptions.event_map;

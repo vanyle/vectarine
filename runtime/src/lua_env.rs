@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use mlua::ObjectLike;
+use vectarine_plugin_sdk::mlua::ObjectLike;
 
 pub mod lua_audio;
 pub mod lua_camera;
@@ -32,7 +32,7 @@ use crate::io::fs::ReadOnlyFileSystem;
 use crate::metrics::MetricsHolder;
 
 pub struct LuaEnvironment {
-    pub lua: Rc<mlua::Lua>,
+    pub lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
     pub env_state: Rc<RefCell<IoEnvState>>,
 
     pub batch: Rc<RefCell<BatchDraw2d>>,
@@ -52,14 +52,18 @@ impl LuaEnvironment {
         metrics: Rc<RefCell<MetricsHolder>>,
     ) -> Self {
         let batch = Rc::new(RefCell::new(batch));
-        let lua_options = mlua::LuaOptions::default();
-        let lua_libs = mlua::StdLib::MATH | mlua::StdLib::TABLE | mlua::StdLib::STRING;
+        let lua_options = vectarine_plugin_sdk::mlua::LuaOptions::default();
+        let lua_libs = vectarine_plugin_sdk::mlua::StdLib::MATH
+            | vectarine_plugin_sdk::mlua::StdLib::TABLE
+            | vectarine_plugin_sdk::mlua::StdLib::STRING;
         let gl = batch.borrow().drawing_target.gl().clone();
 
-        let lua =
-            Rc::new(mlua::Lua::new_with(lua_libs, lua_options).expect("Failed to create Lua"));
+        let lua = Rc::new(
+            vectarine_plugin_sdk::mlua::Lua::new_with(lua_libs, lua_options)
+                .expect("Failed to create Lua"),
+        );
         lua.set_compiler(
-            mlua::Compiler::new()
+            vectarine_plugin_sdk::mlua::Compiler::new()
                 .set_optimization_level(2)
                 .set_type_info_level(1),
         );
@@ -152,7 +156,10 @@ impl LuaEnvironment {
         lua.register_module("@vectarine/loader", loader_module)
             .unwrap();
 
-        let original_require = lua.globals().get::<mlua::Function>("require").unwrap();
+        let original_require = lua
+            .globals()
+            .get::<vectarine_plugin_sdk::mlua::Function>("require")
+            .unwrap();
         add_global_fn(&lua, "require", move |lua, module_name: String| {
             // We provide a custom require with the following features:
             // - Can require @vectarine/* modules (like @vectarine/vec)
@@ -172,10 +179,14 @@ impl LuaEnvironment {
         });
 
         // Add this to utils module?
-        add_global_fn(&lua, "toString", move |_, (arg,): (mlua::Value,)| {
-            let string = stringify_lua_value(&arg);
-            Ok(string)
-        });
+        add_global_fn(
+            &lua,
+            "toString",
+            move |_, (arg,): (vectarine_plugin_sdk::mlua::Value,)| {
+                let string = stringify_lua_value(&arg);
+                Ok(string)
+            },
+        );
 
         LuaEnvironment {
             lua,
@@ -193,11 +204,11 @@ impl LuaEnvironment {
 }
 
 #[allow(clippy::unwrap_used)]
-pub fn add_global_fn<F, A, R>(lua: &Rc<mlua::Lua>, name: &str, func: F)
+pub fn add_global_fn<F, A, R>(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, name: &str, func: F)
 where
-    F: Fn(&mlua::Lua, A) -> mlua::Result<R> + 'static,
-    A: mlua::FromLuaMulti,
-    R: mlua::IntoLuaMulti,
+    F: Fn(&vectarine_plugin_sdk::mlua::Lua, A) -> vectarine_plugin_sdk::mlua::Result<R> + 'static,
+    A: vectarine_plugin_sdk::mlua::FromLuaMulti,
+    R: vectarine_plugin_sdk::mlua::IntoLuaMulti,
 {
     lua.globals()
         .set(name, lua.create_function(func).unwrap())
@@ -205,11 +216,15 @@ where
 }
 
 #[allow(clippy::unwrap_used)]
-pub fn add_fn_to_table<F, A, R>(lua: &Rc<mlua::Lua>, table: &mlua::Table, name: &str, func: F)
-where
-    F: Fn(&mlua::Lua, A) -> mlua::Result<R> + 'static,
-    A: mlua::FromLuaMulti,
-    R: mlua::IntoLuaMulti,
+pub fn add_fn_to_table<F, A, R>(
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    table: &vectarine_plugin_sdk::mlua::Table,
+    name: &str,
+    func: F,
+) where
+    F: Fn(&vectarine_plugin_sdk::mlua::Lua, A) -> vectarine_plugin_sdk::mlua::Result<R> + 'static,
+    A: vectarine_plugin_sdk::mlua::FromLuaMulti,
+    R: vectarine_plugin_sdk::mlua::IntoLuaMulti,
 {
     table.set(name, lua.create_function(func).unwrap()).unwrap();
 }
@@ -217,17 +232,17 @@ where
 /// Run the given Lua file content assuming it is at the given path.
 /// If the file returns a table, and a target_table is provided, the table will be merged into the target_table.
 pub fn run_file_and_display_error_from_lua_handle(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     file_content: &[u8],
     file_path: &Path,
-    target_table: Option<&mlua::Table>,
+    target_table: Option<&vectarine_plugin_sdk::mlua::Table>,
 ) {
     // lua.set_compiler(compiler);
     let lua_chunk = lua.load(file_content);
     // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
     let result = lua_chunk
         .set_name(format!("@{}", file_path.to_string_lossy()))
-        .eval::<mlua::Value>();
+        .eval::<vectarine_plugin_sdk::mlua::Value>();
 
     match result {
         Err(error) => {
@@ -247,7 +262,9 @@ pub fn run_file_and_display_error_from_lua_handle(
                 return;
             };
 
-            for pair in table.pairs::<mlua::Value, mlua::Value>() {
+            for pair in table
+                .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
+            {
                 let Ok((key, value)) = pair else { continue };
                 let _ = target_table.raw_set(key, value);
             }
@@ -255,26 +272,35 @@ pub fn run_file_and_display_error_from_lua_handle(
     }
 }
 
-pub fn stringify_lua_value(value: &mlua::Value) -> String {
+pub fn stringify_lua_value(value: &vectarine_plugin_sdk::mlua::Value) -> String {
     let mut seen = Vec::new();
     stringify_lua_value_helper(value, &mut seen)
 }
 
-pub fn to_lua<T>(lua: &mlua::Lua, value: T) -> mlua::Result<mlua::Value>
+pub fn to_lua<T>(
+    lua: &vectarine_plugin_sdk::mlua::Lua,
+    value: T,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value>
 where
-    T: mlua::IntoLua,
+    T: vectarine_plugin_sdk::mlua::IntoLua,
 {
     value.into_lua(lua)
 }
 
-pub fn merge_lua_tables(source: &mlua::Table, target: &mlua::Table) {
-    for pair in source.pairs::<mlua::Value, mlua::Value>().flatten() {
+pub fn merge_lua_tables(
+    source: &vectarine_plugin_sdk::mlua::Table,
+    target: &vectarine_plugin_sdk::mlua::Table,
+) {
+    for pair in source
+        .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
+        .flatten()
+    {
         let (key, value) = pair;
         let _ = target.raw_set(key, value);
     }
 }
 
-pub fn get_line_and_file_of_error(error: &mlua::Error) -> (usize, String) {
+pub fn get_line_and_file_of_error(error: &vectarine_plugin_sdk::mlua::Error) -> (usize, String) {
     let error = error.to_string();
     // An error looks either like this:
     // Some text
@@ -314,22 +340,25 @@ pub fn get_line_and_file_of_error(error: &mlua::Error) -> (usize, String) {
     (0, "".to_string())
 }
 
-fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) -> String {
-    if seen.contains(value) && matches!(value, mlua::Value::Table(_)) {
+fn stringify_lua_value_helper(
+    value: &vectarine_plugin_sdk::mlua::Value,
+    seen: &mut Vec<vectarine_plugin_sdk::mlua::Value>,
+) -> String {
+    if seen.contains(value) && matches!(value, vectarine_plugin_sdk::mlua::Value::Table(_)) {
         return "[circular]".to_string();
     }
     seen.push(value.clone());
 
     match value {
-        mlua::Value::Nil => "nil".to_string(),
-        mlua::Value::Boolean(b) => b.to_string(),
-        mlua::Value::Integer(i) => i.to_string(),
-        mlua::Value::Number(n) => n.to_string(),
-        mlua::Value::String(s) => s.to_string_lossy(),
-        mlua::Value::Table(table) => format!(
+        vectarine_plugin_sdk::mlua::Value::Nil => "nil".to_string(),
+        vectarine_plugin_sdk::mlua::Value::Boolean(b) => b.to_string(),
+        vectarine_plugin_sdk::mlua::Value::Integer(i) => i.to_string(),
+        vectarine_plugin_sdk::mlua::Value::Number(n) => n.to_string(),
+        vectarine_plugin_sdk::mlua::Value::String(s) => s.to_string_lossy(),
+        vectarine_plugin_sdk::mlua::Value::Table(table) => format!(
             "{{{}}}",
             table
-                .pairs::<mlua::Value, mlua::Value>()
+                .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
                 .map(|pair| {
                     if let Ok((key, value)) = pair {
                         let key_str = stringify_lua_value_helper(&key, seen);
@@ -342,7 +371,7 @@ fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) 
                 .collect::<Vec<_>>()
                 .join(", ")
         ),
-        mlua::Value::Function(func) => {
+        vectarine_plugin_sdk::mlua::Value::Function(func) => {
             let fninfo = func.info();
             format!(
                 "[function: {}:{}]",
@@ -350,15 +379,17 @@ fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) 
                 fninfo.line_defined.unwrap_or(0)
             )
         }
-        mlua::Value::Thread(thread) => {
+        vectarine_plugin_sdk::mlua::Value::Thread(thread) => {
             let ptr = thread.to_pointer();
             format!("[thread: {ptr:?}]")
         }
-        mlua::Value::UserData(userdata) => userdata.to_string().unwrap_or_else(|_| {
-            let ptr = userdata.to_pointer();
-            format!("[userdata: {ptr:?}]")
-        }),
-        mlua::Value::LightUserData(lightuserdata) => {
+        vectarine_plugin_sdk::mlua::Value::UserData(userdata) => {
+            userdata.to_string().unwrap_or_else(|_| {
+                let ptr = userdata.to_pointer();
+                format!("[userdata: {ptr:?}]")
+            })
+        }
+        vectarine_plugin_sdk::mlua::Value::LightUserData(lightuserdata) => {
             let ptr = lightuserdata.0;
             format!("[lightuserdata: {ptr:?}]")
         }
@@ -368,21 +399,21 @@ fn stringify_lua_value_helper(value: &mlua::Value, seen: &mut Vec<mlua::Value>) 
 
 const UNSAFE_INTERNALS_KEY: &str = "Vectarine_Unsafe_Internal";
 
-pub fn get_internals(lua: &mlua::Lua) -> mlua::Table {
+pub fn get_internals(lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Table {
     let globals = lua.globals();
     globals
         .raw_get(UNSAFE_INTERNALS_KEY)
         .expect("Failed to get lua internal table")
 }
 
-pub fn is_valid_data_type<T: 'static>(value: &mlua::Value) -> bool {
+pub fn is_valid_data_type<T: 'static>(value: &vectarine_plugin_sdk::mlua::Value) -> bool {
     match value {
-        mlua::Value::UserData(ud) => ud.is::<T>(),
+        vectarine_plugin_sdk::mlua::Value::UserData(ud) => ud.is::<T>(),
         _ => false,
     }
 }
 
-pub fn print_lua_error_from_error(error: &mlua::Error) {
+pub fn print_lua_error_from_error(error: &vectarine_plugin_sdk::mlua::Error) {
     let error_msg = error.to_string();
     let (line, file_path) = get_line_and_file_of_error(error);
     print_lua_error(error_msg, file_path, line);

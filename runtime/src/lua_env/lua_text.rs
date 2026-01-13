@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value};
+use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value};
 
 use crate::{
     game_resource::{
@@ -25,16 +25,16 @@ impl FontResourceId {
 }
 
 impl IntoLua for FontResourceId {
-    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self).map(mlua::Value::UserData)
+    fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+        lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
     }
 }
 
 impl FromLua for FontResourceId {
-    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
+    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
-            mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
-            _ => Err(mlua::Error::FromLuaConversionError {
+            vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
+            _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "FontResourceId".into(),
                 message: Some("Expected FontResourceId userdata".into()),
@@ -44,24 +44,24 @@ impl FromLua for FontResourceId {
 }
 
 pub fn setup_text_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let text_module = lua.create_table()?;
 
     let default_font_handle = FontResourceId(None);
 
     lua.register_userdata_type::<FontResourceId>(|registry| {
-        registry.add_meta_function(mlua::MetaMethod::ToString, |_lua, (id,): (FontResourceId,)| {
+        registry.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_lua, (id,): (FontResourceId,)| {
             if let Some(id) = id.0{
                 Ok(format!("Resource({})", id.get_id()))
             }else{
                 Ok("FontResource(default)".to_string())
             }
         });
-        registry.add_meta_function(mlua::MetaMethod::Eq, |_lua, (id1, id2): (FontResourceId, FontResourceId)| {
+        registry.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::Eq, |_lua, (id1, id2): (FontResourceId, FontResourceId)| {
             Ok(id1 == id2)
         });
         registry.add_method("getStatus", {
@@ -180,13 +180,13 @@ pub fn setup_text_api(
     Ok(text_module)
 }
 
-fn value_to_text_size(value: &mlua::Value) -> mlua::Result<f32> {
+fn value_to_text_size(value: &vectarine_plugin_sdk::mlua::Value) -> vectarine_plugin_sdk::mlua::Result<f32> {
     match value {
-        mlua::Value::Number(n) => Ok(*n as f32),
-        mlua::Value::UserData(user_data) => {
+        vectarine_plugin_sdk::mlua::Value::Number(n) => Ok(*n as f32),
+        vectarine_plugin_sdk::mlua::Value::UserData(user_data) => {
             let screen_vec = user_data.borrow::<ScreenVec>();
             let Ok(vec) = screen_vec else {
-                return Err(mlua::Error::ToLuaConversionError {
+                return Err(vectarine_plugin_sdk::mlua::Error::ToLuaConversionError {
                     from: value.type_name().to_string(),
                     to: "number",
                     message: Some("Unable to convert the text size to a number".to_string()),
@@ -194,8 +194,8 @@ fn value_to_text_size(value: &mlua::Value) -> mlua::Result<f32> {
             };
             Ok(vec.as_vec2().y())
         }
-        mlua::Value::Nil => Ok(0.05),
-        _ => Err(mlua::Error::ToLuaConversionError {
+        vectarine_plugin_sdk::mlua::Value::Nil => Ok(0.05),
+        _ => Err(vectarine_plugin_sdk::mlua::Error::ToLuaConversionError {
             from: value.type_name().to_string(),
             to: "number",
             message: Some("Unable to convert the text size to a number".to_string()),

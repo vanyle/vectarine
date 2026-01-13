@@ -8,7 +8,7 @@ use crate::{
 pub struct ScriptResource {
     pub script: RefCell<Option<Vec<u8>>>,
     /// If provided when the script is created, the return table of the script will be merged into this table.
-    pub target_table: Option<mlua::Table>,
+    pub target_table: Option<vectarine_plugin_sdk::mlua::Table>,
 }
 
 impl Resource for ScriptResource {
@@ -16,7 +16,7 @@ impl Resource for ScriptResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        lua: &Rc<mlua::Lua>,
+        lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
         _gl: std::sync::Arc<glow::Context>,
         path: &Path,
         data: Box<[u8]>,
@@ -26,7 +26,7 @@ impl Resource for ScriptResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, _painter: &mut egui_glow::Painter, ui: &mut egui::Ui) {
+    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
         // If we wanted a script editor, it would be here.
         ui.label("[TODO] Script Resource debug gui");
     }
@@ -47,14 +47,14 @@ impl Resource for ScriptResource {
 }
 
 impl ScriptResource {
-    pub fn make_with_target_table(target_table: mlua::Table) -> Self {
+    pub fn make_with_target_table(target_table: vectarine_plugin_sdk::mlua::Table) -> Self {
         Self {
             script: RefCell::new(None),
             target_table: Some(target_table),
         }
     }
 
-    pub fn get_exports(&self) -> Option<&mlua::Table> {
+    pub fn get_exports(&self) -> Option<&vectarine_plugin_sdk::mlua::Table> {
         self.target_table.as_ref()
     }
 }

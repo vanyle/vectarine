@@ -1,7 +1,7 @@
 use std::{ops, rc::Rc, sync::Arc};
 
 use glow::Context;
-use mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     auto_impl_lua_copy,
@@ -102,18 +102,18 @@ impl ops::Add<ScreenVec> for ScreenPosition {
     }
 }
 
-pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<mlua::Table> {
+pub fn setup_coords_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, gl: &Arc<Context>) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let coords_module = lua.create_table()?;
 
     lua.register_userdata_type::<ScreenVec>(|registry| {
         let gl = gl.clone();
         registry.add_meta_function(
-            mlua::MetaMethod::Add,
+            vectarine_plugin_sdk::mlua::MetaMethod::Add,
             #[inline(always)]
             |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 + other.0)),
         );
         registry.add_meta_function(
-            mlua::MetaMethod::Sub,
+            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
             #[inline(always)]
             |_, (this, other): (ScreenVec, ScreenVec)| Ok(ScreenVec(this.0 - other.0)),
         );
@@ -140,7 +140,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
             |_, this, (k,): (f32,)| Ok(this.scale(k)),
         );
 
-        registry.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
+        registry.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_, pos, _any: vectarine_plugin_sdk::mlua::Value| {
             Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x(), pos.0.y()))
         });
     })?;
@@ -166,12 +166,12 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         );
 
         registry.add_meta_function(
-            mlua::MetaMethod::Add,
+            vectarine_plugin_sdk::mlua::MetaMethod::Add,
             #[inline(always)]
             |_lua, (this, other): (ScreenPosition, AnyUserData)| {
                 let is_other_screen_pos = other.is::<ScreenPosition>();
                 if is_other_screen_pos {
-                    return Err(mlua::Error::RuntimeError(
+                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
                         "Cannot add two ScreenPosition together. Did you mean to use a ScreenDelta?"
                         .to_string(),
                     ));
@@ -182,7 +182,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
         );
 
         registry.add_meta_function(
-            mlua::MetaMethod::Sub,
+            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
             #[inline(always)]
             |lua, (this, other): (ScreenPosition, AnyUserData)| {
                 let as_screen_pos = other.borrow::<ScreenPosition>();
@@ -198,7 +198,7 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
             },
         );
 
-        registry.add_meta_method(mlua::MetaMethod::ToString, |_, pos, _any: mlua::Value| {
+        registry.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_, pos, _any: vectarine_plugin_sdk::mlua::Value| {
             Ok(format!(
                 "ScreenPosition({:.4}, {:.4})",
                 pos.0.x(),
@@ -344,13 +344,13 @@ pub fn setup_coords_api(lua: &Rc<mlua::Lua>, gl: &Arc<Context>) -> mlua::Result<
     Ok(coords_module)
 }
 
-pub fn get_pos_as_vec2(userdata: mlua::AnyUserData) -> mlua::Result<Vec2> {
+pub fn get_pos_as_vec2(userdata: vectarine_plugin_sdk::mlua::AnyUserData) -> vectarine_plugin_sdk::mlua::Result<Vec2> {
     let pos = userdata.borrow::<ScreenPosition>();
-    let err: mlua::Error = match pos {
+    let err: vectarine_plugin_sdk::mlua::Error = match pos {
         Ok(pos) => return Ok(pos.as_vec2()),
         Err(err) => err,
     };
-    if matches!(err, mlua::Error::UserDataTypeMismatch) {
+    if matches!(err, vectarine_plugin_sdk::mlua::Error::UserDataTypeMismatch) {
         let vec = userdata.borrow::<Vec2>()?;
         Ok(*vec)
     } else {
@@ -358,13 +358,13 @@ pub fn get_pos_as_vec2(userdata: mlua::AnyUserData) -> mlua::Result<Vec2> {
     }
 }
 
-pub fn get_size_as_vec2(userdata: mlua::AnyUserData) -> mlua::Result<Vec2> {
+pub fn get_size_as_vec2(userdata: vectarine_plugin_sdk::mlua::AnyUserData) -> vectarine_plugin_sdk::mlua::Result<Vec2> {
     let size = userdata.borrow::<ScreenVec>();
-    let err: mlua::Error = match size {
+    let err: vectarine_plugin_sdk::mlua::Error = match size {
         Ok(size) => return Ok(size.as_vec2()),
         Err(err) => err,
     };
-    if matches!(err, mlua::Error::UserDataTypeMismatch) {
+    if matches!(err, vectarine_plugin_sdk::mlua::Error::UserDataTypeMismatch) {
         let vec = userdata.borrow::<Vec2>()?;
         Ok(*vec)
     } else {

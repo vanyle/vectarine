@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use mlua::{FromLua, IntoLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{FromLua, IntoLua, UserDataMethods};
 
 use crate::{
     game_resource::{self, ResourceId, audio_resource::AudioResource},
@@ -14,10 +14,10 @@ pub struct AudioResourceId(ResourceId);
 make_resource_lua_compatible!(AudioResourceId);
 
 pub fn setup_audio_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     _env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let audio_module = lua.create_table()?;
 
     lua.register_userdata_type::<AudioResourceId>(|registry| {

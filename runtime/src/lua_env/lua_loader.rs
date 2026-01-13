@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use mlua::UserDataMethods;
-use mlua::{FromLua, IntoLua};
+use vectarine_plugin_sdk::mlua::UserDataMethods;
+use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 
 use crate::game_resource::tile_resource::TilemapResource;
 use crate::lua_env::lua_tile::TilemapResourceId;
@@ -29,9 +29,9 @@ pub struct TextResourceId(ResourceId);
 make_resource_lua_compatible!(TextResourceId);
 
 pub fn setup_loader_api(
-    lua: &Rc<mlua::Lua>,
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
     resources: &Rc<ResourceManager>,
-) -> mlua::Result<mlua::Table> {
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let loader_module = lua.create_table()?;
 
     lua.register_userdata_type::<ScriptResourceId>(|registry| {
@@ -43,18 +43,18 @@ pub fn setup_loader_api(
 
         registry.add_method("getText", {
             let resources = resources.clone();
-            move |lua: &mlua::Lua, this: &TextResourceId, (): ()| {
+            move |lua: &vectarine_plugin_sdk::mlua::Lua, this: &TextResourceId, (): ()| {
                 let resource = resources.get_by_id::<TextResource>(this.0);
                 let Ok(resource) = resource else {
-                    return Ok(mlua::Nil);
+                    return Ok(vectarine_plugin_sdk::mlua::Nil);
                 };
                 let content = resource.content.borrow();
                 let Some(content) = content.as_ref() else {
-                    return Ok(mlua::Nil);
+                    return Ok(vectarine_plugin_sdk::mlua::Nil);
                 };
                 let content = String::from_utf8_lossy(content);
                 let content = lua.create_string(content.to_string())?;
-                Ok(mlua::Value::String(content))
+                Ok(vectarine_plugin_sdk::mlua::Value::String(content))
             }
         });
     })?;
@@ -84,7 +84,7 @@ pub fn setup_loader_api(
                     }),
                 },
             );
-            mlua::Result::Ok(ImageResourceId::from_id(id))
+            vectarine_plugin_sdk::mlua::Result::Ok(ImageResourceId::from_id(id))
         }
     });
 
@@ -130,16 +130,16 @@ pub fn setup_loader_api(
 
     add_fn_to_table(lua, &loader_module, "loadScript", {
         let resources = resources.clone();
-        move |lua, (path, results): (String, Option<mlua::Table>)| {
+        move |lua, (path, results): (String, Option<vectarine_plugin_sdk::mlua::Table>)| {
             if let Some(target_table) = results {
                 let (id, table) =
                     resources.schedule_load_script_resource(Path::new(&path), target_table);
-                return Ok((ScriptResourceId::from_id(id), mlua::Value::Table(table)));
+                return Ok((ScriptResourceId::from_id(id), vectarine_plugin_sdk::mlua::Value::Table(table)));
             }
             let dummy_table = lua.create_table()?;
             let (id, table) =
                 resources.schedule_load_script_resource(Path::new(&path), dummy_table);
-            Ok((ScriptResourceId::from_id(id), mlua::Value::Table(table)))
+            Ok((ScriptResourceId::from_id(id), vectarine_plugin_sdk::mlua::Value::Table(table)))
         }
     });
 

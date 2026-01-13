@@ -26,7 +26,7 @@ use runtime::{
 
 use crate::{
     editorconfig::{EDITOR_CONFIG_FILE, EditorConfig, WindowStyle},
-    editorinterface::emptyscreen::draw_empty_screen,
+    editorinterface::{editorplugins::draw_editor_plugin_manager, emptyscreen::draw_empty_screen},
     egui_sdl2_platform,
     exportinterface::draw_editor_export,
     projectstate::ProjectState,
@@ -39,6 +39,7 @@ use editorwatcher::draw_editor_watcher;
 
 pub mod editorconsole;
 pub mod editormenu;
+pub mod editorplugins;
 pub mod editorprofiler;
 pub mod editorresources;
 pub mod editorwatcher;
@@ -237,6 +238,7 @@ impl EditorState {
         draw_editor_watcher(self, &ctx);
         draw_editor_profiler(self, &ctx);
         draw_editor_export(self, &ctx);
+        draw_editor_plugin_manager(self, &ctx);
 
         if self.project.borrow().is_none() {
             draw_empty_screen(self, &ctx);

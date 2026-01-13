@@ -1,11 +1,11 @@
 use std::{fs::OpenOptions, io::Write, path::PathBuf, rc::Rc};
 
-use mlua::LuaSerdeExt;
+use vectarine_plugin_sdk::mlua::LuaSerdeExt;
 use serde_json;
 
 use crate::lua_env::add_fn_to_table;
 
-fn serialize_lua(lua: &mlua::Lua, value: &mlua::Value) -> Box<[u8]> {
+fn serialize_lua(lua: &vectarine_plugin_sdk::mlua::Lua, value: &vectarine_plugin_sdk::mlua::Value) -> Box<[u8]> {
     let json_value: Result<serde_json::Value, _> = lua.from_value(value.clone());
     match json_value {
         Ok(json) => serde_json::to_vec(&json)
@@ -15,9 +15,9 @@ fn serialize_lua(lua: &mlua::Lua, value: &mlua::Value) -> Box<[u8]> {
     }
 }
 
-fn deserialize_lua(lua: &mlua::Lua, value: Box<[u8]>) -> mlua::Result<mlua::Value> {
+fn deserialize_lua(lua: &vectarine_plugin_sdk::mlua::Lua, value: Box<[u8]>) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
     let json_value: serde_json::Value =
-        serde_json::from_slice(&value).map_err(|e| mlua::Error::DeserializeError(e.to_string()))?;
+        serde_json::from_slice(&value).map_err(|e| vectarine_plugin_sdk::mlua::Error::DeserializeError(e.to_string()))?;
     lua.to_value(&json_value)
 }
 
@@ -68,13 +68,13 @@ fn load_data_from_kv_store(key: String) -> Option<Box<[u8]>> {
     std::fs::read(&path).ok().map(|v| v.into_boxed_slice())
 }
 
-pub fn setup_persist_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
+pub fn setup_persist_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let persist_module = lua.create_table()?;
 
     add_fn_to_table(lua, &persist_module, "onReload", {
-        move |lua, (default_value, global_name): (mlua::Value, String)| {
+        move |lua, (default_value, global_name): (vectarine_plugin_sdk::mlua::Value, String)| {
             let g = lua.globals();
-            let value = g.raw_get::<mlua::Value>(global_name.clone());
+            let value = g.raw_get::<vectarine_plugin_sdk::mlua::Value>(global_name.clone());
             if let Ok(value) = value
                 && !value.is_nil()
             {
@@ -86,15 +86,15 @@ pub fn setup_persist_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
     });
 
     add_fn_to_table(lua, &persist_module, "onReloadWithProvider", {
-        move |lua, (provider, global_name): (mlua::Function, String)| {
+        move |lua, (provider, global_name): (vectarine_plugin_sdk::mlua::Function, String)| {
             let g = lua.globals();
-            let value = g.raw_get::<mlua::Value>(global_name.clone());
+            let value = g.raw_get::<vectarine_plugin_sdk::mlua::Value>(global_name.clone());
             if let Ok(value) = value
                 && !value.is_nil()
             {
                 return Ok(value);
             }
-            let default_value: mlua::Value = provider.call(())?;
+            let default_value: vectarine_plugin_sdk::mlua::Value = provider.call(())?;
             let _ = g.raw_set(global_name, default_value.clone());
             Ok(default_value)
         }
@@ -104,14 +104,14 @@ pub fn setup_persist_api(lua: &Rc<mlua::Lua>) -> mlua::Result<mlua::Table> {
         move |lua, (key,): (String,)| {
             let data = load_data_from_kv_store(key);
             let Some(data) = data else {
-                return Ok(mlua::Nil);
+                return Ok(vectarine_plugin_sdk::mlua::Nil);
             };
             deserialize_lua(lua, data)
         }
     });
 
     add_fn_to_table(lua, &persist_module, "save", {
-        move |lua, (key, value): (String, mlua::Value)| {
+        move |lua, (key, value): (String, vectarine_plugin_sdk::mlua::Value)| {
             let value = serialize_lua(lua, &value);
             save_data_in_kv_store(key, value);
             Ok(())
@@ -138,7 +138,7 @@ mod tests {
 
     #[test]
     fn serialize_lua_and_back() {
-        let lua = mlua::Lua::new();
+        let lua = vectarine_plugin_sdk::mlua::Lua::new();
         let value = lua
             .to_value(&"test")
             .expect("Unable to convert value to lua");

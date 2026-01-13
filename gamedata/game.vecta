@@ -7,3 +7,4 @@ description = """A simple snake game made with Vectarine."""
 loading_animation = "pixel"
 screen_width = 800
 screen_height = 600
+plugins = ["libvectarine_plugin_template"]

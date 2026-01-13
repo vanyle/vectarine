@@ -1,7 +1,9 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
 use glow::HasContext;
+use sdl2;
 use sdl2::video::WindowPos;
+use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
 use crate::{
     console::print_warn,
@@ -13,6 +15,7 @@ use crate::{
         DRAW_CALL_METRIC_NAME, LUA_HEAP_SIZE_METRIC_NAME, LUA_SCRIPT_TIME_METRIC_NAME,
         MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
     },
+    native_plugin::PluginEnvironment,
     projectinfo::ProjectInfo,
     sound,
 };
@@ -39,11 +42,13 @@ impl Game {
         window: &Rc<RefCell<sdl2::video::Window>>,
         callback: F,
     ) where
-        F: FnOnce(anyhow::Result<Self>),
+        F: FnOnce(vectarine_plugin_sdk::anyhow::Result<Self>),
     {
         let project_dir = project_path.parent();
         let Some(project_dir) = project_dir else {
-            callback(Err(anyhow::anyhow!("Invalid project path")));
+            callback(Err(vectarine_plugin_sdk::anyhow::anyhow!(
+                "Invalid project path"
+            )));
             return;
         };
 
@@ -58,6 +63,12 @@ impl Game {
         let lua_env = LuaEnvironment::new(batch, file_system, project_dir, metrics.clone());
         let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone(), metrics);
         game.load(video, window);
+
+        let plugin_env = PluginEnvironment::load_plugins(&project_info.plugins);
+        plugin_env.init(PluginInterface {
+            lua: &game.lua_env.lua,
+        });
+
         let path = Path::new(&game.main_script_path);
         game.lua_env.resources.load_resource::<ScriptResource>(
             path,
@@ -231,7 +242,11 @@ impl Game {
 
         let start_of_lua_update = std::time::Instant::now();
         if self.was_main_script_executed {
-            let update_fn = self.lua_env.lua.globals().get::<mlua::Function>("Update");
+            let update_fn = self
+                .lua_env
+                .lua
+                .globals()
+                .get::<vectarine_plugin_sdk::mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
                 let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
                 if let Err(err) = err {
