@@ -16,6 +16,7 @@ pub struct EditorConfig {
     pub is_resources_window_shown: bool,
     pub is_watcher_window_shown: bool,
     pub is_profiler_window_shown: bool,
+    pub is_plugins_window_shown: bool,
     pub is_export_window_shown: bool,
     pub is_always_on_top: bool,
     pub is_editor_always_on_top: bool,

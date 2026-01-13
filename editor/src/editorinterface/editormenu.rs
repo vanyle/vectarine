@@ -115,6 +115,18 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                     }
                 });
 
+                ui.menu_button("Plugins", |ui| {
+                    if ui.button("Plugin Manager").clicked() {
+                        let mut config = editor.config.borrow_mut();
+                        config.is_plugins_window_shown = !config.is_plugins_window_shown;
+                    }
+                    // Ideas:
+                    // Reload plugins, Plugin Store
+                    ui.menu_button("Plugins", |ui| {
+                        ui.label("No plugins loaded");
+                    });
+                });
+
                 ui.menu_button("Preferences", |ui| {
                     {
                         let mut config = editor.config.borrow_mut();
