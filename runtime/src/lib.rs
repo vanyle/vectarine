@@ -12,6 +12,7 @@ pub mod projectinfo;
 pub mod sound;
 
 // Re-export commonly used crates for the editor
+pub use sdl2;
 pub use vectarine_plugin_sdk::anyhow;
 pub use vectarine_plugin_sdk::egui;
 pub use vectarine_plugin_sdk::egui_glow;
