@@ -3,6 +3,7 @@ use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 use glow::HasContext;
 use sdl2;
 use sdl2::video::WindowPos;
+use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
 use crate::{
     console::print_warn,
@@ -14,6 +15,7 @@ use crate::{
         DRAW_CALL_METRIC_NAME, LUA_HEAP_SIZE_METRIC_NAME, LUA_SCRIPT_TIME_METRIC_NAME,
         MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
     },
+    native_plugin::PluginEnvironment,
     projectinfo::ProjectInfo,
     sound,
 };
@@ -61,6 +63,12 @@ impl Game {
         let lua_env = LuaEnvironment::new(batch, file_system, project_dir, metrics.clone());
         let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone(), metrics);
         game.load(video, window);
+
+        let plugin_env = PluginEnvironment::load_plugins(&project_info.plugins);
+        plugin_env.init(PluginInterface {
+            lua: &game.lua_env.lua,
+        });
+
         let path = Path::new(&game.main_script_path);
         game.lua_env.resources.load_resource::<ScriptResource>(
             path,
