@@ -32,6 +32,9 @@ Io.setResizeable(true)
 -- Io.setWindowSize(800, 600)
 -- Io.centerWindow()
 
+-- Check value set by plugin
+Debug.print("v = ", _G.lua_plugin_template_version)
+
 --- Game state
 local screenSize = Io.getScreenSize()
 local aspectRatio = screenSize.x / screenSize.y
@@ -147,7 +150,6 @@ keyEvent:on(function(key: string)
 end)
 
 function Update(timeDelta: number)
-	Debug.fprint("v = ", _G.lua_plugin_template_version)
 	timer = timer + timeDelta
 
 	if applyShaderEffectForFrames > 0 then
