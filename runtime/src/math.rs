@@ -105,6 +105,14 @@ impl<const N: usize> Vect<N> {
     }
 }
 
+impl<const N: usize> ops::Neg for Vect<N> {
+    type Output = Self;
+    #[inline]
+    fn neg(self) -> Self::Output {
+        Self(std::array::from_fn(|i| -self.0[i]))
+    }
+}
+
 impl<const N: usize> ops::Add for Vect<N> {
     type Output = Self;
     #[inline]

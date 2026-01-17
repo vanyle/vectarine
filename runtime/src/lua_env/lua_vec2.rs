@@ -39,6 +39,10 @@ impl Vec2 {
         Self([self.0[0], y])
     }
     #[inline]
+    pub fn cross(self, other: Self) -> f32 {
+        self.x() * other.y() - self.y() * other.x()
+    }
+    #[inline]
     pub fn cmul(self, other: Self) -> Self {
         Self::new(
             self.0[0] * other.0[0] - self.0[1] * other.0[1],
