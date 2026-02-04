@@ -12,9 +12,11 @@
 - [ ] Modular system
   - [x] Load shared library
   - [x] Make shared library be able to access and edit Lua
-  - [ ] Move plugin interface to an SDK rust module as otherwise: "This may cause spurious casting failures and mysterious crashes"
-  - [ ] Add all runtime hooks (preframe, postframe, load, unload)
-  - [ ] Add all editor hooks (menu, resource reload)
+  - [x] Move plugin interface to an SDK rust module as otherwise: "This may cause spurious casting failures and mysterious crashes"
+  - [x] Add all runtime hooks (preframe, postframe, load, unload)
+  - [ ] Turn preferences into a window to have proper editor settings
+    - [ ] Add a way to pick the prefered text editor (with vscode as default)
+  - [ ] Add all editor hooks (debug menu)
   - [ ] Show plugins in the editor
   - [ ] Reload plugins in the editor
   - [ ] Show supported platforms in the editor
@@ -24,6 +26,7 @@
   - [ ] Test that it works on Linux
   - [ ] Test that it works on Windows
   - [ ] Emscripten compatibility using JS as a bridge
+  - [ ] Move generic resource trait to the SDK so that plugins can define custom resources. (the plugin will need access to the resources object.)
 - [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
