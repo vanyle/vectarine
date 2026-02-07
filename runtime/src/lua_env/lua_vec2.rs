@@ -5,7 +5,10 @@ use crate::math::Vect;
 pub type Vec2 = Vect<2>;
 
 impl vectarine_plugin_sdk::mlua::FromLua for Vec2 {
-    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+    fn from_lua(
+        value: vectarine_plugin_sdk::mlua::Value,
+        _: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
             vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
             _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
@@ -206,7 +209,9 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec2 {
         methods.add_meta_method(
             vectarine_plugin_sdk::mlua::MetaMethod::ToString,
             #[inline(always)]
-            |_, vec, _any: vectarine_plugin_sdk::mlua::Value| Ok(format!("V2({}, {})", vec.0[0], vec.0[1])),
+            |_, vec, _any: vectarine_plugin_sdk::mlua::Value| {
+                Ok(format!("V2({}, {})", vec.0[0], vec.0[1]))
+            },
         );
 
         // In-place methods
@@ -249,7 +254,9 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec2 {
     }
 }
 
-pub fn setup_vec_api(lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
+pub fn setup_vec_api(
+    lua: &vectarine_plugin_sdk::mlua::Lua,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let vec2_module = lua.create_table()?;
     vec2_module.set(
         "V2",

@@ -4,10 +4,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use runtime::egui;
-use runtime::egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
 use egui_extras::{Size, StripBuilder};
 use regex::Regex;
+use runtime::egui;
+use runtime::egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
 use runtime::{
     io::localfs::LocalFileSystem,
     projectinfo::{ProjectInfo, get_project_info},

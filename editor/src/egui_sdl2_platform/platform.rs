@@ -1,6 +1,6 @@
+use runtime::anyhow;
 use runtime::egui;
 use runtime::egui::{Modifiers, Pos2};
-use runtime::anyhow;
 use runtime::sdl2;
 use runtime::sdl2::{
     event::{Event, WindowEvent},

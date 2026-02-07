@@ -145,7 +145,11 @@ pub fn setup_graphics_api(
         let batch = batch.clone();
         let resources = resources.clone();
         let gl = batch.borrow().drawing_target.gl().clone();
-        move |_lua, (draw_fn, mask_fn): (vectarine_plugin_sdk::mlua::Function, vectarine_plugin_sdk::mlua::Function)| {
+        move |_lua,
+              (draw_fn, mask_fn): (
+            vectarine_plugin_sdk::mlua::Function,
+            vectarine_plugin_sdk::mlua::Function,
+        )| {
             draw_with_mask(
                 &gl,
                 || {
@@ -274,7 +278,11 @@ pub fn setup_graphics_api(
 
     add_fn_to_table(lua, &graphics_module, "drawSplashScreenIfNeeded", {
         let draw_splash_screen = get_draw_splash_screen_fn();
-        move |_, (resources_to_wait_for, loading_text): (vectarine_plugin_sdk::mlua::Table, Option<String>)| {
+        move |_,
+              (resources_to_wait_for, loading_text): (
+            vectarine_plugin_sdk::mlua::Table,
+            Option<String>,
+        )| {
             let ready_count = resources_to_wait_for
                 .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
                 .map(|res| {

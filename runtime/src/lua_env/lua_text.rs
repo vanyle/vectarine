@@ -25,13 +25,20 @@ impl FontResourceId {
 }
 
 impl IntoLua for FontResourceId {
-    fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-        lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+    fn into_lua(
+        self,
+        lua: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+        lua.create_any_userdata(self)
+            .map(vectarine_plugin_sdk::mlua::Value::UserData)
     }
 }
 
 impl FromLua for FontResourceId {
-    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+    fn from_lua(
+        value: vectarine_plugin_sdk::mlua::Value,
+        _: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
             vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
             _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
@@ -180,7 +187,9 @@ pub fn setup_text_api(
     Ok(text_module)
 }
 
-fn value_to_text_size(value: &vectarine_plugin_sdk::mlua::Value) -> vectarine_plugin_sdk::mlua::Result<f32> {
+fn value_to_text_size(
+    value: &vectarine_plugin_sdk::mlua::Value,
+) -> vectarine_plugin_sdk::mlua::Result<f32> {
     match value {
         vectarine_plugin_sdk::mlua::Value::Number(n) => Ok(*n as f32),
         vectarine_plugin_sdk::mlua::Value::UserData(user_data) => {

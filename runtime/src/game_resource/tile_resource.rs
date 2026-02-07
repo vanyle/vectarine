@@ -44,7 +44,11 @@ impl Resource for TilesetResource {
         }
     }
 
-    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
+    fn draw_debug_gui(
+        &self,
+        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        ui: &mut vectarine_plugin_sdk::egui::Ui,
+    ) {
         ui.label("Tileset Resource");
         let content = self.content.borrow();
         if let Some(data) = &*content {
@@ -104,7 +108,11 @@ impl Resource for TilemapResource {
         }
     }
 
-    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
+    fn draw_debug_gui(
+        &self,
+        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        ui: &mut vectarine_plugin_sdk::egui::Ui,
+    ) {
         ui.label("Tilemap Resource");
         let content = self.content.borrow();
         if let Some(data) = &*content {

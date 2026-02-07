@@ -12,13 +12,20 @@ pub struct Camera2 {
 }
 
 impl vectarine_plugin_sdk::mlua::IntoLua for Camera2 {
-    fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-        lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+    fn into_lua(
+        self,
+        lua: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+        lua.create_any_userdata(self)
+            .map(vectarine_plugin_sdk::mlua::Value::UserData)
     }
 }
 
 impl vectarine_plugin_sdk::mlua::FromLua for Camera2 {
-    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+    fn from_lua(
+        value: vectarine_plugin_sdk::mlua::Value,
+        _: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
             vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
             _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {

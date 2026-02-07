@@ -55,7 +55,10 @@ impl Default for EventManagerRc {
 }
 
 impl EventType {
-    pub fn trigger(&self, data: vectarine_plugin_sdk::mlua::Value) -> vectarine_plugin_sdk::mlua::Result<()> {
+    pub fn trigger(
+        &self,
+        data: vectarine_plugin_sdk::mlua::Value,
+    ) -> vectarine_plugin_sdk::mlua::Result<()> {
         // Maybe no-op instead of panic?
         let event_manager = self.1.upgrade().expect("Event manager should exist");
         let event_manager = event_manager.borrow();
@@ -150,7 +153,11 @@ pub struct DefaultEvents {
 
 pub fn setup_event_api(
     lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
-) -> vectarine_plugin_sdk::mlua::Result<(vectarine_plugin_sdk::mlua::Table, DefaultEvents, EventManagerRc)> {
+) -> vectarine_plugin_sdk::mlua::Result<(
+    vectarine_plugin_sdk::mlua::Table,
+    DefaultEvents,
+    EventManagerRc,
+)> {
     let event_module = lua.create_table()?;
     let event_manager = EventManagerRc::default();
 
@@ -166,7 +173,9 @@ pub fn setup_event_api(
             }
         });
         registry.add_method("dispatch", {
-            move |_lua, event_type, data: vectarine_plugin_sdk::mlua::Value| event_type.trigger(data)
+            move |_lua, event_type, data: vectarine_plugin_sdk::mlua::Value| {
+                event_type.trigger(data)
+            }
         });
         registry.add_method("clear", {
             move |_lua, event_type, ()| {

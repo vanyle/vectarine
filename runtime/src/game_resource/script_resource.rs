@@ -26,7 +26,11 @@ impl Resource for ScriptResource {
         Status::Loaded
     }
 
-    fn draw_debug_gui(&self, _painter: &mut vectarine_plugin_sdk::egui_glow::Painter, ui: &mut vectarine_plugin_sdk::egui::Ui) {
+    fn draw_debug_gui(
+        &self,
+        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        ui: &mut vectarine_plugin_sdk::egui::Ui,
+    ) {
         // If we wanted a script editor, it would be here.
         ui.label("[TODO] Script Resource debug gui");
     }
