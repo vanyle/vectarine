@@ -10,6 +10,7 @@ use runtime::egui::{RichText, Widget};
 use runtime::game::Game;
 use runtime::lua_env::to_lua;
 
+use crate::editorconfig::TextEditor;
 use crate::editorinterface::EditorState;
 
 pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
@@ -72,7 +73,8 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                     });
 
                 egui::CentralPanel::default().show_inside(ui, |ui| {
-                    draw_console_content(ui, project_dir.as_deref());
+                    let prefered_text_editor = editor.config.borrow().text_editor;
+                    draw_console_content(ui, project_dir.as_deref(), prefered_text_editor);
                 });
         });
         if let Some(response) = response {
@@ -95,7 +97,11 @@ pub fn try_send_command_to_game(game: &Option<&mut Game>, command: &str) {
     );
 }
 
-fn draw_console_content(ui: &mut egui::Ui, project_path: Option<&Path>) {
+fn draw_console_content(
+    ui: &mut egui::Ui,
+    project_path: Option<&Path>,
+    prefered_text_editor: Option<TextEditor>,
+) {
     static ARE_LOGS_ERROR_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
     static ARE_LOGS_WARN_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
     static ARE_LOGS_INFO_SHOWN: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(true));
@@ -154,7 +160,9 @@ fn draw_console_content(ui: &mut egui::Ui, project_path: Option<&Path>) {
                                 .monospace(),
                         );
                     }
-                    ConsoleMessage::LuaError(msg) => render_lua_error(ui, msg, project_path),
+                    ConsoleMessage::LuaError(msg) => {
+                        render_lua_error(ui, msg, project_path, prefered_text_editor)
+                    }
                 };
             });
         });
@@ -164,7 +172,12 @@ fn render_error_fallback(ui: &mut egui::Ui, error: &str) {
     ui.label(RichText::new(error).color(egui::Color32::RED).monospace());
 }
 
-fn render_lua_error(ui: &mut egui::Ui, error: &LuaError, project_path: Option<&Path>) {
+fn render_lua_error(
+    ui: &mut egui::Ui,
+    error: &LuaError,
+    project_path: Option<&Path>,
+    prefered_text_editor: Option<TextEditor>,
+) {
     let Some(project_path) = project_path else {
         render_error_fallback(ui, &error.message);
         return;
@@ -194,7 +207,7 @@ fn render_lua_error(ui: &mut egui::Ui, error: &LuaError, project_path: Option<&P
                 )
                 .on_hover_cursor(egui::CursorIcon::PointingHand);
             if label.clicked() {
-                open_file_at_line(&file, error.line);
+                open_file_at_line(&file, error.line, prefered_text_editor);
             }
         });
 
@@ -204,51 +217,91 @@ fn render_lua_error(ui: &mut egui::Ui, error: &LuaError, project_path: Option<&P
 // There is no standard way to do this, so we try different editors
 // Ideally the user should be able his preferred editor
 // Roughly sorted by popularity (least to most popular)
-fn open_file_at_line(file: &Path, line: usize) {
-    // Antigravity
-    let is_antigravity = which::which("antigravity").is_ok();
-    if is_antigravity {
-        let res = Command::new("antigravity")
-            .args(["--goto", format!("{}:{}", file.display(), line).as_str()])
-            .spawn();
-        if res.is_ok() {
-            return;
+fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<TextEditor>) {
+    let opened_successfully = match prefered_text_editor {
+        None => false,
+        Some(TextEditor::Antigravity) => {
+            let is_antigravity = which::which("antigravity").is_ok();
+            if is_antigravity {
+                let res = Command::new("antigravity")
+                    .args(["--goto", format!("{}:{}", file.display(), line).as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
         }
-    }
-
-    // Sublime Text
-    let is_sublime = which::which("subl").is_ok();
-    if is_sublime {
-        let res = Command::new("subl")
-            .args([format!("{}:{}", file.display(), line).as_str()])
-            .spawn();
-        if res.is_ok() {
-            return;
+        Some(TextEditor::SublimeText) => {
+            let is_sublime = which::which("subl").is_ok();
+            if is_sublime {
+                let res = Command::new("subl")
+                    .args([format!("{}:{}", file.display(), line).as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
         }
-    }
-
-    // Zed
-    let is_zed = which::which("zed").is_ok();
-    if is_zed {
-        let res = Command::new("zed")
-            .args([format!("{}:{}", file.display(), line).as_str()])
-            .spawn();
-        if res.is_ok() {
-            return;
+        Some(TextEditor::Zed) => {
+            let is_zed = which::which("zed").is_ok();
+            if is_zed {
+                let res = Command::new("zed")
+                    .args([format!("{}:{}", file.display(), line).as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
         }
-    }
-
-    // VSCode
-    let is_code = which::which("code").is_ok();
-    if is_code {
-        // code --goto "path/to/file:line"
-        let res = Command::new("code")
-            .args(["--goto", format!("{}:{}", file.display(), line).as_str()])
-            .spawn();
-        if res.is_ok() {
-            return;
+        Some(TextEditor::VSCode) => {
+            let is_code = which::which("code").is_ok();
+            if is_code {
+                // code --goto "path/to/file:line"
+                let res = Command::new("code")
+                    .args(["--goto", format!("{}:{}", file.display(), line).as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
         }
-    }
+        Some(TextEditor::Cursor) => {
+            let is_cursor = which::which("cursor").is_ok();
+            if is_cursor {
+                let res = Command::new("cursor")
+                    .args(["--goto", format!("{}:{}", file.display(), line).as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Vim) => {
+            let is_vim = which::which("vim").is_ok();
+            if is_vim {
+                // vim +line file
+                let res = Command::new("vim")
+                    .args([format!("+{}", line), file.display().to_string()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Neovim) => {
+            let is_neovim = which::which("nvim").is_ok();
+            if is_neovim {
+                let res = Command::new("nvim")
+                    .args([format!("+{}", line), file.display().to_string()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+    };
 
-    let _ = open::that(file);
+    if !opened_successfully {
+        let _ = open::that(file);
+    }
 }
