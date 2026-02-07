@@ -13,12 +13,16 @@ pub fn register_resource_id_methods_on_type<T: ResourceIdWrapper>(
     resources: &Rc<ResourceManager>,
     registry: &mut UserDataRegistry<T>,
 ) {
-    registry.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_lua, (id,): (T,)| {
-        Ok(format!("Resource({})", id.to_resource_id().get_id()))
-    });
-    registry.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::Eq, |_lua, (id1, id2): (T, T)| {
-        Ok(id1.to_resource_id().get_id() == id2.to_resource_id().get_id())
-    });
+    registry.add_meta_function(
+        vectarine_plugin_sdk::mlua::MetaMethod::ToString,
+        |_lua, (id,): (T,)| Ok(format!("Resource({})", id.to_resource_id().get_id())),
+    );
+    registry.add_meta_function(
+        vectarine_plugin_sdk::mlua::MetaMethod::Eq,
+        |_lua, (id1, id2): (T, T)| {
+            Ok(id1.to_resource_id().get_id() == id2.to_resource_id().get_id())
+        },
+    );
     registry.add_method("getStatus", {
         let resources = resources.clone();
         move |_, id: &T, (): ()| {
@@ -53,13 +57,20 @@ macro_rules! make_resource_lua_compatible {
         }
 
         impl IntoLua for $struct_name {
-            fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-                lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+            fn into_lua(
+                self,
+                lua: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+                lua.create_any_userdata(self)
+                    .map(vectarine_plugin_sdk::mlua::Value::UserData)
             }
         }
 
         impl FromLua for $struct_name {
-            fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+            fn from_lua(
+                value: vectarine_plugin_sdk::mlua::Value,
+                _: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<Self> {
                 match value {
                     vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
                     _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
@@ -85,13 +96,20 @@ macro_rules! make_resource_lua_compatible {
 macro_rules! auto_impl_lua_take {
     ($struct_name:ident, $friendly_name:ident) => {
         impl IntoLua for $struct_name {
-            fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-                lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+            fn into_lua(
+                self,
+                lua: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+                lua.create_any_userdata(self)
+                    .map(vectarine_plugin_sdk::mlua::Value::UserData)
             }
         }
 
         impl FromLua for $struct_name {
-            fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+            fn from_lua(
+                value: vectarine_plugin_sdk::mlua::Value,
+                _: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<Self> {
                 match value {
                     // this is probably buggy, take can cause issues.
                     vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
@@ -110,16 +128,25 @@ macro_rules! auto_impl_lua_take {
 macro_rules! auto_impl_lua_clone {
     ($struct_name:ident, $friendly_name:ident) => {
         impl IntoLua for $struct_name {
-            fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-                lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+            fn into_lua(
+                self,
+                lua: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+                lua.create_any_userdata(self)
+                    .map(vectarine_plugin_sdk::mlua::Value::UserData)
             }
         }
 
         impl FromLua for $struct_name {
-            fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+            fn from_lua(
+                value: vectarine_plugin_sdk::mlua::Value,
+                _: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<Self> {
                 match value {
                     // this is probably buggy, take can cause issues.
-                    vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(ud.borrow::<Self>()?.clone()),
+                    vectarine_plugin_sdk::mlua::Value::UserData(ud) => {
+                        Ok(ud.borrow::<Self>()?.clone())
+                    }
                     _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
                         from: value.type_name(),
                         to: stringify!($friendly_name).to_string(),
@@ -139,14 +166,21 @@ macro_rules! auto_impl_lua_copy {
     ($struct_name:ident, $friendly_name:ident) => {
         impl IntoLua for $struct_name {
             #[inline(always)]
-            fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-                lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+            fn into_lua(
+                self,
+                lua: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+                lua.create_any_userdata(self)
+                    .map(vectarine_plugin_sdk::mlua::Value::UserData)
             }
         }
 
         impl FromLua for $struct_name {
             #[inline(always)]
-            fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+            fn from_lua(
+                value: vectarine_plugin_sdk::mlua::Value,
+                _: &vectarine_plugin_sdk::mlua::Lua,
+            ) -> vectarine_plugin_sdk::mlua::Result<Self> {
                 match value {
                     vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
                     _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {

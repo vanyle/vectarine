@@ -1,11 +1,14 @@
 use std::{fs::OpenOptions, io::Write, path::PathBuf, rc::Rc};
 
-use vectarine_plugin_sdk::mlua::LuaSerdeExt;
 use serde_json;
+use vectarine_plugin_sdk::mlua::LuaSerdeExt;
 
 use crate::lua_env::add_fn_to_table;
 
-fn serialize_lua(lua: &vectarine_plugin_sdk::mlua::Lua, value: &vectarine_plugin_sdk::mlua::Value) -> Box<[u8]> {
+fn serialize_lua(
+    lua: &vectarine_plugin_sdk::mlua::Lua,
+    value: &vectarine_plugin_sdk::mlua::Value,
+) -> Box<[u8]> {
     let json_value: Result<serde_json::Value, _> = lua.from_value(value.clone());
     match json_value {
         Ok(json) => serde_json::to_vec(&json)
@@ -15,9 +18,12 @@ fn serialize_lua(lua: &vectarine_plugin_sdk::mlua::Lua, value: &vectarine_plugin
     }
 }
 
-fn deserialize_lua(lua: &vectarine_plugin_sdk::mlua::Lua, value: Box<[u8]>) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-    let json_value: serde_json::Value =
-        serde_json::from_slice(&value).map_err(|e| vectarine_plugin_sdk::mlua::Error::DeserializeError(e.to_string()))?;
+fn deserialize_lua(
+    lua: &vectarine_plugin_sdk::mlua::Lua,
+    value: Box<[u8]>,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+    let json_value: serde_json::Value = serde_json::from_slice(&value)
+        .map_err(|e| vectarine_plugin_sdk::mlua::Error::DeserializeError(e.to_string()))?;
     lua.to_value(&json_value)
 }
 
@@ -68,7 +74,9 @@ fn load_data_from_kv_store(key: String) -> Option<Box<[u8]>> {
     std::fs::read(&path).ok().map(|v| v.into_boxed_slice())
 }
 
-pub fn setup_persist_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
+pub fn setup_persist_api(
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let persist_module = lua.create_table()?;
 
     add_fn_to_table(lua, &persist_module, "onReload", {

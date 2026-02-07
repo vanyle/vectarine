@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
+use noise::{NoiseFn, Simplex, Worley};
 use vectarine_plugin_sdk::mlua::UserDataMethods;
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
-use noise::{NoiseFn, Simplex, Worley};
 
 use crate::{
     game_resource::{self, image_resource::ImageResource},
@@ -20,14 +20,21 @@ pub struct FastList {
 }
 impl IntoLua for FastList {
     #[inline(always)]
-    fn into_lua(self, lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-        lua.create_any_userdata(self).map(vectarine_plugin_sdk::mlua::Value::UserData)
+    fn into_lua(
+        self,
+        lua: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
+        lua.create_any_userdata(self)
+            .map(vectarine_plugin_sdk::mlua::Value::UserData)
     }
 }
 
 impl FromLua for FastList {
     #[inline(always)]
-    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+    fn from_lua(
+        value: vectarine_plugin_sdk::mlua::Value,
+        _: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
             // Note that we are taking and not cloning the data here.
             // This means that any function that takes a FastList as argument consumes it.
@@ -70,7 +77,10 @@ pub enum FastListOrVec<'a> {
     Vec(Vec2),
 }
 
-fn parse_fastlist_or_vec_with_cb<F, T>(ud: vectarine_plugin_sdk::mlua::AnyUserData, f: F) -> vectarine_plugin_sdk::mlua::Result<T>
+fn parse_fastlist_or_vec_with_cb<F, T>(
+    ud: vectarine_plugin_sdk::mlua::AnyUserData,
+    f: F,
+) -> vectarine_plugin_sdk::mlua::Result<T>
 where
     F: Fn(&FastListOrVec) -> vectarine_plugin_sdk::mlua::Result<T>,
 {
@@ -113,7 +123,10 @@ pub fn setup_fastlist_api(
     resources: &Rc<game_resource::ResourceManager>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     lua.register_userdata_type::<FastList>(|registry| {
-        registry.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::Len, |_, this, ()| Ok(this.data.len()));
+        registry.add_meta_method(
+            vectarine_plugin_sdk::mlua::MetaMethod::Len,
+            |_, this, ()| Ok(this.data.len()),
+        );
 
         registry.add_method("get", |_, this, index: usize| {
             if index == 0 || index > this.data.len() {
@@ -130,13 +143,16 @@ pub fn setup_fastlist_api(
 
         registry.add_method("toTable", |_, this, ()| Ok(this.data.clone()));
 
-        registry.add_method_mut("forEach", |_, this, func: vectarine_plugin_sdk::mlua::Function| {
-            for (i, vec) in this.data.iter_mut().enumerate() {
-                // 1-indexed for Lua
-                *vec = func.call::<Vec2>((*vec, i + 1))?;
-            }
-            Ok(())
-        });
+        registry.add_method_mut(
+            "forEach",
+            |_, this, func: vectarine_plugin_sdk::mlua::Function| {
+                for (i, vec) in this.data.iter_mut().enumerate() {
+                    // 1-indexed for Lua
+                    *vec = func.call::<Vec2>((*vec, i + 1))?;
+                }
+                Ok(())
+            },
+        );
 
         registry.add_method("componentRepeated", |_, this, count: usize| {
             let mut new_data = Vec::with_capacity(this.data.len() * count);
@@ -230,20 +246,26 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method("cmul", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-            parse_fastlist_or_vec_with_cb(other, |parsed| {
-                Ok(apply_binary_op(this, parsed, |a, b| a.cmul(b)))
-            })
-        });
+        registry.add_method(
+            "cmul",
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a.cmul(b)))
+                })
+            },
+        );
 
-        registry.add_method("dot", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-            parse_fastlist_or_vec_with_cb(other, |parsed| {
-                Ok(apply_binary_op(this, parsed, |a, b| {
-                    let d = a.dot(&b);
-                    Vec2::new(d, d)
-                }))
-            })
-        });
+        registry.add_method(
+            "dot",
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| {
+                        let d = a.dot(&b);
+                        Vec2::new(d, d)
+                    }))
+                })
+            },
+        );
 
         registry.add_method("normalized", |_, this, ()| {
             let data = this.data.iter().map(|v| v.normalized()).collect();
@@ -265,17 +287,23 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method("max", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-            parse_fastlist_or_vec_with_cb(other, |parsed| {
-                Ok(apply_binary_op(this, parsed, |a, b| a.max(b)))
-            })
-        });
+        registry.add_method(
+            "max",
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a.max(b)))
+                })
+            },
+        );
 
-        registry.add_method("min", |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-            parse_fastlist_or_vec_with_cb(other, |parsed| {
-                Ok(apply_binary_op(this, parsed, |a, b| a.min(b)))
-            })
-        });
+        registry.add_method(
+            "min",
+            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a.min(b)))
+                })
+            },
+        );
 
         registry.add_method("toPolar", |_, this, ()| {
             let data = this.data.iter().map(|v| v.to_polar()).collect();
@@ -287,11 +315,14 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method("lerp", |_, this, (other, k): (vectarine_plugin_sdk::mlua::AnyUserData, f32)| {
-            parse_fastlist_or_vec_with_cb(other, |parsed| {
-                Ok(apply_binary_op(this, parsed, |a, b| a.lerp(b, k)))
-            })
-        });
+        registry.add_method(
+            "lerp",
+            |_, this, (other, k): (vectarine_plugin_sdk::mlua::AnyUserData, f32)| {
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a.lerp(b, k)))
+                })
+            },
+        );
 
         registry.add_method("sign", |_, this, ()| {
             let data = this.data.iter().map(|v| v.sign()).collect();

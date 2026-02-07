@@ -5,7 +5,10 @@ use crate::math::Vect;
 pub type Vec4 = Vect<4>;
 
 impl vectarine_plugin_sdk::mlua::FromLua for Vec4 {
-    fn from_lua(value: vectarine_plugin_sdk::mlua::Value, _: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<Self> {
+    fn from_lua(
+        value: vectarine_plugin_sdk::mlua::Value,
+        _: &vectarine_plugin_sdk::mlua::Lua,
+    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
         match value {
             vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(*ud.borrow::<Self>()?),
             _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
@@ -173,21 +176,27 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec4 {
         });
 
         methods.add_method("sign", |_, vec, ()| Ok(vec.sign()));
-        methods.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::Add, |_, (vec, other): (Vec4, Vec4)| {
-            Ok(vec + other)
-        });
-        methods.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::Sub, |_, (vec, other): (Vec4, Vec4)| {
-            Ok(vec - other)
-        });
-        methods.add_meta_function(vectarine_plugin_sdk::mlua::MetaMethod::Mul, |_, (vec, other): (Vec4, Vec4)| {
-            Ok(vec * other)
-        });
-        methods.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_, vec, _any: vectarine_plugin_sdk::mlua::Value| {
-            Ok(format!(
-                "V4({}, {}, {}, {})",
-                vec.0[0], vec.0[1], vec.0[2], vec.0[3]
-            ))
-        });
+        methods.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Add,
+            |_, (vec, other): (Vec4, Vec4)| Ok(vec + other),
+        );
+        methods.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
+            |_, (vec, other): (Vec4, Vec4)| Ok(vec - other),
+        );
+        methods.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Mul,
+            |_, (vec, other): (Vec4, Vec4)| Ok(vec * other),
+        );
+        methods.add_meta_method(
+            vectarine_plugin_sdk::mlua::MetaMethod::ToString,
+            |_, vec, _any: vectarine_plugin_sdk::mlua::Value| {
+                Ok(format!(
+                    "V4({}, {}, {}, {})",
+                    vec.0[0], vec.0[1], vec.0[2], vec.0[3]
+                ))
+            },
+        );
     }
 }
 
@@ -214,7 +223,9 @@ const DARK_RED: Vec4 = Vec4::new(0.5, 0.0, 0.0, 1.0);
 const DARK_GREEN: Vec4 = Vec4::new(0.0, 0.5, 0.0, 1.0);
 const DARK_BLUE: Vec4 = Vec4::new(0.0, 0.0, 0.5, 1.0);
 
-pub fn setup_vec_api(lua: &vectarine_plugin_sdk::mlua::Lua) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
+pub fn setup_vec_api(
+    lua: &vectarine_plugin_sdk::mlua::Lua,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let vec4_module = lua.create_table()?;
     vec4_module.set(
         "V4",

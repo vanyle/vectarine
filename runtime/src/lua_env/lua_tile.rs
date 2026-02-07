@@ -67,7 +67,11 @@ pub fn setup_tile_api(
                     let user_type = tile
                         .user_type
                         .clone()
-                        .and_then(|s| lua.create_string(s).ok().map(vectarine_plugin_sdk::mlua::Value::String))
+                        .and_then(|s| {
+                            lua.create_string(s)
+                                .ok()
+                                .map(vectarine_plugin_sdk::mlua::Value::String)
+                        })
                         .unwrap_or(vectarine_plugin_sdk::mlua::Nil);
 
                     let result = lua.create_table().ok()?;
@@ -181,22 +185,22 @@ pub fn setup_tile_api(
                 let layer = tileset_content
                     .and_then(|content| content.layers().nth(layer as usize))
                     .and_then(|l| l.as_tile_layer());
-                let Some(layer) = layer else{
+                let Some(layer) = layer else {
                     return Ok(());
                 };
                 match layer {
                     tiled::TileLayer::Finite(finite_layer) => {
-                        for x in lx..hx{
-                            for y in ly..hy{
+                        for x in lx..hx {
+                            for y in ly..hy {
                                 if let Some(tile) = finite_layer.get_tile_data(x, y) {
                                     let _ = access_fn.call::<()>((tile.id(), x, y));
                                 }
                             }
                         }
-                    },
+                    }
                     tiled::TileLayer::Infinite(infinite_layer) => {
-                        for x in lx..hx{
-                            for y in ly..hy{
+                        for x in lx..hx {
+                            for y in ly..hy {
                                 if let Some(tile) = infinite_layer.get_tile_data(x, y) {
                                     let _ = access_fn.call::<()>((tile.id(), x, y));
                                 }

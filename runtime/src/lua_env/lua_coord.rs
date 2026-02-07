@@ -102,7 +102,10 @@ impl ops::Add<ScreenVec> for ScreenPosition {
     }
 }
 
-pub fn setup_coords_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, gl: &Arc<Context>) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
+pub fn setup_coords_api(
+    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    gl: &Arc<Context>,
+) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let coords_module = lua.create_table()?;
 
     lua.register_userdata_type::<ScreenVec>(|registry| {
@@ -140,9 +143,12 @@ pub fn setup_coords_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, gl: &Arc<Cont
             |_, this, (k,): (f32,)| Ok(this.scale(k)),
         );
 
-        registry.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_, pos, _any: vectarine_plugin_sdk::mlua::Value| {
-            Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x(), pos.0.y()))
-        });
+        registry.add_meta_method(
+            vectarine_plugin_sdk::mlua::MetaMethod::ToString,
+            |_, pos, _any: vectarine_plugin_sdk::mlua::Value| {
+                Ok(format!("ScreenVec({:.4}, {:.4})", pos.0.x(), pos.0.y()))
+            },
+        );
     })?;
 
     lua.register_userdata_type::<ScreenPosition>(|registry| {
@@ -198,13 +204,16 @@ pub fn setup_coords_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, gl: &Arc<Cont
             },
         );
 
-        registry.add_meta_method(vectarine_plugin_sdk::mlua::MetaMethod::ToString, |_, pos, _any: vectarine_plugin_sdk::mlua::Value| {
-            Ok(format!(
-                "ScreenPosition({:.4}, {:.4})",
-                pos.0.x(),
-                pos.0.y()
-            ))
-        });
+        registry.add_meta_method(
+            vectarine_plugin_sdk::mlua::MetaMethod::ToString,
+            |_, pos, _any: vectarine_plugin_sdk::mlua::Value| {
+                Ok(format!(
+                    "ScreenPosition({:.4}, {:.4})",
+                    pos.0.x(),
+                    pos.0.y()
+                ))
+            },
+        );
     })?;
 
     add_fn_to_table(lua, &coords_module, "px", {
@@ -344,7 +353,9 @@ pub fn setup_coords_api(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, gl: &Arc<Cont
     Ok(coords_module)
 }
 
-pub fn get_pos_as_vec2(userdata: vectarine_plugin_sdk::mlua::AnyUserData) -> vectarine_plugin_sdk::mlua::Result<Vec2> {
+pub fn get_pos_as_vec2(
+    userdata: vectarine_plugin_sdk::mlua::AnyUserData,
+) -> vectarine_plugin_sdk::mlua::Result<Vec2> {
     let pos = userdata.borrow::<ScreenPosition>();
     let err: vectarine_plugin_sdk::mlua::Error = match pos {
         Ok(pos) => return Ok(pos.as_vec2()),
@@ -358,7 +369,9 @@ pub fn get_pos_as_vec2(userdata: vectarine_plugin_sdk::mlua::AnyUserData) -> vec
     }
 }
 
-pub fn get_size_as_vec2(userdata: vectarine_plugin_sdk::mlua::AnyUserData) -> vectarine_plugin_sdk::mlua::Result<Vec2> {
+pub fn get_size_as_vec2(
+    userdata: vectarine_plugin_sdk::mlua::AnyUserData,
+) -> vectarine_plugin_sdk::mlua::Result<Vec2> {
     let size = userdata.borrow::<ScreenVec>();
     let err: vectarine_plugin_sdk::mlua::Error = match size {
         Ok(size) => return Ok(size.as_vec2()),

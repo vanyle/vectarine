@@ -134,12 +134,18 @@ pub fn setup_loader_api(
             if let Some(target_table) = results {
                 let (id, table) =
                     resources.schedule_load_script_resource(Path::new(&path), target_table);
-                return Ok((ScriptResourceId::from_id(id), vectarine_plugin_sdk::mlua::Value::Table(table)));
+                return Ok((
+                    ScriptResourceId::from_id(id),
+                    vectarine_plugin_sdk::mlua::Value::Table(table),
+                ));
             }
             let dummy_table = lua.create_table()?;
             let (id, table) =
                 resources.schedule_load_script_resource(Path::new(&path), dummy_table);
-            Ok((ScriptResourceId::from_id(id), vectarine_plugin_sdk::mlua::Value::Table(table)))
+            Ok((
+                ScriptResourceId::from_id(id),
+                vectarine_plugin_sdk::mlua::Value::Table(table),
+            ))
         }
     });
 

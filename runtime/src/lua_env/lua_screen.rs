@@ -89,18 +89,25 @@ pub fn setup_screen_api(
     })?;
 
     add_fn_to_table(lua, &screen_module, "newScreen", {
-        move |_, (name, draw_fn): (String, vectarine_plugin_sdk::mlua::Function)| Ok(Screen { name, draw_fn })
+        move |_, (name, draw_fn): (String, vectarine_plugin_sdk::mlua::Function)| {
+            Ok(Screen { name, draw_fn })
+        }
     });
 
     add_fn_to_table(lua, &screen_module, "setCurrentScreen", {
         let screen_state = screen_state.clone();
-        move |_, (maybe_screen, transition): (vectarine_plugin_sdk::mlua::AnyUserData, Option<vectarine_plugin_sdk::mlua::Table>)| {
+        move |_,
+              (maybe_screen, transition): (
+            vectarine_plugin_sdk::mlua::AnyUserData,
+            Option<vectarine_plugin_sdk::mlua::Table>,
+        )| {
             let screen = maybe_screen.borrow::<Screen>()?;
             let mut state = screen_state.borrow_mut();
 
             let transition_state = if let Some(trans_table) = transition {
                 let duration = trans_table.get::<f32>("duration")?;
-                let style_value: vectarine_plugin_sdk::mlua::Value = trans_table.get("transition_style")?;
+                let style_value: vectarine_plugin_sdk::mlua::Value =
+                    trans_table.get("transition_style")?;
 
                 let style = match style_value {
                     vectarine_plugin_sdk::mlua::Value::String(s) => {
