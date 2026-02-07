@@ -1,6 +1,6 @@
 use std::{cell::Cell, path::PathBuf};
 
-use crate::{buildinfo, editorconfig::WindowStyle};
+use crate::buildinfo;
 use runtime::console;
 use runtime::egui;
 use runtime::egui::{Modal, Popup, RichText, UiBuilder};
@@ -127,48 +127,10 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                     });
                 });
 
-                ui.menu_button("Preferences", |ui| {
-                    {
-                        let mut config = editor.config.borrow_mut();
-                        if ui
-                            .checkbox(&mut config.is_always_on_top, "Game always on top")
-                            .clicked()
-                        {
-                            editor
-                                .window
-                                .borrow_mut()
-                                .set_always_on_top(config.is_always_on_top);
-                        }
-                    }
-                    if editor.config.borrow().window_style == WindowStyle::GameSeparateFromEditor {
-                        let mut config = editor.config.borrow_mut();
-                        if ui
-                            .checkbox(&mut config.is_editor_always_on_top, "Editor always on top")
-                            .clicked()
-                        {
-                            editor
-                                .editor_specific_window
-                                .set_always_on_top(config.is_editor_always_on_top);
-                        }
-                    }
-                    {
-                        let mut config = editor.config.borrow_mut();
-                        let mut window_style = config.window_style == WindowStyle::GameWithEditor;
-                        if ui
-                            .checkbox(&mut window_style, "Merge editor and game windows")
-                            .clicked()
-                        {
-                            config.window_style = if window_style {
-                                WindowStyle::GameWithEditor
-                            } else {
-                                WindowStyle::GameSeparateFromEditor
-                            };
-                        }
-                    }
-                    if ui.button("Save preferences").clicked() {
-                        editor.save_config();
-                    }
-                });
+                if ui.button("Preferences").clicked() {
+                    let mut config = editor.config.borrow_mut();
+                    config.is_preferences_window_shown = !config.is_preferences_window_shown;
+                }
 
                 ui.menu_button("Help", |ui| {
                     if ui.button("Offline Guide").clicked() {
