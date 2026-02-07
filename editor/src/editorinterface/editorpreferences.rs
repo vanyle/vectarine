@@ -56,13 +56,13 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
 
                 ui.separator();
                 ui.heading("External Editor");
-                ui.label("Select the editor used to open files from the console.");
+                ui.label("Select the default editor used to open scripts.");
 
                 {
                     let mut config = editor.config.borrow_mut();
                     let current_editor = config.text_editor;
 
-                    egui::ComboBox::from_label("Editor")
+                    egui::ComboBox::new("editor_selector", "")
                         .selected_text(format!("{:?}", current_editor.unwrap_or_default()))
                         .show_ui(ui, |ui| {
                             let editors = [
