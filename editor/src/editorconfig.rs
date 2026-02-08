@@ -22,7 +22,26 @@ pub enum TextEditor {
     SublimeText,
     Vim,
     Neovim,
-    // Emacs not in the list.
+    Emacs,
+}
+
+impl std::fmt::Display for TextEditor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                TextEditor::VSCode => "VSCode",
+                TextEditor::Antigravity => "Antigravity",
+                TextEditor::Cursor => "Cursor",
+                TextEditor::Zed => "Zed",
+                TextEditor::SublimeText => "Sublime Text",
+                TextEditor::Vim => "Vim",
+                TextEditor::Neovim => "Neovim",
+                TextEditor::Emacs => "emacsclient",
+            }
+        )
+    }
 }
 
 /// The editor config contains settings that are not specific to any project and are persisted across editor launches.
