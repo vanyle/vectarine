@@ -63,7 +63,7 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
                     let current_editor = config.text_editor;
 
                     egui::ComboBox::new("editor_selector", "")
-                        .selected_text(format!("{:?}", current_editor.unwrap_or_default()))
+                        .selected_text(format!("{}", current_editor.unwrap_or_default()))
                         .show_ui(ui, |ui| {
                             let editors = [
                                 TextEditor::VSCode,
@@ -73,13 +73,14 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
                                 TextEditor::SublimeText,
                                 TextEditor::Vim,
                                 TextEditor::Neovim,
+                                TextEditor::Emacs,
                             ];
 
                             for editor_option in editors {
                                 ui.selectable_value(
                                     &mut config.text_editor,
                                     Some(editor_option),
-                                    format!("{:?}", editor_option),
+                                    format!("{}", editor_option),
                                 );
                             }
                         });

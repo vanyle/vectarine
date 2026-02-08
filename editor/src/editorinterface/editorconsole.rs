@@ -294,6 +294,17 @@ fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<Text
                 false
             }
         }
+        Some(TextEditor::Emacs) => {
+            let is_emacs = which::which("emacsclient").is_ok();
+            if is_emacs {
+                let res = Command::new("emacsclient")
+                    .args([format!("+{}", line), absolute_path])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
     };
 
     if !opened_successfully {
