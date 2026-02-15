@@ -1,4 +1,5 @@
 pub mod console;
+pub mod dbvh;
 pub mod game;
 pub mod game_resource;
 pub mod graphics;
@@ -9,7 +10,7 @@ pub mod math;
 pub mod metrics;
 pub mod projectinfo;
 pub mod sound;
-pub mod space;
+pub mod space2;
 
 // Re-export commonly used crates for the editor
 pub use anyhow;

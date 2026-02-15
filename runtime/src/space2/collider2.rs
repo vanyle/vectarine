@@ -1,30 +1,45 @@
-use std::ops;
+use std::{collections::HashMap, ops};
 
-use crate::{lua_env::lua_vec2::Vec2, space::transform::Transform2};
+use crate::{lua_env::lua_vec2::Vec2, space2::transform2::Transform2};
 
 const EPSILON: f32 = 1e-9;
 const EPSILON2: f32 = EPSILON * EPSILON;
 
-// TODO: generalize everything to 3D
-struct Id(usize);
-
-impl Id {
-    pub fn get_id(&self) -> usize {
-        self.0
-    }
-}
-
-struct PolygonCollision2Key {
+#[derive(Clone, Eq, Hash, PartialEq)]
+pub struct PolygonCollision2Key {
     start: Option<usize>,
     is_edge: Option<bool>,
 }
 
+#[derive(Clone)]
 pub struct Collision2 {
     normal: Vec2,
     depth: f32,
     location: Vec2,
     key1: Option<PolygonCollision2Key>,
     key2: Option<PolygonCollision2Key>,
+}
+
+impl Collision2 {
+    pub fn get_normal(&self) -> Vec2 {
+        self.normal
+    }
+
+    pub fn get_depth(&self) -> f32 {
+        self.depth
+    }
+
+    pub fn get_location(&self) -> Vec2 {
+        self.location
+    }
+
+    pub fn get_key1(&self) -> Option<PolygonCollision2Key> {
+        self.key1.clone()
+    }
+
+    pub fn get_key2(&self) -> Option<PolygonCollision2Key> {
+        self.key2.clone()
+    }
 }
 
 impl ops::Neg for Collision2 {
@@ -41,29 +56,72 @@ impl ops::Neg for Collision2 {
     }
 }
 
+#[derive(Clone, Eq, Hash, PartialEq)]
+struct Collision2DetailsKey {
+    key1: Option<PolygonCollision2Key>,
+    key2: Option<PolygonCollision2Key>,
+}
+
+#[derive(Clone)]
+pub struct Collision2Details {
+    collision_map: HashMap<Collision2DetailsKey, Collision2>,
+}
+
+impl Collision2Details {
+    pub fn new() -> Self {
+        Self {
+            collision_map: HashMap::new(),
+        }
+    }
+
+    pub fn update_collision_details(&mut self, collisions: Vec<Collision2>) {
+        let mut collision_keys_to_keep: HashMap<Collision2DetailsKey, bool> = HashMap::new();
+        for collision in collisions {
+            let key1 = collision.get_key1();
+            let key2 = collision.get_key2();
+            let collision2_details_key = Collision2DetailsKey { key1, key2 };
+            collision_keys_to_keep.insert(collision2_details_key.clone(), true);
+            self.collision_map.insert(collision2_details_key, collision);
+        }
+        self.collision_map
+            .retain(|key, _| collision_keys_to_keep.contains_key(key));
+    }
+}
+
+#[derive(Clone)]
 pub struct ConvexPolygon {
     vertices: Vec<Vec2>,
 }
 
+#[derive(Clone)]
 pub struct Circle {
     center: Vec2,
     radius: f32,
 }
 
+#[derive(Clone)]
 pub enum Shape2 {
     ConvexPolygon(ConvexPolygon),
     Circle(Circle),
 }
 
+#[derive(Clone)]
 pub struct Collider2 {
-    id: Id,
-    dbvh_id: Id,
+    dbvh_index: usize,
     transform: Transform2,
     shape: Shape2,
     bounding_box: Vec2,
 }
 
 impl Collider2 {
+    pub fn get_dbvh_index(&self) -> usize {
+        self.dbvh_index
+    }
+
+    pub fn get_transform(&self) -> Transform2 {
+        self.transform
+    }
+
     pub fn transformed_shape(&self, parent_transform: Transform2) -> Shape2 {
         let transform = parent_transform + self.transform;
         match &self.shape {
@@ -113,7 +171,6 @@ pub fn point_and_polygon_with_thickness_collide(
         let v_a = *pv_a;
         let v_b = polygon.vertices[(i + 1) % (polygon.vertices.len())];
         let signed_dist_to_polygon = (v_b - v_a).cross(point - v_a);
-        // TODO: WIP check sign
         if signed_dist_to_polygon < -thickness {
             return None;
         }
@@ -175,13 +232,13 @@ pub fn circle_and_polygon_collide(
     polygon: ConvexPolygon,
     from_circle: bool,
 ) -> Option<Collision2> {
-    let collision =
+    let mut collision =
         point_and_polygon_with_thickness_collide(circle.center, &polygon, circle.radius)?;
     let depth = collision.depth + circle.radius;
     if depth < 0.0 {
         return None;
     }
-    collision.point = collision.point - normal.scale(circle.radius);
+    collision.location = collision.location - collision.normal.scale(circle.radius);
     collision.depth = depth;
     if from_circle {
         Some(-collision)

@@ -2,8 +2,6 @@ use std::ops;
 
 use crate::lua_env::lua_vec2::Vec2;
 
-// TODO: generalize everything to 3D
-
 #[derive(PartialEq, Clone, Copy)]
 pub struct Transform2 {
     position: Vec2,
