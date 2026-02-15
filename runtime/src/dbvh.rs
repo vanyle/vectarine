@@ -79,15 +79,33 @@ impl<const N: usize> DbvhNode<N> {
     }
 }
 
-pub struct DbvhTree<const N: usize> {
+pub struct DbvhTree<const N: usize = 2> {
+    margin_buffer_size: f32,
     root_index: Option<usize>,
     nodes: Vec<DbvhNode<N>>,
     free_spaces: Vec<usize>,
 }
 
 impl<const N: usize> DbvhTree<N> {
-    // TODO: update when space/entity structure is defined to have
-    // node_index, position and volume in a single object
+    pub fn new() -> Self {
+        DbvhTree {
+            margin_buffer_size: 0.2,
+            root_index: None,
+            nodes: Vec::new(),
+            free_spaces: Vec::new(),
+        }
+    }
+
+    pub fn get_node_by_index(&self, node_index: usize) -> DbvhNode<N> {
+        return self.nodes[node_index];
+    }
+
+    pub fn are_nodes_adjacent(&self, node_index: usize, adjacent_node_index: usize) -> bool {
+        self.nodes[node_index]
+            .bounds
+            .overlaps(self.nodes[adjacent_node_index].bounds)
+    }
+
     pub fn is_entity_up_to_date(
         &self,
         node_index: Option<usize>,
@@ -102,8 +120,6 @@ impl<const N: usize> DbvhTree<N> {
             .strictly_includes(DbvhBounds { position, volume })
     }
 
-    // TODO: update when space/entity structure is defined to have node position and volume
-    // in a single object
     fn align_dbvh_leaf_with_entity(
         &mut self,
         node_index: Option<usize>,
@@ -114,11 +130,10 @@ impl<const N: usize> DbvhTree<N> {
             return;
         };
         self.nodes[node_index].bounds.position = position;
-        // TODO: put 1.2 in a constant ?
-        self.nodes[node_index].bounds.volume = volume.scale(1.2);
+        self.nodes[node_index].bounds.volume = volume.scale(1.0 + self.margin_buffer_size);
     }
 
-    fn tree_cost(&mut self, node_index: Option<usize>) -> f32 {
+    fn tree_cost(&self, node_index: Option<usize>) -> f32 {
         let Some(node_index) = node_index else {
             return 0.0;
         };
@@ -132,7 +147,7 @@ impl<const N: usize> DbvhTree<N> {
         cost + self.tree_cost(self.nodes[node_index].parent_index)
     }
 
-    fn delta_cost(&mut self, node_index: Option<usize>, bounds: DbvhBounds<N>) -> f32 {
+    fn delta_cost(&self, node_index: Option<usize>, bounds: DbvhBounds<N>) -> f32 {
         // Compute the additional cost for the whole tree if the node
         // at `node_index` were to be resized to include the `bounds`
         let Some(node_index) = node_index else {
@@ -449,8 +464,6 @@ impl<const N: usize> DbvhTree<N> {
         }
     }
 
-    // TODO: update when space/entity structure is defined
-    // entity_id might not be relevant anymore
     pub fn instantiate_node(
         &mut self,
         parent_index: Option<usize>,
@@ -578,8 +591,6 @@ impl<const N: usize> DbvhTree<N> {
         true
     }
 
-    // TODO: update when space/entity structure is defined to have
-    // entity_id, position and volume in a single object
     pub fn create_dbvh_leaf(
         &mut self,
         entity_id: Option<usize>,
@@ -636,5 +647,52 @@ impl<const N: usize> DbvhTree<N> {
         // 3) Propagate change
         self.refit_dbvh_tree(Some(node_index));
         Some(node_index)
+    }
+
+    fn compute_adjacent_nodes_recursive(
+        &self,
+        node_index: usize,
+        start_node_index: usize,
+        adjacent_nodes: &mut Vec<usize>,
+    ) {
+        if !self.nodes[node_index]
+            .bounds
+            .overlaps(self.nodes[start_node_index].bounds)
+            || node_index == start_node_index
+        {
+            return;
+        }
+        if self.nodes[start_node_index].is_leaf {
+            let adjacent_node = self.nodes[start_node_index]
+                .entity_id
+                .expect("Leaf node should have an entity_id");
+            // A node can only be added once because the
+            // tree is explored without backtracking
+            adjacent_nodes.push(adjacent_node);
+            return;
+        }
+        self.compute_adjacent_nodes_recursive(
+            node_index,
+            self.nodes[start_node_index]
+                .child1
+                .expect("Node should have a child1 because it is not a leaf"),
+            adjacent_nodes,
+        );
+        self.compute_adjacent_nodes_recursive(
+            node_index,
+            self.nodes[start_node_index]
+                .child2
+                .expect("Node should have a child2 because it is not a leaf"),
+            adjacent_nodes,
+        );
+    }
+
+    pub fn get_adjacent_node_indexes(&self, node_index: usize) -> Vec<usize> {
+        let mut adjacent_nodes = Vec::new();
+        let Some(root_index) = self.root_index else {
+            return Vec::new();
+        };
+        self.compute_adjacent_nodes_recursive(node_index, root_index, &mut adjacent_nodes);
+        adjacent_nodes
     }
 }
