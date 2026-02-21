@@ -2,7 +2,8 @@ use std::{collections::HashMap, ops};
 
 use crate::{lua_env::lua_vec2::Vec2, space2::transform2::Transform2};
 
-const EPSILON: f32 = 1e-9;
+// guaranted 1e-3 precision
+const EPSILON: f32 = 1e-4;
 const EPSILON2: f32 = EPSILON * EPSILON;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
