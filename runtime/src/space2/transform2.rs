@@ -9,11 +9,11 @@ pub struct Transform2 {
 }
 
 impl Transform2 {
-    pub fn position(self) -> Vec2 {
+    pub fn position(&self) -> Vec2 {
         self.position
     }
 
-    pub fn rotation(self) -> f32 {
+    pub fn rotation(&self) -> f32 {
         self.rotation
     }
 
