@@ -14,8 +14,8 @@
   - [x] Make shared library be able to access and edit Lua
   - [x] Move plugin interface to an SDK rust module as otherwise: "This may cause spurious casting failures and mysterious crashes"
   - [x] Add all runtime hooks (preframe, postframe, load, unload)
-  - [ ] Turn preferences into a window to have proper editor settings
-    - [ ] Add a way to pick the prefered text editor (with vscode as default)
+  - [x] Turn preferences into a window to have proper editor settings
+    - [x] Add a way to pick the prefered text editor (with vscode as default)
   - [ ] Add all editor hooks (debug menu)
   - [ ] Show plugins in the editor
   - [ ] Reload plugins in the editor
