@@ -6,10 +6,24 @@ use crate::{lua_env::lua_vec2::Vec2, space2::transform2::Transform2};
 const EPSILON: f32 = 1e-4;
 const EPSILON2: f32 = EPSILON * EPSILON;
 
+// Always used wrapped as Option<PolygonCollision2Key> to identify
+// precisely a collision
+// None ->  collision with a circle
+//          everything can be deduced from the normal of the collision
+//          and the center + radius of the circle
+// Some ->  collision with a convex polygon
+//          - start: vertice where the collision happened
+//          - is_edge:
+//              -> false: the collision only involves the vertice
+//                      previously identified as `start`
+//              -> true: the collision involves the edge of the
+//                      polygon that starts with the vertice `start`,
+//                      the other vertice being the next rotating
+//                      trigonometrically (counter-clockwise)
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct PolygonCollision2Key {
-    start: Option<usize>,
-    is_edge: Option<bool>,
+    start: usize,
+    is_edge: bool,
 }
 
 #[derive(Clone)]
@@ -167,7 +181,7 @@ pub fn point_and_polygon_with_thickness_collide(
     thickness: f32,
 ) -> Option<Collision2> {
     let mut depth = f32::MAX;
-    let mut key1_start = 0;
+    let mut key2_start = 0;
     for (i, pv_a) in polygon.vertices.iter().enumerate() {
         let v_a = *pv_a;
         let v_b = polygon.vertices[(i + 1) % (polygon.vertices.len())];
@@ -177,18 +191,21 @@ pub fn point_and_polygon_with_thickness_collide(
         }
         if signed_dist_to_polygon < depth {
             depth = signed_dist_to_polygon;
-            key1_start = i;
+            key2_start = i;
         }
     }
-    let v_a = polygon.vertices[key1_start % (polygon.vertices.len())];
-    let v_b = polygon.vertices[(key1_start + 1) % (polygon.vertices.len())];
+    let v_a = polygon.vertices[key2_start % (polygon.vertices.len())];
+    let v_b = polygon.vertices[(key2_start + 1) % (polygon.vertices.len())];
     let normal = (v_a - v_b).normalized();
     Some(Collision2 {
         normal,
         depth,
         location: point,
         key1: None,
-        key2: None,
+        key2: Some(PolygonCollision2Key {
+            start: key2_start,
+            is_edge: true,
+        }),
     })
 }
 
@@ -242,6 +259,10 @@ pub fn circle_and_polygon_collide(
     collision.location = collision.location - collision.normal.scale(circle.radius);
     collision.depth = depth;
     if from_circle {
+        // Swap keys, the normal is from the circle, meaning
+        // the polygon (key1) is colliding with the circle (key2)
+        collision.key1 = collision.key2;
+        collision.key2 = None;
         Some(-collision)
     } else {
         Some(collision)
@@ -264,13 +285,24 @@ pub fn polygons_collisions(
     let mut collisions = Vec::new();
     for (i, _) in polygon.vertices.iter().enumerate() {
         let point = polygon.vertices[i % (polygon.vertices.len())];
-        if let Some(collision) = point_and_polygon_collide(point, &other_polygon) {
+        if let Some(mut collision) = point_and_polygon_collide(point, &other_polygon) {
+            collision.key1 = Some(PolygonCollision2Key {
+                start: i,
+                is_edge: false,
+            });
             collisions.push(collision);
         }
     }
-    for (j, _) in polygon.vertices.iter().enumerate() {
-        let point = polygon.vertices[j % (polygon.vertices.len())];
-        if let Some(collision) = point_and_polygon_collide(point, &polygon) {
+    for (j, _) in other_polygon.vertices.iter().enumerate() {
+        let point = other_polygon.vertices[j % (other_polygon.vertices.len())];
+        if let Some(mut collision) = point_and_polygon_collide(point, &polygon) {
+            // Swap keys, the normal is from `polygon`, meaning
+            // `other_polygon` (key1) is colliding with `polygon` (key2)
+            collision.key1 = collision.key2;
+            collision.key2 = Some(PolygonCollision2Key {
+                start: j,
+                is_edge: false,
+            });
             collisions.push(collision);
         }
     }
