@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use runtime::egui::TextBuffer;
 use zip::write::SimpleFileOptions;
 
-use crate::editorinterface::geteditorpaths::{
+use crate::editorinterface::extra::geteditorpaths::{
     get_runtime_file_for_linux, get_runtime_file_for_macos, get_runtime_file_for_windows,
     get_runtime_file_paths_for_web,
 };

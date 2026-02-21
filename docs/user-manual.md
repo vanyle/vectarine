@@ -65,18 +65,8 @@ end
 
 As you save, the game updates instantly.
 See the `luau-api` folder for a list of available functions lua.
-You can copy the content of `luau-api` to the folder with your game and create a `.luaurc` file with the following content:
-```json
-{
-	"languageMode": "strict",
-	"aliases": {
-		"vectarine": "luau-api"
-	}
-}
-``` 
-This should make your text editor be able to autocomplete your code using these functions.
 
-`luau-api` is a great source of documentation and can be though of as a companion to this manual.
+With a Luau extension / plugin installed, your text editor be able to autocomplete your code using the functions in `luau-api`. `luau-api` is a great source of documentation and can be though of as a companion to this manual.
 
 # 🌙 Using Vectarine and Luau
 

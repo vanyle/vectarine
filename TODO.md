@@ -17,8 +17,8 @@
   - [x] Turn preferences into a window to have proper editor settings
     - [x] Add a way to pick the prefered text editor (with vscode as default)
   - [x] Write the bundle.py script to watch the specs defined in plugins.md
+  - [x] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
   - [ ] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
-  - [ ] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
   - [ ] Show plugins in the editor
   - [ ] Add all editor hooks (debug menu)
   - [ ] Reload plugins in the editor

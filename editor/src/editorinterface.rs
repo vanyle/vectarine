@@ -29,7 +29,7 @@ use crate::{
     editorconfig::{EditorConfig, WindowStyle},
     editorinterface::{
         editorplugins::draw_editor_plugin_manager, editorpreferences::draw_editor_preferences,
-        emptyscreen::draw_empty_screen,
+        emptyscreen::draw_empty_screen, extra::geteditorpaths,
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
@@ -49,7 +49,7 @@ pub mod editorprofiler;
 pub mod editorresources;
 pub mod editorwatcher;
 pub mod emptyscreen;
-pub mod geteditorpaths;
+pub mod extra;
 
 pub struct EditorState {
     pub config: Rc<RefCell<EditorConfig>>,
