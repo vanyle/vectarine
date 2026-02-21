@@ -18,6 +18,7 @@ serde = { version = "1.0.221", features = ["derive"] }
 which = "8.0.0"
 zip = "6.0.0"
 directories = "6.0.0"
+blake3 = "1.8.3"
 
 [[bin]]
 name = "vecta"

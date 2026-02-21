@@ -28,6 +28,7 @@ pub mod editorinterface;
 pub mod egui_sdl2_platform;
 pub mod export;
 pub mod luau;
+pub mod pluginsystem;
 pub mod projectstate;
 pub mod reload;
 

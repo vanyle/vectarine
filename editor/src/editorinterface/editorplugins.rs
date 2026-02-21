@@ -1,6 +1,8 @@
+use std::fs;
+
 use runtime::egui;
 
-use crate::editorinterface::EditorState;
+use crate::editorinterface::{EditorState, extra::geteditorpaths::get_editor_plugins_path};
 
 pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context) {
     let mut is_shown = editor.config.borrow_mut().is_plugins_window_shown;
@@ -31,7 +33,10 @@ fn draw_editor_plugin_manager_content(_editor: &mut EditorState, ui: &mut egui::
     if ui.button("Open plugin folder")
         .on_hover_text("Open the folder where plugins are stored. You can add plugins there and they will appear in the list of available plugins.")
         .clicked(){
-            // let _ = open::that("plugins");
-            // ...
+            let plugin_library_path = get_editor_plugins_path();
+            if !plugin_library_path.exists() {
+                let _ = fs::create_dir_all(&plugin_library_path);
+            }
+            let _ = open::that(plugin_library_path);
         }
 }
