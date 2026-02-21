@@ -31,7 +31,7 @@ use crate::{
         emptyscreen::draw_empty_screen,
     },
     egui_sdl2_platform,
-    exportinterface::draw_editor_export,
+    export::exportinterface::draw_editor_export,
     projectstate::ProjectState,
 };
 use editorconsole::draw_editor_console;
@@ -48,6 +48,7 @@ pub mod editorprofiler;
 pub mod editorresources;
 pub mod editorwatcher;
 pub mod emptyscreen;
+pub mod geteditorassetspath;
 
 pub struct EditorState {
     pub config: Rc<RefCell<EditorConfig>>,
