@@ -44,8 +44,14 @@ impl FileSystem for LocalFileSystem {
     fn write_file(&self, path: &str, data: &[u8], callback: Box<dyn FnOnce(bool)>) {
         use std::fs;
         use std::path::Path;
-        let result = fs::write(Path::new(path), data).is_ok();
-        callback(result);
+        let result = fs::write(Path::new(path), data);
+        callback(result.is_ok());
+        if let Err(e) = result {
+            #[cfg(debug_assertions)]
+            {
+                println!("Failed to write file: {}", e);
+            }
+        }
     }
 }
 

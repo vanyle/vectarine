@@ -1,8 +1,6 @@
 use runtime::game_resource::ResourceId;
 use serde::{Deserialize, Serialize};
 
-pub const EDITOR_CONFIG_FILE: &str = "vectarine-config.toml";
-
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub enum WindowStyle {
     #[default]

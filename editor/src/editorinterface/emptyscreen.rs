@@ -14,7 +14,7 @@ use runtime::{
     toml,
 };
 
-use crate::editorinterface::EditorState;
+use crate::editorinterface::{EditorState, geteditorpaths::get_gallery_path};
 
 pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
     thread_local! {
@@ -181,6 +181,13 @@ function Update(deltaTime: number)
     Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
 end";
 
+pub fn copy_default_luau_api(project_folder: &Path) -> Result<(), std::io::Error> {
+    let luau_api_path = project_folder.join("luau-api");
+    fs::create_dir_all(luau_api_path)?;
+
+    Ok(())
+}
+
 pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_path: &Path) {
     let project_folder = game_path.join(game_name);
     let project_file_path = project_folder.join("game.vecta");
@@ -198,7 +205,9 @@ pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_pa
         let serialized = toml::to_string(&project_info).unwrap_or_default();
         setup_failed = setup_failed.or(fs::write(&project_file_path, serialized).err());
     }
+
     setup_failed = setup_failed.or(fs::write(&main_script_path, DEFAULT_CODE).err());
+    setup_failed = setup_failed.or(copy_default_luau_api(&project_folder).err());
 
     if let Some(setup_failed) = setup_failed {
         println!(
@@ -248,16 +257,6 @@ pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
             println!("Failed to load project: {e}");
         }
     });
-}
-
-pub fn get_gallery_path() -> PathBuf {
-    let executable_path = std::env::current_exe().unwrap_or_default();
-    let executable_parent = executable_path.parent().unwrap_or(Path::new("."));
-    let gallery_path = executable_parent.join("gallery");
-    if gallery_path.is_dir() {
-        return gallery_path;
-    }
-    PathBuf::from("gallery")
 }
 
 pub fn trim_string_with_ellipsis(s: &str, max_len: usize) -> String {

@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    fs,
     ops::Deref,
     path::{Path, PathBuf},
     rc::Rc,
@@ -25,7 +26,7 @@ use runtime::{
 };
 
 use crate::{
-    editorconfig::{EDITOR_CONFIG_FILE, EditorConfig, WindowStyle},
+    editorconfig::{EditorConfig, WindowStyle},
     editorinterface::{
         editorplugins::draw_editor_plugin_manager, editorpreferences::draw_editor_preferences,
         emptyscreen::draw_empty_screen,
@@ -48,7 +49,7 @@ pub mod editorprofiler;
 pub mod editorresources;
 pub mod editorwatcher;
 pub mod emptyscreen;
-pub mod geteditorassetspath;
+pub mod geteditorpaths;
 
 pub struct EditorState {
     pub config: Rc<RefCell<EditorConfig>>,
@@ -72,7 +73,20 @@ impl EditorState {
     pub fn save_config(&self) {
         let config = &self.config.borrow();
         let data = toml::to_string(config.deref()).unwrap_or_default();
-        LocalFileSystem.write_file(EDITOR_CONFIG_FILE, data.as_bytes(), Box::new(|_| {}));
+
+        let config_path = geteditorpaths::get_editor_config_path();
+        let parent = config_path.parent();
+        if let Some(parent) = parent {
+            let _ = fs::create_dir_all(parent);
+        }
+
+        LocalFileSystem.write_file(
+            config_path
+                .to_str()
+                .expect("The editor path is valid unicode"), // otherwise, your installation / OS is very cursed
+            data.as_bytes(),
+            Box::new(|_| {}),
+        );
     }
 
     /// Load the editor config from file.
@@ -86,7 +100,9 @@ impl EditorState {
         let debouncer = self.debouncer.clone();
 
         LocalFileSystem.read_file(
-            EDITOR_CONFIG_FILE,
+            geteditorpaths::get_editor_config_path()
+                .to_str()
+                .expect("The editor path is valid unicode"),
             Box::new(move |data: Option<Vec<u8>>| {
                 let Some(data) = data else {
                     return; // no config file

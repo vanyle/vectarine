@@ -163,6 +163,12 @@ def make_macos_release(
         os.path.join(root_path, "gallery"),
         os.path.join(root_path, f"engine-release/{friendly_name}.app/gallery"),
     )
+    # Put the luau-api in the bundle so that we can generate it for new projects
+    shutil.copytree(
+        os.path.join(root_path, "luau-api"),
+        os.path.join(root_path, f"engine-release/{friendly_name}.app/luau-api"),
+    )
+
     # For macOS, we put the runtime also in the bundle. Only the docs are outside
     copy_runtime_files(root_path, os.path.join(root_path, f"engine-release/{friendly_name}.app"))
 
