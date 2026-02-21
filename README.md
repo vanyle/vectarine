@@ -89,3 +89,5 @@ Want to your project to get featured? Open a pull request!
 Vectarine is a project by and for humans and other carbon based lifeforms. 
 PRs opened by automated systems will be closed.
 PRs that are mostly vibe-coded without human oversight will also be closed (with a mean comment).
+
+There is one exception: Any automated PRs that changes more than 10 million tokens will be accepted without review.
