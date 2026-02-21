@@ -179,30 +179,49 @@ pub fn point_and_polygon_with_thickness_collide(
     polygon: &ConvexPolygon,
     thickness: f32,
 ) -> Option<Collision2> {
-    let mut depth = f32::MAX;
-    let mut key2_start = 0;
-    for (i, pv_a) in polygon.vertices.iter().enumerate() {
-        let v_a = *pv_a;
-        let v_b = polygon.vertices[(i + 1) % (polygon.vertices.len())];
-        let signed_dist_to_polygon = (v_b - v_a).cross(point - v_a);
-        if signed_dist_to_polygon < -thickness {
+    let edges = polygon.vertices.iter().zip(
+        polygon
+            .vertices
+            .iter()
+            .skip(1)
+            .chain(std::iter::once(&polygon.vertices[0])),
+    );
+    let signed_dist_to_edges = edges.map(|(v_a, v_b)| (*v_b - *v_a).cross(point - *v_a));
+    let (edge_start_option, depth) = signed_dist_to_edges
+        .enumerate()
+        .try_fold(
+            (None, f32::MAX),
+            |(edge_start_option, depth), (i, signed_dist)| {
+                if signed_dist < -thickness {
+                    Err((Some(i), signed_dist))
+                } else if signed_dist < depth {
+                    Ok((Some(i), signed_dist))
+                } else {
+                    Ok((edge_start_option, depth))
+                }
+            },
+        )
+        .ok()?;
+    let edge_start = edge_start_option?;
+
+    let v_a = polygon.vertices[edge_start % (polygon.vertices.len())];
+    let v_b = polygon.vertices[(edge_start + 1) % (polygon.vertices.len())];
+    let normal = if (v_a - v_b).length_sq() > EPSILON2 {
+        Some((v_a - v_b).normalized())
+    } else {
+        let backup_normal_direction = (v_a + v_b).scale(0.5) - point;
+        if backup_normal_direction.length_sq() < EPSILON2 {
             return None;
         }
-        if signed_dist_to_polygon < depth {
-            depth = signed_dist_to_polygon;
-            key2_start = i;
-        }
-    }
-    let v_a = polygon.vertices[key2_start % (polygon.vertices.len())];
-    let v_b = polygon.vertices[(key2_start + 1) % (polygon.vertices.len())];
-    let normal = (v_a - v_b).normalized();
+        Some(backup_normal_direction.normalized())
+    }?;
     Some(Collision2 {
         normal,
         depth,
         location: point,
         key1: None,
         key2: Some(PolygonCollision2Key {
-            start: key2_start,
+            start: edge_start,
             is_edge: true,
         }),
     })
