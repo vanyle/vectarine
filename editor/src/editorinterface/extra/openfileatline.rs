@@ -195,9 +195,7 @@ fn open_in_terminal(command: &str, args: &[String]) -> bool {
                 // Determine the flag to execute a command
                 let arg_flag = if terminal.contains("gnome-terminal") {
                     Some("--")
-                } else if terminal.contains("xfce4-terminal") {
-                    Some("-x")
-                } else if terminal.contains("terminator") {
+                } else if terminal.contains("xfce4-terminal") || terminal.contains("terminator") {
                     Some("-x")
                 } else if terminal.contains("kitty") {
                     None // kitty uses NO flag, just `kitty command`
