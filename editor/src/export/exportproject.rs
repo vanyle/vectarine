@@ -1,12 +1,17 @@
 use regex::Regex;
 use runtime::mlua;
 use runtime::projectinfo::ProjectInfo;
+use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::{env, fs};
 
 use runtime::egui::TextBuffer;
 use zip::write::SimpleFileOptions;
+
+use crate::editorinterface::geteditorpaths::{
+    get_runtime_file_for_linux, get_runtime_file_for_macos, get_runtime_file_for_windows,
+    get_runtime_file_paths_for_web,
+};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum ExportPlatform {
@@ -72,15 +77,7 @@ pub fn export_project(
                 .map_err(|e| e.to_string())?;
         }
         ExportPlatform::Windows => {
-            let runtime_path = look_for_file_next_to_exe(
-                &[
-                    "../x86_64-pc-windows-msvc/release",
-                    ".",
-                    "../x86_64-pc-windows-msvc/debug",
-                    "../release",
-                ],
-                Some("runtime.exe"),
-            );
+            let runtime_path = get_runtime_file_for_windows();
             if let Some(runtime_path) = runtime_path {
                 add_file_to_zip_from_path(&mut zip, &runtime_path, "game.exe", true, false)
                     .map_err(|e| e.to_string())?;
@@ -89,14 +86,7 @@ pub fn export_project(
             }
         }
         ExportPlatform::Linux => {
-            let runtime_path = look_for_file_next_to_exe(
-                &[
-                    "./runtime-linux",
-                    "../x86_64-unknown-linux-gnu/release/runtime",
-                    "../x86_64-unknown-linux-gnu/debug/runtime",
-                ],
-                None,
-            );
+            let runtime_path = get_runtime_file_for_linux();
             if let Some(runtime_path) = runtime_path {
                 add_file_to_zip_from_path(&mut zip, &runtime_path, "game", true, false)
                     .map_err(|e| e.to_string())?;
@@ -105,14 +95,7 @@ pub fn export_project(
             }
         }
         ExportPlatform::MacOS => {
-            let runtime_path = look_for_file_next_to_exe(
-                &[
-                    "./runtime-macos",
-                    "../x86_64-apple-darwin/release/runtime",
-                    "../x86_64-apple-darwin/debug/runtime",
-                ],
-                None,
-            );
+            let runtime_path = get_runtime_file_for_macos();
             if let Some(runtime_path) = runtime_path {
                 add_file_to_zip_from_path(&mut zip, &runtime_path, "game", true, false)
                     .map_err(|e| e.to_string())?;
@@ -188,45 +171,6 @@ pub fn export_project(
 
     zip.finish().map_err(|e| e.to_string())?;
     Ok(output_path)
-}
-
-fn look_for_file_next_to_exe(locations: &[&str], file_name: Option<&str>) -> Option<PathBuf> {
-    let exec_path = env::current_exe().ok()?;
-    let exec_dir = exec_path.parent()?;
-    for loc in locations {
-        let candidate = exec_dir.join(loc);
-        let candidate = if let Some(file_name) = file_name {
-            candidate.join(file_name)
-        } else {
-            candidate
-        };
-        if candidate.exists() {
-            return Some(candidate);
-        }
-    }
-    None
-}
-
-fn get_runtime_file_paths_for_web()
--> Option<(std::path::PathBuf, std::path::PathBuf, std::path::PathBuf)> {
-    let locations_to_check = [
-        ".",
-        "../wasm32-unknown-emscripten/release",
-        "../wasm32-unknown-emscripten/debug",
-        "../..",
-    ];
-    let runtime_js_path = look_for_file_next_to_exe(&locations_to_check, Some("runtime.js"));
-    let runtime_wasm_path = look_for_file_next_to_exe(&locations_to_check, Some("runtime.wasm"));
-    let index_html_path = look_for_file_next_to_exe(&locations_to_check, Some("index.html"));
-
-    if let Some(runtime) = runtime_js_path
-        && let Some(wasm) = runtime_wasm_path
-        && let Some(index) = index_html_path
-    {
-        Some((runtime, wasm, index))
-    } else {
-        None
-    }
 }
 
 fn add_file_to_zip_from_path(
