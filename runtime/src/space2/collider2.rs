@@ -228,16 +228,13 @@ pub fn circles_collide(circle: Circle, other_circle: Circle) -> Option<Collision
         })
     } else {
         let dist = dist2.sqrt();
-        let mut depth = max_dist - dist;
-        if depth < 0.0 {
-            depth = 0.0;
-        }
+        let depth = f32::max(0.0, max_dist - dist);
         Some(Collision2 {
             normal: (circle.center - other_circle.center).scale(1.0 / dist),
             depth,
             location: (circle.center.scale(other_circle.radius)
                 + other_circle.center.scale(circle.radius))
-            .scale(1.0 / (max_dist)),
+            .scale(1.0 / max_dist),
             key1: None,
             key2: None,
         })
@@ -269,11 +266,7 @@ pub fn circle_and_polygon_collide(
 }
 
 pub fn collision_option_to_collisions(collision: Option<Collision2>) -> Vec<Collision2> {
-    let mut collisions = Vec::new();
-    if let Some(collision) = collision {
-        collisions.push(collision);
-    }
-    collisions
+    collision.into_iter().collect()
 }
 
 // Cannot handle weird collisions with only edge/edge intersections
