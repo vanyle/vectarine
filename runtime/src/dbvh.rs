@@ -688,10 +688,10 @@ impl<const N: usize> DbvhTree<N> {
     }
 
     pub fn get_adjacent_node_indexes(&self, node_index: usize) -> Vec<usize> {
-        let mut adjacent_nodes = Vec::new();
         let Some(root_index) = self.root_index else {
             return Vec::new();
         };
+        let mut adjacent_nodes = Vec::new();
         self.compute_adjacent_nodes_recursive(node_index, root_index, &mut adjacent_nodes);
         adjacent_nodes
     }
