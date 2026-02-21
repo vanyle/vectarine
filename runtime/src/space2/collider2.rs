@@ -271,22 +271,50 @@ pub fn circle_and_polygon_collide(
     polygon: ConvexPolygon,
     from_circle: bool,
 ) -> Option<Collision2> {
-    let mut collision =
-        point_and_polygon_with_thickness_collide(circle.center, &polygon, circle.radius)?;
-    let depth = collision.depth + circle.radius;
+    let Collision2 {
+        normal,
+        depth,
+        location,
+        key1,
+        key2,
+    } = point_and_polygon_with_thickness_collide(circle.center, &polygon, circle.radius)?;
+    let depth = depth + circle.radius;
     if depth < 0.0 {
         return None;
     }
-    collision.location = collision.location - collision.normal.scale(circle.radius);
-    collision.depth = depth;
+    let location = location - normal.scale(circle.radius);
     if from_circle {
-        // Swap keys, the normal is from the circle, meaning
-        // the polygon (key1) is colliding with the circle (key2)
-        collision.key1 = collision.key2;
-        collision.key2 = ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {});
-        Some(-collision)
+        // `point_and_polygon_with_thickness_collide` returns a
+        // normal from the polygon but we want a normal from the
+        // circle so we invert the normal and swap keys, meaning the
+        // the polygon having a key1 collision identifier (originaly
+        // key2 from `point_and_polygon_with_thickness_collide`) is
+        // colliding with the circle having a key2 collision identifier.
+        // The circle's key2 is different than the key1 defined in
+        // `point_and_polygon_with_thickness_collide` because it
+        // it involved a point (that can be considered to be a
+        // circle of radius 0) and a polygon instead of a circle
+        // and a polygon. Although because there is no additional
+        // info needed to identify precisely a collision point
+        // for either a point or a circle, the two are technically
+        // equal in the end. But conceptually they are different
+        // and the point was just a way to compute the collision
+        // data by reusing an existing function.
+        Some(Collision2 {
+            normal: -normal,
+            depth,
+            location,
+            key1: key2,
+            key2: ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {}),
+        })
     } else {
-        Some(collision)
+        Some(Collision2 {
+            normal,
+            depth,
+            location,
+            key1,
+            key2,
+        })
     }
 }
 
