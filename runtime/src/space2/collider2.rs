@@ -6,24 +6,31 @@ use crate::{lua_env::lua_vec2::Vec2, space2::transform2::Transform2};
 const EPSILON: f32 = 1e-4;
 const EPSILON2: f32 = EPSILON * EPSILON;
 
-// Always used wrapped as Option<PolygonCollision2Key> to identify
-// precisely a collision
-// None ->  collision with a circle
-//          everything can be deduced from the normal of the collision
-//          and the center + radius of the circle
-// Some ->  collision with a convex polygon
-//          - start: vertice where the collision happened
-//          - is_edge:
-//              -> false: the collision only involves the vertice
-//                      previously identified as `start`
-//              -> true: the collision involves the edge of the
-//                      polygon that starts with the vertice `start`,
-//                      the other vertice being the next rotating
-//                      trigonometrically (counter-clockwise)
+// Used wrapped as  to identify  precisely a collision
+// - start: vertice where the collision happened
+// - is_edge:
+//      -> false: the collision only involves the vertice
+//         previously identified as `start`
+//      -> true: the collision involves the edge of the
+//         polygon that starts with the vertice `start`,
+//         the other vertice being the next rotating
+//         trigonometrically (counter-clockwise)
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct PolygonCollision2Key {
     start: usize,
     is_edge: bool,
+}
+
+// Used wrapped as  to identify  precisely a collision
+// every necessary information can be deduced from the normal
+// of the collision and the center + radius of the circle
+#[derive(Clone, Eq, Hash, PartialEq)]
+pub struct CircleCollision2Key {}
+
+#[derive(Clone, Eq, Hash, PartialEq)]
+pub enum ShapeCollision2Key {
+    PolygonCollision2Key(PolygonCollision2Key),
+    CircleCollision2Key(CircleCollision2Key),
 }
 
 #[derive(Clone)]
@@ -31,8 +38,8 @@ pub struct Collision2 {
     normal: Vec2,
     depth: f32,
     location: Vec2,
-    key1: Option<PolygonCollision2Key>,
-    key2: Option<PolygonCollision2Key>,
+    key1: ShapeCollision2Key,
+    key2: ShapeCollision2Key,
 }
 
 impl Collision2 {
@@ -48,11 +55,11 @@ impl Collision2 {
         self.location
     }
 
-    pub fn get_key1(&self) -> Option<PolygonCollision2Key> {
+    pub fn get_key1(&self) -> ShapeCollision2Key {
         self.key1.clone()
     }
 
-    pub fn get_key2(&self) -> Option<PolygonCollision2Key> {
+    pub fn get_key2(&self) -> ShapeCollision2Key {
         self.key2.clone()
     }
 }
@@ -73,8 +80,7 @@ impl ops::Neg for Collision2 {
 
 #[derive(Clone)]
 pub struct Collision2Details {
-    collision_map:
-        HashMap<(Option<PolygonCollision2Key>, Option<PolygonCollision2Key>), Collision2>,
+    collision_map: HashMap<(ShapeCollision2Key, ShapeCollision2Key), Collision2>,
 }
 
 impl Collision2Details {
@@ -219,8 +225,8 @@ pub fn point_and_polygon_with_thickness_collide(
         normal,
         depth,
         location: point,
-        key1: None,
-        key2: Some(PolygonCollision2Key {
+        key1: ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {}),
+        key2: ShapeCollision2Key::PolygonCollision2Key(PolygonCollision2Key {
             start: edge_start,
             is_edge: true,
         }),
@@ -242,8 +248,8 @@ pub fn circles_collide(circle: Circle, other_circle: Circle) -> Option<Collision
             normal: Vec2::one(),
             depth: max_dist,
             location: (circle.center + other_circle.center).scale(0.5),
-            key1: None,
-            key2: None,
+            key1: ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {}),
+            key2: ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {}),
         })
     } else {
         let dist = dist2.sqrt();
@@ -254,8 +260,8 @@ pub fn circles_collide(circle: Circle, other_circle: Circle) -> Option<Collision
             location: (circle.center.scale(other_circle.radius)
                 + other_circle.center.scale(circle.radius))
             .scale(1.0 / max_dist),
-            key1: None,
-            key2: None,
+            key1: ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {}),
+            key2: ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {}),
         })
     }
 }
@@ -277,7 +283,7 @@ pub fn circle_and_polygon_collide(
         // Swap keys, the normal is from the circle, meaning
         // the polygon (key1) is colliding with the circle (key2)
         collision.key1 = collision.key2;
-        collision.key2 = None;
+        collision.key2 = ShapeCollision2Key::CircleCollision2Key(CircleCollision2Key {});
         Some(-collision)
     } else {
         Some(collision)
@@ -297,7 +303,7 @@ pub fn polygons_collisions(
     for (i, _) in polygon.vertices.iter().enumerate() {
         let point = polygon.vertices[i % (polygon.vertices.len())];
         if let Some(mut collision) = point_and_polygon_collide(point, &other_polygon) {
-            collision.key1 = Some(PolygonCollision2Key {
+            collision.key1 = ShapeCollision2Key::PolygonCollision2Key(PolygonCollision2Key {
                 start: i,
                 is_edge: false,
             });
@@ -310,7 +316,7 @@ pub fn polygons_collisions(
             // Swap keys, the normal is from `polygon`, meaning
             // `other_polygon` (key1) is colliding with `polygon` (key2)
             collision.key1 = collision.key2;
-            collision.key2 = Some(PolygonCollision2Key {
+            collision.key2 = ShapeCollision2Key::PolygonCollision2Key(PolygonCollision2Key {
                 start: j,
                 is_edge: false,
             });
