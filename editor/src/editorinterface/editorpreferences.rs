@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use runtime::egui;
 
 use crate::editorinterface::EditorState;
@@ -6,6 +8,7 @@ use crate::editorconfig::{TextEditor, WindowStyle};
 
 pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
     let mut is_shown = editor.config.borrow().is_preferences_window_shown;
+    static HAS_UNSAVED_CHANGES: AtomicBool = AtomicBool::new(false);
 
     if is_shown {
         egui::Window::new("Preferences")
@@ -16,10 +19,11 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
                 ui.heading("General");
                 {
                     let mut config = editor.config.borrow_mut();
-                    if ui
-                        .checkbox(&mut config.is_always_on_top, "Game always on top")
-                        .clicked()
-                    {
+                    let response = ui.checkbox(&mut config.is_always_on_top, "Game always on top");
+                    if response.changed() {
+                        HAS_UNSAVED_CHANGES.store(true, Ordering::Relaxed);
+                    }
+                    if response.clicked() {
                         editor
                             .window
                             .borrow_mut()
@@ -29,10 +33,12 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
 
                 if editor.config.borrow().window_style == WindowStyle::GameSeparateFromEditor {
                     let mut config = editor.config.borrow_mut();
-                    if ui
-                        .checkbox(&mut config.is_editor_always_on_top, "Editor always on top")
-                        .clicked()
-                    {
+                    let response =
+                        ui.checkbox(&mut config.is_editor_always_on_top, "Editor always on top");
+                    if response.changed() {
+                        HAS_UNSAVED_CHANGES.store(true, Ordering::Relaxed);
+                    }
+                    if response.clicked() {
                         editor
                             .editor_specific_window
                             .set_always_on_top(config.is_editor_always_on_top);
@@ -42,10 +48,11 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
                 {
                     let mut config = editor.config.borrow_mut();
                     let mut window_style = config.window_style == WindowStyle::GameWithEditor;
-                    if ui
-                        .checkbox(&mut window_style, "Merge editor and game windows")
-                        .clicked()
-                    {
+                    let response = ui.checkbox(&mut window_style, "Merge editor and game windows");
+                    if response.changed() {
+                        HAS_UNSAVED_CHANGES.store(true, Ordering::Relaxed);
+                    }
+                    if response.clicked() {
                         config.window_style = if window_style {
                             WindowStyle::GameWithEditor
                         } else {
@@ -77,20 +84,27 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
                             ];
 
                             for editor_option in editors {
-                                ui.selectable_value(
-                                    &mut config.text_editor,
-                                    Some(editor_option),
-                                    format!("{}", editor_option),
-                                );
+                                if ui
+                                    .selectable_value(
+                                        &mut config.text_editor,
+                                        Some(editor_option),
+                                        format!("{}", editor_option),
+                                    )
+                                    .changed()
+                                {
+                                    HAS_UNSAVED_CHANGES.store(true, Ordering::Relaxed);
+                                }
                             }
                         });
                 }
 
-                ui.add_space(10.0);
-                ui.separator();
-
-                if ui.button("Save preferences").clicked() {
-                    editor.save_config();
+                if HAS_UNSAVED_CHANGES.load(Ordering::Relaxed) {
+                    ui.add_space(10.0);
+                    ui.separator();
+                    if ui.button("Save preferences").clicked() {
+                        editor.save_config();
+                        HAS_UNSAVED_CHANGES.store(false, Ordering::Relaxed);
+                    }
                 }
             });
 
