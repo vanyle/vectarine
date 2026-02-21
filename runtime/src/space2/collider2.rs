@@ -71,15 +71,10 @@ impl ops::Neg for Collision2 {
     }
 }
 
-#[derive(Clone, Eq, Hash, PartialEq)]
-struct Collision2DetailsKey {
-    key1: Option<PolygonCollision2Key>,
-    key2: Option<PolygonCollision2Key>,
-}
-
 #[derive(Clone)]
 pub struct Collision2Details {
-    collision_map: HashMap<Collision2DetailsKey, Collision2>,
+    collision_map:
+        HashMap<(Option<PolygonCollision2Key>, Option<PolygonCollision2Key>), Collision2>,
 }
 
 impl Collision2Details {
@@ -90,11 +85,14 @@ impl Collision2Details {
     }
 
     pub fn update_collision_details(&mut self, collisions: Vec<Collision2>) {
-        let mut collision_keys_to_keep: HashMap<Collision2DetailsKey, bool> = HashMap::new();
+        let mut collision_keys_to_keep: HashMap<
+            (Option<PolygonCollision2Key>, Option<PolygonCollision2Key>),
+            bool,
+        > = HashMap::new();
         for collision in collisions {
             let key1 = collision.get_key1();
             let key2 = collision.get_key2();
-            let collision2_details_key = Collision2DetailsKey { key1, key2 };
+            let collision2_details_key = (key1, key2);
             collision_keys_to_keep.insert(collision2_details_key.clone(), true);
             self.collision_map.insert(collision2_details_key, collision);
         }
