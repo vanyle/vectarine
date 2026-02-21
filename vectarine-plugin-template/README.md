@@ -6,6 +6,11 @@ You can use it to expand the features of Vectarine using native (Rust) code.
 
 ## Getting started
 
+You can build your plugin using the `bundle.py` script.
+Run it using `uv run bundle.py`.
+
+You'll need to have [uv](https://github.com/astral-sh/uv) installed.
+
 ## Using your plugin
 
 Vectarine comes bundled with a runtime that is precompiled for all the major platforms.
