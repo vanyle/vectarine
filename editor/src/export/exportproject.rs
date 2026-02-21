@@ -13,7 +13,7 @@ use crate::editorinterface::extra::geteditorpaths::{
     get_runtime_file_paths_for_web,
 };
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum ExportPlatform {
     Windows,
     Linux,
