@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops};
+use std::{cmp::Ordering, collections::HashMap, ops};
 
 use crate::{lua_env::lua_vec2::Vec2, space2::transform2::Transform2};
 
@@ -85,19 +85,18 @@ impl Collision2Details {
     }
 
     pub fn update_collision_details(&mut self, collisions: Vec<Collision2>) {
-        let mut collision_keys_to_keep: HashMap<
-            (Option<PolygonCollision2Key>, Option<PolygonCollision2Key>),
-            bool,
-        > = HashMap::new();
-        for collision in collisions {
-            let key1 = collision.get_key1();
-            let key2 = collision.get_key2();
-            let collision2_details_key = (key1, key2);
-            collision_keys_to_keep.insert(collision2_details_key.clone(), true);
-            self.collision_map.insert(collision2_details_key, collision);
-        }
-        self.collision_map
-            .retain(|key, _| collision_keys_to_keep.contains_key(key));
+        self.collision_map = HashMap::from_iter(collisions.iter().map(|collision| {
+            (
+                (collision.get_key1(), collision.get_key2()),
+                collision.clone(),
+            )
+        }));
+    }
+}
+
+impl Default for Collision2Details {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -154,22 +153,24 @@ impl Collider2 {
 }
 
 pub fn compute_bounding_box(shape: Shape2) -> Vec2 {
-    let mut max_dist2 = 0.0;
-    let bounding_box_size: f32;
-    match shape {
+    let bounding_box_size = match shape {
         Shape2::ConvexPolygon(polygon) => {
-            for ele in polygon.vertices {
-                let dist2 = ele.length_sq();
-                if dist2 > max_dist2 {
-                    max_dist2 = dist2
-                }
-            }
-            bounding_box_size = 2.0 * max_dist2.sqrt();
+            let max_dist2 = polygon
+                .vertices
+                .iter()
+                .map(|e| e.length_sq())
+                .max_by(|a, b| {
+                    a.partial_cmp(b).unwrap_or(if a.is_nan() {
+                        Ordering::Less
+                    } else {
+                        Ordering::Greater
+                    })
+                })
+                .expect("Polygon should have vertices");
+            2.0 * max_dist2.sqrt()
         }
-        Shape2::Circle(circle) => {
-            bounding_box_size = circle.radius;
-        }
-    }
+        Shape2::Circle(circle) => circle.radius,
+    };
     Vec2::new(bounding_box_size, bounding_box_size)
 }
 

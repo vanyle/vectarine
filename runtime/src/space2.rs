@@ -118,7 +118,7 @@ impl Entity2Manager {
         enable_collision: bool,
         collider2: Option<Collider2>,
     ) -> Option<usize> {
-        if self.free_spaces.len() == 0 {
+        if self.free_spaces.is_empty() {
             self.free_spaces.push(self.entities.len());
             self.entities.push(None)
         }
@@ -149,8 +149,8 @@ impl Entity2Manager {
 
     pub fn get_entity_local_transform(&self, entity_id: usize) -> Option<Transform2> {
         if self.has_entity(Some(entity_id)) {
-            let entity = self.get_entity_by_id(entity_id)?;
-            Some(entity.transform)
+            let transform = (self.entities[entity_id]).as_ref()?.transform;
+            Some(transform)
         } else {
             None
         }
@@ -171,21 +171,12 @@ impl Entity2Manager {
     }
 
     pub fn get_entity_absolute_transform(&self, entity_id: usize) -> Option<Transform2> {
-        if self.has_entity(Some(entity_id)) {
-            let parent_id;
-            let entity_transform;
-            {
-                let entity = self.get_entity_by_id(entity_id)?;
-                parent_id = entity.get_parent_id();
-                entity_transform = entity.transform.clone();
-            }
-            if self.has_entity(parent_id) {
-                Some(self.get_entity_absolute_transform(parent_id?)? + entity_transform)
-            } else {
-                Some(entity_transform)
-            }
+        let entity_local_transform = self.get_entity_local_transform(entity_id)?;
+        if let Some(parent_id) = self.get_entity_parent_id(entity_id) {
+            let parent_transform = self.get_entity_absolute_transform(parent_id)?;
+            Some(parent_transform + entity_local_transform)
         } else {
-            None
+            Some(entity_local_transform)
         }
     }
 
@@ -195,20 +186,19 @@ impl Entity2Manager {
         entity_id: usize,
         transform: Transform2,
     ) -> Option<Transform2> {
-        let absolute_transform = self.get_entity_absolute_transform(entity_id);
-        if absolute_transform.is_some() {
-            let local_transform = self.entities[entity_id].as_mut().unwrap().transform.clone();
+        if let Some(absolute_transform) = self.get_entity_absolute_transform(entity_id) {
+            let local_transform = self.get_entity_local_transform(entity_id)?;
             // Operations on transforms are NOT commutative
-            let new_transform = local_transform - absolute_transform.unwrap() + transform;
+            let new_transform = local_transform - absolute_transform + transform;
             self.set_entity_local_transform(entity_id, new_transform)
         } else {
             None
         }
     }
 
-    pub fn get_entity_parent_id(&mut self, entity_id: usize) -> Option<usize> {
+    pub fn get_entity_parent_id(&self, entity_id: usize) -> Option<usize> {
         if self.has_entity(Some(entity_id)) {
-            let entity = self.entities[entity_id].as_mut()?;
+            let entity = self.entities[entity_id].as_ref()?;
             entity.parent_id
         } else {
             None
@@ -226,8 +216,7 @@ impl Entity2Manager {
     }
 
     pub fn remove_entity_parent(&mut self, entity_id: usize) -> bool {
-        if self.has_entity(Some(entity_id)) {
-            let entity = self.entities[entity_id].as_mut().unwrap();
+        if let Some(entity) = self.entities[entity_id].as_mut() {
             entity.set_parent_id(None);
             true
         } else {
@@ -236,8 +225,7 @@ impl Entity2Manager {
     }
 
     pub fn add_entity_child(&mut self, entity_id: usize, child_id: usize) -> bool {
-        if self.has_entity(Some(entity_id)) {
-            let entity = self.entities[entity_id].as_mut().unwrap();
+        if let Some(entity) = self.entities[entity_id].as_mut() {
             entity.add_child(child_id);
             true
         } else {
@@ -246,8 +234,7 @@ impl Entity2Manager {
     }
 
     pub fn remove_entity_child(&mut self, entity_id: usize, child_id: usize) -> bool {
-        if self.has_entity(Some(entity_id)) {
-            let entity = self.entities[entity_id].as_mut().unwrap();
+        if let Some(entity) = self.entities[entity_id].as_mut() {
             entity.remove_child(child_id);
             true
         } else {
