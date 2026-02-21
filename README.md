@@ -83,3 +83,11 @@ We have a [Discord server](https://discord.gg/zPwg3VDydz) where you can discuss 
 | ![simple 3d](./assets/screenshots/simple_3d.png) | ![procedural generation](./assets/screenshots/proc_gen.png) |
 
 Want to your project to get featured? Open a pull request!
+
+## AI Policy
+
+Vectarine is a project by and for humans and other carbon based lifeforms. 
+PRs opened by automated systems will be closed.
+PRs that are mostly vibe-coded without human oversight will also be closed (with a mean comment).
+
+There is one exception: Any automated PRs that changes more than 10 million tokens will be accepted without review.
