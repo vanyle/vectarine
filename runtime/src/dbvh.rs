@@ -23,19 +23,6 @@ impl<const N: usize> DbvhBounds<N> {
         }
     }
 
-    pub fn intersection(&self, other: Self) -> Self {
-        let self_min_corner = self.position - self.volume.scale(0.5);
-        let self_max_corner = self.position + self.volume.scale(0.5);
-        let other_min_corner = other.position - other.volume.scale(0.5);
-        let other_max_corner = other.position + other.volume.scale(0.5);
-        let position = Vect::max(self_min_corner, other_min_corner);
-        let volume = Vect::max(
-            Vect::zero(),
-            Vect::min(self_max_corner, other_max_corner) - position,
-        );
-        Self { position, volume }
-    }
-
     pub fn strictly_includes(&self, other: Self) -> bool {
         let self_min_corner = self.position - self.volume.scale(0.5);
         let self_max_corner = self.position + self.volume.scale(0.5);
@@ -97,7 +84,7 @@ impl<const N: usize> DbvhTree<N> {
     }
 
     pub fn get_node_by_index(&self, node_index: usize) -> DbvhNode<N> {
-        return self.nodes[node_index];
+        self.nodes[node_index]
     }
 
     pub fn are_nodes_adjacent(&self, node_index: usize, adjacent_node_index: usize) -> bool {
@@ -694,5 +681,11 @@ impl<const N: usize> DbvhTree<N> {
         let mut adjacent_nodes = Vec::new();
         self.compute_adjacent_nodes_recursive(node_index, root_index, &mut adjacent_nodes);
         adjacent_nodes
+    }
+}
+
+impl<const N: usize> Default for DbvhTree<N> {
+    fn default() -> Self {
+        Self::new()
     }
 }
