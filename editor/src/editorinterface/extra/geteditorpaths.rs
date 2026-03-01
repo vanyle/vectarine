@@ -119,3 +119,9 @@ pub fn get_editor_plugins_path() -> PathBuf {
     let base_dirs = get_base_dir();
     base_dirs.data_dir().join("plugins")
 }
+
+pub static PLUGIN_FILE_EXTENSION: &str = ".vectaplugin";
+
+pub fn does_path_end_with(path: &Path, suffix: &str) -> bool {
+    path.to_string_lossy().ends_with(suffix)
+}

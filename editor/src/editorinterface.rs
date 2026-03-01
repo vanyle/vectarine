@@ -33,6 +33,7 @@ use crate::{
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
+    pluginsystem::trustedplugin::{self, PluginEntry},
     projectstate::ProjectState,
 };
 use editorconsole::draw_editor_console;
@@ -65,6 +66,8 @@ pub struct EditorState {
     pub editor_specific_window: sdl2::video::Window,
     pub editor_batch_draw: BatchDraw2d,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
+
+    pub plugins: Vec<PluginEntry>,
 
     pub game_error: Option<crate::luau::InfiniteLoopError>,
 }
@@ -179,6 +182,7 @@ impl EditorState {
                 .expect("Failed to create debouncer"),
             )),
             game_error: None,
+            plugins: trustedplugin::load_plugins(),
         }
     }
 

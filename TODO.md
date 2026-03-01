@@ -18,8 +18,8 @@
     - [x] Add a way to pick the prefered text editor (with vscode as default)
   - [x] Write the bundle.py script to watch the specs defined in plugins.md
   - [x] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
-  - [ ] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
   - [ ] Show plugins in the editor
+  - [ ] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
   - [ ] Add all editor hooks (debug menu)
   - [ ] Reload plugins in the editor
   - [ ] Show supported platforms in the editor
@@ -30,6 +30,7 @@
   - [ ] Test that it works on Windows
   - [ ] Emscripten compatibility using JS as a bridge
   - [ ] Move generic resource trait to the SDK so that plugins can define custom resources. (the plugin will need access to the resources object.)
+- [ ] Inside 'Help' add an 'Issues' button that opens to a window where errors related to the editor (bad installation, missing permissions, etc...) are shown instead of discarding all results all of the time.
 - [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
