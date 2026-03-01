@@ -64,10 +64,9 @@ Read the manual section about obfuscation for more details.
     ui_title(ui, "Export platform");
     ui.horizontal_wrapped(|ui| {
         TARGET_PLATFORM.with_borrow_mut(|target_platform| {
-            ui.selectable_value(target_platform, ExportPlatform::Windows, "Windows");
-            ui.selectable_value(target_platform, ExportPlatform::Linux, "Linux");
-            ui.selectable_value(target_platform, ExportPlatform::MacOS, "macOS");
-            ui.selectable_value(target_platform, ExportPlatform::Web, "Web");
+            for platform in ExportPlatform::all() {
+                ui.selectable_value(target_platform, platform, format!("{}", platform));
+            }
         });
     });
 

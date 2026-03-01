@@ -21,6 +21,29 @@ pub enum ExportPlatform {
     Web,
 }
 
+impl ExportPlatform {
+    pub fn all() -> impl Iterator<Item = Self> {
+        [
+            ExportPlatform::Windows,
+            ExportPlatform::Linux,
+            ExportPlatform::MacOS,
+            ExportPlatform::Web,
+        ]
+        .into_iter()
+    }
+}
+
+impl std::fmt::Display for ExportPlatform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExportPlatform::Windows => write!(f, "Windows"),
+            ExportPlatform::Linux => write!(f, "Linux"),
+            ExportPlatform::MacOS => write!(f, "macOS"),
+            ExportPlatform::Web => write!(f, "Web"),
+        }
+    }
+}
+
 pub fn export_project(
     project_path: &Path,
     project_info: &ProjectInfo,
@@ -211,12 +234,12 @@ fn add_file_content_to_zip(
 
 fn get_export_filename(project_info: &ProjectInfo, platform: ExportPlatform) -> String {
     let project_name = &project_info.title.replace(" ", "_");
-    match platform {
-        ExportPlatform::Windows => format!("{}_windows.zip", project_name),
-        ExportPlatform::Linux => format!("{}_linux.zip", project_name),
-        ExportPlatform::MacOS => format!("{}_macos.zip", project_name),
-        ExportPlatform::Web => format!("{}_web.zip", project_name),
-    }
+    // Example: my_snake_windows.zip
+    format!(
+        "{}_{}.zip",
+        project_name,
+        format!("{}", platform).to_lowercase()
+    )
 }
 
 fn get_files_in_folder(folder_path: &Path, zip_base_path: &str) -> Vec<(PathBuf, String)> {
