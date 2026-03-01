@@ -839,6 +839,19 @@ It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the s
 
 You put these files in a zip and upload it to [itch.io](https://itch.io) if you want.
 
+# 🧩 Extending Vectarine with Plugins
+
+Plugins are a way to add features to the vectarine editor and to your game. Plugins can add new interfaces in the editor, new luau functions, and do basically anything.
+Because of this, running requires that you trust the author.
+
+Plugins exist in the form of files with the `.vectaplugin` extension. Vectarine stores a list of trusted plugin that you can use in your games to a `plugin` folder that
+you can open using the "Open plugin folder" in the "Plugin manager". When you download a plugin, you should add it to this folder.
+
+Games have their own list of plugins in their `plugins` folder which should be next to the `game.vecta` file. For security reasons, 
+**the vectarine editor will only load plugins from a game if they are also in the `plugins` folder of the editor** and are thus trusted plugins!
+
+If you want to make your own plugins, check the [README](https://github.com/vanyle/vectarine/tree/main/vectarine-plugin-template) of the vectarine plugin template on Github.
+
 # 👥 Collaborating on a project
 
 Working on a game with other people is more fun!
