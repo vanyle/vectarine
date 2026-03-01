@@ -258,6 +258,11 @@ impl EditorState {
         let ctx = platform.context();
 
         draw_editor_menu(self, &ctx);
+
+        if self.project.borrow().is_none() {
+            draw_empty_screen(self, &ctx);
+        }
+
         draw_editor_console(self, &ctx);
         draw_editor_resources(self, painter, &ctx);
         draw_editor_watcher(self, &ctx);
@@ -265,10 +270,6 @@ impl EditorState {
         draw_editor_export(self, &ctx);
         draw_editor_plugin_manager(self, &ctx);
         draw_editor_preferences(self, &ctx);
-
-        if self.project.borrow().is_none() {
-            draw_empty_screen(self, &ctx);
-        }
 
         // Stop drawing the egui frame and get the full output
         let full_output = platform.end_frame(&mut self.video.borrow_mut());

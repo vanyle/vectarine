@@ -125,3 +125,15 @@ pub static PLUGIN_FILE_EXTENSION: &str = ".vectaplugin";
 pub fn does_path_end_with(path: &Path, suffix: &str) -> bool {
     path.to_string_lossy().ends_with(suffix)
 }
+
+/// Returns the last components of a path. Ideal for displaying long paths.
+pub fn get_end_of_path(path: &Path) -> String {
+    // Show last 5 components of the path.
+    let components = path.components().collect::<Vec<_>>();
+    let end_of_path = &components
+        [std::cmp::max(0, components.len().saturating_sub(5))..components.len()]
+        .iter()
+        .map(|c| PathBuf::from(c.as_os_str()))
+        .fold(PathBuf::new(), |a, b| a.join(b));
+    format!("{}", end_of_path.display())
+}
