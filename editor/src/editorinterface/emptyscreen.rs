@@ -14,7 +14,7 @@ use runtime::{
 
 use crate::editorinterface::{
     EditorState, emptyscreen::createproject::create_game_and_open_it,
-    geteditorpaths::get_gallery_path,
+    extra::geteditorpaths::get_end_of_path, geteditorpaths::get_gallery_path,
 };
 
 pub mod createproject;
@@ -101,17 +101,6 @@ pub fn draw_empty_screen_window_content(
             draw_gallery(state, ui);
         });
     });
-}
-
-pub fn get_end_of_path(path: &Path) -> String {
-    // Show last 5 components of the path.
-    let components = path.components().collect::<Vec<_>>();
-    let end_of_path = &components
-        [std::cmp::max(0, components.len().saturating_sub(5))..components.len()]
-        .iter()
-        .map(|c| PathBuf::from(c.as_os_str()))
-        .fold(PathBuf::new(), |a, b| a.join(b));
-    format!("{}", end_of_path.display())
 }
 
 pub fn draw_new_game_window_content(
