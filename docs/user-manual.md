@@ -842,10 +842,10 @@ You put these files in a zip and upload it to [itch.io](https://itch.io) if you 
 # 🧩 Extending Vectarine with Plugins
 
 Plugins are a way to add features to the vectarine editor and to your game. Plugins can add new interfaces in the editor, new luau functions, and do basically anything.
-Because of this, running requires that you trust the author.
+Because of this, using a plugin in a game requires that you trust the author.
 
-Plugins exist in the form of files with the `.vectaplugin` extension. Vectarine stores a list of trusted plugin that you can use in your games to a `plugin` folder that
-you can open using the "Open plugin folder" in the "Plugin manager". When you download a plugin, you should add it to this folder.
+Plugins exist in the form of files with the `.vectaplugin` extension. Vectarine stores a list of trusted plugins that you can use in your games to a `plugins` folder.
+You can open it using the "Open plugins folder" button in the "Plugin manager". When you download a plugin, add it to this folder and refresh the list for it to appear.
 
 Games have their own list of plugins in their `plugins` folder which should be next to the `game.vecta` file. For security reasons, 
 **the vectarine editor will only load plugins from a game if they are also in the `plugins` folder of the editor** and are thus trusted plugins!

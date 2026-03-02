@@ -7,6 +7,7 @@ use std::{
 
 use runtime::{
     anyhow::{self, bail},
+    native_plugin::{DYNAMIC_LIB_SUFFIXES, get_dynamic_lib_suffix},
     toml,
 };
 use serde::Deserialize;
@@ -49,21 +50,12 @@ impl TrustedPlugin {
     /// If the destination path already exists, it will be overwritten.
     /// If the plugin does not have a lua api, it will do nothing.
     pub fn try_copy_lua_api(&self, dest: &Path) -> anyhow::Result<()> {
-        if !self.has_lua_api {
-            return Ok(());
-        }
-        let Ok(file) = fs::File::open(&self.path) else {
-            bail!("The file cannot be read");
-        };
-        let Ok(mut zip_archive) = zip::ZipArchive::new(file) else {
-            bail!("It is not a valid {} file", PLUGIN_FILE_EXTENSION);
-        };
-        let Ok(mut lua_api_entry) = zip_archive.by_name("plugin.luau") else {
-            bail!("It does not contain a plugin.luau file");
-        };
-        let mut dest_writer = fs::File::create(dest)?;
-        io::copy(&mut lua_api_entry, &mut dest_writer)?;
-        Ok(())
+        copy_file_from_vectaplugin(&self.path, "plugin.luau", dest)
+    }
+
+    pub fn try_copy_dynamic_library(&self, dest: &Path) -> anyhow::Result<()> {
+        let platform_file = get_platform_file_for_me();
+        copy_file_from_vectaplugin(&self.path, platform_file, dest)
     }
 
     /// Checks if the file containing the plugin is still valid.
@@ -118,6 +110,47 @@ pub fn load_plugins() -> Vec<PluginEntry> {
         .collect::<Vec<_>>()
 }
 
+static PLATFORM_FILES: [(ExportPlatform, &str); 4] = [
+    (ExportPlatform::Windows, "windows/plugin.dll"),
+    (ExportPlatform::Linux, "linux/plugin.so"),
+    (ExportPlatform::MacOS, "macos/plugin.dylib"),
+    (ExportPlatform::Web, "web/plugin.wasm"),
+];
+
+pub fn get_platform_file_for_me() -> &'static str {
+    #[cfg(target_os = "windows")]
+    {
+        "windows/plugin.dll"
+    }
+    #[cfg(target_os = "linux")]
+    {
+        "linux/plugin.so"
+    }
+    #[cfg(target_os = "macos")]
+    {
+        "macos/plugin.dylib"
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        "web/plugin.wasm"
+    }
+}
+
+fn copy_file_from_vectaplugin(zip_path: &Path, file_name: &str, dest: &Path) -> anyhow::Result<()> {
+    let Ok(file) = fs::File::open(zip_path) else {
+        bail!("The vectaplugin file cannot be read");
+    };
+    let Ok(mut zip_archive) = zip::ZipArchive::new(file) else {
+        bail!("It is not a valid {} file", PLUGIN_FILE_EXTENSION);
+    };
+    let Ok(mut file) = zip_archive.by_name(file_name) else {
+        bail!("It does not contain a {} file", file_name);
+    };
+    let mut dest_writer = fs::File::create(dest)?;
+    io::copy(&mut file, &mut dest_writer)?;
+    Ok(())
+}
+
 fn load_trusted_plugin(path: &Path) -> anyhow::Result<TrustedPlugin> {
     if !does_path_end_with(path, PLUGIN_FILE_EXTENSION) {
         bail!("The file does not end with {}", PLUGIN_FILE_EXTENSION);
@@ -138,14 +171,7 @@ fn load_trusted_plugin(path: &Path) -> anyhow::Result<TrustedPlugin> {
         );
     };
 
-    let platform_files = [
-        (ExportPlatform::Windows, "windows/plugin.dll"),
-        (ExportPlatform::Linux, "linux/plugin.so"),
-        (ExportPlatform::MacOS, "macos/plugin.dylib"),
-        (ExportPlatform::Web, "web/plugin.wasm"),
-    ];
-
-    let supported_platforms = platform_files
+    let supported_platforms = PLATFORM_FILES
         .iter()
         .filter(|(_, file)| zip_archive.by_name(file).is_ok())
         .map(|(platform, _)| *platform)
@@ -173,4 +199,25 @@ fn load_trusted_plugin(path: &Path) -> anyhow::Result<TrustedPlugin> {
         url: manifest.url,
         description: manifest.description,
     })
+}
+
+pub fn get_hash_of_file_in_zip(zip_path: &Path, file_name: &str) -> Option<Hash> {
+    let Ok(file) = fs::File::open(zip_path) else {
+        return None;
+    };
+    let Ok(mut zip_archive) = zip::ZipArchive::new(file) else {
+        return None;
+    };
+    let Ok(file) = zip_archive.by_name(file_name) else {
+        return None;
+    };
+    let mut file_reader = io::BufReader::new(file);
+    Hash::from_file(&mut file_reader)
+}
+
+pub fn is_dynamic_library_file(path: &Path) -> bool {
+    let Some(ext) = path.extension() else {
+        return false;
+    };
+    DYNAMIC_LIB_SUFFIXES.contains(&ext.to_string_lossy().as_ref())
 }

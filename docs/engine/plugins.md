@@ -57,6 +57,15 @@ to the trusted plugins folder.
 
 When the list of plugins of the game changes, the game is restarted to have a coherent state.
 
+## Dynamic loading
+
+On some OS, a dynamic library needs to be associated with a file and cannot come from memory. To solve this, the plugin folder contains both the `.dll` / `.so` / etc... and the `.vectaplugin` files.
+If the dynamic library file does not exist, we generate it automatically.
+
+Before execution we check the hash of the dynamic library against the hash inside the `.vectaplugin` to prevent anything fishy.
+
+This type of verification only exists in the editor. The runtime trusts the game's plugins.
+
 ## In the game
 
 When the game is distributed, only the relevant native code is shipped in the `.vecta` package. As start-up, the game is able to extract the .dlls/.so/.dynlib from the zip to execute them.
