@@ -9,6 +9,7 @@ use crate::{
         extra::geteditorpaths::{get_editor_plugins_path, get_end_of_path},
     },
     pluginsystem::trustedplugin::{self, PluginEntry, TrustedPlugin},
+    projectstate::ProjectState,
 };
 
 pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context) {
@@ -99,7 +100,8 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
                 let row_height = 20.0;
                 match plugin {
                     PluginEntry::Trusted(trusted_plugin) => {
-                        draw_trusted_plugin_row(&mut body, trusted_plugin);
+                        let game_project = editor.project.borrow();
+                        draw_trusted_plugin_row(&mut body, trusted_plugin, game_project.as_ref());
                     }
                     PluginEntry::Malformed(malformed) => {
                         let filename = malformed
@@ -139,21 +141,47 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
         .on_hover_text("Game plugins are the list of plugins belonging to the current game. Only trusted plugins are actually loaded and executed.");
 
     let project = editor.project.borrow();
-    if let Some(_project) = &project.as_ref() {
-        if ui
-            .button("Open game plugin folder")
-            .on_hover_text("Open the folder with the plugins specific to your project")
-            .clicked()
-        {
-            // ...
-        }
+    if let Some(project) = &project.as_ref() {
+        ui.horizontal(|ui| {
+            #[allow(clippy::collapsible_if)]
+            if ui
+                .button("Open game plugin folder")
+                .on_hover_text("Open the folder with the plugins specific to your project")
+                .clicked()
+            {
+                if let Some(folder) = project.project_plugins_folder() {
+                    if !folder.exists() {
+                        let _ = fs::create_dir_all(&folder);
+                    }
+                    let _ = open::that(&folder);
+                }
+            }
+
+            if ui.button("Refresh game plugins list").clicked() {
+                let trusted_plugins = editor
+                    .plugins
+                    .iter()
+                    .filter_map(|entry| match entry {
+                        PluginEntry::Trusted(trusted_plugin) => Some(trusted_plugin.clone()),
+                        PluginEntry::Malformed(_) => None,
+                    })
+                    .collect::<Vec<TrustedPlugin>>();
+                project.refresh_plugin_list(&trusted_plugins);
+            }
+
+            // TODO: draw the table of loaded plugins with the associated actions.
+        });
     } else {
         ui.label("No project loaded")
             .on_hover_text("Load a project to see its plugins.");
     }
 }
 
-fn draw_trusted_plugin_row(body: &mut TableBody, plugin: &mut TrustedPlugin) {
+fn draw_trusted_plugin_row(
+    body: &mut TableBody,
+    plugin: &mut TrustedPlugin,
+    game_project: Option<&ProjectState>,
+) {
     let ui = body.ui_mut();
     let font_id = egui::TextStyle::Body.resolve(ui.style());
 
@@ -202,8 +230,17 @@ fn draw_trusted_plugin_row(body: &mut TableBody, plugin: &mut TrustedPlugin) {
             ui.label(supported_platforms);
         });
         row.col(|ui| {
-            if ui.button("Add to game").clicked() {
-                // ...
+            if let Some(game_project) = game_project {
+                // First, check if the plugin is already added
+                let game_plugins = game_project.plugins.borrow();
+                let is_added = game_plugins.iter().any(|p| {
+                    p.trusted_plugin.as_ref().map(|plugin| plugin.hash) == Some(plugin.hash)
+                });
+                if is_added {
+                    ui.label("Added");
+                } else if ui.button("Add to game").clicked() {
+                    game_project.add_plugin(plugin.clone());
+                }
             }
         });
     });

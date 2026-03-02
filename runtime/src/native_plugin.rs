@@ -59,7 +59,7 @@ pub struct PluginEnvironment {
 impl PluginEnvironment {
     pub fn load_plugins(plugin_names: &[String]) -> Self {
         // TODO: load plugins from a directory in a cross-platform way
-        let suffix = get_dynlib_suffix();
+        let suffix = get_dynamic_lib_suffix();
         let native_plugins = plugin_names
             .iter()
             .flat_map(|name| {
@@ -93,7 +93,9 @@ impl PluginEnvironment {
     }
 }
 
-fn get_dynlib_suffix() -> &'static str {
+pub static DYNAMIC_LIB_SUFFIXES: [&str; 4] = [".so", ".dll", ".dylib", ".wasm"];
+
+pub fn get_dynamic_lib_suffix() -> &'static str {
     #[cfg(target_os = "linux")]
     {
         ".so"
