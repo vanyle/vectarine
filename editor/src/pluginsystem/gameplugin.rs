@@ -12,6 +12,7 @@ use crate::pluginsystem::trustedplugin::{
 #[derive(Debug)]
 pub struct GamePlugin {
     pub path: PathBuf,
+    pub hash: Hash,
     pub trusted_plugin: Option<TrustedPlugin>,
     pub dynamic_library_path: PathBuf,
     pub dynamic_library_hash: Option<Hash>,
@@ -19,19 +20,18 @@ pub struct GamePlugin {
 
 impl GamePlugin {
     pub fn from_path(path: &Path, trusted_plugins: &[TrustedPlugin]) -> Option<Self> {
-        let Some(hash) = Hash::from_path(path) else {
-            return None;
-        };
+        let hash = Hash::from_path(path)?;
         let trusted_plugin = trusted_plugins.iter().find(|plugin| plugin.hash == hash);
         let dynamic_library_path = get_associated_dynamic_library_path(path);
         let path_in_zip = get_platform_file_for_me();
-        let hash = get_hash_of_file_in_zip(path, path_in_zip);
+        let dynamic_library_hash = get_hash_of_file_in_zip(path, path_in_zip);
 
         Some(Self {
             path: path.to_path_buf(),
+            hash,
             trusted_plugin: trusted_plugin.cloned(),
             dynamic_library_path,
-            dynamic_library_hash: hash,
+            dynamic_library_hash,
         })
     }
 

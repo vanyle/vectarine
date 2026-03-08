@@ -1,3 +1,4 @@
+use base64::{Engine, prelude::BASE64_STANDARD};
 use std::{
     fs,
     io::{self, Read},
@@ -7,6 +8,13 @@ use std::{
 /// Represents the hash of a plugin
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub struct Hash([u8; 32]);
+
+impl std::fmt::Display for Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let base64 = BASE64_STANDARD.encode(self.0);
+        write!(f, "{}", base64)
+    }
+}
 
 impl Hash {
     pub fn from(bytes: blake3::Hash) -> Self {
