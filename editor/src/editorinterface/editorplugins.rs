@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fs};
 
 use egui_extras::{Column, TableBody, TableBuilder};
-use runtime::egui;
+use runtime::egui::{self, Label};
 
 use crate::{
     editorinterface::{
@@ -19,7 +19,7 @@ pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context)
         let window = egui::Window::new("Plugin manager")
             .resizable(true)
             .default_height(300.0)
-            .default_width(500.0)
+            .default_width(700.0)
             .open(&mut is_shown)
             .collapsible(false)
             .vscroll(false);
@@ -43,8 +43,8 @@ pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context)
 
 fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::Ui) {
     ui.horizontal(|ui|{
-        if ui.button("Open plugins folder")
-            .on_hover_text("Open the folder where plugins are stored. You can add plugins there and they will appear in the list of trusted plugins.")
+        if ui.button("Open trusted plugins folder")
+            .on_hover_text("Open the folder where trusted plugins are stored. You can add plugins there and they will appear in the list of trusted plugins.")
             .clicked(){
                 let plugin_library_path = get_editor_plugins_path();
                 if !plugin_library_path.exists() {
@@ -53,7 +53,7 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
                 let _ = open::that(plugin_library_path);
             }
 
-        if ui.button("Refresh plugin list").clicked() {
+        if ui.button("Refresh trusted plugin list").clicked() {
             editor.plugins = trustedplugin::load_plugins();
         }
     });
@@ -63,45 +63,15 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
     if plugins.is_empty() {
         ui.label("No plugins found").on_hover_text("Plugins are programs that extend Vectarine's functionality. They are files ending with '.vecta.plugin'. You can download plugins or create them using the template provided by Vectarine GitHub repository.");
     } else {
-        ui.heading("Trusted plugins").on_hover_text("Trusted plugins are the list of plugins known to the editor. Only trusted plugins of a game are loaded and executed. To be trusted, a plugin needs to be inside the plugins folder of the editor");
+        ui.heading("Trusted plugins").on_hover_text("Trusted plugins are the list of plugins known to the editor. Only plugins of a game that are also inside the trusted list are executed.");
 
-        let available_height = ui.available_height();
-        let table = TableBuilder::new(ui)
-            .striped(true)
-            .resizable(true)
-            .auto_shrink(true)
-            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-            .column(Column::auto()) // Name
-            .column(Column::auto().at_most(200.0).clip(true)) // Path
-            .column(Column::auto().resizable(true)) // About (description, version, url, errors, supported platforms, ...)
-            .column(Column::auto()) // Supported platforms
-            .column(Column::auto()) // Actions
-            .min_scrolled_height(0.0)
-            .max_scroll_height(available_height);
-        let table = table.header(20.0, |mut header| {
-            header.col(|ui| {
-                ui.label("Name");
-            });
-            header.col(|ui| {
-                ui.label("Filename");
-            });
-            header.col(|ui| {
-                ui.label("Description");
-            });
-            header.col(|ui| {
-                ui.label("Supported platforms");
-            });
-            header.col(|ui| {
-                ui.label("Actions");
-            });
-        });
-        table.body(|mut body| {
+        draw_table_header_for_plugin(ui, "trusted", |body| {
             for plugin in plugins.iter_mut() {
                 let row_height = 20.0;
                 match plugin {
                     PluginEntry::Trusted(trusted_plugin) => {
                         let game_project = editor.project.borrow();
-                        draw_trusted_plugin_row(&mut body, trusted_plugin, game_project.as_ref());
+                        draw_trusted_plugin_row(body, trusted_plugin, game_project.as_ref());
                     }
                     PluginEntry::Malformed(malformed) => {
                         let filename = malformed
@@ -130,6 +100,9 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
                             row.col(|ui| {
                                 ui.label("N/A");
                             });
+                            row.col(|ui| {
+                                ui.label("N/A");
+                            });
                         });
                     }
                 }
@@ -138,7 +111,7 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
     }
 
     ui.heading("Game plugins")
-        .on_hover_text("Game plugins are the list of plugins belonging to the current game. Only trusted plugins are actually loaded and executed.");
+        .on_hover_text("Game plugins are the list of plugins belonging to the current game. Only plugins that are also trusted are executed.");
 
     let project = editor.project.borrow();
     if let Some(project) = &project.as_ref() {
@@ -168,8 +141,50 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
                     .collect::<Vec<TrustedPlugin>>();
                 project.refresh_plugin_list(&trusted_plugins);
             }
+        });
 
-            // TODO: draw the table of loaded plugins with the associated actions.
+        let mut game_plugins = project.plugins.borrow_mut();
+
+        draw_table_header_for_game_plugin(ui, "game", |body| {
+            for plugin in game_plugins.iter_mut() {
+                let row_height = 20.0;
+                let filename = plugin
+                    .path
+                    .file_name()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| get_end_of_path(&plugin.path));
+
+                match plugin.trusted_plugin.as_mut() {
+                    Some(trusted_plugin) => {
+                        body.row(row_height, |mut row| {
+                            row.col(|ui| {
+                                ui.label(&trusted_plugin.name);
+                            });
+                            row.col(|ui| {
+                                ui.label(filename);
+                            });
+                            row.col(|ui| {
+                                ui.label("This plugin is trusted");
+                            });
+                        });
+                    }
+                    None => {
+                        body.row(row_height, |mut row| {
+                            row.col(|ui| {
+                                ui.label("⚠️ Untrusted").on_hover_text("This plugin is not trusted and won't be executed. You can add it to the list of trusted plugin to allow its execution.");
+                            });
+                            row.col(|ui| {
+                                ui.label(filename);
+                            });
+                            row.col(|ui| {
+                                if ui.button("Trust").clicked() {
+                                    // Trust it and refresh lists.
+                                }
+                            });
+                        });
+                    }
+                }
+            }
         });
     } else {
         ui.label("No project loaded")
@@ -230,6 +245,12 @@ fn draw_trusted_plugin_row(
             ui.label(supported_platforms);
         });
         row.col(|ui| {
+            let label = Label::new(plugin.hash.to_string()).wrap();
+            if ui.add(label).on_hover_text("Click to copy").clicked() {
+                ui.ctx().copy_text(plugin.hash.to_string());
+            }
+        });
+        row.col(|ui| {
             if let Some(game_project) = game_project {
                 // First, check if the plugin is already added
                 let game_plugins = game_project.plugins.borrow();
@@ -242,6 +263,98 @@ fn draw_trusted_plugin_row(
                     game_project.add_plugin(plugin.clone());
                 }
             }
+        });
+    });
+}
+
+/// Draws a table header for a plugin list.
+/// This table has 6 columns:
+/// - Name
+/// - Filename
+/// - About
+/// - Supported platforms
+/// - Hash
+/// - Actions
+fn draw_table_header_for_plugin(
+    ui: &mut egui::Ui,
+    salt: &str,
+    body_renderer: impl FnOnce(&mut TableBody),
+) {
+    ui.push_id(salt, |ui| {
+        let available_height = ui.available_height();
+        let table = TableBuilder::new(ui)
+            .striped(true)
+            .resizable(true)
+            .auto_shrink(true)
+            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+            .column(Column::auto()) // Name
+            .column(Column::auto().at_most(200.0).clip(true)) // Path
+            .column(Column::auto().resizable(true)) // About (description, version, url, errors, supported platforms, ...)
+            .column(Column::auto()) // Supported platforms
+            .column(Column::auto()) // Hash
+            .column(Column::auto()) // Actions
+            .min_scrolled_height(0.0)
+            .max_scroll_height(available_height);
+
+        let table = table.header(20.0, |mut header| {
+                header.col(|ui| {
+                    ui.label("Name");
+                });
+                header.col(|ui| {
+                    ui.label("Filename");
+                });
+                header.col(|ui| {
+                    ui.label("Description");
+                });
+                header.col(|ui| {
+                    ui.label("Supported platforms").on_hover_text("Your game will only be available on the platforms that are supported by all of the plugins your game uses.");
+                });
+                header.col(|ui| {
+                    ui.label("Hash").on_hover_text("You can compare this hash with the one on the plugin's website if it exists to make sure the plugin is not corrupted or malicious.");
+                });
+                header.col(|ui| {
+                    ui.label("Actions");
+                });
+            });
+        table.body(|mut body| {
+            body_renderer(&mut body);
+        });
+    });
+}
+
+// Draw a table header for game plugins
+// This table has 3 columns
+// Name, Filename and Actions
+fn draw_table_header_for_game_plugin(
+    ui: &mut egui::Ui,
+    salt: &str,
+    body_renderer: impl FnOnce(&mut TableBody),
+) {
+    ui.push_id(salt, |ui| {
+        let available_height = ui.available_height();
+        let table = TableBuilder::new(ui)
+            .striped(true)
+            .resizable(true)
+            .auto_shrink(true)
+            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+            .column(Column::auto()) // Name
+            .column(Column::auto().at_most(200.0).clip(true)) // Path
+            .column(Column::auto()) // Actions
+            .min_scrolled_height(0.0)
+            .max_scroll_height(available_height);
+        let table = table.header(20.0, |mut header| {
+            header.col(|ui| {
+                ui.label("Trusted Name");
+            });
+            header.col(|ui| {
+                ui.label("Filename");
+            });
+            header.col(|ui| {
+                ui.label("Actions");
+            });
+        });
+        table.body(|mut body| {
+            body_renderer(&mut body);
         });
     });
 }

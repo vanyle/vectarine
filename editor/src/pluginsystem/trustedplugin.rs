@@ -7,7 +7,7 @@ use std::{
 
 use runtime::{
     anyhow::{self, bail},
-    native_plugin::{DYNAMIC_LIB_SUFFIXES, get_dynamic_lib_suffix},
+    native_plugin::DYNAMIC_LIB_SUFFIXES,
     toml,
 };
 use serde::Deserialize;

@@ -19,6 +19,7 @@ which = "8.0.0"
 zip = "6.0.0"
 directories = "6.0.0"
 blake3 = "1.8.3"
+base64 = "0.22.1"
 
 [[bin]]
 name = "vecta"
