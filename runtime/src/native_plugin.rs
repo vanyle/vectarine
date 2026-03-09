@@ -4,6 +4,8 @@ use std::rc::Rc;
 
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
+use crate::game_resource::ResourceManager;
+
 #[cfg(target_os = "emscripten")]
 use super::native_plugin::native_plugin_impl::emscripten as imp;
 
@@ -23,6 +25,7 @@ pub struct NativePlugin {
 }
 
 impl NativePlugin {
+    /// Load a native vectarine plugin from a path.
     pub fn load(name: &str) -> vectarine_plugin_sdk::anyhow::Result<Self> {
         let native_handle = unsafe { imp::NativePlugin::load(name) }?;
         Ok(Self {
@@ -57,19 +60,23 @@ pub struct PluginEnvironment {
 }
 
 impl PluginEnvironment {
-    pub fn load_plugins(plugin_names: &[String]) -> Self {
+    /// Are plugins resources? Great question! No. But we still need a resource_manager to resolve their path.
+    pub fn load_plugins(plugin_names: &[String], resource_manager: &ResourceManager) -> Self {
         // TODO: load plugins from a directory in a cross-platform way
         let suffix = get_dynamic_lib_suffix();
         let native_plugins = plugin_names
             .iter()
             .flat_map(|name| {
-                let full_name = format!("{}{}", name, suffix);
-
+                let full_name = format!("{}.{}", name, suffix);
                 // We look at the plugin at multiple locations before giving up
-                let plugin = match NativePlugin::load(&full_name) {
+                let plugin_path = resource_manager
+                    .get_resource_path()
+                    .join("plugins")
+                    .join(&full_name);
+                let plugin = match NativePlugin::load(plugin_path.to_string_lossy().as_ref()) {
                     Ok(plugin) => plugin,
                     Err(e) => {
-                        println!("Failed to load plugin {}, {}", full_name, e);
+                        println!("Failed to load plugin {}: {}", full_name, e);
                         return None;
                     }
                 };
@@ -88,28 +95,28 @@ impl PluginEnvironment {
 
     pub fn init(&self, plugin_interface: PluginInterface) {
         for plugin in &self.loaded_plugins {
-            plugin.call_init_hook(plugin_interface);
+            plugin.call_init_hook(plugin_interface); // might trigger a crash I guess?
         }
     }
 }
 
-pub static DYNAMIC_LIB_SUFFIXES: [&str; 4] = [".so", ".dll", ".dylib", ".wasm"];
+pub static DYNAMIC_LIB_SUFFIXES: [&str; 4] = ["so", "dll", "dylib", "wasm"];
 
 pub fn get_dynamic_lib_suffix() -> &'static str {
     #[cfg(target_os = "linux")]
     {
-        ".so"
+        "so"
     }
     #[cfg(target_os = "windows")]
     {
-        ".dll"
+        "dll"
     }
     #[cfg(target_os = "macos")]
     {
-        ".dylib"
+        "dylib"
     }
     #[cfg(target_os = "emscripten")]
     {
-        ".wasm"
+        "wasm"
     }
 }

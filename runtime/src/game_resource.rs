@@ -446,6 +446,9 @@ impl ResourceManager {
     pub fn get_absolute_path(&self, resource_path: &Path) -> String {
         get_absolute_path(&self.base_path, resource_path)
     }
+    pub fn get_resource_path(&self) -> PathBuf {
+        self.base_path.clone()
+    }
 }
 
 /// Represents a resource, a dependency on external data that can be loaded and used by the game.
