@@ -18,12 +18,12 @@
     - [x] Add a way to pick the prefered text editor (with vscode as default)
   - [x] Write the bundle.py script to watch the specs defined in plugins.md
   - [x] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
-  - [ ] Show plugins in the editor
-  - [ ] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
+  - [x] Show plugins in the editor
+  - [x] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
   - [ ] Add all editor hooks (debug menu)
   - [ ] Reload plugins in the editor
-  - [ ] Show supported platforms in the editor
-  - [ ] Add ability to load/unload plugins from the editor from the filesystem
+  - [x] Show supported platforms in the editor
+  - [x] Add ability to load/unload plugins from the editor from the filesystem
   - [ ] Add ability to download plugins from the editor
   - [ ] Add documentation on how to create and use plugins
   - [ ] Test that it works on Linux
