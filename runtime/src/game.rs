@@ -64,7 +64,8 @@ impl Game {
         let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone(), metrics);
         game.load(video, window);
 
-        let plugin_env = PluginEnvironment::load_plugins(&project_info.plugins);
+        let plugin_env =
+            PluginEnvironment::load_plugins(&project_info.plugins, &game.lua_env.resources);
         plugin_env.init(PluginInterface {
             lua: &game.lua_env.lua,
         });

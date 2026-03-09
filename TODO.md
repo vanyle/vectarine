@@ -20,8 +20,11 @@
   - [x] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
   - [x] Show plugins in the editor
   - [x] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
+  - [x] Automatically unpack dynamic libs in the plugins folder.
+  - [ ] Find a way to avoid crashes caused by dylibs plugins
   - [ ] Add all editor hooks (debug menu)
   - [ ] Reload plugins in the editor
+  - [ ] Automatically manage the "plugins" field in the game.vecta file of projects opened in the editor
   - [x] Show supported platforms in the editor
   - [x] Add ability to load/unload plugins from the editor from the filesystem
   - [ ] Add ability to download plugins from the editor

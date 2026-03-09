@@ -7,3 +7,4 @@ description = """Open this project to discover how vectarine works!"""
 loading_animation = "pixel"
 screen_width = 800
 screen_height = 600
+plugins = ["plugin_template"]

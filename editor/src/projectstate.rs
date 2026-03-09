@@ -182,6 +182,14 @@ impl ProjectState {
             }
         }
 
+        // Extract dynamic libraries of trusted plugins
+        for plugin in &game_plugins {
+            let Some(trusted_plugin) = &plugin.trusted_plugin else {
+                continue;
+            };
+            let _ = trusted_plugin.try_copy_dynamic_library(&plugin.dynamic_library_path);
+        }
+
         // Sync the Lua API folder
         if !luau_api_folder.is_dir() && luau_api_folder.exists() {
             let _ = fs::remove_file(&luau_api_folder);
