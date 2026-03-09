@@ -31,6 +31,12 @@ use crate::io::fs::ReadOnlyFileSystem;
 
 use crate::metrics::MetricsHolder;
 
+pub const BUILT_IN_MODULES: &[&str] = &[
+    "vec", "vec4", "event", "fastlist", "camera", "audio", "tile", "loader", "image", "text",
+    "graphics", "screen", "io", "debug", "persist", "resource", "physics", "color", "coord",
+    "canvas",
+];
+
 pub struct LuaEnvironment {
     pub lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
     pub env_state: Rc<RefCell<IoEnvState>>,
@@ -81,80 +87,66 @@ impl LuaEnvironment {
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
 
         let persist_module = lua_persist::setup_persist_api(&lua).unwrap();
-        lua.register_module("@vectarine/persist", persist_module)
-            .unwrap();
+        register_vectarine_module(&lua, "persist", persist_module);
 
         let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
-        lua.register_module("@vectarine/vec", vec2_module).unwrap();
+        register_vectarine_module(&lua, "vec", vec2_module);
 
         let vec4_module = lua_vec4::setup_vec_api(&lua).unwrap();
-        lua.register_module("@vectarine/vec4", vec4_module).unwrap();
+        register_vectarine_module(&lua, "vec4", vec4_module);
 
         let fastlist_module = lua_fastlist::setup_fastlist_api(&lua, &batch, &resources).unwrap();
-        lua.register_module("@vectarine/fastlist", fastlist_module)
-            .unwrap();
+        register_vectarine_module(&lua, "fastlist", fastlist_module);
 
         let color_module = lua.create_table().unwrap();
-        lua.register_module("@vectarine/color", color_module)
-            .unwrap();
+        register_vectarine_module(&lua, "color", color_module);
 
         let coords_module = lua_coord::setup_coords_api(&lua, &gl).unwrap();
-        lua.register_module("@vectarine/coord", coords_module)
-            .unwrap();
+        register_vectarine_module(&lua, "coord", coords_module);
 
         let (event_module, default_events, _event_manager) =
             lua_event::setup_event_api(&lua).unwrap();
-        lua.register_module("@vectarine/event", event_module)
-            .unwrap();
+        register_vectarine_module(&lua, "event", event_module);
 
         let canvas_module =
             lua_canvas::setup_canvas_api(&lua, &batch, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/canvas", canvas_module)
-            .unwrap();
+        register_vectarine_module(&lua, "canvas", canvas_module);
 
         let image_module =
             lua_image::setup_image_api(&lua, &batch, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/image", image_module)
-            .unwrap();
+        register_vectarine_module(&lua, "image", image_module);
 
         let text_module = lua_text::setup_text_api(&lua, &batch, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/text", text_module).unwrap();
+        register_vectarine_module(&lua, "text", text_module);
 
         let graphics_module =
             lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/graphics", graphics_module)
-            .unwrap();
+        register_vectarine_module(&lua, "graphics", graphics_module);
 
         let screen_module =
             lua_screen::setup_screen_api(&lua, &batch, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/screen", screen_module)
-            .unwrap();
+        register_vectarine_module(&lua, "screen", screen_module);
 
         let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();
-        lua.register_module("@vectarine/io", io_module).unwrap();
+        register_vectarine_module(&lua, "io", io_module);
 
         let camera_module = lua_camera::setup_camera_api(&lua, &env_state).unwrap();
-        lua.register_module("@vectarine/camera", camera_module)
-            .unwrap();
+        register_vectarine_module(&lua, "camera", camera_module);
 
         let debug_module = lua_debug::setup_debug_api(&lua, &metrics).unwrap();
-        lua.register_module("@vectarine/debug", debug_module)
-            .unwrap();
+        register_vectarine_module(&lua, "debug", debug_module);
 
         let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
-        lua.register_module("@vectarine/audio", audio_module)
-            .unwrap();
+        register_vectarine_module(&lua, "audio", audio_module);
 
         let physics_module = lua_physics::setup_physics_api(&lua).unwrap();
-        lua.register_module("@vectarine/physics", physics_module)
-            .unwrap();
+        register_vectarine_module(&lua, "physics", physics_module);
 
         let tile_module = lua_tile::setup_tile_api(&lua, &resources).unwrap();
-        lua.register_module("@vectarine/tile", tile_module).unwrap();
+        register_vectarine_module(&lua, "tile", tile_module);
 
         let loader_module = lua_loader::setup_loader_api(&lua, &resources).unwrap();
-        lua.register_module("@vectarine/loader", loader_module)
-            .unwrap();
+        register_vectarine_module(&lua, "loader", loader_module);
 
         let original_require = lua
             .globals()
@@ -270,6 +262,21 @@ pub fn run_file_and_display_error_from_lua_handle(
             }
         }
     }
+}
+
+pub fn register_vectarine_module(
+    lua: &vectarine_plugin_sdk::mlua::Lua,
+    name: &'static str,
+    module: vectarine_plugin_sdk::mlua::Table,
+) {
+    if !BUILT_IN_MODULES.contains(&name) {
+        panic!(
+            "You need to add {} to the BUILT_IN_MODULES list in runtime/src/lua_env.rs to be allowed to register it.",
+            name
+        );
+    }
+    lua.register_module(&format!("@vectarine/{}", name), module)
+        .expect("Failed to register vectarine module");
 }
 
 pub fn stringify_lua_value(value: &vectarine_plugin_sdk::mlua::Value) -> String {

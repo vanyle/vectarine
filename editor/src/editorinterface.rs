@@ -33,7 +33,7 @@ use crate::{
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
-    pluginsystem::trustedplugin::{self, PluginEntry},
+    pluginsystem::trustedplugin::{self, PluginEntry, TrustedPlugin},
     projectstate::ProjectState,
 };
 use editorconsole::draw_editor_console;
@@ -101,6 +101,7 @@ impl EditorState {
         let video = self.video.clone();
         let window = self.window.clone();
         let debouncer = self.debouncer.clone();
+        let trusted_plugins = self.get_trusted_plugins();
 
         LocalFileSystem.read_file(
             geteditorpaths::get_editor_config_path()
@@ -138,6 +139,7 @@ impl EditorState {
                             gl,
                             video,
                             window,
+                            &trusted_plugins,
                             |loaded_project| {
                                 if let Ok(loaded_project) = loaded_project {
                                     project.replace(Some(loaded_project));
@@ -200,9 +202,12 @@ impl EditorState {
             self.gl.clone(),
             self.video.clone(),
             self.window.clone(),
+            &self.get_trusted_plugins(),
             |project| {
                 match project {
-                    Ok(p) => self.project.borrow_mut().replace(p),
+                    Ok(p) => {
+                        self.project.borrow_mut().replace(p);
+                    }
                     Err(e) => {
                         callback(Err(e));
                         return;
@@ -302,6 +307,16 @@ impl EditorState {
             // Convert mouse position.
             platform.handle_event(event, sdl, &self.video.borrow());
         }
+    }
+
+    pub fn get_trusted_plugins(&self) -> Vec<TrustedPlugin> {
+        self.plugins
+            .iter()
+            .filter_map(|entry| match entry {
+                PluginEntry::Trusted(trusted_plugin) => Some(trusted_plugin.clone()),
+                PluginEntry::Malformed(_) => None,
+            })
+            .collect::<Vec<TrustedPlugin>>()
     }
 }
 

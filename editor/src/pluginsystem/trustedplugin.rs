@@ -221,3 +221,32 @@ pub fn is_dynamic_library_file(path: &Path) -> bool {
     };
     DYNAMIC_LIB_SUFFIXES.contains(&ext.to_string_lossy().as_ref())
 }
+
+pub fn is_trusted_plugin_name_is_available(name: &str) -> bool {
+    let editor_plugin_path = get_editor_plugins_path();
+    !editor_plugin_path.join(name).exists()
+}
+
+/// Returns a name for a trusted plugin that does not exist yet, using the preferred name if possible.
+pub fn get_available_filename_for_trusted_plugin(preferred_name: &str) -> String {
+    let (name, extension) = preferred_name
+        .split_once('.')
+        .unwrap_or((preferred_name, ""));
+    let mut considered_index = 0;
+    loop {
+        let name = format!(
+            "{}{}.{}",
+            name,
+            if considered_index == 0 {
+                String::new()
+            } else {
+                format!("_{}", considered_index)
+            },
+            extension
+        );
+        if is_trusted_plugin_name_is_available(&name) {
+            return name;
+        }
+        considered_index += 1;
+    }
+}

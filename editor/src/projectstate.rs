@@ -12,16 +12,18 @@ use runtime::{
     anyhow::{self},
     game::Game,
     io::fs::ReadOnlyFileSystem,
+    lua_env::BUILT_IN_MODULES,
     projectinfo::{ProjectInfo, get_project_info},
 };
 use runtime::{io::localfs::LocalFileSystem, sdl2};
 
 use crate::{
-    editorinterface::extra::geteditorpaths::{PLUGIN_FILE_EXTENSION, does_path_end_with},
+    editorinterface::extra::geteditorpaths::{
+        PLUGIN_FILE_EXTENSION, does_path_end_with, get_luau_api_path,
+    },
     luau,
     pluginsystem::{
         gameplugin::GamePlugin,
-        hash::Hash,
         trustedplugin::{TrustedPlugin, is_dynamic_library_file},
     },
 };
@@ -67,6 +69,7 @@ impl ProjectState {
         gl: Arc<glow::Context>,
         video: Rc<RefCell<sdl2::VideoSubsystem>>,
         window: Rc<RefCell<sdl2::video::Window>>,
+        trusted_plugins: &[TrustedPlugin],
         callback: F,
     ) where
         F: FnOnce(anyhow::Result<Self>),
@@ -103,7 +106,7 @@ impl ProjectState {
                     return;
                 };
                 let (hook_timing, hook_error) = luau::setup_luau_hooks(&game.lua_env.lua);
-                callback(Ok(Self {
+                let result = Self {
                     project_path: project_path.to_path_buf(),
                     project_info,
                     game,
@@ -112,7 +115,9 @@ impl ProjectState {
                     hook_timing,
                     hook_error,
                     plugins: Rc::new(RefCell::new(Vec::new())),
-                }));
+                };
+                result.refresh_plugin_list(trusted_plugins);
+                callback(Ok(result));
             },
         );
     }
@@ -137,7 +142,7 @@ impl ProjectState {
         let Ok(files) = fs::read_dir(&project_plugins_folder) else {
             return;
         };
-        // Filter out untrusted plugins
+
         let plugin_files = files.filter_map(|file| {
             let Ok(file) = file else {
                 return None;
@@ -148,26 +153,15 @@ impl ProjectState {
             }
             Some(path)
         });
-        let trusted_plugins_hashes = trusted_plugins
-            .iter()
-            .map(|plugin| plugin.hash)
-            .collect::<HashSet<Hash>>();
 
-        let trusted_plugin_paths_of_game = plugin_files.filter_map(|path| {
-            let hash = Hash::from_path(&path)?;
-            if !trusted_plugins_hashes.contains(&hash) {
-                return None;
-            }
-            Some(path)
-        });
-
-        // Unpack the dynamic libraries needed and delete the other dynamic libraries
-        let game_plugins = trusted_plugin_paths_of_game
+        let game_plugins = plugin_files
             .filter_map(|path| GamePlugin::from_path(&path, trusted_plugins))
             .collect::<Vec<GamePlugin>>();
 
+        // Filter out untrusted plugins
         let trusted_dynamic_library_paths = game_plugins
             .iter()
+            .filter(|plugin| plugin.trusted_plugin.is_some()) // take only trusted plugins
             .map(|plugin| plugin.dynamic_library_path.clone())
             .collect::<HashSet<PathBuf>>();
 
@@ -189,30 +183,72 @@ impl ProjectState {
         }
 
         // Sync the Lua API folder
+        if !luau_api_folder.is_dir() && luau_api_folder.exists() {
+            let _ = fs::remove_file(&luau_api_folder);
+        }
+        if !luau_api_folder.exists() {
+            let _ = fs::create_dir(&luau_api_folder);
+        }
+        let mut known_luau_files = BUILT_IN_MODULES
+            .iter()
+            .map(|module| format!("{}.luau", module))
+            .collect::<HashSet<String>>();
+
+        // Add the Lua API files of the plugins
         for game_plugin in &game_plugins {
             let Some(trusted_plugin) = &game_plugin.trusted_plugin else {
                 continue;
             };
-            let dest = luau_api_folder.join(format!("{}.luau", trusted_plugin.name.clone()));
+            let name = format!("{}.luau", trusted_plugin.name.clone());
+            let dest = luau_api_folder.join(name.clone());
+            known_luau_files.insert(name);
             let _ = trusted_plugin.try_copy_lua_api(&dest);
         }
+
+        // Remove unknown Lua API files
+        if let Ok(files) = fs::read_dir(&luau_api_folder) {
+            for file in files {
+                let Ok(file) = file else {
+                    continue;
+                };
+                let filename = file
+                    .path()
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string();
+                if !known_luau_files.contains(&filename) {
+                    let _ = fs::remove_file(file.path());
+                }
+            }
+        }
+
+        // Add the built-in modules
+        let luau_editor_path = get_luau_api_path();
+        BUILT_IN_MODULES.iter().for_each(|module_name| {
+            let src = luau_editor_path.join(format!("{}.luau", module_name));
+            let dest = luau_api_folder.join(format!("{}.luau", module_name));
+            if !src.exists() {
+                // avoid unnecessary file writing.
+                let _ = fs::copy(src, dest);
+            }
+        });
 
         // Build the Vec<GamePlugin>
         self.plugins.replace(game_plugins);
     }
 
+    /// Add a plugin to the project.
+    /// A refresh of the plugin list is needed after that.
     pub fn add_plugin(&self, plugin: TrustedPlugin) {
         let Some(project_folder) = self.project_folder() else {
             return;
         };
         let project_plugins_folder = project_folder.join("plugins");
-        let luau_api_folder = project_folder.join("luau-api");
         let Some(plugin_name) = plugin.path.file_name() else {
             return;
         };
         let _ = fs::create_dir_all(&project_plugins_folder);
         let _ = fs::copy(&plugin.path, project_plugins_folder.join(plugin_name));
-        // Also copy the Luau API if it exists
-        let _ = plugin.try_copy_lua_api(&luau_api_folder);
     }
 }
