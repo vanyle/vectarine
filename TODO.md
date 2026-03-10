@@ -21,7 +21,8 @@
   - [x] Show plugins in the editor
   - [x] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
   - [x] Automatically unpack dynamic libs in the plugins folder.
-  - [ ] Find a way to avoid crashes caused by dylibs plugins
+  - [ ] Find a way to avoid crashes caused by dylibs plugins (use abi-stable instead of libloading for safe ffi)
+  - [ ] Check the version of the plugin and only allow loading if the version of the plugin matches the vectarine version (maybe the plugin can have a version range?)
   - [ ] Add all editor hooks (debug menu)
   - [ ] Reload plugins in the editor
   - [ ] Automatically manage the "plugins" field in the game.vecta file of projects opened in the editor

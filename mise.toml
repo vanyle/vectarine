@@ -1,7 +1,7 @@
 [tools]
 uv = "0.9.0"
 emsdk = "4.0.13"
-rust = "1.90.0"
+rust = "1.94.0"
 git-lfs = "latest"
 gh = "2.83.1"
 
