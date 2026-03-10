@@ -20,6 +20,7 @@ zip = "6.0.0"
 directories = "6.0.0"
 blake3 = "1.8.3"
 base64 = "0.22.1"
+toml_edit = "0.25.4"
 
 [[bin]]
 name = "vecta"
