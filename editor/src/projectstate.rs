@@ -244,6 +244,7 @@ impl ProjectState {
 
         // Build the Vec<GamePlugin>
         self.plugins.replace(game_plugins);
+        self.save_project_info();
     }
 
     /// Add a plugin to the project.
@@ -258,6 +259,19 @@ impl ProjectState {
         };
         let _ = fs::create_dir_all(&project_plugins_folder);
         let _ = fs::copy(&plugin.path, project_plugins_folder.join(plugin_name));
+    }
+
+    pub fn update_plugins_in_project_info(&mut self) {
+        self.project_info.plugins = self
+            .plugins
+            .borrow()
+            .iter()
+            .filter_map(|plugin| {
+                plugin.trusted_plugin.as_ref()?; // only keep trusted plugins.
+                let filename = plugin.dynamic_library_path.file_prefix()?;
+                Some(filename.to_string_lossy().to_string())
+            })
+            .collect();
     }
 
     /// Save the project info to the project manifest while trying to preserve comments general order of keys.
