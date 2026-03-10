@@ -93,9 +93,29 @@ impl PluginEnvironment {
         self.loaded_plugins.iter()
     }
 
+    /// Call the initialization hook of all the loaded plugins
     pub fn init(&self, plugin_interface: PluginInterface) {
         for plugin in &self.loaded_plugins {
             plugin.call_init_hook(plugin_interface); // might trigger a crash I guess?
+        }
+    }
+
+    pub fn pre_lua_hook(&self, plugin_interface: PluginInterface) {
+        for plugin in &self.loaded_plugins {
+            plugin.call_pre_lua_hook(plugin_interface);
+        }
+    }
+
+    pub fn post_lua_hook(&self, plugin_interface: PluginInterface) {
+        for plugin in &self.loaded_plugins {
+            plugin.call_post_lua_hook(plugin_interface);
+        }
+    }
+
+    /// Call the release hook of all the loaded plugins
+    pub fn release_hook(&self, plugin_interface: PluginInterface) {
+        for plugin in &self.loaded_plugins {
+            plugin.call_release_hook(plugin_interface);
         }
     }
 }

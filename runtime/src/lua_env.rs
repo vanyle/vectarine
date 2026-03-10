@@ -27,7 +27,6 @@ use crate::console::{print_lua_error, print_warn};
 use crate::game_resource::ResourceManager;
 use crate::graphics::batchdraw::BatchDraw2d;
 use crate::io::IoEnvState;
-use crate::io::fs::ReadOnlyFileSystem;
 
 use crate::metrics::MetricsHolder;
 

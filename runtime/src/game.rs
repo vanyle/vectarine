@@ -256,6 +256,11 @@ impl Game {
             gl.enable(glow::MULTISAMPLE);
         }
 
+        let plugin_interface = PluginInterface {
+            lua: &self.lua_env.lua,
+        };
+        self.plugin_env.pre_lua_hook(plugin_interface);
+
         // Update screen transitions
         lua_screen::update_screen_transition(&self.lua_env.lua, delta_time.as_secs_f32());
 
@@ -283,6 +288,11 @@ impl Game {
                 .borrow_mut()
                 .draw(&self.lua_env.resources, true);
         }
+
+        let plugin_interface = PluginInterface {
+            lua: &self.lua_env.lua,
+        };
+        self.plugin_env.post_lua_hook(plugin_interface);
 
         // Default Duration metrics
         self.metrics_holder
