@@ -122,46 +122,46 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
     ui.heading("Game plugins")
         .on_hover_text("Game plugins are the list of plugins belonging to the current game. Only plugins that are also trusted are executed.");
 
-    let project = editor.project.borrow();
-
-    if let Some(project) = project.as_ref() {
-        ui.horizontal(|ui| {
-            #[allow(clippy::collapsible_if)]
-            if ui
-                .button("Open game plugin folder")
-                .on_hover_text("Open the folder with the plugins specific to your project")
-                .clicked()
-            {
-                if let Some(folder) = project.project_plugins_folder() {
-                    if !folder.exists() {
-                        let _ = fs::create_dir_all(&folder);
+    {
+        let project = editor.project.borrow();
+        if let Some(project) = project.as_ref() {
+            ui.horizontal(|ui| {
+                #[allow(clippy::collapsible_if)]
+                if ui
+                    .button("Open game plugin folder")
+                    .on_hover_text("Open the folder with the plugins specific to your project")
+                    .clicked()
+                {
+                    if let Some(folder) = project.project_plugins_folder() {
+                        if !folder.exists() {
+                            let _ = fs::create_dir_all(&folder);
+                        }
+                        let _ = open::that(&folder);
                     }
-                    let _ = open::that(&folder);
                 }
-            }
 
-            if ui.button("Refresh game plugins list").clicked() {
-                should_refresh_plugins = true;
-            }
-        });
+                if ui.button("Refresh game plugins list").clicked() {
+                    should_refresh_plugins = true;
+                }
+            });
 
-        {
-            let game_plugins = project.plugins.borrow();
-            if game_plugins.is_empty() {
-                ui.label("Because you use no native plugins, all platforms are supported.");
-            } else {
-                let is_untrusted_plugin_in_list =
-                    game_plugins.iter().any(|p| p.trusted_plugin.is_none());
-                if is_untrusted_plugin_in_list {
-                    ui.label("Because some plugins are not trusted, the list of supported platform is unknown");
+            {
+                let game_plugins = project.plugins.borrow();
+                if game_plugins.is_empty() {
+                    ui.label("Because you use no native plugins, all platforms are supported.");
                 } else {
-                    let supported_platforms = game_plugins
-                        .iter()
-                        .filter_map(|p| p.trusted_plugin.as_ref())
-                        .map(|trusted_plugin| trusted_plugin.supported_platforms.clone())
-                        .reduce(|a, b| &a & &b);
-                    if let Some(supported_platforms) = supported_platforms {
-                        ui.label(format!(
+                    let is_untrusted_plugin_in_list =
+                        game_plugins.iter().any(|p| p.trusted_plugin.is_none());
+                    if is_untrusted_plugin_in_list {
+                        ui.label("Because some plugins are not trusted, the list of supported platform is unknown");
+                    } else {
+                        let supported_platforms = game_plugins
+                            .iter()
+                            .filter_map(|p| p.trusted_plugin.as_ref())
+                            .map(|trusted_plugin| trusted_plugin.supported_platforms.clone())
+                            .reduce(|a, b| &a & &b);
+                        if let Some(supported_platforms) = supported_platforms {
+                            ui.label(format!(
                         "Your game only supports the following platforms: {}",
                         supported_platforms
                             .iter()
@@ -169,41 +169,41 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
                             .collect::<Vec<_>>()
                             .join(", ")
                     )).on_hover_text("For a platform to be supported, it needs to be supported by all the plugins you use.");
-                    } else {
-                        ui.label("Something went wrong while checking the supported platform. Try refreshing the list of plugins.");
+                        } else {
+                            ui.label("Something went wrong while checking the supported platform. Try refreshing the list of plugins.");
+                        }
                     }
                 }
             }
-        }
 
-        let mut plugin_to_trust: Option<PathBuf> = None;
+            let mut plugin_to_trust: Option<PathBuf> = None;
 
-        draw_table_header_for_game_plugin(ui, "game", |body| {
-            let game_plugins = project.plugins.borrow();
-            for plugin in game_plugins.iter() {
-                let row_height = 20.0;
-                let display_filename = plugin
-                    .path
-                    .file_name()
-                    .map(|p| p.display().to_string())
-                    .unwrap_or_else(|| get_end_of_path(&plugin.path));
+            draw_table_header_for_game_plugin(ui, "game", |body| {
+                let game_plugins = project.plugins.borrow();
+                for plugin in game_plugins.iter() {
+                    let row_height = 20.0;
+                    let display_filename = plugin
+                        .path
+                        .file_name()
+                        .map(|p| p.display().to_string())
+                        .unwrap_or_else(|| get_end_of_path(&plugin.path));
 
-                match plugin.trusted_plugin.as_ref() {
-                    Some(trusted_plugin) => {
-                        body.row(row_height, |mut row| {
-                            row.col(|ui| {
-                                ui.label(&trusted_plugin.name);
+                    match plugin.trusted_plugin.as_ref() {
+                        Some(trusted_plugin) => {
+                            body.row(row_height, |mut row| {
+                                row.col(|ui| {
+                                    ui.label(&trusted_plugin.name);
+                                });
+                                row.col(|ui| {
+                                    ui.label(display_filename);
+                                });
+                                row.col(|ui| {
+                                    ui.label("This plugin is trusted");
+                                });
                             });
-                            row.col(|ui| {
-                                ui.label(display_filename);
-                            });
-                            row.col(|ui| {
-                                ui.label("This plugin is trusted");
-                            });
-                        });
-                    }
-                    None => {
-                        body.row(row_height, |mut row| {
+                        }
+                        None => {
+                            body.row(row_height, |mut row| {
                             row.col(|ui| {
                                 ui.label("⚠ Untrusted").on_hover_text("This plugin is not trusted and won't be executed. You can add it to the list of trusted plugins to allow its execution.");
                             });
@@ -217,33 +217,36 @@ fn draw_editor_plugin_manager_content(editor: &mut EditorState, ui: &mut egui::U
                                 }
                             });
                         });
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        // We perform actions on the plugin list outside of drawing code to avoid mutating the list of plugins while iterating on it.
-        // Trusting a plugin means copying it the trusted folder. We refresh the list afterwards
-        if let Some(plugin_to_trust) = plugin_to_trust {
-            let editor_plugin_folder = get_editor_plugins_path();
-            let plugin_filename = plugin_to_trust
-                .file_name()
-                .map(|fname| fname.display().to_string())
-                .unwrap_or_else(|| "plugin.vectaplugin".to_string());
-            let _ = std::fs::create_dir_all(&editor_plugin_folder);
-            let destination = editor_plugin_folder
-                .join(get_available_filename_for_trusted_plugin(&plugin_filename));
-            let _ = std::fs::copy(&plugin_to_trust, destination);
+            // We perform actions on the plugin list outside of drawing code to avoid mutating the list of plugins while iterating on it.
+            // Trusting a plugin means copying it the trusted folder. We refresh the list afterwards
+            if let Some(plugin_to_trust) = plugin_to_trust {
+                let editor_plugin_folder = get_editor_plugins_path();
+                let plugin_filename = plugin_to_trust
+                    .file_name()
+                    .map(|fname| fname.display().to_string())
+                    .unwrap_or_else(|| "plugin.vectaplugin".to_string());
+                let _ = std::fs::create_dir_all(&editor_plugin_folder);
+                let destination = editor_plugin_folder
+                    .join(get_available_filename_for_trusted_plugin(&plugin_filename));
+                let _ = std::fs::copy(&plugin_to_trust, destination);
+            }
+        } else {
+            ui.label("No project loaded")
+                .on_hover_text("Load a project to see its plugins.");
         }
-    } else {
-        ui.label("No project loaded")
-            .on_hover_text("Load a project to see its plugins.");
     }
 
     if should_refresh_plugins {
         editor.plugins = trustedplugin::load_plugins();
-        if let Some(project) = project.as_ref() {
+        let mut project = editor.project.borrow_mut();
+        if let Some(project) = project.as_mut() {
             project.refresh_plugin_list(&editor.get_trusted_plugins());
+            project.update_plugins_in_project_info();
         }
     }
 }

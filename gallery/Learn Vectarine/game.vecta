@@ -1,10 +1,10 @@
 #!/usr/bin/env vecta
 title = "Learn Vectarine!"
 main_script_path = "scripts/game.luau"
-logo = "textures/logo.png"
 tags = ["tutorial", "prototype"]
-description = """Open this project to discover how vectarine works!"""
+description = "Open this project to discover how vectarine works!"
 loading_animation = "pixel"
-screen_width = 800
-screen_height = 600
 plugins = ["plugin_template"]
+logo_path = "assets/logo.png"
+default_screen_width = 800
+default_screen_height = 600
