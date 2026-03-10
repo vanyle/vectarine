@@ -7,7 +7,9 @@ use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
 use crate::{
     console::print_warn,
-    game_resource::{Resource, ResourceId, Status, script_resource::ScriptResource},
+    game_resource::{
+        Resource, ResourceId, ResourceManager, Status, script_resource::ScriptResource,
+    },
     graphics::batchdraw::BatchDraw2d,
     io::{fs::ReadOnlyFileSystem, process_events},
     lua_env::{LuaEnvironment, lua_screen, print_lua_error_from_error},
@@ -27,6 +29,8 @@ pub struct Game {
     pub main_script_path: String,
 
     pub metrics_holder: Rc<RefCell<MetricsHolder>>,
+
+    pub plugin_env: PluginEnvironment,
 }
 
 impl Game {
@@ -58,18 +62,28 @@ impl Game {
             project_info.default_screen_height,
         );
 
+        // Create all the things we need for a game
         let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
         let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
-        let lua_env = LuaEnvironment::new(batch, file_system, project_dir, metrics.clone());
-        let mut game = Game::from_lua(&gl, lua_env, project_info.main_script_path.clone(), metrics);
-        game.load(video, window);
+        let resources = Rc::new(ResourceManager::new(file_system, project_dir));
+        let plugin_env = PluginEnvironment::load_plugins(&project_info.plugins, &resources);
+        let lua_env = LuaEnvironment::new(batch, metrics.clone(), resources);
 
-        let plugin_env =
-            PluginEnvironment::load_plugins(&project_info.plugins, &game.lua_env.resources);
-        plugin_env.init(PluginInterface {
+        // Make the game!
+        let mut game = Game::from_lua(
+            &gl,
+            lua_env,
+            project_info.main_script_path.clone(),
+            metrics,
+            plugin_env,
+        );
+
+        game.load(video, window);
+        game.plugin_env.init(PluginInterface {
             lua: &game.lua_env.lua,
         });
 
+        // Load the starting script
         let path = Path::new(&game.main_script_path);
         game.lua_env.resources.load_resource::<ScriptResource>(
             path,
@@ -77,8 +91,10 @@ impl Game {
             game.lua_env.lua.clone(),
             game.lua_env.default_events.resource_loaded_event.clone(),
         );
-        // New game means new sounds, so we discard the previous ones.
+
+        // New game means new sounds, so we discard the previous ones (this is useful only for the editor).
         sound::flush_all_samples();
+
         callback(Ok(game));
     }
 
@@ -87,6 +103,7 @@ impl Game {
         lua_env: LuaEnvironment,
         main_script_path: String,
         metrics_holder: Rc<RefCell<MetricsHolder>>,
+        plugin_env: PluginEnvironment,
     ) -> Self {
         Game {
             gl: gl.clone(),
@@ -94,6 +111,7 @@ impl Game {
             was_main_script_executed: false,
             main_script_path,
             metrics_holder,
+            plugin_env,
         }
     }
 
