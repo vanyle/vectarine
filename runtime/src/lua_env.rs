@@ -53,9 +53,8 @@ impl LuaEnvironment {
     #[allow(clippy::unwrap_used)]
     pub fn new(
         batch: BatchDraw2d,
-        file_system: Box<dyn ReadOnlyFileSystem>,
-        base_path: &Path,
         metrics: Rc<RefCell<MetricsHolder>>,
+        resources: Rc<ResourceManager>,
     ) -> Self {
         let batch = Rc::new(RefCell::new(batch));
         let lua_options = vectarine_plugin_sdk::mlua::LuaOptions::default();
@@ -83,7 +82,6 @@ impl LuaEnvironment {
             .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
             .unwrap();
 
-        let resources = Rc::new(ResourceManager::new(file_system, base_path));
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
 
         let persist_module = lua_persist::setup_persist_api(&lua).unwrap();
