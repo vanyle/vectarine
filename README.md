@@ -15,14 +15,15 @@
 ## Goals by importance
 
 - Your time is valuable
-  - Luau scripting: Instant reload and strong typing
+  - **Luau** scripting: Instant reload and strong typing
   - Assets built into the engine for fast testing
   - Gallery of example: start with working templates
-  - Powerful debugging tools: waste less time on bugs
+  - Powerful debugging tools and editor: waste less time on bugs, boilerplate and clicking around in menus
 - Don't limit creativity
   - Access to low-level primitives
   - 3d & 2d support
   - Performance: Render millions of entities at 60 fps
+  - Extensible: Write and share **Rust plugins** that can add anything to the engine
 - Reach a wide audience
   - Supports the Web, Windows, Linux, MacOS
   - Distribute your game by sharing a zip with a small size footprint.
@@ -45,6 +46,19 @@ Feel free to join our [Discord server](https://discord.gg/zPwg3VDydz) if you hav
 
 Below are information on how to work and improve the engine.
 
+## Plugins
+
+Vectarine can be extended with [**plugins** written in **Rust**](https://github.com/vanyle/vectarine/tree/main/vectarine-plugin-template)
+
+These plugins can add anything to the engine including new menus, new Luau APIs or new debugging interfaces. 
+You can share plugins as `.vectaplugin` files to reuse them between projects or share them with other people.
+The manual contains a section on how to use plugins.
+
+To install a plugin, download `.vectaplugin` file and put it into the trusted plugins folder. You can open this folder by pressing the "Open trusted plugins folder" button
+in the plugin manager window of the editor.
+
+Read [the README of the plugin template folder](https://github.com/vanyle/vectarine/tree/main/vectarine-plugin-template) to learn how to create plugins, or use ones built by the community.
+
 ## Helping out on the engine
 
 There are plenty of ways to contribute to the engine!
@@ -54,6 +68,12 @@ There are plenty of ways to contribute to the engine!
 - You can document individual functions inside `luau-api`
 - You can clarify and add sections of [the manual](./docs/user-manual.md)
 - You can add new examples to the [gallery](./gallery/)
+
+### You can write and share plugins
+
+Plugins can extend the engine and add modules similar to the base one provided.
+If you need a specific feature, you can write a plugin for it and share it so that
+other developers can reuse it in their project.
 
 ### You can change the engine itself
 
