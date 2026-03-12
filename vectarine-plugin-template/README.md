@@ -22,7 +22,10 @@ To share your plugin, simply share the `your_plugin_name.vectaplugin` file.
 Vectarine comes bundled with a runtime that is precompiled for all the major platforms.
 However, as plugins contain native code, you will need to manually compile them for the platforms you want to support.
 
-If you don't compile a Mac version of your plugin, games using it won't be able to run on Mac.
+For example, if you don't compile a Mac version of your plugin, games using it won't be able to run on Mac.
+
+As there is no single platform that can compile for all platforms, if you have a windows specific and a linux version of your plugin, you can
+merge them using `uv run bundle.py windows_version.vectaplugin linux_version.vectaplugin` to get a version that supports both platforms.
 
 ## Lua API
 
