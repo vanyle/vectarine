@@ -1,6 +1,9 @@
 use libloading::{Library, Symbol};
 
-use vectarine_plugin_sdk::{anyhow, plugininterface::PluginInterface};
+use vectarine_plugin_sdk::{
+    anyhow,
+    plugininterface::{EditorPluginInterface, PluginInterface},
+};
 
 pub(crate) struct NativePlugin {
     // Note: library NEEDS to be private or else it could be moved to weird ways leading to the symbols
@@ -14,6 +17,9 @@ pub(crate) struct NativePlugin {
     release_hook: Option<Symbol<'static, unsafe extern "C" fn(PluginInterface)>>,
     pre_lua_hook: Option<Symbol<'static, unsafe extern "C" fn(PluginInterface)>>,
     post_lua_hook: Option<Symbol<'static, unsafe extern "C" fn(PluginInterface)>>,
+
+    draw_debug_menu_hook:
+        Option<Symbol<'static, unsafe extern "C" fn(EditorPluginInterface) -> bool>>,
 }
 
 impl NativePlugin {
@@ -39,13 +45,20 @@ impl NativePlugin {
         let post_lua_hook =
             load_symbol::<unsafe extern "C" fn(PluginInterface)>(&lib, "post_lua_hook").ok();
 
+        let draw_debug_menu_hook =
+            load_symbol::<unsafe extern "C" fn(EditorPluginInterface) -> bool>(
+                &lib,
+                "draw_debug_menu_hook",
+            )
+            .ok();
+
         Ok(Self {
             library: lib,
             init_hook,
             release_hook,
             pre_lua_hook,
             post_lua_hook,
-            // editor_hooks: None, // this is the runtime.
+            draw_debug_menu_hook,
         })
     }
 
@@ -72,6 +85,20 @@ impl NativePlugin {
         let post_lua_hook = &self.post_lua_hook;
         if let Some(post_lua_hook) = post_lua_hook {
             unsafe { post_lua_hook(plugin_interface) }
+        }
+    }
+
+    pub fn call_draw_debug_menu_hook(
+        &self,
+        editor_plugin_interface: EditorPluginInterface,
+    ) -> bool {
+        // The draw_debug_menu_hook is only for the editor, so we don't load it in the runtime.
+        // Having the EditorPluginInterface type in the runtime is strange, but it is should be fine as we never instanciate it.
+        let draw_debug_menu_hook = &self.draw_debug_menu_hook;
+        if let Some(draw_debug_menu_hook) = draw_debug_menu_hook {
+            unsafe { draw_debug_menu_hook(editor_plugin_interface) }
+        } else {
+            false
         }
     }
 }

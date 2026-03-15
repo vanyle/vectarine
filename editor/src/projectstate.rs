@@ -274,7 +274,34 @@ impl ProjectState {
             .collect();
     }
 
-    /// Save the project info to the project manifest while trying to preserve comments general order of keys.
+    pub fn for_each_trusted_plugin<F>(&self, mut callback: F)
+    where
+        F: FnMut(&GamePlugin, &TrustedPlugin),
+    {
+        self.plugins
+            .borrow()
+            .iter()
+            .filter_map(|plugin| {
+                plugin
+                    .trusted_plugin
+                    .as_ref()
+                    .map(|trusted| (plugin, trusted))
+            })
+            .for_each(|(plugin, trusted)| callback(plugin, trusted));
+    }
+
+    pub fn for_each_trusted_plugin_mut<F>(&mut self, callback: F)
+    where
+        F: FnMut(&mut GamePlugin),
+    {
+        self.plugins
+            .borrow_mut()
+            .iter_mut()
+            .filter(|plugin| plugin.trusted_plugin.is_some())
+            .for_each(callback);
+    }
+
+    /// Save the project info from RAM to the project manifest file while trying to preserve comments general order of keys.
     pub fn save_project_info(&self) {
         let Ok(current_project_info) = fs::read_to_string(&self.project_path) else {
             self.save_project_info_by_overwriting();
