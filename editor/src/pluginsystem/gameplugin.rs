@@ -16,6 +16,7 @@ pub struct GamePlugin {
     pub trusted_plugin: Option<TrustedPlugin>,
     pub dynamic_library_path: PathBuf,
     pub dynamic_library_hash: Option<Hash>,
+    pub is_debug_interface_shown: bool,
 }
 
 impl GamePlugin {
@@ -32,6 +33,7 @@ impl GamePlugin {
             trusted_plugin: trusted_plugin.cloned(),
             dynamic_library_path,
             dynamic_library_hash,
+            is_debug_interface_shown: false,
         })
     }
 

@@ -2,7 +2,7 @@ pub mod native_plugin_impl;
 
 use std::rc::Rc;
 
-use vectarine_plugin_sdk::plugininterface::PluginInterface;
+use vectarine_plugin_sdk::plugininterface::{EditorPluginInterface, PluginInterface};
 
 use crate::game_resource::ResourceManager;
 
@@ -38,19 +38,24 @@ impl NativePlugin {
     }
 
     pub fn call_init_hook(&self, plugin_interface: PluginInterface) {
-        self.native_handle.call_init_hook(plugin_interface);
+        self.native_handle.call_init_hook(plugin_interface)
     }
 
     pub fn call_release_hook(&self, plugin_interface: PluginInterface) {
-        self.native_handle.call_release_hook(plugin_interface);
+        self.native_handle.call_release_hook(plugin_interface)
     }
 
     pub fn call_pre_lua_hook(&self, plugin_interface: PluginInterface) {
-        self.native_handle.call_pre_lua_hook(plugin_interface);
+        self.native_handle.call_pre_lua_hook(plugin_interface)
     }
 
     pub fn call_post_lua_hook(&self, plugin_interface: PluginInterface) {
-        self.native_handle.call_post_lua_hook(plugin_interface);
+        self.native_handle.call_post_lua_hook(plugin_interface)
+    }
+
+    pub fn call_draw_debug_menu_hook(&self, plugin_interface: EditorPluginInterface) -> bool {
+        self.native_handle
+            .call_draw_debug_menu_hook(plugin_interface)
     }
 }
 
@@ -73,6 +78,10 @@ impl PluginEnvironment {
                     .get_resource_path()
                     .join("plugins")
                     .join(&full_name);
+                if !plugin_path.exists() {
+                    // exists is not available for the web...
+                    return None;
+                }
                 let plugin = match NativePlugin::load(plugin_path.to_string_lossy().as_ref()) {
                     Ok(plugin) => plugin,
                     Err(e) => {

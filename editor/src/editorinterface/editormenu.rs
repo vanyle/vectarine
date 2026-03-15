@@ -1,6 +1,7 @@
 use std::{cell::Cell, path::PathBuf};
 
 use crate::buildinfo;
+use crate::pluginsystem::trustedplugin;
 use runtime::console;
 use runtime::egui;
 use runtime::egui::{Modal, Popup, RichText, UiBuilder};
@@ -120,10 +121,22 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
                         let mut config = editor.config.borrow_mut();
                         config.is_plugins_window_shown = !config.is_plugins_window_shown;
                     }
-                    // Ideas:
-                    // Reload plugins, Plugin Store
                     ui.menu_button("Plugins", |ui| {
-                        ui.label("No plugins loaded");
+                        let mut project = editor.project.borrow_mut();
+                        if let Some(project) = project.as_mut() {
+                            let mut is_there_at_least_one_trusted_plugin = false;
+                            project.for_each_trusted_plugin_mut(|game_plugin| {
+                                is_there_at_least_one_trusted_plugin = true;
+                                let trusted_plugin = &game_plugin.trusted_plugin.as_ref().expect("for_each_trusted_plugin_mut should only return trusted plugins");
+                                ui.checkbox(&mut game_plugin.is_debug_interface_shown, &trusted_plugin.name)
+                                    .on_hover_text("Show the interface of the plugin");
+                            });
+                            if !is_there_at_least_one_trusted_plugin {
+                                ui.label("No plugins loaded");
+                            }
+                        } else {
+                            ui.label("No project loaded");
+                        }
                     });
                 });
 
