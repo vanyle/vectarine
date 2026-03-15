@@ -28,8 +28,10 @@ use runtime::{
 use crate::{
     editorconfig::{EditorConfig, WindowStyle},
     editorinterface::{
-        editorplugins::draw_editor_plugin_manager, editorpreferences::draw_editor_preferences,
-        emptyscreen::draw_empty_screen, extra::geteditorpaths,
+        editorplugins::{draw_editor_plugin_manager, draw_editor_plugin_windows},
+        editorpreferences::draw_editor_preferences,
+        emptyscreen::draw_empty_screen,
+        extra::geteditorpaths,
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
@@ -274,6 +276,7 @@ impl EditorState {
         draw_editor_profiler(self, &ctx);
         draw_editor_export(self, &ctx);
         draw_editor_plugin_manager(self, &ctx);
+        draw_editor_plugin_windows(self, &ctx);
         draw_editor_preferences(self, &ctx);
 
         // Stop drawing the egui frame and get the full output

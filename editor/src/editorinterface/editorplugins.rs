@@ -2,6 +2,7 @@ use std::{borrow::Cow, fs, path::PathBuf};
 
 use egui_extras::{Column, TableBody, TableBuilder};
 use runtime::egui::{self, Label};
+use vectarine_plugin_sdk::plugininterface::{EditorPluginInterface, PluginInterface};
 
 use crate::{
     editorinterface::{
@@ -13,6 +14,41 @@ use crate::{
     },
     projectstate::ProjectState,
 };
+
+/// Draw the debug window of all plugins for which the debug menu is open. This is called every frame in the editor.
+pub fn draw_editor_plugin_windows(editor: &mut EditorState, ctx: &egui::Context) {
+    let mut project = editor.project.borrow_mut();
+    let Some(project) = project.as_mut() else {
+        return;
+    };
+
+    let editor_plugin_interface = EditorPluginInterface {
+        gui_context: ctx,
+        plugin_interface: PluginInterface {
+            lua: &project.game.lua_env.lua,
+        },
+    };
+
+    for plugin in &project.game.plugin_env.loaded_plugins {
+        let name = plugin.get_name();
+
+        project
+            .plugins
+            .borrow_mut()
+            .iter_mut()
+            .filter(|plugin| plugin.trusted_plugin.is_some())
+            .for_each(|game_plugin| {
+                if game_plugin.is_debug_interface_shown {
+                    if game_plugin.basename() != name {
+                        return;
+                    }
+                    let should_be_kept_open =
+                        plugin.call_draw_debug_menu_hook(editor_plugin_interface);
+                    game_plugin.is_debug_interface_shown = should_be_kept_open;
+                }
+            });
+    }
+}
 
 pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context) {
     let mut is_shown = editor.config.borrow_mut().is_plugins_window_shown;

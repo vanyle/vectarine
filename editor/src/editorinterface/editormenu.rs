@@ -1,7 +1,6 @@
 use std::{cell::Cell, path::PathBuf};
 
 use crate::buildinfo;
-use crate::pluginsystem::trustedplugin;
 use runtime::console;
 use runtime::egui;
 use runtime::egui::{Modal, Popup, RichText, UiBuilder};

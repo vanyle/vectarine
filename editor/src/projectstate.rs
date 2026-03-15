@@ -207,7 +207,7 @@ impl ProjectState {
             let Some(trusted_plugin) = &game_plugin.trusted_plugin else {
                 continue;
             };
-            let name = format!("{}.luau", trusted_plugin.name.clone());
+            let name = format!("{}.luau", snake_caseify(&trusted_plugin.name));
             let dest = luau_api_folder.join(name.clone());
             known_luau_files.insert(name);
             let _ = trusted_plugin.try_copy_lua_api(&dest);
@@ -329,4 +329,9 @@ impl ProjectState {
             .expect("Unable to serialize the ProjectInfo type to toml");
         let _ = fs::write(&self.project_path, toml_string);
     }
+}
+
+fn snake_caseify(s: &str) -> String {
+    // Replace spaces with _ and convert to lowercase
+    s.replace(' ', "_").to_lowercase()
 }

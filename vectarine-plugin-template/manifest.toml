@@ -1,4 +1,4 @@
 name = "Plugin template"
 description = """A demo plugin that squares a number."""
-version = 1
+version = 2
 url = "https://github.com/vanyle/vectarine/tree/main/vectarine-plugin-template"

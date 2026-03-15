@@ -37,6 +37,15 @@ impl GamePlugin {
         })
     }
 
+    /// The base name of the file containing the plugin
+    pub fn basename(&self) -> String {
+        self.path
+            .file_stem()
+            .expect("Failed to get file stem")
+            .to_string_lossy()
+            .to_string()
+    }
+
     pub fn create_dynamic_library_file_if_needed(&self) -> anyhow::Result<()> {
         let Some(expected_hash) = &self.dynamic_library_hash else {
             bail!("The plugin does not support the current platform");
