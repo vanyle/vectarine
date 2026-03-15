@@ -21,20 +21,26 @@ pub enum Platform {
 
 pub struct NativePlugin {
     native_handle: imp::NativePlugin,
-    name: String, // as specified in the .vecta file
+    name: String,     // as specified in the .vecta file of the game
+    location: String, // the path/url used to access the plugin data. Usually, it is the name concatenated with something.
 }
 
 impl NativePlugin {
     /// Load a native vectarine plugin from a path.
-    pub fn load(name: &str) -> vectarine_plugin_sdk::anyhow::Result<Self> {
-        let native_handle = unsafe { imp::NativePlugin::load(name) }?;
+    pub fn load(name: &str, location: &str) -> vectarine_plugin_sdk::anyhow::Result<Self> {
+        let native_handle = unsafe { imp::NativePlugin::load(location) }?;
         Ok(Self {
             native_handle,
             name: name.to_string(),
+            location: location.to_string(),
         })
     }
     pub fn get_name(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn get_location(&self) -> String {
+        self.location.clone()
     }
 
     pub fn call_init_hook(&self, plugin_interface: PluginInterface) {
@@ -82,7 +88,8 @@ impl PluginEnvironment {
                     // exists is not available for the web...
                     return None;
                 }
-                let plugin = match NativePlugin::load(plugin_path.to_string_lossy().as_ref()) {
+                let plugin = match NativePlugin::load(name, plugin_path.to_string_lossy().as_ref())
+                {
                     Ok(plugin) => plugin,
                     Err(e) => {
                         println!("Failed to load plugin {}: {}", full_name, e);

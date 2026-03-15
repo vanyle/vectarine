@@ -15,6 +15,26 @@ This will produce a `plugin.vectaplugin` file that you can copy to the `plugins`
 
 You can automatically copy the resulting plugin to the editor using `uv run bundle.py --install` to quickly iterate.
 
+## Creating your plugin
+
+First, edit the `plugin.luau` file to put the functions and values that your plugin will provide.
+Then, inside `lib.rs`, you can write the actual Rust implementation of these functions.
+
+## The name and filename of your plugin
+
+The name of your plugin, as specified in the `manifest.toml` needs to be unique enough: It is not possible for somebody to use two plugins
+with the same name in one game. This name is used to generate the `.luau` api file for example.
+
+If you add Lua APIs using your plugins, you should make it so that these APIs can be imported using:
+
+`require("@vectarine/your_unique_name")`
+
+Your name can have spaces and upper case letters, but these will be replaced with underscores and lowercase when importing.
+
+The filename of your plugin is what needs to go inside the `plugin` list inside the `game.vecta` and is what will be the name of the dynamic libraries
+
+Basically, the name of your plugin is only useful to the editor (it is shown in the GUI and for the Luau API), the runtime cares little about it.
+
 ## Distributing your plugin
 
 To share your plugin, simply share the `your_plugin_name.vectaplugin` file.

@@ -24,13 +24,24 @@ use crate::{
 /// These are not loaded and are specific to the editor, not to a given game / project.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct TrustedPlugin {
+    /// The name of the plugin, as specified in the manifest. This is not necessarily the same as the file name.
     pub name: String,
+
+    /// The version of the plugin, as specified in the manifest. This is not necessarily the same as the file name.
     pub version: u64,
+
+    /// The path to the plugin file in the trusted plugins directory
     pub path: std::path::PathBuf,
     has_lua_api: bool,
     pub supported_platforms: HashSet<ExportPlatform>,
+
+    /// A hash of the .vectaplugin
     pub hash: Hash,
+
+    /// The url as specified in the manifest
     pub url: String,
+
+    /// The description of the plugin, as specified in the manifest
     pub description: String,
 }
 
