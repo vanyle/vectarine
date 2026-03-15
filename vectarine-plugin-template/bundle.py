@@ -101,7 +101,41 @@ def artifact_path(triple: str, lib_filename: str, release: bool) -> str | None:
     return None
 
 
-def main(release: bool = False):
+def get_plugin_install_dir() -> str | None:
+    """
+    Return the path to the editor's trusted plugins directory for the current OS,
+    mirroring the behaviour of the ``directories`` crate's ``data_dir`` function
+    used by the Vectarine editor.
+
+    - macOS  : ~/Library/Application Support/com.vanyle.vectarine/plugins
+    - Windows: %APPDATA%/vanyle/vectarine/data
+    - Linux  : $XDG_DATA_HOME/vectarine  (falls back to ~/.local/share/vectarine)
+    """
+    if sys.platform == "darwin":
+        return os.path.expanduser("~/Library/Application Support/com.vanyle.vectarine/plugins")
+    elif sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        if not appdata:
+            console.print("[red]Error:[/red] APPDATA environment variable is not set.")
+            return None
+        return os.path.join(appdata, "vanyle", "vectarine", "data")
+    else:  # Linux / BSD / …
+        xdg_data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+        return os.path.join(xdg_data_home, "vectarine")
+
+
+def install_plugin(output_filename: str) -> None:
+    """Copy *output_filename* into the editor's trusted plugins directory."""
+    install_dir = get_plugin_install_dir()
+    if install_dir is None:
+        return
+    os.makedirs(install_dir, exist_ok=True)
+    dest = os.path.join(install_dir, os.path.basename(output_filename))
+    shutil.copy2(output_filename, dest)
+    console.print(f"[bold green]✔ Plugin installed:[/bold green] [cyan]{dest}[/cyan]")
+
+
+def main(release: bool = False, install: bool = False):
     # 1. Check that the manifest exist and is valid
     try:
         with open("manifest.toml", "r") as f:
@@ -222,6 +256,9 @@ def main(release: bool = False):
 
     console.print()
     console.print(f"[bold green]✔ Plugin bundled:[/bold green] [cyan]{output_filename}[/cyan]")
+
+    if install:
+        install_plugin(output_filename)
 
 
 KNOWN_FOLDERS = {"windows", "linux", "macos", "web"}
@@ -369,6 +406,12 @@ Flags (build mode only):
         default=False,
         help="(build mode) compile with --release instead of the default debug profile.",
     )
+    parser.add_argument(
+        "--install",
+        action="store_true",
+        default=False,
+        help="(build mode) Copy the resulting bundle into the editor's trusted plugins folder.",
+    )
     return parser
 
 
@@ -389,4 +432,4 @@ if __name__ == "__main__":
     elif len(opts.plugins) > 1:
         merge_plugins(opts.plugins)
     else:
-        main(release=opts.release)
+        main(release=opts.release, install=opts.install)
