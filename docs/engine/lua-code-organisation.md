@@ -1,6 +1,6 @@
 # Lua code organisation
 
-At first, `game.lua` is loaded.
+At first, `game.lua` is loaded. This happens in the "from_project" function inside game.rs (in the runtime project)
 We need a way to allow spliting the code into modules while still keeping everything hotreload friendly.
 
 Also, the way we do things needs to be friendly to the IDE and the Lua LSP.
