@@ -13,6 +13,8 @@ You'll need to have [uv](https://github.com/astral-sh/uv) installed.
 
 This will produce a `plugin.vectaplugin` file that you can copy to the `plugins` folder of the editor to use it.
 
+You can automatically copy the resulting plugin to the editor using `uv run bundle.py --install` to quickly iterate.
+
 ## Distributing your plugin
 
 To share your plugin, simply share the `your_plugin_name.vectaplugin` file.

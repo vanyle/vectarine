@@ -24,12 +24,12 @@
   - [ ] Find a way to avoid crashes caused by dylibs plugins (use abi-stable instead of libloading for safe ffi)
   - [ ] Check the version of the plugin and only allow loading if the version of the plugin matches the vectarine version (maybe the plugin can have a version range?)
   - [ ] Add all editor hooks (debug menu)
-  - [ ] Reload plugins in the editor
+  - [x] Reload plugins in the editor
   - [x] Automatically manage the "plugins" field in the game.vecta file of projects opened in the editor
   - [x] Show supported platforms in the editor
   - [x] Add ability to load/unload plugins from the editor from the filesystem
   - [ ] Add ability to download plugins from the editor
-  - [ ] Add documentation on how to create and use plugins
+  - [x] Add documentation on how to create and use plugins
   - [ ] Test that it works on Linux
   - [ ] Test that it works on Windows
   - [ ] Emscripten compatibility using JS as a bridge
