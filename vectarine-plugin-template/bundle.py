@@ -51,7 +51,9 @@ def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 def rustup_installed_targets() -> set[str]:
     """Return the set of targets currently installed in rustup."""
-    result = run(["rustup", "target", "list", "--installed"], capture_output=True, text=True)
+    result = run(
+        ["rustup", "target", "list", "--installed"], capture_output=True, text=True
+    )
     if result.returncode != 0:
         return set()
     return {line.strip() for line in result.stdout.splitlines() if line.strip()}
@@ -70,7 +72,9 @@ def cargo_lib_name(cargo_toml_path: str) -> str:
     with open(cargo_toml_path, "r") as f:
         data = toml.load(f)
     # The [lib] section may have an explicit name; otherwise fall back to [package].name
-    lib_name = data.get("lib", {}).get("name") or data.get("package", {}).get("name", "plugin")
+    lib_name = data.get("lib", {}).get("name") or data.get("package", {}).get(
+        "name", "plugin"
+    )
     return lib_name.replace("-", "_")
 
 
@@ -112,16 +116,20 @@ def get_plugin_install_dir() -> str | None:
     - Linux  : $XDG_DATA_HOME/vectarine  (falls back to ~/.local/share/vectarine)
     """
     if sys.platform == "darwin":
-        return os.path.expanduser("~/Library/Application Support/com.vanyle.vectarine/plugins")
+        return os.path.expanduser(
+            "~/Library/Application Support/com.vanyle.vectarine/plugins"
+        )
     elif sys.platform == "win32":
         appdata = os.environ.get("APPDATA")
         if not appdata:
             console.print("[red]Error:[/red] APPDATA environment variable is not set.")
             return None
-        return os.path.join(appdata, "vanyle", "vectarine", "data")
+        return os.path.join(appdata, "vanyle", "vectarine", "data", "plugins")
     else:  # Linux / BSD / …
-        xdg_data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-        return os.path.join(xdg_data_home, "vectarine")
+        xdg_data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser(
+            "~/.local/share"
+        )
+        return os.path.join(xdg_data_home, "vectarine", "plugins")
 
 
 def install_plugin(output_filename: str) -> None:
@@ -142,7 +150,9 @@ def main(release: bool = False, install: bool = False):
             manifest = toml.load(f)
         for field in ("name", "version", "description", "url"):
             if not manifest.get(field):
-                console.print(f"[red]Error: manifest.toml is missing a '{field}' field[/red]")
+                console.print(
+                    f"[red]Error: manifest.toml is missing a '{field}' field[/red]"
+                )
                 return
     except FileNotFoundError:
         console.print("[red]Error: manifest.toml not found[/red]")
@@ -154,7 +164,9 @@ def main(release: bool = False, install: bool = False):
     plugin_name: str = str(manifest["name"]).strip()
     safe_name = plugin_name.replace(" ", "_").lower()
 
-    console.print(f"[bold green]Bundling plugin:[/bold green] {plugin_name} - version: {manifest['version']}")
+    console.print(
+        f"[bold green]Bundling plugin:[/bold green] {plugin_name} - version: {manifest['version']}"
+    )
 
     # 2. Check that plugin.luau exists
     has_luau = os.path.exists("plugin.luau")
@@ -165,7 +177,9 @@ def main(release: bool = False, install: bool = False):
 
     # 3. Resolve the Cargo library name
     if not os.path.exists("Cargo.toml"):
-        console.print("[red]Error: Cargo.toml not found. This is not a valid rust plugin for vectarine.[/red]")
+        console.print(
+            "[red]Error: Cargo.toml not found. This is not a valid rust plugin for vectarine.[/red]"
+        )
         return
 
     lib = cargo_lib_name("Cargo.toml")
@@ -174,14 +188,18 @@ def main(release: bool = False, install: bool = False):
     installed = rustup_installed_targets()
     profile_dir = "release" if release else "debug"
 
-    built: list[tuple[str, str, str]] = []  # (folder_in_zip, artifact_path, zip_entry_name)
+    built: list[
+        tuple[str, str, str]
+    ] = []  # (folder_in_zip, artifact_path, zip_entry_name)
     skipped: list[tuple[str, str]] = []  # (triple, reason)
 
     # Native targets
     for triple, folder, filename_tmpl in NATIVE_TARGETS:
         filename = filename_tmpl.format(lib=lib)
         if triple not in installed:
-            skipped.append((triple, "target not installed (run: rustup target add " + triple + ")"))
+            skipped.append(
+                (triple, "target not installed (run: rustup target add " + triple + ")")
+            )
             continue
         # We can only cross-compile to the current host or if the proper linker is set up,
         # but we attempt it regardless and report failure.
@@ -191,7 +209,12 @@ def main(release: bool = False, install: bool = False):
             continue
         path = artifact_path(triple, filename, release)
         if path is None:
-            skipped.append((triple, f"artifact not found at target/{triple}/{profile_dir}/{filename}"))
+            skipped.append(
+                (
+                    triple,
+                    f"artifact not found at target/{triple}/{profile_dir}/{filename}",
+                )
+            )
             continue
         built.append((folder, path, filename))
 
@@ -205,7 +228,12 @@ def main(release: bool = False, install: bool = False):
             if path is not None:
                 built.append((wasm_folder, path, wasm_filename))
             else:
-                skipped.append((wasm_triple, f"Artifact not found at target/{wasm_triple}/{profile_dir}/{wasm_filename}"))
+                skipped.append(
+                    (
+                        wasm_triple,
+                        f"Artifact not found at target/{wasm_triple}/{profile_dir}/{wasm_filename}",
+                    )
+                )
         else:
             skipped.append((wasm_triple, "Build failed"))
     else:
@@ -251,11 +279,15 @@ def main(release: bool = False, install: bool = False):
         # Always named "plugin.<ext>" inside the zip (e.g. windows/plugin.dll)
         # regardless of the actual Cargo artifact name on disk.
         for folder, src_path, filename in built:
-            ext = os.path.splitext(filename)[1]  # .dll / .so / .dylib / .wasm / other in the future?
+            ext = os.path.splitext(filename)[
+                1
+            ]  # .dll / .so / .dylib / .wasm / other in the future?
             zf.write(src_path, f"{folder}/plugin{ext}")
 
     console.print()
-    console.print(f"[bold green]✔ Plugin bundled:[/bold green] [cyan]{output_filename}[/cyan]")
+    console.print(
+        f"[bold green]✔ Plugin bundled:[/bold green] [cyan]{output_filename}[/cyan]"
+    )
 
     if install:
         install_plugin(output_filename)
@@ -293,16 +325,24 @@ def validate_vectaplugin(path: str) -> tuple[dict, list[str]] | None:
             raw = zf.read("manifest.toml")
             manifest = toml.loads(raw.decode("utf-8"))
         except toml.TomlDecodeError as exc:
-            console.print(f"[red]Error:[/red] {path}: manifest.toml is not valid TOML: {exc}")
+            console.print(
+                f"[red]Error:[/red] {path}: manifest.toml is not valid TOML: {exc}"
+            )
             return None
 
         for field in REQUIRED_MANIFEST_FIELDS:
             if not manifest.get(field):
-                console.print(f"[red]Error:[/red] {path}: manifest.toml is missing the '{field}' field")
+                console.print(
+                    f"[red]Error:[/red] {path}: manifest.toml is missing the '{field}' field"
+                )
                 return None
 
         # Must contain at least one known platform folder with an actual file in it
-        has_platform = any(name.split("/")[0] in KNOWN_FOLDERS and name.split("/")[-1] != "" for name in names if "/" in name)
+        has_platform = any(
+            name.split("/")[0] in KNOWN_FOLDERS and name.split("/")[-1] != ""
+            for name in names
+            if "/" in name
+        )
         if not has_platform:
             console.print(
                 f"[red]Error:[/red] {path} contains no recognised platform folders with files ({', '.join(sorted(KNOWN_FOLDERS))})"
@@ -327,12 +367,17 @@ def merge_plugins(input_paths: list[str]) -> None:
             sys.exit(1)
         manifest, names = result
         validated.append((path, manifest, names))
-        console.print(f"  [green]✔[/green]  [cyan]{path}[/cyan]  — {manifest['name']} v{manifest['version']}")
+        console.print(
+            f"  [green]✔[/green]  [cyan]{path}[/cyan]  — {manifest['name']} v{manifest['version']}"
+        )
 
     # Check that all plugins share the same name (sanity guard)
     names_set = {v[1]["name"] for v in validated}
     if len(names_set) > 1:
-        console.print("[yellow]Warning:[/yellow] merging plugins with different names: " + ", ".join(f"'{n}'" for n in sorted(names_set)))
+        console.print(
+            "[yellow]Warning:[/yellow] merging plugins with different names: "
+            + ", ".join(f"'{n}'" for n in sorted(names_set))
+        )
 
     # Merge: first zip wins on conflict
     # We collect (arcname -> bytes) in insertion order; first occurrence wins.
@@ -357,18 +402,28 @@ def merge_plugins(input_paths: list[str]) -> None:
     safe_name = plugin_name.replace(" ", "_").lower()
     output_filename = f"{safe_name}.vectaplugin"
 
-    with zipfile.ZipFile(output_filename, "w", compression=zipfile.ZIP_DEFLATED) as out_zf:
+    with zipfile.ZipFile(
+        output_filename, "w", compression=zipfile.ZIP_DEFLATED
+    ) as out_zf:
         for arcname, data in merged.items():
             out_zf.writestr(arcname, data)
 
     console.print()
     console.rule("[bold]Merge summary[/bold]")
-    platform_entries = [arcname for arcname in merged if "/" in arcname and arcname.split("/")[0] in KNOWN_FOLDERS]
+    platform_entries = [
+        arcname
+        for arcname in merged
+        if "/" in arcname and arcname.split("/")[0] in KNOWN_FOLDERS
+    ]
     for entry in sorted(platform_entries):
-        console.print(f"  [green]✔[/green]  {entry}  [dim](from {sources[entry]})[/dim]")
+        console.print(
+            f"  [green]✔[/green]  {entry}  [dim](from {sources[entry]})[/dim]"
+        )
 
     console.print()
-    console.print(f"[bold green]✔ Merged plugin:[/bold green] [cyan]{output_filename}[/cyan]")
+    console.print(
+        f"[bold green]✔ Merged plugin:[/bold green] [cyan]{output_filename}[/cyan]"
+    )
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -424,11 +479,19 @@ if __name__ == "__main__":
         if result is None:
             sys.exit(1)
         manifest, names = result
-        platform_entries = [name for name in names if "/" in name and name.split("/")[0] in KNOWN_FOLDERS]
-        console.print(f"[bold green]✔ Valid plugin:[/bold green] [cyan]{opts.plugins[0]}[/cyan]")
+        platform_entries = [
+            name
+            for name in names
+            if "/" in name and name.split("/")[0] in KNOWN_FOLDERS
+        ]
+        console.print(
+            f"[bold green]✔ Valid plugin:[/bold green] [cyan]{opts.plugins[0]}[/cyan]"
+        )
         console.print(f"  Name:     {manifest['name']}")
         console.print(f"  Version:  {manifest['version']}")
-        console.print(f"  Targets:  {', '.join(sorted({n.split('/')[0] for n in platform_entries}))}")
+        console.print(
+            f"  Targets:  {', '.join(sorted({n.split('/')[0] for n in platform_entries}))}"
+        )
     elif len(opts.plugins) > 1:
         merge_plugins(opts.plugins)
     else:

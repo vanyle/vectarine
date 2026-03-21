@@ -12,6 +12,13 @@ mise.local.toml
 hooks
 bundle.vecta
 
+# Plugins related
+*.vectaplugin
+*.dll
+*.dylib
+*.so
+*.wasm
+
 # Prevent people from adding AI and going all vibecody
 CLAUDE.md
 AI.md
