@@ -66,36 +66,42 @@ impl Game {
         let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
         let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
         let resources = Rc::new(ResourceManager::new(file_system, project_dir));
-        let plugin_env = PluginEnvironment::load_plugins(&project_info.plugins, &resources);
-        let lua_env = LuaEnvironment::new(batch, metrics.clone(), resources);
 
-        // Make the game!
-        let mut game = Game::from_lua(
-            &gl,
-            lua_env,
-            project_info.main_script_path.clone(),
-            metrics,
-            plugin_env,
+        PluginEnvironment::load_plugins(
+            &project_info.plugins,
+            &resources.clone(),
+            move |plugin_environment| {
+                let lua_env = LuaEnvironment::new(batch, metrics.clone(), resources);
+
+                // Make the game!
+                let mut game = Game::from_lua(
+                    &gl,
+                    lua_env,
+                    project_info.main_script_path.clone(),
+                    metrics,
+                    plugin_environment,
+                );
+
+                game.load(video, window);
+                game.plugin_env.init(PluginInterface {
+                    lua: &game.lua_env.lua,
+                });
+
+                // Load the starting script
+                let path = Path::new(&game.main_script_path);
+                game.lua_env.resources.load_resource::<ScriptResource>(
+                    path,
+                    gl,
+                    game.lua_env.lua.clone(),
+                    game.lua_env.default_events.resource_loaded_event.clone(),
+                );
+
+                // New game means new sounds, so we discard the previous ones (this is useful only for the editor).
+                sound::flush_all_samples();
+
+                callback(Ok(game));
+            },
         );
-
-        game.load(video, window);
-        game.plugin_env.init(PluginInterface {
-            lua: &game.lua_env.lua,
-        });
-
-        // Load the starting script
-        let path = Path::new(&game.main_script_path);
-        game.lua_env.resources.load_resource::<ScriptResource>(
-            path,
-            gl,
-            game.lua_env.lua.clone(),
-            game.lua_env.default_events.resource_loaded_event.clone(),
-        );
-
-        // New game means new sounds, so we discard the previous ones (this is useful only for the editor).
-        sound::flush_all_samples();
-
-        callback(Ok(game));
     }
 
     fn from_lua(

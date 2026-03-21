@@ -233,6 +233,10 @@ impl ResourceManager {
         }
     }
 
+    pub fn file_system(&self) -> &dyn ReadOnlyFileSystem {
+        &*self.file_system
+    }
+
     pub fn dummy_manager() -> Self {
         Self {
             resources: RefCell::new(Vec::new()),

@@ -71,21 +71,68 @@ pub struct PluginEnvironment {
 }
 
 impl PluginEnvironment {
+    #[cfg(target_os = "emscripten")]
+    pub fn load_plugins(
+        _plugin_names: &[String],
+        resource_manager: &ResourceManager,
+        _callback: impl FnOnce(PluginEnvironment) + 'static,
+    ) {
+        // Plugins are not supported on the web for multiple reasons:
+        // - Shared libraries are complicated to load on the web, we would need to so complicated WASM magic.
+        // - The use cases for plugin on the web are more limited as you cannot access native APIs anyway
+        // - Most plugin creator probably won't bother to make their plugin compatible for the web.
+
+        // However, this method signature is flexible enough to allow us to add this feature in the future if we need to as
+        // we can still extract wasm files from the 'fs' inside the resource_manager object, load them and add them to the environment.
+        Self {
+            loaded_plugins: Vec::new(),
+        }
+    }
+
     /// Are plugins resources? Great question! No. But we still need a resource_manager to resolve their path.
-    pub fn load_plugins(plugin_names: &[String], resource_manager: &ResourceManager) -> Self {
+    #[cfg(not(target_os = "emscripten"))]
+    pub fn load_plugins(
+        plugin_names: &[String],
+        resource_manager: &ResourceManager,
+        callback: impl FnOnce(PluginEnvironment),
+    ) {
         // TODO: load plugins from a directory in a cross-platform way
         let suffix = get_dynamic_lib_suffix();
+        let fs = resource_manager.file_system();
         let native_plugins = plugin_names
             .iter()
             .flat_map(|name| {
+                // We are on desktop here, so we can use native filesystem methods instead of the 'fs' object.
                 let full_name = format!("{}.{}", name, suffix);
+                let plugin_path = resource_manager
+                    .get_resource_path()
+                    .join("plugins")
+                    .join(&full_name);
+
+                fs.read_file(&format!("gamedata/plugins/{}", &full_name), {
+                    let full_name = full_name.clone();
+                    Box::new(move |result| {
+                        // Copy the content to the true file system so that we can load it as a native library.
+                        let Some(data) = result else {
+                            println!("Plugin {} not found in the game bundle", &full_name);
+                            return;
+                        };
+                        if plugin_path.exists() {
+                            return; // Plugin is already at the right location.
+                        }
+                        let parent = plugin_path.parent().expect("The plugin path has a parent");
+                        let _ = std::fs::create_dir_all(parent);
+                        std::fs::write(&plugin_path, data).expect("Failed to write plugin to disk");
+                    })
+                });
                 // We look at the plugin at multiple locations before giving up
                 let plugin_path = resource_manager
                     .get_resource_path()
                     .join("plugins")
                     .join(&full_name);
+                println!("Loading plugin {} from path {:?}", full_name, plugin_path);
+
                 if !plugin_path.exists() {
-                    // exists is not available for the web...
                     return None;
                 }
                 let plugin = match NativePlugin::load(name, plugin_path.to_string_lossy().as_ref())
@@ -100,9 +147,9 @@ impl PluginEnvironment {
             })
             .collect::<Vec<_>>();
 
-        Self {
+        callback(Self {
             loaded_plugins: native_plugins,
-        }
+        });
     }
 
     pub fn get_plugins(&self) -> impl Iterator<Item = &Rc<NativePlugin>> {

@@ -11,7 +11,6 @@ A module for writing high performance code by storing data in a compact way
 - You can index a fastlist using .get
 - You can draw the content of a fastlist quickly using functions starting with draw
 ]]
---
 local module = {}
 
 local FastListImpl = { fast_list = true }
@@ -19,6 +18,11 @@ FastListImpl.__index = FastListImpl
 export type FastList = typeof(setmetatable({}, FastListImpl))
 
 type FastListOrVec = FastList | Vec.Vec2
+
+--- A gap is a special value used to represent empty indices in a fastlist, similar to a `nil` in a table. When you filter a fastlist, you get a new fastlist with gaps.
+--- Gaps are 'contagious', meaning that adding/substracting/multiplying, etc... a gap to a number will result in a gap.
+--- You can remove gaps using the `replaceGaps` or `otherwise` function.
+module.GAP = Vec.V2(0 / 0, 0 / 0)
 
 --MARK: Constructors
 
@@ -70,6 +74,7 @@ end
 
 --- Apply a function to each Vec2 in the fast list. You can modify the vector in-place
 --- in the function to modify elements of the fast list efficiently
+--- This function is not as efficient that the other as it calls Lua code for each element.
 function FastListImpl.forEach(self: FastList, fn: (Vec.Vec2, number) -> ()): FastList
 	error("Not implemented")
 end
@@ -92,8 +97,68 @@ function FastListImpl.weave(self: FastList, others: { FastList }): FastList
 	error("Not implemented")
 end
 
---- Filter the fast list, keeping only the Vec2 for which the corresponding Vec2 in the mask has a x component greater than the threshold
-function FastListImpl.filterGtX(self: FastList, mask: FastList, threshold: number): FastList
+--MARK: Filter Gap
+
+--[[
+Filter the Fastlist on the X component, keeping only the Vec2s for which the corresponding Vec2 in the mask has a x component between min and max.
+The mask and self and expected to be of the same size.
+
+The indices outside the range are replaced with `GAP`s. If there were already gaps in the mask or fastlist, they are preserved.
+The resulting fastlist has the same length as the original one.
+
+Conside the following non-fastlist code:
+```lua
+local filtered = {}
+for i, value in pairs(mask):
+	if min <= value.x <= max then
+		filtered[i] = fastlist[I]
+	end
+end
+```
+The equivalent fastlist code is:
+```lua
+local filtered = fastlist:filterBetweenX(mask, min, max)
+```
+
+You can use `math.inf` for max or `-math.inf` for min for taking greater or smaller values.
+]]
+function FastListImpl.filterBetweenX(fastlist: FastList, mask: FastList, min: number, max: number): FastList
+	error("Not implemented")
+end
+
+--- Filter the Fastlist on the Y component, keeping only the Vec2s for which the corresponding Vec2 in the mask has a y component between min and max.
+--- Gaps are preserved.
+---
+--- The resulting fastlist has the same length as the original one.
+--- See filterBetweenX for more information
+function FastListImpl.filterBetweenY(fastlist: FastList, mask: FastList, min: number, max: number): FastList
+	error("Not implemented")
+end
+
+--- Replace gaps in the Fastlist with the replacement value
+function FastListImpl.replaceGaps(self: FastList, replacement: Vec.Vec2): FastList
+	error("Not implemented")
+end
+
+--- Remove gaps from the Fastlist, resulting in a shorter list
+function FastListImpl.filterGaps(self: FastList): FastList
+	error("Not implemented")
+end
+
+--- Returns the elements of the fastlist at indices where there are no gaps, otherwise, the gap is replaced with the value from other
+--- This is similar to how `or` works for numbers: `4 or 5` is `4`, but `nil or 5` is `5`
+function FastListImpl.otherwise(self: FastList, other: FastList): FastList
+	error("Not implemented")
+end
+
+--- Returns the elements of `other` at indices where there is no gaps inside both fastlists. If there is a gap in one of the fastlists, a gap will be there in the result.
+--- This is similar to how `and` works for numbers: `4 and 5` is `5`, but `nil and 5` is `nil`
+function FastListImpl.also(self: FastList, other: FastList): FastList
+	error("Not implemented")
+end
+
+--- Return the number of gaps in the fastlist
+function FastListImpl.countGaps(self: FastList): number
 	error("Not implemented")
 end
 

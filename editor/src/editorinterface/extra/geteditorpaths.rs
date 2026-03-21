@@ -96,7 +96,9 @@ pub fn get_runtime_file_for_macos() -> Option<PathBuf> {
     look_for_file_next_to_exe(
         &[
             "./runtime-macos",
+            "../aarch64-apple-darwin/release/runtime",
             "../x86_64-apple-darwin/release/runtime",
+            "../aarch64-apple-darwin/debug/runtime",
             "../x86_64-apple-darwin/debug/runtime",
         ],
         None,
