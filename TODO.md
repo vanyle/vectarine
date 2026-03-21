@@ -39,11 +39,6 @@
 - [ ] Add a CLI version of the editor
   - [ ] The editor is compiled with -mwindow
   - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
-- [ ] Use SDL pref_path for editor settings and cache.
-  - [ ] The runtime and editor have separate logger implementation
-  - [ ] The logger is easily accessible from anywhere in the code even without Lua.
-  - [ ] Enable errors and warnings, even for release builds
-  - [ ] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [ ] Event system, part II
   - [ ] Action system (you map actions to keys and actions to functions)
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
@@ -74,6 +69,11 @@
 
 # Done
 
+- [x] Use SDL pref_path for editor settings and cache.
+  - [x] The runtime and editor have separate logger implementation
+  - [x] The logger is easily accessible from anywhere in the code even without Lua.
+  - [x] Enable errors and warnings, even for release builds
+  - [x] Add error logs in the code when relevant (to avoid black screens with no other failure message.)
 - [x] Add more types in the watcher
 - [x] Entity system
   - [x] Add a concept of a 'PhysicsWorld2D'
