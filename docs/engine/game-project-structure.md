@@ -45,6 +45,11 @@ Everything is put into one file compressed with zstd and named `bundle.vecta` to
 └── game.exe
 ```
 
+On desktop, because plugins need to be stored as file to be loaded as dynamic libraries, `game.exe` will first extract the plugins to a `plugins` folder next to the game if such a folder does not exist.
+
+For development convenience, `game.exe` will look for the `bundle.vecta` file in the current working directory (and not next to the executable).
+If there is no `bundle.vecta` there, `game.exe` will then look for an uncompressed `gamedata` folder at the current working directory.
+
 ## Pipeline
 
 Feature ideas
