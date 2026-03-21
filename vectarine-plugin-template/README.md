@@ -38,6 +38,7 @@ Basically, the name of your plugin is only useful to the editor (it is shown in 
 ## Distributing your plugin
 
 To share your plugin, simply share the `your_plugin_name.vectaplugin` file.
+You should distribute the release version of your plugin, the one produced by `uv run bundle.py --release`
 
 ## Platform support
 
