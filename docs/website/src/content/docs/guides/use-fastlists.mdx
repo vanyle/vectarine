@@ -156,7 +156,8 @@ function ProcessObjects(deltaTime: number)
 
     -- We can use filterBetweenX to modify elements in a fastlist based on a condition.
     local negativePosition = objects.position:filterBetweenX(objects.position, -math.huge, 0)
-    local velocityWherePositionNegative = objects.velocity:filterBetweenX(objects.position, -math.huge, 0)
+    -- 'also' returns the value in the second argument if the value in the first argument is not a gap, like the "and" keyword.
+    local velocityWherePositionNegative = negativePosition:also(objects.velocity)
     objects.position = (negativePosition * Vec.V2(0, 1)):otherwise(objects.position)
     -- Multiply the velocity by (-1, 1) element-wise for elements where the corresponding position was negative.
     objects.velocity.x = (velocityWherePositionNegative * Vec.V2(-1, 1)):otherwise(objects.velocity.x)

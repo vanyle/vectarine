@@ -74,8 +74,8 @@ impl PluginEnvironment {
     #[cfg(target_os = "emscripten")]
     pub fn load_plugins(
         _plugin_names: &[String],
-        resource_manager: &ResourceManager,
-        _callback: impl FnOnce(PluginEnvironment) + 'static,
+        _resource_manager: &ResourceManager,
+        callback: impl FnOnce(PluginEnvironment),
     ) {
         // Plugins are not supported on the web for multiple reasons:
         // - Shared libraries are complicated to load on the web, we would need to so complicated WASM magic.
@@ -84,9 +84,9 @@ impl PluginEnvironment {
 
         // However, this method signature is flexible enough to allow us to add this feature in the future if we need to as
         // we can still extract wasm files from the 'fs' inside the resource_manager object, load them and add them to the environment.
-        Self {
+        callback(Self {
             loaded_plugins: Vec::new(),
-        }
+        });
     }
 
     /// Are plugins resources? Great question! No. But we still need a resource_manager to resolve their path.

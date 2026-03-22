@@ -13,7 +13,7 @@ export default defineConfig({
     integrations: [
         starlight({
             title: "Vectarine",
-            favicon: "./src/assets/vectarine.png",
+            favicon: "./public/vectarine.png",
             customCss: ["./src/styles/custom.css"],
             components: {
                 SocialIcons: "./src/components/SocialIcons.astro",
