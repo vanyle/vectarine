@@ -46,9 +46,9 @@ impl FileSystem for LocalFileSystem {
         use std::path::Path;
         let result = fs::write(Path::new(path), data);
         callback(result.is_ok());
-        if let Err(e) = result {
-            #[cfg(debug_assertions)]
-            {
+        #[cfg(debug_assertions)]
+        {
+            if let Err(e) = result {
                 println!("Failed to write file: {}", e);
             }
         }

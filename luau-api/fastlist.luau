@@ -145,7 +145,8 @@ function FastListImpl.filterGaps(self: FastList): FastList
 	error("Not implemented")
 end
 
---- Returns the elements of the fastlist at indices where there are no gaps, otherwise, the gap is replaced with the value from other
+--- Returns the elements of the fastlist at indices where there are no gaps, otherwise, the gap is replaced with the value from other.
+--- Self and other are expected to be of the same size.
 --- This is similar to how `or` works for numbers: `4 or 5` is `4`, but `nil or 5` is `5`
 function FastListImpl.otherwise(self: FastList, other: FastList): FastList
 	error("Not implemented")

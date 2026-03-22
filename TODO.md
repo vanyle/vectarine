@@ -9,7 +9,6 @@
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
-- [ ] For fastlist, add a concept of a 'gap' value which is empty and is used to make filtering and slicing operations simpler. A gap is a Vec2 with NaNs. You can merge fastlist to discard the gaps.
 - [ ] Inside 'Help' add an 'Issues' button that opens to a window where errors related to the editor (bad installation, missing permissions, etc...) are shown instead of discarding all results all of the time.
 - [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
 - [ ] Screenshot API
@@ -49,6 +48,7 @@
 
 # Done
 
+- [x] For fastlist, add a concept of a 'gap' value which is empty and is used to make filtering and slicing operations simpler. A gap is a Vec2 with NaNs. You can merge fastlist to discard the gaps.
 - [x] Modular system
   - [x] Load shared library
   - [x] Make shared library be able to access and edit Lua
