@@ -9,26 +9,6 @@
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Add a command palette to the editor
-- [ ] Modular system
-  - [x] Load shared library
-  - [x] Make shared library be able to access and edit Lua
-  - [x] Move plugin interface to an SDK rust module as otherwise: "This may cause spurious casting failures and mysterious crashes"
-  - [x] Add all runtime hooks (preframe, postframe, load, unload)
-  - [x] Turn preferences into a window to have proper editor settings
-    - [x] Add a way to pick the prefered text editor (with vscode as default)
-  - [x] Write the bundle.py script to watch the specs defined in plugins.md
-  - [x] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
-  - [x] Show plugins in the editor
-  - [x] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
-  - [x] Automatically unpack dynamic libs in the plugins folder.
-  - [x] Add all editor hooks (debug menu)
-  - [x] Reload plugins in the editor
-  - [x] Automatically manage the "plugins" field in the game.vecta file of projects opened in the editor
-  - [x] Show supported platforms in the editor
-  - [x] Add ability to load/unload plugins from the editor from the filesystem
-  - [x] Add documentation on how to create and use plugins
-  - [ ] Test that it works on Linux
-  - [ ] Test that it works on Windows
 - [ ] For fastlist, add a concept of a 'gap' value which is empty and is used to make filtering and slicing operations simpler. A gap is a Vec2 with NaNs. You can merge fastlist to discard the gaps.
 - [ ] Inside 'Help' add an 'Issues' button that opens to a window where errors related to the editor (bad installation, missing permissions, etc...) are shown instead of discarding all results all of the time.
 - [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
@@ -69,6 +49,26 @@
 
 # Done
 
+- [x] Modular system
+  - [x] Load shared library
+  - [x] Make shared library be able to access and edit Lua
+  - [x] Move plugin interface to an SDK rust module as otherwise: "This may cause spurious casting failures and mysterious crashes"
+  - [x] Add all runtime hooks (preframe, postframe, load, unload)
+  - [x] Turn preferences into a window to have proper editor settings
+    - [x] Add a way to pick the prefered text editor (with vscode as default)
+  - [x] Write the bundle.py script to watch the specs defined in plugins.md
+  - [x] Manage files that the editor needs to work that are not inside the editor binary in a cross-platform way.
+  - [x] Show plugins in the editor
+  - [x] Automatically manage the `luau-api` folder (create it when the project is created, verify its integrity on load, etc...)
+  - [x] Automatically unpack dynamic libs in the plugins folder.
+  - [x] Add all editor hooks (debug menu)
+  - [x] Reload plugins in the editor
+  - [x] Automatically manage the "plugins" field in the game.vecta file of projects opened in the editor
+  - [x] Show supported platforms in the editor
+  - [x] Add ability to load/unload plugins from the editor from the filesystem
+  - [x] Add documentation on how to create and use plugins
+  - [x] Test that it works on Linux
+  - [x] Test that it works on Windows
 - [x] Use SDL pref_path for editor settings and cache.
   - [x] The runtime and editor have separate logger implementation
   - [x] The logger is easily accessible from anywhere in the code even without Lua.
