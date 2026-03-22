@@ -1,0 +1,58 @@
+name: ✨ Lint, Build & Test
+
+on:
+  push:
+    branches:
+      - main
+      - docs/website
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  pages: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+    generate_docs:
+        name: 📝 Generating documentation
+        runs-on: ubuntu-latest
+        environment:
+          name: github-pages
+          url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - uses: actions/checkout@v6
+              name: 📂 Checkout
+              with:
+                lfs: true
+
+            - uses: actions/setup-node@v3
+              name: ⚙️ Setup Node.js
+              with:
+                node-version: 24
+
+            - uses: pnpm/action-setup@v4
+              name: ⚙️ Setup pnpm
+              with:
+                version: 10
+
+            - name: ⬇️ Install dependencies
+              run: |
+                cd docs/website
+                pnpm install
+
+            - name: 🏗️ Build
+              run: |
+                cd docs/website
+                pnpm build
+
+            - name: ⬆️ Upload static files as artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                path: docs/website/dist/
+
+            - name: 🚀 Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
+

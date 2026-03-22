@@ -5,6 +5,11 @@ import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
+    srcDir: "./src",
+    build: {
+        format: "file",
+    },
+    base: "/vectarine",
     integrations: [
         starlight({
             title: "Vectarine",
