@@ -1,3 +1,4 @@
+use std::f32;
 use std::{cell::RefCell, rc::Rc};
 
 use noise::{NoiseFn, Simplex, Worley};
@@ -13,6 +14,12 @@ use crate::{
         lua_vec4::{Vec4, WHITE},
     },
 };
+
+fn is_gap(vec: &Vec2) -> bool {
+    vec.x().is_nan() && vec.y().is_nan()
+}
+
+const GAP: Vec2 = Vec2::new(f32::NAN, f32::NAN);
 
 #[derive(Clone, Debug)]
 pub struct FastList {
@@ -202,19 +209,100 @@ pub fn setup_fastlist_api(
         });
 
         registry.add_method(
-            "filterGtX",
-            |_, this, (maybe_mask, threshold): (vectarine_plugin_sdk::mlua::AnyUserData, f32)| {
+            "filterBetweenX",
+            |_,
+             this,
+             (maybe_mask, min_threshold, max_threshold): (
+                vectarine_plugin_sdk::mlua::AnyUserData,
+                f32,
+                f32,
+            )| {
                 let mask = maybe_mask.borrow::<FastList>()?;
                 let filtered_data: Vec<Vec2> = this
                     .data
                     .iter()
                     .zip(mask.data.iter())
-                    .filter(|(_, mask)| mask.x() > threshold)
-                    .map(|(vec, _)| *vec)
+                    .map(|(val, mask)| {
+                        if mask.x() > min_threshold && mask.x() < max_threshold {
+                            *val
+                        } else {
+                            GAP
+                        }
+                    })
                     .collect();
                 Ok(FastList::from_vec(filtered_data))
             },
         );
+
+        registry.add_method(
+            "filterBetweenY",
+            |_,
+             this,
+             (maybe_mask, min_threshold, max_threshold): (
+                vectarine_plugin_sdk::mlua::AnyUserData,
+                f32,
+                f32,
+            )| {
+                let mask = maybe_mask.borrow::<FastList>()?;
+                let filtered_data: Vec<Vec2> = this
+                    .data
+                    .iter()
+                    .zip(mask.data.iter())
+                    .map(|(val, mask)| {
+                        if mask.y() > min_threshold && mask.y() < max_threshold {
+                            *val
+                        } else {
+                            GAP
+                        }
+                    })
+                    .collect();
+                Ok(FastList::from_vec(filtered_data))
+            },
+        );
+
+        registry.add_method("replaceGaps", |_, this, (replacement,): (Vec2,)| {
+            let data = this
+                .data
+                .iter()
+                .map(|v| if is_gap(v) { replacement } else { *v })
+                .collect();
+            Ok(FastList::from_vec(data))
+        });
+
+        registry.add_method("filterGaps", |_, this, ()| {
+            let data = this
+                .data
+                .iter()
+                .filter(|v| !is_gap(v))
+                .cloned()
+                .collect::<Vec<_>>();
+            Ok(FastList::from_vec(data))
+        });
+
+        registry.add_method("otherwise", |_, this, (other,): (FastList,)| {
+            let data = this
+                .data
+                .iter()
+                .zip(other.data.iter())
+                .map(|(v, o)| if !is_gap(v) { *v } else { *o })
+                .collect();
+            Ok(FastList::from_vec(data))
+        });
+
+        registry.add_method("also", |_, this, (other,): (FastList,)| {
+            let data = this
+                .data
+                .iter()
+                .zip(other.data.iter())
+                .map(|(v, o)| if is_gap(v) { *v } else { *o })
+                .collect();
+            Ok(FastList::from_vec(data))
+        });
+
+        registry.add_method("countGaps", |_, this, ()| {
+            let count = this.data.iter().filter(|v| is_gap(v)).count();
+            Ok(count)
+        });
 
         registry.add_meta_method(
             vectarine_plugin_sdk::mlua::MetaMethod::Add,
@@ -508,6 +596,8 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         })?,
     )?;
+
+    fastlist_module.set("GAP", GAP)?;
 
     Ok(fastlist_module)
 }
