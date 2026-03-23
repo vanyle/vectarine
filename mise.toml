@@ -1,8 +1,8 @@
 [tools]
 uv = "0.9.0"
 # emsdk cannot be installed automatically on windows, you need to clone it manually.
-"asdf:mise-plugins/mise-emsdk" = { version = "4.0.13", os = ["linux", "macos"] }
-rust = "1.90.0"
+"asdf:mise-plugins/mise-emsdk" = { version = "5.0.3", os = ["linux", "macos"] }
+rust = "1.92.0"
 git-lfs = "latest"
 gh = "2.83.1"
 
