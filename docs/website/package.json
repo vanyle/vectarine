@@ -15,11 +15,10 @@
 		"@astrojs/starlight": "^0.38.2",
 		"@fortawesome/fontawesome-free": "^7.2.0",
 		"astro": "^6.0.8",
-		"codehike": "^1.1.0",
+		"astro-expressive-code": "^0.41.7",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
-		"sharp": "^0.34.2",
-		"zod": "^4.3.6"
+		"sharp": "^0.34.2"
 	},
 	"devDependencies": {
 		"@types/react": "^19.2.14"

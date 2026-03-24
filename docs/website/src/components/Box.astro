@@ -1,0 +1,29 @@
+---
+const { title } = Astro.props;
+---
+
+<div class="box">
+    <h3 class="box-title">{title}</h3>
+    <slot />
+</div>
+
+<style>
+    .box-title {
+        font-size: var(--sl-text-xl);
+        font-weight: 700;
+        color: var(--sl-color-white);
+        margin: 0 0 0.6rem;
+    }
+    .box {
+        background: var(--sl-color-bg-sidebar);
+        border: 1px solid var(--sl-color-gray-5);
+        border-radius: 0.75rem;
+        padding: 1.75rem 2rem;
+    }
+    .box-content {
+        color: var(--sl-color-gray-2);
+        font-size: var(--sl-text-base);
+        line-height: 1.7;
+        margin: 0;
+    }
+</style>

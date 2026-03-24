@@ -18,6 +18,7 @@ hero:
 
 
 import { LinkCard } from "@astrojs/starlight/components";
+import Box from "../../components/Box.astro";
 import CommunityButton from "../../components/CommunityButton.astro";
 import FeatureBox from "../../components/FeatureBox.astro";
 import FeatureGrid from "../../components/FeatureGrid.astro";
@@ -28,12 +29,12 @@ import GalleryImage from "../../components/GalleryImage.astro";
 
 <FeatureGrid>
 <FeatureBox title="User Friendly" icon="fa-solid fa-heart">
-    Vectarine is built to make games quickly and simply with a focus on Jams and fast prototyping.
+    Make games and prototypes quickly.
     Vectarine is snappy, launches instantly, exports instantly and doesn't get in the way of your ideas.
 </FeatureBox>
 
 <FeatureBox title="Hot Reloading" icon="fa-solid fa-bolt">
-    See your changes in real-time in the running game without needing to restart it.
+    See your changes in real-time in the running game as soon as you save.
 </FeatureBox>
 
 <FeatureBox title="Luau Scripting" icon="fa-solid fa-code">
@@ -54,6 +55,60 @@ import GalleryImage from "../../components/GalleryImage.astro";
 </FeatureBox>
 
 </FeatureGrid>
+
+<Box title="Why Vectarine?">
+After trying out many game engines and frameworks, I've decided to make my own to reduce the friction of making games and prototypes.
+
+Vectarine is a hybrid between a framework and an engine.
+It has a UI with an editor, asset management, debugging tools but you can still create your game by only writing code if you want to.
+
+</Box>
+
+<Box title="Why not Vectarine?">
+Vectarine might not be the best choice if you are not familiar with coding or hate to code, but it can be a great starting point
+if you want to learn to code. You will need to program ([in Luau](https://luau.org/)) to make games in Vectarine.
+
+Moreover, as Vectarine is a new engine, it doesn't have many tutorials or plugins. It provides you with the building blocks like drawing
+to the screen, physics, sound, input and lets you use these block to make the game you want.
+</Box>
+
+<Box title="Why Vectarine instead of Godot?">
+    Godot is a great engine, but it is UI-driven with a lot of drag-and-drops meaning that you need to learn the interface to work on it.
+    Moreover, its built-in features, regarding collision or tilemaps, push you towards a creative direction that might not fit your vision.
+
+    It is a great fit for a lot of games, but you might need to fight the engine if you want to do something truely original gameplay wise. 
+
+    Vectarine has an interface but can be interacted with code which makes features more discoverable, versionnable and composable while the interface
+    can still be used to manage assets, debug and play the game, edit levels, etc.
+
+    You cannot forget you put a game object behind a sprite with an incorrect offset in Vectarine. If you made a mistake at multiple places, you can
+    use Search and Replace to fix it everywhere. In Godot, you would need to open each scene and fix it manually for example.
+</Box>
+
+<Box title="Why Vectarine instead of Unity?">
+    Unity is a powerful engine, but it suffers from many of the issues of Godot, having a complex UI-driven interface. Moreover, Unity is slow to download, install, launch, start a project
+    and export one. All these actions are instant with Vectarine, making it a much better choice for game jams and quick prototyping.
+
+    Because Vectarine allows for low-level interaction through Rust code, it can make better running games compared to Unity.
+</Box>
+
+<Box title="Why Vectarine instead of Love2D?">
+    Like Love2D, Vectarine uses Lua for scripting, however, it has a built-in editor to manage assets and debug your game making it more productive than Love2D.
+    Moreover, Vectarine uses Luau which provides types and autocompletion for your code making it easier to write and get documentation for your code.
+
+    Also, Vectarine has a built-in export to the web allowing you to export your project to itch.io in 3 clicks while Love2D requires third-party tools to do so.
+</Box>
+
+<Box title="Why Vectarine instead of Roblox?">
+
+Like Roblox, Vectarine uses Luau for scripting. Moreover, Vectarine is very greatful to Roblox for open-sourcing the Luau language which is what made Vectarine possible.
+
+Roblox is a popular platform to create and play games, but it is limited to the Roblox ecosystem and has a lot of restrictions on what you can do with it.
+Roblox games have a specific look and feel that might not fit your vision.
+
+Vectarine allows you to create an publish game to any platform without restrictions.
+
+</Box>
 
 ## Gallery
 

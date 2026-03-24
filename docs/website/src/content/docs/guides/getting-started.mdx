@@ -3,12 +3,14 @@ title: Create your first game
 description: Making a simple pong game in vectarine
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-import ScrollyGettingStarted from '../../../components/ScrollyGettingStarted.astro';
+import { Aside, TabItem, Tabs } from '@astrojs/starlight/components';
 
-In this step-by-step guide, we'll see how you can create a *PONG* game using Vectarine.
+In this step-by-step guide, we'll see how you can create your first game using Vectarine.
+This will be a *PONG* game, where you control a paddle to bounce a ball and try to score against an AI opponent.
 
-## Setup Vectarine
+This guide is made for *beginners* and doesn't go into the details of Vectarine. If you are **already familiar with programming** and game development, you can take [a guided tour of Vectarine](a-guided-tour) to see how to use the different features of the engine.
+
+## Installation
 
 First, download [Vectarine from Github](https://github.com/vanyle/vectarine/releases). You need to download the zip file for your platform.
 You can unzip it anywhere you like and run "vecta" executable to get started.
@@ -48,7 +50,8 @@ function Update(deltaTime: number)
 end
 ```
 
-Try to replace "Empty game" with "Hello Vectarine!" and save the file. You should see the change in the editor immediately without needing to restart the game.
+Before explaining what all the code does, try to replace "Empty game" with "Hello Vectarine!" and save the file.
+You should see the change in the editor immediately without needing to restart the game.
 
 ## Editing Luau code
 
@@ -56,7 +59,7 @@ You can use any text or code editor to edit `.luau` files, but for the best expe
 the following extensions:
 
 [Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp): Provides autocompletion, type checking and error highlighting for Luau code. This is a must have
-as it shown you available functions and their documentation as you type.
+as it shows you available functions and their documentation as you type.
 
 [StyLua](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.stylua): A code formatter for Luau. It automatically formats your code when you save the file, making it more readable and consistent. This
 is less important than Luau Language Server, but it can be nice to have.
@@ -68,9 +71,481 @@ If both extensions are installed, your code should be colored, errors should be 
 Pressing <kbd>Ctrl</kbd> while clicking on a Vectarine function should take you to its definition with documentation.
 Hovering over a function should also show you its documentation and parameters.
 
-## Writing game code
+## The basics
 
-<ScrollyGettingStarted />
+Vectarine uses [Luau](https://luau.org/) for scripting. Luau is a programming language that is great for beginners as it is easy to learn.
+
+When your game is first loaded, the `game.luau` file is executed. Files ending with `.luau` contain Luau code that is executed to make your game work.
+
+Code is read top to bottom and every line contains something for the computer to do, like a cooking recipe.
+
+Code is organized into functions. Functions are reusable pieces of code that do useful things.
+
+Inside code, you can add explanations that do nothing for the computer but are useful for you to understand and remember what the code does.
+These explanation are preceded by `--` and are called comments. You can write anything you want in comments, and they will be ignored by the computer.
+```luau
+-- Hello, I'm explaining the code below.
+```
+As this is a tutorial, I will use a lot of comments to explain what is going on all of the time.
+
+The `Update` function is then called every frame. This is where you put the code that needs to be executed continuously, like drawing your game.
+
+Code outside of the `Update` function is execute once at the start of the game and can be used to initialize things.
+
+When you save, Vectarine will reexecute your `game.luau` file to provide hot-reload.
+
+```luau
+function Update(deltaTime: number)
+	-- This code is executed every frame
+end
+```
+
+## Drawing to the screen
+
+Modules are packages of related functions. To get access to a module, you need to import it using the `require` function, like so:
+
+```luau
+local myModule = require("moduleName")
+-- To execute a function, you need to put parenthesis after its name.
+-- Inside these parenthesis, you can sometimes put arguments to give the function more information to do its job.
+myModule.functionInsideModule()
+myModule.functionWithArguments(1, 4, 5)
+```
+
+Vectarine has many modules to do many things. The first modules we'll see are the `Graphics`, `Vec` and `Vec4` modules.
+
+- `Graphics` provides function to draw on the screen.
+- `Vec` provides 2d vector types and function to do math with them.
+- `Vec4` provides a 4d vector type that is used to represent colors.
+
+As the screen is 2D, a lot of Graphics function take `Vec2` as parameters to represent screen locations.
+
+### An aside on variables
+
+You can make a vector using the `Vec2.V2` function like so:
+
+```luau
+local v = Vec.V2(1, 2)
+```
+
+There we use the `local` keyword to create a variable named `v` that contains the vector `(1, 2)`. Variables are like boxes that contain values.
+
+```luau
+-- var contains the value 3
+local var = 3
+-- name contains the value "Joe"
+local name = "Joe"
+
+-- var2 contains the value 5 because it is the result of adding 2 to 3.
+local var2 = var + 2
+-- You can modify the content of a variable by assigning it a new value like so:
+-- Now var contains the value 4 because we added 1 to it.
+var = var + 1
+```
+
+When requiring a module, we put it into a variable to use all of its functions later which is why we also use the `local` keyword there.
+
+Colors are represented as `Vec4` because they are made of a mix of red, green, blue and alpha (opacity).
+The `Vec4` module contains a few default colors like `Vec4.WHITE` and `Vec4.RED` but you can also create your own colors with `Vec4.createColor(r, g, b, a)` where r, g, b and a are numbers between 0 and 1.
+
+You can import a module using `require`:
+
+```luau
+-- Import the Graphics and Vec modules
+local Graphics = require("@vectarine/graphics")
+local Vec = require("@vectarine/vec")
+local Vec4 = require('@vectarine/vec4')
+
+function Update(deltaTime: number)
+	-- Set the background color to white using the clear function
+	Graphics.clear(Vec4.WHITE)
+
+	-- Draw a red circle at the center of the screen (0,0) with a radius of 0.5 units (2 units is the width of the screen)
+	Graphics.drawCircle(Vec.V2(0, 0), 0.5, Vec4.RED)
+
+	local rectColor = Vec4.createColor(0, 0, 1, 1) -- Create a blue color
+	-- Draw a blue rectangle at the bottom right of the screen
+	Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
+end
+
+```
+
+When using Vectors:
+
+- `(0,0)` is the center of the screen.
+- `(-1,-1)` is the bottom left of the screen.
+- `(-1,1)` is the top left of the screen.
+- `(1,-1)` is the bottom right of the screen.
+- `(1,1)` is the top right of the screen.
+
+The screen is 2x2 units.
+
+## Displaying a value to debug
+
+Sometimes, you have a variable, but you don't know its content:
+
+```luau
+local score = mysteryFunction()
+```
+
+To understand your program, it is useful to know the content of your variable. To do so, you can use the `Debug` module to print the content of your variable to the console:
+
+```luau
+local Debug = require("@vectarine/debug")
+
+local score = mysteryFunction()
+Debug.print("The score is: ", score)
+```
+
+Debug will display the content of the variable in the console, which you can open from the tools menu or with <kbd>Ctrl</kbd>+<kbd>1</kbd>.
+
+If you display something inside the `Update` function, it will be displayed every frame, which can be a lot of values and flood the console.
+To avoid this, you can use `Debug.fprint` (like frame print), which prints the value, but overwrite the previous value displayed by `Debug.fprint` which
+allows you to see values that change every frame.
+
+## Global values and the watcher
+
+You can create variables without using the `local` keyword. These variables are called global and can be accessed from any file in your project.
+You can see the content of a global variable in the watcher tool, which you can open from the tools menu or with <kbd>Ctrl</kbd>+<kbd>3</kbd>.
+
+You can search the variable to watch-for by name in the search bar and its value will be shown and updated in real-time.
+
+## Reading input from the player
+
+We'd like to react to player input to make our game interactive. The `Io` module provides functions to read input from the player.
+
+```luau
+local Io = require("@vectarine/Io")
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+
+	-- Depending on if space is pressed, we draw a red or blue circle at the center of the screen
+	if Io.isKeyDown("Space") then
+		Graphics.drawCircle(Vec.V2(0, 0), 0.5, Vec4.RED)
+	else
+		Graphics.drawCircle(Vec.V2(0, 0), 0.5, Vec4.BLUE)
+	end
+end
+```
+
+## Let's make this game!
+
+With these 2 concepts: drawing on the screen and reading player input, we have everything we need to make a simple pong game!
+
+<Tabs>
+<TabItem label="Drawing a ball">
+
+We start by drawing a ball at the center of the screen.
+We store the position and velocity of the ball in a variable named `Ball`.
+We can access and update the position using `Ball.position` and the velocity using `Ball.velocity`.
+
+For now, we only use the position to draw the ball, but we will use the velocity later to move the ball.
+
+```luau
+local Debug = require("@vectarine/debug")
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+
+local Ball = {
+  position = Vec.V2(0, 0),
+  velocity = Vec.V2(1, 1.5),
+}
+
+function Update(deltaTime: number)
+  Graphics.clear(Vec4.WHITE)
+  Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+end
+```
+</TabItem>
+
+<TabItem label="Moving the ball">
+
+To move the ball, we change its position every frame by adding the velocity to it.
+
+To avoid having the ball go off the screen, when its position is too high (bigger than 1 or smaller than -1), we change the velocity
+to make it go in the opposite direction.
+
+```luau
+local Debug = require("@vectarine/debug")
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+
+local Ball = {
+	position = Vec.V2(0, 0),
+	velocity = Vec.V2(1, 1.5),
+}
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+
+	-- By adding the velocity to the position every frame, the ball will move in the direction of the velocity.
+	Ball.position += Ball.velocity:scale(deltaTime)
+
+	-- We change the velocity when the ball hits the border of the screen to make it turn around.
+	-- Every if is a condition representing a border of the screen.
+	if Ball.position.y < -1 then
+		-- The math.abs function returns the absolute value of a number, (the number without its sign)
+		Ball.velocity.y = math.abs(Ball.velocity.y)
+	end
+	if Ball.position.y > 1 then
+		Ball.velocity.y = -math.abs(Ball.velocity.y)
+	end
+
+	if Ball.position.x < -1 then
+		Ball.velocity.x = math.abs(Ball.velocity.x)
+	end
+	if Ball.position.x > 1 then
+		Ball.velocity.x = -math.abs(Ball.velocity.x)
+	end
+end
+```
+</TabItem>
+
+<TabItem label="Persisting ball position">
+
+When saving, Vectarine re-executes `game.luau` which resets the position of the ball.
+To preserve the ball between saves, we can use the `Persist` module to store the ball position and velocity in a way that survives reloads.
+
+`Persist`ed values are made global and can be inspected with the watcher tool.
+
+```luau
+local Persist = require("@vectarine/persist")
+
+local Ball = Persist.onReload({
+	position = Vec.V2(0, 0),
+	velocity = Vec.V2(1, 1.5),
+}, "ball")
+```
+</TabItem>
+
+<TabItem label="Adding player input">
+```luau
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+local Io = require("@vectarine/Io")
+local Persist = require("@vectarine/persist")
+
+local Ball = Persist.onReload({
+	position = Vec.V2(0, 0),
+	velocity = Vec.V2(1, 1.5),
+}, "ball")
+
+local Player = Persist.onReload({
+	position = 0,
+}, "Player")
+
+local racketSize = 0.4
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+	-- Drawing
+	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
+
+	-- Player input
+	if Io.isKeyDown("Up") then
+		Player.position += deltaTime
+	end
+	if Io.isKeyDown("Down") then
+		Player.position -= deltaTime
+	end
+
+	-- Ball code stays the same
+end
+```
+</TabItem>
+
+<TabItem label="Adding an opponent">
+```luau
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+local Io = require("@vectarine/Io")
+local Persist = require("@vectarine/persist")
+
+local Ball = Persist.onReload({
+	position = Vec.V2(0, 0),
+	velocity = Vec.V2(1, 1.5),
+}, "ball")
+
+local Player = Persist.onReload({
+	position = 0,
+}, "player")
+
+local Opponent = Persist.onReload({
+	position = 0,
+}, "opponent")
+
+local racketSize = 0.4
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+	-- Drawing
+	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
+	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+
+	-- Player input stays the same
+
+	-- Opponent movement
+	if Ball.position.y < Opponent.position + racketSize / 2 then
+		Opponent.position -= deltaTime / 1.1
+	end
+	if Ball.position.y > Opponent.position + racketSize / 2 then
+		Opponent.position += deltaTime / 1.1
+	end
+
+	-- Ball code stays the same
+end
+```
+</TabItem>
+
+<TabItem label="Collision with rackets">
+```lua
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+local Io = require("@vectarine/Io")
+local Persist = require("@vectarine/persist")
+
+-- Initialization code stays the same
+
+function resetBall()
+	Ball.position = Vec.V2(0, 0)
+	Ball.velocity.y = math.random() * 2
+end
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+	-- Drawing
+	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
+	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+
+	-- Player input stays the same
+
+	-- Opponent movement stays the same
+
+	-- Physics
+	Ball.position += Ball.velocity:scale(deltaTime)
+	if Ball.position.y < -1 then
+		Ball.velocity.y = math.abs(Ball.velocity.y)
+	end
+	if Ball.position.y > 1 then
+		Ball.velocity.y = -math.abs(Ball.velocity.y)
+	end
+
+	if Ball.position.x < -1 then
+		Opponent.score += 1
+		resetBall()
+	elseif Ball.position.x < -0.8 then
+		if Ball.position.y > Player.position and Ball.position.y < Player.position + racketSize then
+			Ball.velocity.x = math.abs(Ball.velocity.x)
+		end
+	end
+
+	if Ball.position.x > 1 then
+		Player.score += 1
+		resetBall()
+	elseif Ball.position.x > 0.8 then
+		if Ball.position.y > Opponent.position and Ball.position.y < Opponent.position + racketSize then
+			Ball.velocity.x = -math.abs(Ball.velocity.x)
+		end
+	end
+end
+
+```
+</TabItem>
+
+<TabItem label="Randomising ball speed and adding a score">
+
+We can use the `math.random()` function to obtain a random number between 0 and 1. We use it to make the game more interesting.
+
+```luau
+local Graphics = require("@vectarine/graphics")
+local Vec4 = require("@vectarine/vec4")
+local Vec = require("@vectarine/vec")
+local Io = require("@vectarine/Io")
+local Persist = require("@vectarine/persist")
+local Text = require("@vectarine/text")
+
+local Ball = Persist.onReload({
+	position = Vec.V2(0, 0),
+	velocity = Vec.V2(1, 1.5),
+}, "ball")
+
+local Player = Persist.onReload({
+	position = 0,
+	score = 0,
+}, "player")
+
+local Opponent = Persist.onReload({
+	position = 0,
+	score = 0,
+}, "opponent")
+
+local racketSize = 0.4
+
+function resetBall()
+	Ball.position = Vec.V2(0, 0)
+	Ball.velocity.y = math.random() * 2
+end
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.WHITE)
+	-- Drawing
+	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
+	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+
+	local scoreText = Player.score .. " - " .. Opponent.score
+	local measurements = Text.font:measureText(scoreText, 0.2)
+	Text.font:drawText(scoreText, Vec.V2(-measurements.width / 2, 0), 0.2)
+
+	-- Player input stays the same
+
+	-- Opponent movement stays the same
+
+	-- Physics
+	Ball.position += Ball.velocity:scale(deltaTime)
+	if Ball.position.y < -1 then
+		Ball.velocity.y = math.abs(Ball.velocity.y)
+	end
+	if Ball.position.y > 1 then
+		Ball.velocity.y = -math.abs(Ball.velocity.y)
+	end
+
+	if Ball.position.x < -1 then
+		Opponent.score += 1 -- <-- Increment opponent score when the ball goes out on the left
+		resetBall()
+	elseif Ball.position.x < -0.8 then
+		if Ball.position.y > Player.position and Ball.position.y < Player.position + racketSize then
+			Ball.velocity.x = math.abs(Ball.velocity.x)
+			Ball.velocity.y = 2 * math.random()
+		end
+	end
+
+	if Ball.position.x > 1 then
+		Player.score += 1 -- <-- Increment player score when the ball goes out on the right
+		resetBall()
+	elseif Ball.position.x > 0.8 then
+		if Ball.position.y > Opponent.position and Ball.position.y < Opponent.position + racketSize then
+			Ball.velocity.x = -math.abs(Ball.velocity.x)
+			Ball.velocity.y = 2 * math.random()
+		end
+	end
+end
+```
+</TabItem>
+</Tabs>
 
 ## Final version
 

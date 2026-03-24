@@ -23,9 +23,9 @@ importers:
       astro:
         specifier: ^6.0.8
         version: 6.0.8(@types/node@25.0.3)(rollup@4.54.0)(typescript@5.9.3)
-      codehike:
-        specifier: ^1.1.0
-        version: 1.1.0
+      astro-expressive-code:
+        specifier: ^0.41.7
+        version: 0.41.7(astro@6.0.8(@types/node@25.0.3)(rollup@4.54.0)(typescript@5.9.3))
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -35,9 +35,6 @@ importers:
       sharp:
         specifier: ^0.34.2
         version: 0.34.5
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
     devDependencies:
       '@types/react':
         specifier: ^19.2.14
@@ -181,9 +178,6 @@ packages:
 
   '@clack/prompts@1.1.0':
     resolution: {integrity: sha512-pkqbPGtohJAvm4Dphs2M8xE29ggupihHdy1x84HNojZuMtFsHiUlRvqD24tM2+XmI+61LlfNceM3Wr7U5QES5g==}
-
-  '@code-hike/lighter@1.0.1':
-    resolution: {integrity: sha512-mccvcsk5UTScRrE02oBz1/qzckyhD8YE3VQlQv++2bSVVZgNuCUX8MpokSCi5OmfRAAxbj6kmNiqq1Um8eXPrw==}
 
   '@ctrl/tinycolor@4.2.0':
     resolution: {integrity: sha512-kzyuwOAQnXJNLS9PSyrk0CWk35nWJW/zl/6KvnTBMFK65gm7U1/Z5BqjxeapjZCIhQcM/DsrEmcbRwDyXyXK4A==}
@@ -808,9 +802,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ansi-sequence-parser@1.1.1:
-    resolution: {integrity: sha512-vJXt3yiaUL4UU546s3rPXlsry/RnM730G1+HkpKE012AN0sx1eOrxSu95oKDIonskeLTijMgqWZ3uDEe3NFvyg==}
-
   anymatch@3.1.3:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
@@ -897,9 +888,6 @@ packages:
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
-
-  codehike@1.1.0:
-    resolution: {integrity: sha512-hOxqmTHjiOxhlcVEuDTCoAQ8TW358HVrNKlOwuKcnbwkuTpbGtwj5TnQ7AZjnZiQvJ3LeXohrd1E7qfYYN0Rdg==}
 
   collapse-white-space@2.1.0:
     resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
@@ -989,10 +977,6 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
-
-  diff@5.2.2:
-    resolution: {integrity: sha512-vtcDfH3TOjP8UekytvnHH1o1P4FcUdt4eQ1Y+Abap1tk/OB2MWQvcwS2ClCd1zuIhc3JKOx6p3kod8Vfys3E+A==}
-    engines: {node: '>=0.3.1'}
 
   diff@8.0.3:
     resolution: {integrity: sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ==}
@@ -2238,10 +2222,6 @@ snapshots:
       '@clack/core': 1.1.0
       sisteransi: 1.0.5
 
-  '@code-hike/lighter@1.0.1':
-    dependencies:
-      ansi-sequence-parser: 1.1.1
-
   '@ctrl/tinycolor@4.2.0': {}
 
   '@emnapi/runtime@1.7.1':
@@ -2336,7 +2316,7 @@ snapshots:
       hastscript: 9.0.1
       postcss: 8.5.6
       postcss-nested: 6.2.0(postcss@8.5.6)
-      unist-util-visit: 5.0.0
+      unist-util-visit: 5.1.0
       unist-util-visit-parents: 6.0.2
 
   '@expressive-code/plugin-frames@0.41.7':
@@ -2761,8 +2741,6 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  ansi-sequence-parser@1.1.1: {}
-
   anymatch@3.1.3:
     dependencies:
       normalize-path: 3.0.0
@@ -2921,16 +2899,6 @@ snapshots:
 
   clsx@2.1.1: {}
 
-  codehike@1.1.0:
-    dependencies:
-      '@code-hike/lighter': 1.0.1
-      diff: 5.2.2
-      estree-util-visit: 2.0.0
-      mdast-util-mdx-jsx: 3.2.0
-      unist-util-visit: 5.1.0
-    transitivePeerDependencies:
-      - supports-color
-
   collapse-white-space@2.1.0: {}
 
   comma-separated-tokens@2.0.3: {}
@@ -3000,8 +2968,6 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
-
-  diff@5.2.2: {}
 
   diff@8.0.3: {}
 

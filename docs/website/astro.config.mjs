@@ -1,6 +1,7 @@
 // @ts-check
 import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
+import expressiveCode from "astro-expressive-code";
 import { defineConfig } from "astro/config";
 
 // https://astro.build/config
@@ -11,9 +12,10 @@ export default defineConfig({
     },
     base: "/",
     integrations: [
+        expressiveCode(),
         starlight({
             title: "Vectarine",
-            favicon: "./public/vectarine.png",
+            favicon: "vectarine.png",
             customCss: ["./src/styles/custom.css"],
             components: {
                 SocialIcons: "./src/components/SocialIcons.astro",
@@ -44,6 +46,10 @@ export default defineConfig({
                         {
                             label: "Create a native plugin",
                             link: "/guides/create-a-plugin/",
+                        },
+                        {
+                            label: "A guided tour",
+                            link: "/guides/a-guided-tour/",
                         },
                     ],
                 },
