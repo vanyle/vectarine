@@ -9,7 +9,7 @@ export default defineConfig({
     build: {
         format: "file",
     },
-    base: "/vectarine",
+    base: "/",
     integrations: [
         starlight({
             title: "Vectarine",

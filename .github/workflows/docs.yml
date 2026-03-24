@@ -51,7 +51,12 @@ jobs:
               with:
                 path: docs/website/dist/
 
-            - name: 🚀 Deploy to GitHub Pages
+            - name: 🚀 Deploy to Surge
               id: deployment
-              uses: actions/deploy-pages@v4
+              env:
+                SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+                SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+              run: |
+                pnpm install -g surge
+                surge --project docs/website/dist/ --domain vectarine.surge.sh
 
