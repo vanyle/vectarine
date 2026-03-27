@@ -10,7 +10,7 @@
 <a href="https://discord.gg/zPwg3VDydz"><img src="https://dcbadge.limes.pink/api/server/zPwg3VDydz?style=flat" alt="Discord invite badge" /></a>
 </p>
 
-*Vectarine is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
+*[Vectarine](https://vectarine.surge.sh) is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
 
 ## Goals by importance
 
@@ -38,7 +38,9 @@ Additionally, you'll need:
 - A text editor. I recommend [Visual Studio Code](https://code.visualstudio.com/), but you can use Notepad or anything really.
 - (Optional) Installing a Luau extension for your editor
 
-See **[The manual](./docs/user-manual.md)** for detailed information on how to make games with vectarine
+See **[The guided tour](https://vectarine.surge.sh/guides/a-guided-tour.html)** for detailed information on how to make games with vectarine.
+
+If this is your first time making games, read the guide to [create your first game](https://vectarine.surge.sh/guides/getting-started.html)
 
 If you prefer watching rather than reading, there is a **[video presentation](https://www.youtube.com/watch?v=KwckT9mbj10)** to get started.
 

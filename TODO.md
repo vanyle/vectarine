@@ -8,6 +8,7 @@
 - [ ] Debug tooling for physics?
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
+- [ ] Data files
 - [ ] Add a command palette to the editor
 - [ ] Inside 'Help' add an 'Issues' button that opens to a window where errors related to the editor (bad installation, missing permissions, etc...) are shown instead of discarding all results all of the time.
 - [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
