@@ -78,4 +78,19 @@ function module.drawSplashScreenIfNeeded(resourcesToWaitFor: { Resource.Resource
 	error("Not implemented")
 end
 
+-- MARK: Transformations
+
+--- All drawing function called inside `withTransformation` will be transformed by the given translation, rotation, and scale.
+--- You can use this to rotate or scale things without changing your drawing code.
+--- The translation is applied first, then the rotation, then the scale. You can nest multiple calls to `withTransformation` and the transformations will be combined.
+--- The transformations are only applied for 2d drawing functions.
+function module.withTransformation(
+	translation: Vec.Vec2,
+	rotationAngle: number,
+	scale: Vec.Vec2,
+	drawFunction: () -> ()
+): ()
+	error("Not implemented")
+end
+
 return module
