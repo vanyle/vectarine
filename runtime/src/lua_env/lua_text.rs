@@ -195,18 +195,18 @@ fn value_to_text_size(
         vectarine_plugin_sdk::mlua::Value::UserData(user_data) => {
             let screen_vec = user_data.borrow::<ScreenVec>();
             let Ok(vec) = screen_vec else {
-                return Err(vectarine_plugin_sdk::mlua::Error::ToLuaConversionError {
-                    from: value.type_name().to_string(),
-                    to: "number",
+                return Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
+                    from: value.type_name(),
+                    to: "number".to_string(),
                     message: Some("Unable to convert the text size to a number".to_string()),
                 });
             };
             Ok(vec.as_vec2().y())
         }
         vectarine_plugin_sdk::mlua::Value::Nil => Ok(0.05),
-        _ => Err(vectarine_plugin_sdk::mlua::Error::ToLuaConversionError {
-            from: value.type_name().to_string(),
-            to: "number",
+        _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
+            from: value.type_name(),
+            to: "number".to_string(),
             message: Some("Unable to convert the text size to a number".to_string()),
         }),
     }
