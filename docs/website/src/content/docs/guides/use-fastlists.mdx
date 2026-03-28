@@ -15,7 +15,7 @@ Nobody will play a game that is not fun, even if it runs smoothly. Optimize if y
 ## Understanding FPS
 
 A vectarine game will always try to run at a divisor of the display's refresh rate, usually 60 FPS. This is because
-rendering more often is wasteful, consumes more battery and heat's the CPU for no reason.
+rendering more often is wasteful, consumes more battery and heats the CPU for no reason.
 
 Thus, when optimizing performance, we don't care about the FPS, but about the time it takes to render a frame. As long as this time
 is below 16.67ms (1000ms / 60), the game will run at 60 FPS. If it takes more than that, the game will drop to 30 FPS, then 15 FPS, etc.
@@ -36,6 +36,8 @@ Vectarine has a built in profiler that shows you how long it takes to render a f
 
 
 ```luau
+local Debug = require("@vectarine/debug")
+
 function Update(deltaTime: number)
     Debug.timed("Update", function()
         updateWorld()
@@ -50,6 +52,8 @@ end
 You can put `timed` blocks inside one another and inside loops to understand what parts of the code take for most time:
 
 ```luau
+local Debug = require("@vectarine/debug")
+
 function Update(deltaTime: number)
     Debug.timed("Total", function()
         for i, obj in ipairs(game_objects) do
@@ -112,6 +116,36 @@ end
 
 Fastlists are the simplest way to increase the performance of your game. A fastlist is a list of `Vec.Vec2` where all operation are fast. They are inspired by [numpy](https://numpy.org/) arrays from Python.
 
+You can create a fastlist from a table using `FastList.fromTable`. You can also create a fastlist where all values are the same using `FastList.fromValue(value, count)` or a fastlist with increasing values (0.1, 0.2, 0.3, etc.) using `FastList.newLinspace(min, max, step)`.
+
+Any arithmetic operations on vectors stays the same with fastlists, so: `a = b + c:scale(d)` becomes `a = b + c:scale(d)` where a, b and c are now fastlists instead of vectors. The difference is that
+the first code needs to loop through all elements of a table, while the second does not require a loop and is **much** faster.
+
+You can also do operation on fastlist based on conditions using `filterBetweenX` and `filterBetweenY` functions:
+
+`input:filterBetweenX(mask, min, max)` returns a fastlist with the same values as `input`, but only at indices where the mask is strictly between `min` and `max` on the `x` axis. The other values are "gaps" which
+are ignored in operations. You can think of a `gap` as a `nil` value. Adding a gap and anything else produces a gap, same for multiplying and all other operations.
+
+Let's say you have this input:
+| 0 | 1 | 2 | 3 |
+| - | - | - | - |
+| (1, 5) | (2, 1) | (3, 6) | (4, 7) |
+
+And this mask:
+
+| 0 | 1 | 2 | 3 |
+| - | - | - | - |
+| (0, 0) | (1, 1) | (0, 0) | (1, 1) |
+
+Then, `filtered = input:filterBetweenX(mask, -0.5, 0.5)` will produce the following fastlist:
+
+| 0 | 1 | 2 | 3 |
+| - | - | - | - |
+| (1, 5) | gap | (3, 6) | gap |
+
+Once you have done all the operation you want on the filtered list, you can remove the gaps using `list:replaceGaps(replacementValue)` or using `filteredList:otherwise(input)` to merge
+the modified values back into the original list.
+
 Let's consider the following code that updates the position of a list of objects:
 
 ```luau
@@ -154,17 +188,59 @@ function ProcessObjects(deltaTime: number)
     -- All operations on vectors exists on fastlists.
     objects.position += objects.velocity * deltaTime
 
-    -- We can use filterBetweenX to modify elements in a fastlist based on a condition.
+    -- We can use filterBetweenX to take elements in a fastlist based on a condition.
     local negativePosition = objects.position:filterBetweenX(objects.position, -math.huge, 0)
+    
     -- 'also' returns the value in the second argument if the value in the first argument is not a gap, like the "and" keyword.
     local velocityWherePositionNegative = negativePosition:also(objects.velocity)
+
+    -- We set the position to 0 on the X axis by multiplying by (0, 1), when we merge the result with the original position.
+    -- The gaps in negativePosition, which are the element where the position is not negative are filled with the original values
     objects.position = (negativePosition * Vec.V2(0, 1)):otherwise(objects.position)
-    -- Multiply the velocity by (-1, 1) element-wise for elements where the corresponding position was negative.
-    objects.velocity.x = (velocityWherePositionNegative * Vec.V2(-1, 1)):otherwise(objects.velocity.x)
+    
+    -- We do something similar for the velocity, but we multiply by (-1, 1) to flip the velocity on the X axis.
+    objects.velocity = (velocityWherePositionNegative * Vec.V2(-1, 1)):otherwise(objects.velocity)
 end
 ```
 
 You can expect code using fastlists to run 10 to 100 times faster.
+
+In general, to convert a code using tables of vectors to fastlists, you need to:
+
+First, instead of a table of objects, you need one object with fastlists for each property. So instead of `objects[i].position`, you will have `objects.position[i]`.
+This pattern is called ["structure of arrays" or SoA](https://en.wikipedia.org/wiki/AoS_and_SoA) and leads to better performance due to how the CPU and memory work on a computer.
+
+
+To replace `if` statements, you need to use `filterBetweenX` and `filterBetweenY`. When you have a vector, any condition will be of the form:
+
+- `a < b`
+- `A or B` or `A and B` when combining other conditions
+
+You can replace the first with `:filterBetweenX(a, -math.huge, b)` and the second with `A:otherwise(B)` for "or" and `A:also(B)` for "and".
+
+Because `if` are "branches" and are bad for performance, `filterBetweenX` filters a list based on the condition provided and returns a subset of the list on which you want to do your operations.
+
+So:
+
+```luau
+for i = ... do
+    if a.x[i] < b and c.y[i] < d then
+        e[i] = modify(e[i])
+    end
+end
+```
+
+becomes:
+
+
+```luau
+    local filtered = a:filterBetweenX(a, -math.huge, b):filterBetweenY(c, -math.huge, d)
+    -- We chain the 2 filters to get an AND. We could also use `also`:
+    local filtered = a:filterBetweenX(a, -math.huge, b):also(c:filterBetweenY(c, -math.huge, d))
+    -- To merge the original e with the modified values, we use `otherwise`
+    e = modify(filtered):otherwise(e)
+```
+
 
 You can use fastlists to draw objects efficiently too using `drawImages`:
 
@@ -173,8 +249,39 @@ You can use fastlists to draw objects efficiently too using `drawImages`:
 local screenSize = Io.getWindowSize()
 local positionsScaled = positions * Vec.V2(1 / screenSize.x, 1 / screenSize.y) + Vec.V2(-1, -1)
 -- We create a fastlist of sizes with the same length as positions, where all values are the same (size).
-local sizes = Fastlist.fromValue(size:gl(), #positions)
+local sizes = FastList.fromValue(size:gl(), #positions)
 -- We can weave the 2 fastlists together to get a fastlist of position and size, which is what drawImages needs.
 local positionWithSizes = positionsScaled:weave({ sizes })
 positionWithSizes:drawImages(myImage, Vec4.WHITE)
 ```
+
+## Cases where fastlists are trickier to use
+
+Some code cannot easily converted to use fastlists. This happens in general when indices need to interact with one another:
+
+```luau
+for i in ... do
+    if a[i] < b[i + 1] then
+        c[i / 2] = c[i] - c[i - 1]
+    end
+end
+```
+In this example, in one iteration of the loop, we access values at different indices, which is impossible with fastlists.
+
+However, you can still perform some optimizations.
+
+First, you can split you code into parts that use fastlists and part that need specific indices.
+You can still access the `i`th element of a fastlist using `list:get(i)`, but it will be slower than optimized fastlist operations.
+
+Don't forget that you can convert a table to a fastlist using `FastList.fromTable` and convert it back using `FastList.toTable`, so you are never forced to do things one way. Tables are slower, but more flexible.
+
+Second, if you need to compare `a[i]` and `a[i + 1]`, you can create `b = FastList.fromTable({Vec.V2(0, 0)}):concat(a)` to shift a by 1 and then compare `a` and `b`.
+
+Finally, don't forget about functions like `weave` and `unweave` that can transform fastlists and mix indices.
+
+`weave` combines a fastlist like `ABC` and `DEF` into `ADBECF`.
+`unweave` takes a fastlist like `ABCDEF` and a group count of 2 to produce `ACE` and `BDF`.
+
+If you need to compare odd and even indices, you can unweave the fastlist into 2 parts, compare them and then weave them back together.
+
+You can find all the functions available for fastlists inside `luau-api/fastlist.luau`. Happy optimizing!

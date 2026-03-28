@@ -2,6 +2,7 @@ use std::f32;
 use std::{cell::RefCell, rc::Rc};
 
 use noise::{NoiseFn, Simplex, Worley};
+use vectarine_plugin_sdk::mlua;
 use vectarine_plugin_sdk::mlua::UserDataMethods;
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 
@@ -27,27 +28,20 @@ pub struct FastList {
 }
 impl IntoLua for FastList {
     #[inline(always)]
-    fn into_lua(
-        self,
-        lua: &vectarine_plugin_sdk::mlua::Lua,
-    ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Value> {
-        lua.create_any_userdata(self)
-            .map(vectarine_plugin_sdk::mlua::Value::UserData)
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
     }
 }
 
 impl FromLua for FastList {
     #[inline(always)]
-    fn from_lua(
-        value: vectarine_plugin_sdk::mlua::Value,
-        _: &vectarine_plugin_sdk::mlua::Lua,
-    ) -> vectarine_plugin_sdk::mlua::Result<Self> {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
             // Note that we are taking and not cloning the data here.
             // This means that any function that takes a FastList as argument consumes it.
             // It is thus forbidden !!! Instead use Userdata as an argument and perform the borrowing manually.
-            vectarine_plugin_sdk::mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
-            _ => Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
+            mlua::Value::UserData(ud) => Ok(ud.take::<Self>()?),
+            _ => Err(mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "FastList".to_string(),
                 message: Some("Expected FastList userdata".to_string()),
@@ -84,21 +78,27 @@ pub enum FastListOrVec<'a> {
     Vec(Vec2),
 }
 
-fn parse_fastlist_or_vec_with_cb<F, T>(
-    ud: vectarine_plugin_sdk::mlua::AnyUserData,
-    f: F,
-) -> vectarine_plugin_sdk::mlua::Result<T>
+fn parse_fastlist_or_vec_with_cb<F, T>(ud: mlua::AnyUserData, f: F) -> mlua::Result<T>
 where
-    F: Fn(&FastListOrVec) -> vectarine_plugin_sdk::mlua::Result<T>,
+    F: Fn(&FastListOrVec) -> mlua::Result<T>,
 {
     if let Ok(vec) = ud.borrow::<Vec2>() {
         f(&FastListOrVec::Vec(*vec))
     } else if let Ok(list) = ud.borrow::<FastList>() {
         f(&FastListOrVec::List(&list))
     } else {
-        Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+        Err(mlua::Error::RuntimeError(
             "Expected FastList or Vec2".to_string(),
         ))
+    }
+}
+
+/// Extract an f32 from a mlua::Value that may be Number or Integer
+fn value_to_f32(value: &mlua::Value) -> Option<f32> {
+    match value {
+        mlua::Value::Number(n) => Some(*n as f32),
+        mlua::Value::Integer(n) => Some(*n as f32),
+        _ => None,
     }
 }
 
@@ -125,15 +125,12 @@ where
 }
 
 pub fn setup_fastlist_api(
-    lua: &vectarine_plugin_sdk::mlua::Lua,
+    lua: &mlua::Lua,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     resources: &Rc<game_resource::ResourceManager>,
-) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
+) -> mlua::Result<mlua::Table> {
     lua.register_userdata_type::<FastList>(|registry| {
-        registry.add_meta_method(
-            vectarine_plugin_sdk::mlua::MetaMethod::Len,
-            |_, this, ()| Ok(this.data.len()),
-        );
+        registry.add_meta_method(mlua::MetaMethod::Len, |_, this, ()| Ok(this.data.len()));
 
         registry.add_method("get", |_, this, index: usize| {
             if index == 0 || index > this.data.len() {
@@ -150,16 +147,13 @@ pub fn setup_fastlist_api(
 
         registry.add_method("toTable", |_, this, ()| Ok(this.data.clone()));
 
-        registry.add_method_mut(
-            "forEach",
-            |_, this, func: vectarine_plugin_sdk::mlua::Function| {
-                for (i, vec) in this.data.iter_mut().enumerate() {
-                    // 1-indexed for Lua
-                    *vec = func.call::<Vec2>((*vec, i + 1))?;
-                }
-                Ok(())
-            },
-        );
+        registry.add_method_mut("forEach", |_, this, func: mlua::Function| {
+            for (i, vec) in this.data.iter_mut().enumerate() {
+                // 1-indexed for Lua
+                *vec = func.call::<Vec2>((*vec, i + 1))?;
+            }
+            Ok(())
+        });
 
         registry.add_method("componentRepeated", |_, this, count: usize| {
             let mut new_data = Vec::with_capacity(this.data.len() * count);
@@ -208,28 +202,120 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(new_data))
         });
 
+        registry.add_method("unweave", |_, this, group_count: usize| {
+            if group_count == 0 {
+                return Err(mlua::Error::RuntimeError(
+                    "groupCount must be at least 1".to_string(),
+                ));
+            }
+            let result_length = this.data.len().div_ceil(group_count);
+            let mut groups: Vec<FastList> = (0..group_count)
+                .map(|_| FastList::with_capacity(result_length))
+                .collect();
+            let mut group_idx = 0usize;
+            for vec in &this.data {
+                groups[group_idx].data.push(*vec);
+                group_idx += 1;
+                if group_idx == group_count {
+                    group_idx = 0;
+                }
+            }
+            Ok(groups)
+        });
+
         registry.add_method(
             "filterBetweenX",
             |_,
              this,
-             (maybe_mask, min_threshold, max_threshold): (
-                vectarine_plugin_sdk::mlua::AnyUserData,
-                f32,
-                f32,
+             (maybe_mask, min_val, max_val): (
+                mlua::AnyUserData,
+                mlua::Value,
+                mlua::Value,
             )| {
                 let mask = maybe_mask.borrow::<FastList>()?;
-                let filtered_data: Vec<Vec2> = this
-                    .data
-                    .iter()
-                    .zip(mask.data.iter())
-                    .map(|(val, mask)| {
-                        if mask.x() > min_threshold && mask.x() < max_threshold {
-                            *val
-                        } else {
-                            GAP
-                        }
-                    })
-                    .collect();
+                let min_scalar = value_to_f32(&min_val);
+                let max_scalar = value_to_f32(&max_val);
+                let filtered_data: Vec<Vec2> = match (min_scalar, max_scalar) {
+                    (Some(min_t), Some(max_t)) => {
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .map(|(val, m)| {
+                                if m.x() > min_t && m.x() < max_t {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                    (None, Some(max_t)) => {
+                        let min_ud = min_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "min must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let min_list = min_ud.borrow::<FastList>()?;
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .zip(min_list.data.iter())
+                            .map(|((val, m), min_v)| {
+                                if m.x() > min_v.x() && m.x() < max_t {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                    (Some(min_t), None) => {
+                        let max_ud = max_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "max must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let max_list = max_ud.borrow::<FastList>()?;
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .zip(max_list.data.iter())
+                            .map(|((val, m), max_v)| {
+                                if m.x() > min_t && m.x() < max_v.x() {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                    (None, None) => {
+                        let min_ud = min_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "min must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let max_ud = max_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "max must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let min_list = min_ud.borrow::<FastList>()?;
+                        let max_list = max_ud.borrow::<FastList>()?;
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .zip(min_list.data.iter().zip(max_list.data.iter()))
+                            .map(|((val, m), (min_v, max_v))| {
+                                if m.x() > min_v.x() && m.x() < max_v.x() {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                };
                 Ok(FastList::from_vec(filtered_data))
             },
         );
@@ -238,24 +324,95 @@ pub fn setup_fastlist_api(
             "filterBetweenY",
             |_,
              this,
-             (maybe_mask, min_threshold, max_threshold): (
-                vectarine_plugin_sdk::mlua::AnyUserData,
-                f32,
-                f32,
+             (maybe_mask, min_val, max_val): (
+                mlua::AnyUserData,
+                mlua::Value,
+                mlua::Value,
             )| {
                 let mask = maybe_mask.borrow::<FastList>()?;
-                let filtered_data: Vec<Vec2> = this
-                    .data
-                    .iter()
-                    .zip(mask.data.iter())
-                    .map(|(val, mask)| {
-                        if mask.y() > min_threshold && mask.y() < max_threshold {
-                            *val
-                        } else {
-                            GAP
-                        }
-                    })
-                    .collect();
+                let min_scalar = value_to_f32(&min_val);
+                let max_scalar = value_to_f32(&max_val);
+                let filtered_data: Vec<Vec2> = match (min_scalar, max_scalar) {
+                    (Some(min_t), Some(max_t)) => {
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .map(|(val, m)| {
+                                if m.y() > min_t && m.y() < max_t {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                    (None, Some(max_t)) => {
+                        let min_ud = min_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "min must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let min_list = min_ud.borrow::<FastList>()?;
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .zip(min_list.data.iter())
+                            .map(|((val, m), min_v)| {
+                                if m.y() > min_v.y() && m.y() < max_t {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                    (Some(min_t), None) => {
+                        let max_ud = max_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "max must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let max_list = max_ud.borrow::<FastList>()?;
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .zip(max_list.data.iter())
+                            .map(|((val, m), max_v)| {
+                                if m.y() > min_t && m.y() < max_v.y() {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                    (None, None) => {
+                        let min_ud = min_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "min must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let max_ud = max_val.as_userdata().ok_or_else(|| {
+                            mlua::Error::RuntimeError(
+                                "max must be a number or FastList".to_string(),
+                            )
+                        })?;
+                        let min_list = min_ud.borrow::<FastList>()?;
+                        let max_list = max_ud.borrow::<FastList>()?;
+                        this.data
+                            .iter()
+                            .zip(mask.data.iter())
+                            .zip(min_list.data.iter().zip(max_list.data.iter()))
+                            .map(|((val, m), (min_v, max_v))| {
+                                if m.y() > min_v.y() && m.y() < max_v.y() {
+                                    *val
+                                } else {
+                                    GAP
+                                }
+                            })
+                            .collect()
+                    }
+                };
                 Ok(FastList::from_vec(filtered_data))
             },
         );
@@ -305,24 +462,24 @@ pub fn setup_fastlist_api(
         });
 
         registry.add_meta_method(
-            vectarine_plugin_sdk::mlua::MetaMethod::Add,
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+            mlua::MetaMethod::Add,
+            |_, this, other: mlua::AnyUserData| {
                 parse_fastlist_or_vec_with_cb(other, |parsed| {
                     Ok(apply_binary_op(this, parsed, |a, b| a + b))
                 })
             },
         );
         registry.add_meta_method(
-            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+            mlua::MetaMethod::Sub,
+            |_, this, other: mlua::AnyUserData| {
                 parse_fastlist_or_vec_with_cb(other, |parsed| {
                     Ok(apply_binary_op(this, parsed, |a, b| a - b))
                 })
             },
         );
         registry.add_meta_method(
-            vectarine_plugin_sdk::mlua::MetaMethod::Mul,
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
+            mlua::MetaMethod::Mul,
+            |_, this, other: mlua::AnyUserData| {
                 parse_fastlist_or_vec_with_cb(other, |parsed| {
                     Ok(apply_binary_op(this, parsed, |a, b| a * b))
                 })
@@ -334,26 +491,20 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method(
-            "cmul",
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-                parse_fastlist_or_vec_with_cb(other, |parsed| {
-                    Ok(apply_binary_op(this, parsed, |a, b| a.cmul(b)))
-                })
-            },
-        );
+        registry.add_method("cmul", |_, this, other: mlua::AnyUserData| {
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.cmul(b)))
+            })
+        });
 
-        registry.add_method(
-            "dot",
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-                parse_fastlist_or_vec_with_cb(other, |parsed| {
-                    Ok(apply_binary_op(this, parsed, |a, b| {
-                        let d = a.dot(&b);
-                        Vec2::new(d, d)
-                    }))
-                })
-            },
-        );
+        registry.add_method("dot", |_, this, other: mlua::AnyUserData| {
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| {
+                    let d = a.dot(&b);
+                    Vec2::new(d, d)
+                }))
+            })
+        });
 
         registry.add_method("normalized", |_, this, ()| {
             let data = this.data.iter().map(|v| v.normalized()).collect();
@@ -375,23 +526,17 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method(
-            "max",
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-                parse_fastlist_or_vec_with_cb(other, |parsed| {
-                    Ok(apply_binary_op(this, parsed, |a, b| a.max(b)))
-                })
-            },
-        );
+        registry.add_method("max", |_, this, other: mlua::AnyUserData| {
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.max(b)))
+            })
+        });
 
-        registry.add_method(
-            "min",
-            |_, this, other: vectarine_plugin_sdk::mlua::AnyUserData| {
-                parse_fastlist_or_vec_with_cb(other, |parsed| {
-                    Ok(apply_binary_op(this, parsed, |a, b| a.min(b)))
-                })
-            },
-        );
+        registry.add_method("min", |_, this, other: mlua::AnyUserData| {
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.min(b)))
+            })
+        });
 
         registry.add_method("toPolar", |_, this, ()| {
             let data = this.data.iter().map(|v| v.to_polar()).collect();
@@ -403,14 +548,11 @@ pub fn setup_fastlist_api(
             Ok(FastList::from_vec(data))
         });
 
-        registry.add_method(
-            "lerp",
-            |_, this, (other, k): (vectarine_plugin_sdk::mlua::AnyUserData, f32)| {
-                parse_fastlist_or_vec_with_cb(other, |parsed| {
-                    Ok(apply_binary_op(this, parsed, |a, b| a.lerp(b, k)))
-                })
-            },
-        );
+        registry.add_method("lerp", |_, this, (other, k): (mlua::AnyUserData, f32)| {
+            parse_fastlist_or_vec_with_cb(other, |parsed| {
+                Ok(apply_binary_op(this, parsed, |a, b| a.lerp(b, k)))
+            })
+        });
 
         registry.add_method("sign", |_, this, ()| {
             let data = this.data.iter().map(|v| v.sign()).collect();
@@ -554,7 +696,7 @@ pub fn setup_fastlist_api(
         "newLinspace",
         lua.create_function(|_lua, (min, max, step): (Vec2, Vec2, Vec2)| {
             if step.x() <= 0.0 || step.y() <= 0.0 {
-                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                return Err(mlua::Error::RuntimeError(
                     "step components must be positive".to_string(),
                 ));
             }

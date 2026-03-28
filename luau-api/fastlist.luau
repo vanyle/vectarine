@@ -97,6 +97,14 @@ function FastListImpl.weave(self: FastList, others: { FastList }): FastList
 	error("Not implemented")
 end
 
+--- Unweave a fastlist into `groupCount` fastlists. This is the opposite of weave.
+--- A fastlist like ADGBCEFH with a group count of 3 becomes ABC, DEF and GHI
+--- ADGBCEFH with a group count of 2 becomes AGCF and DBEH
+--- The resulting fastlists might not be of the same size if the original fastlist size is not a multiple of groupCount.
+function FastListImpl.unweave(self: FastList, groupCount: number): { FastList }
+	error("Not implemented")
+end
+
 --MARK: Filter Gap
 
 --[[
@@ -122,7 +130,12 @@ local filtered = fastlist:filterBetweenX(mask, min, max)
 
 You can use `math.inf` for max or `-math.inf` for min for taking greater or smaller values.
 ]]
-function FastListImpl.filterBetweenX(fastlist: FastList, mask: FastList, min: number, max: number): FastList
+function FastListImpl.filterBetweenX(
+	fastlist: FastList,
+	mask: FastList,
+	min: number | FastList,
+	max: number | FastList
+): FastList
 	error("Not implemented")
 end
 
@@ -131,7 +144,12 @@ end
 ---
 --- The resulting fastlist has the same length as the original one.
 --- See filterBetweenX for more information
-function FastListImpl.filterBetweenY(fastlist: FastList, mask: FastList, min: number, max: number): FastList
+function FastListImpl.filterBetweenY(
+	fastlist: FastList,
+	mask: FastList,
+	min: number | FastList,
+	max: number | FastList
+): FastList
 	error("Not implemented")
 end
 
