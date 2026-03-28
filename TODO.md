@@ -1,5 +1,14 @@
 # TO-DO
 
+- [ ] UI system
+  - [ ] Add transform, scale, pop, rotate and reset to graphics API which push transformation
+  - [ ] Add an imgui style button which takes a draw function and returns events. In the context of the button, (-1,-1) is the bottom left of the button and (0,0) is the center. pixels stay the same.
+  - [ ] Add a vertical container and a horizontal container which take padding, gap and a table of drawing functions as argument
+  - [ ] Add a scrollable container as a widget
+  - [ ] Add a text input widget (to the best of your ability...)
+  - [ ] Add a slider widget
+  - [ ] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
+- [ ] Mouse wheel
 - [ ] Animation system from multiple PNG files
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images

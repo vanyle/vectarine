@@ -12,11 +12,6 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
         .display()
         .to_string();
 
-    println!(
-        "Let's try to open a file: {} using {:?}",
-        absolute_path, prefered_text_editor
-    );
-
     let opened_successfully = match prefered_text_editor {
         None => false,
         Some(TextEditor::Antigravity) => {
