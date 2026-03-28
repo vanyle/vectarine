@@ -30,7 +30,7 @@ This is normal, as no code has been written yet. You can open the resources tab 
 
 ![The empty game project](../../../assets/emptygame.png)
 
-Your game has only one resource, the main script, `scripts/game.luau`. `game.luau` is the first file loaded by any Vectarine game. It's job is to set up the game
+Your game has only one resource, the main script, `scripts/game.luau`. `game.luau` is the first file loaded by any Vectarine game. Its job is to set up the game
 and load all of the other files needed.
 
 You can press on the blue link to open the script in your default `luau` editor. You can also open the game folder to open the `.luau` file manually.
@@ -81,6 +81,23 @@ Code is read top to bottom and every line contains something for the computer to
 
 Code is organized into functions. Functions are reusable pieces of code that do useful things.
 
+```luau
+function functionName()
+
+	put content of the function here
+
+end
+```
+
+You can call a function to run it by writing its name followed by parenthesis:
+
+```luau
+functionName()
+```
+
+This will run the content of functionName. While you can write and call you own functions, Vectarine and Luau have a lot of functions to do all kinds of things useful for making games like drawing to the screen, playing sound, etc.
+A simple example is the `math.abs` function which removes the sign of a number so `math.abs(-3)` is 3 and `math.abs(1.2)` is 1.2.
+
 Inside code, you can add explanations that do nothing for the computer but are useful for you to understand and remember what the code does.
 These explanation are preceded by `--` and are called comments. You can write anything you want in comments, and they will be ignored by the computer.
 ```luau
@@ -90,7 +107,7 @@ As this is a tutorial, I will use a lot of comments to explain what is going on 
 
 The `Update` function is then called every frame. This is where you put the code that needs to be executed continuously, like drawing your game.
 
-Code outside of the `Update` function is execute once at the start of the game and can be used to initialize things.
+Code outside of the `Update` function is executed once at the start of the game and can be used to initialize things.
 
 When you save, Vectarine will reexecute your `game.luau` file to provide hot-reload.
 
@@ -99,6 +116,8 @@ function Update(deltaTime: number)
 	-- This code is executed every frame
 end
 ```
+
+`deltaTime` is the time in seconds since the last frame. You can use it to make objects move at a consistent speed regardless of how fast the code is executed.
 
 ## Drawing to the screen
 
@@ -125,6 +144,10 @@ As the screen is 2D, a lot of Graphics function take `Vec2` as parameters to rep
 You can make a vector using the `Vec2.V2` function like so:
 
 ```luau
+-- Import the Vec module to get access to the Vec2 type
+local Vec = require("@vectarine/vec")
+
+-- Use the Vec.V2 function to create a vector with x = 1 and y = 2, and put it in a variable named v
 local v = Vec.V2(1, 2)
 ```
 
@@ -215,7 +238,7 @@ You can search the variable to watch-for by name in the search bar and its value
 We'd like to react to player input to make our game interactive. The `Io` module provides functions to read input from the player.
 
 ```luau
-local Io = require("@vectarine/Io")
+local Io = require("@vectarine/io")
 local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
@@ -251,6 +274,7 @@ local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
 
+-- Initialize a ball variable with a position at the center of the screen and a velocity pointing to the top right.
 local Ball = {
   position = Vec.V2(0, 0),
   velocity = Vec.V2(1, 1.5),
@@ -269,6 +293,10 @@ To move the ball, we change its position every frame by adding the velocity to i
 
 To avoid having the ball go off the screen, when its position is too high (bigger than 1 or smaller than -1), we change the velocity
 to make it go in the opposite direction.
+
+You might notice that we don't write `Ball.position += Ball.velocity`, but we scale it by `deltaTime`.
+With no scaling, it means that a game running at 60 fps would move the ball faster than a game running at 30 fps, so the gameplay would change a lot depending on the hardware. We
+don't want that! So we multiply by `deltaTime` so that the movement is proportional to the time elapsed since the last frame.
 
 ```luau
 local Debug = require("@vectarine/debug")
@@ -310,7 +338,7 @@ end
 
 <TabItem label="Persisting ball position">
 
-When saving, Vectarine re-executes `game.luau` which resets the position of the ball.
+When saving, Vectarine re-executes `game.luau`, which runs your initialization code and resets all variables, including the position of the ball.
 To preserve the ball between saves, we can use the `Persist` module to store the ball position and velocity in a way that survives reloads.
 
 `Persist`ed values are made global and can be inspected with the watcher tool.
@@ -318,10 +346,13 @@ To preserve the ball between saves, we can use the `Persist` module to store the
 ```luau
 local Persist = require("@vectarine/persist")
 
+-- You can wrap any variable initialization with Persist.onReload to make it persist between reloads.
 local Ball = Persist.onReload({
 	position = Vec.V2(0, 0),
 	velocity = Vec.V2(1, 1.5),
 }, "ball")
+
+--- The rest is unchanged
 ```
 </TabItem>
 
@@ -330,7 +361,7 @@ local Ball = Persist.onReload({
 local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/Io")
+local Io = require("@vectarine/io")
 local Persist = require("@vectarine/persist")
 
 local Ball = Persist.onReload({
@@ -368,7 +399,7 @@ end
 local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/Io")
+local Io = require("@vectarine/io")
 local Persist = require("@vectarine/persist")
 
 local Ball = Persist.onReload({
@@ -409,14 +440,24 @@ end
 </TabItem>
 
 <TabItem label="Collision with rackets">
-```lua
+```luau
 local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/Io")
+local Io = require("@vectarine/io")
 local Persist = require("@vectarine/persist")
 
--- Initialization code stays the same
+local Player = Persist.onReload({
+	position = 0,
+	score = 0,
+}, "player")
+
+local Opponent = Persist.onReload({
+	position = 0,
+	score = 0,
+}, "opponent")
+
+-- Ball initialization code stays the same
 
 function resetBall()
 	Ball.position = Vec.V2(0, 0)
@@ -473,7 +514,7 @@ We can use the `math.random()` function to obtain a random number between 0 and 
 local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/Io")
+local Io = require("@vectarine/io")
 local Persist = require("@vectarine/persist")
 local Text = require("@vectarine/text")
 
@@ -555,7 +596,7 @@ In the end, the code looks like this:
 local Graphics = require("@vectarine/graphics")
 local Vec4 = require("@vectarine/vec4")
 local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/Io")
+local Io = require("@vectarine/io")
 local Persist = require("@vectarine/persist")
 local Text = require("@vectarine/text")
 
@@ -639,4 +680,11 @@ function Update(deltaTime: number)
 end
 ```
 
-You now have a fully functional pong game! You can add more features, like sound effects, a start screen, items, etc.
+You now have a fully functional pong game! Congrats!
+
+## What's next?
+
+Now that you know the basics of Vectarine, you can check the [guided tour](a-guided-tour) to see how to use the different features of the engine including playing sounds,
+the displaying images, using the physics engine, and much more! You can try to expand on this game by adding sound effects, power-ups, etc. or create a new game from scratch!
+
+You can also check the `luau-api` folder of your project which has all the available functions of Vectarine with documentation and examples on how to use them.

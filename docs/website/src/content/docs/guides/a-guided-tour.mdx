@@ -723,7 +723,7 @@ end
 
 This will only create 2 metrics, "Loop Section A" and "Loop Section B". Because you can filter metrics by name, you should use common prefixes or suffixes to group related metrics.
 
-### Using fast list
+### Using fastlist
 
 A `Fastlist` is just a list of `Vec2`. However, unlike regular Lua tables,
 they are very fast because they can only contain `Vec2` which allows for some optimizations.
@@ -774,7 +774,7 @@ end)
 While fastlist are fast, they are less readable, so first write your code in a readable way and turn it to a fastlist later.
 A fastlist has the same functions as a `Vec` (`+`, `-`, `scale`, `max`, `dot`, etc...), so you can just change your types in the function signature and it will work.
 
-Moreover, fastlists have special functions to handle conditions, like `filterGtX`. Check `luau-api` to see all the available functions. 
+Moreover, fastlists have special functions to handle conditions, like `filterBetweenX`. Check `luau-api` to see all the available functions and "the optimizing your game" guide. 
 
 ### Using shaders
 

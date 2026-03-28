@@ -33,12 +33,21 @@ export default defineConfig({
                     link: "/",
                 },
                 {
-                    label: "Guides",
+                    label: "Introductions",
                     items: [
                         {
                             label: "Create your first game",
                             link: "/guides/getting-started/",
                         },
+                        {
+                            label: "A guided tour",
+                            link: "/guides/a-guided-tour/",
+                        },
+                    ],
+                },
+                {
+                    label: "Guides",
+                    items: [
                         {
                             label: "Optimizing your game",
                             link: "/guides/use-fastlists/",
@@ -46,10 +55,6 @@ export default defineConfig({
                         {
                             label: "Create a native plugin",
                             link: "/guides/create-a-plugin/",
-                        },
-                        {
-                            label: "A guided tour",
-                            link: "/guides/a-guided-tour/",
                         },
                     ],
                 },
