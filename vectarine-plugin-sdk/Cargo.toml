@@ -16,13 +16,14 @@ lazy_static = "1.5.0"
 serde = { version = "1.0.219", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-mlua = { version = "0.11.6", features = ["luau-jit", "serde", "vendored"] }
+# Mar 28, 2026 commit, needed for Rust 1.94 compatibility, >0.11.6
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "macos"))'.dependencies]
-mlua = { version = "0.11.6", features = ["luau-jit", "serde", "vendored"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
-mlua = { version = "0.11.6", features = ["luau-jit", "serde", "vendored"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
-mlua = { version = "0.11.6", features = ["luau", "serde", "vendored"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau", "serde", "vendored"] }

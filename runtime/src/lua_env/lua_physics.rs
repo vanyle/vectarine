@@ -45,9 +45,9 @@ pub fn ensure_camera_is_valid(
     maybe_camera: &vectarine_plugin_sdk::mlua::Value,
 ) -> vectarine_plugin_sdk::mlua::Result<()> {
     if !is_valid_data_type::<Camera2>(maybe_camera) {
-        return Err(vectarine_plugin_sdk::mlua::Error::ToLuaConversionError {
-            from: maybe_camera.type_name().to_string(),
-            to: "Camera2",
+        return Err(vectarine_plugin_sdk::mlua::Error::FromLuaConversionError {
+            from: maybe_camera.type_name(),
+            to: "Camera2".to_string(),
             message: Some("Invalid camera when creating World2".to_string()),
         });
     }

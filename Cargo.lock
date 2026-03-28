@@ -1906,18 +1906,18 @@ dependencies = [
 
 [[package]]
 name = "lua-src"
-version = "550.0.0"
+version = "550.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e836dc8ae16806c9bdcf42003a88da27d163433e3f9684c52f0301258004a4fb"
+checksum = "defc9c82bf2471ef9bfc4d9e8669773e89d81b2a3c51f59896356638a0d055ea"
 dependencies = [
  "cc",
 ]
 
 [[package]]
 name = "luajit-src"
-version = "210.6.6+707c12b"
+version = "210.7.0+fbb36bb"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a86cc925d4053d0526ae7f5bc765dbd0d7a5d1a63d43974f4966cb349ca63295"
+checksum = "a07e04c7542e3206c532b742fb0e8acf0706def46a9b4c8c0541ac91523f206c"
 dependencies = [
  "cc",
  "which",
@@ -1925,9 +1925,9 @@ dependencies = [
 
 [[package]]
 name = "luau0-src"
-version = "0.18.3+luau709"
+version = "0.19.1+luau714"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e73f7d752fe2ef0a41f132b83d0be154c6ae0ed84967b4df80a16901866be075"
+checksum = "7b824c0a50062396dbb03e1d786e21406a5c29ae5e8f3a862ad34adbe404ab59"
 dependencies = [
  "cc",
 ]
@@ -2019,9 +2019,8 @@ dependencies = [
 
 [[package]]
 name = "mlua"
-version = "0.11.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccd36acfa49ce6ee56d1307a061dd302c564eee757e6e4cd67eb4f7204846fab"
+version = "0.12.0-dev.1"
+source = "git+https://github.com/mlua-rs/mlua?rev=c5aadc68cdc475871d30cc53411b059f02daceb8#c5aadc68cdc475871d30cc53411b059f02daceb8"
 dependencies = [
  "bstr",
  "either",
@@ -2031,7 +2030,6 @@ dependencies = [
  "num-traits",
  "parking_lot",
  "rustc-hash",
- "rustversion",
  "serde",
  "serde-value",
 ]
@@ -2039,8 +2037,7 @@ dependencies = [
 [[package]]
 name = "mlua-sys"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f1c3a7fc7580227ece249fd90aa2fa3b39eb2b49d3aec5e103b3e85f2c3dfc8"
+source = "git+https://github.com/mlua-rs/mlua?rev=c5aadc68cdc475871d30cc53411b059f02daceb8#c5aadc68cdc475871d30cc53411b059f02daceb8"
 dependencies = [
  "cc",
  "cfg-if",
