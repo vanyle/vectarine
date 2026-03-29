@@ -151,6 +151,7 @@ pub fn setup_graphics_api(
             vectarine_plugin_sdk::mlua::Function,
             vectarine_plugin_sdk::mlua::Function,
         )| {
+            batch.borrow_mut().draw(&resources, true);
             draw_with_mask(
                 &gl,
                 || {
