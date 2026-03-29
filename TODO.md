@@ -1,14 +1,16 @@
 # TO-DO
 
 - [ ] UI system
-  - [ ] Add transform, scale, pop, rotate and reset to graphics API which push transformation
+  - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation
   - [ ] Add an imgui style button which takes a draw function and returns events. In the context of the button, (-1,-1) is the bottom left of the button and (0,0) is the center. pixels stay the same.
   - [ ] Add a vertical container and a horizontal container which take padding, gap and a table of drawing functions as argument
   - [ ] Add a scrollable container as a widget
   - [ ] Add a text input widget (to the best of your ability...)
   - [ ] Add a slider widget
   - [ ] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
-- [ ] Mouse wheel
+- [ ] Better heap info
+  In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
+  thanks to the mlua::luau::HeapDump object
 - [ ] Animation system from multiple PNG files
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
@@ -58,6 +60,7 @@
 
 # Done
 
+- [x] Mouse wheel
 - [x] For fastlist, add a concept of a 'gap' value which is empty and is used to make filtering and slicing operations simpler. A gap is a Vec2 with NaNs. You can merge fastlist to discard the gaps.
 - [x] Modular system
   - [x] Load shared library

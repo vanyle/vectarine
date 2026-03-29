@@ -261,6 +261,12 @@ function module.getMouseState(): {
 	error("Not implemented")
 end
 
+--- Get how much the mouse wheel has been scrolled since the last frame. The x value is for horizontal scrolling, and the y value is for vertical scrolling.
+--- This is because some mice have horizontal scroll (but i've never seen one in real life). On most mice, the x value will always be 0.
+function module.getMouseWheel(): Vec.Vec2
+	error("Not implemented")
+end
+
 --- Get the current window size (in px)
 function module.getWindowSize(): Vec.Vec2
 	error("Not implemented")

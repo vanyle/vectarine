@@ -13,6 +13,8 @@ pub mod zipfs;
 pub struct MouseState {
     pub x: f32,
     pub y: f32,
+    pub wheel_x: f32,
+    pub wheel_y: f32,
     pub is_left_down: bool,
     pub is_right_down: bool,
     pub is_left_just_pressed: bool,
@@ -79,6 +81,8 @@ pub fn process_events(
         env_state.keyboard_just_pressed_state.clear();
         env_state.mouse_state.is_left_just_pressed = false;
         env_state.mouse_state.is_right_just_pressed = false;
+        env_state.mouse_state.wheel_x = 0.0;
+        env_state.mouse_state.wheel_y = 0.0;
     }
 
     for event in events.iter() {
@@ -160,6 +164,23 @@ pub fn process_events(
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert mouse button to Lua"),
                 );
+            }
+            Event::MouseWheel {
+                timestamp: _,
+                window_id: _,
+                which: _,
+                x: _,
+                y: _,
+                direction: _,
+                precise_x,
+                precise_y,
+                mouse_x: _,
+                mouse_y: _,
+            } => {
+                let mut env_state = game.lua_env.env_state.borrow_mut();
+                let mouse_state = &mut env_state.mouse_state;
+                mouse_state.wheel_x += *precise_x;
+                mouse_state.wheel_y += *precise_y;
             }
             Event::MouseMotion {
                 timestamp: _,

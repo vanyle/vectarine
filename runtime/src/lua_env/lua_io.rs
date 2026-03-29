@@ -70,6 +70,14 @@ pub fn setup_io_api(
         }
     });
 
+    add_fn_to_table(lua, &io_module, "getMouseWheel", {
+        let env_state = env_state.clone();
+        move |_, ()| {
+            let mouse_state = env_state.borrow().mouse_state.clone();
+            Ok(Vec2::new(mouse_state.wheel_x, mouse_state.wheel_y))
+        }
+    });
+
     add_fn_to_table(lua, &io_module, "getMouseState", {
         let env_state = env_state.clone();
         move |lua, ()| {
