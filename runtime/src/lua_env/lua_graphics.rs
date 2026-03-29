@@ -5,6 +5,7 @@ use vectarine_plugin_sdk::mlua::{AnyUserData, ObjectLike};
 use crate::{
     game_resource::{self, font_resource::use_default_font},
     graphics::{
+        affinetransform::AffineTransform,
         batchdraw,
         glstencil::draw_with_mask,
         gltexture::{ImageAntialiasing, Texture},
@@ -161,6 +162,38 @@ pub fn setup_graphics_api(
                     batch.borrow_mut().draw(&resources, true);
                 },
             );
+            Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "withTransformation", {
+        let batch = batch.clone();
+        move |_lua,
+              (transformation_table, draw_fn): (
+            vectarine_plugin_sdk::mlua::Table,
+            vectarine_plugin_sdk::mlua::Function,
+        )| {
+            let translation = transformation_table
+                .raw_get::<AnyUserData>("translation")
+                .ok()
+                .and_then(|ud| get_pos_as_vec2(ud).ok())
+                .unwrap_or_default();
+            let scale = transformation_table
+                .raw_get::<AnyUserData>("scale")
+                .ok()
+                .and_then(|ud| get_size_as_vec2(ud).ok())
+                .unwrap_or(Vec2::new(1.0, 1.0));
+            let rotation = transformation_table
+                .raw_get::<f32>("rotation")
+                .ok()
+                .unwrap_or(0.0);
+
+            let current_transform = batch.borrow().affine_transform;
+            let mut new_transform = AffineTransform::new(translation, scale, rotation);
+            new_transform = current_transform.combine(&new_transform);
+            batch.borrow_mut().affine_transform = new_transform;
+            let _ = draw_fn.call::<()>(());
+            batch.borrow_mut().affine_transform = current_transform;
             Ok(())
         }
     });

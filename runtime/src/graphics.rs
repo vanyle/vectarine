@@ -11,3 +11,5 @@ pub mod gluniforms;
 
 pub mod shadersources;
 pub mod shape;
+
+pub mod affinetransform;
