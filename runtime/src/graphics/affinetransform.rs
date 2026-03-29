@@ -42,6 +42,24 @@ impl AffineTransform {
         )
     }
 
+    pub fn inverse_apply(&self, v: &Vec2) -> Vec2 {
+        let det = self.a * self.d - self.b * self.c;
+        if det == 0.0 {
+            return Vec2::new(0.0, 0.0);
+        }
+        let inv_a = self.d / det;
+        let inv_b = -self.b / det;
+        let inv_c = -self.c / det;
+        let inv_d = self.a / det;
+        let inv_tx = (self.c * self.ty - self.d * self.tx) / det;
+        let inv_ty = (self.b * self.tx - self.a * self.ty) / det;
+
+        Vec2::new(
+            inv_a * v.x() + inv_c * v.y() + inv_tx,
+            inv_b * v.x() + inv_d * v.y() + inv_ty,
+        )
+    }
+
     pub fn apply_quad(&self, quad: &Quad) -> Quad {
         Quad {
             p1: self.apply(&quad.p1),

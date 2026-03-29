@@ -85,9 +85,21 @@ end
 --- The translation is applied first, then the rotation, then the scale. You can nest multiple calls to `withTransformation` and the transformations will be combined.
 --- The transformations are only applied for 2d drawing functions.
 function module.withTransformation(
-	transformation: { translation: Vec.Vec2?, scale: Vec.Vec2?, rotationAngle: number? },
+	transformation: { translation: Vec.Vec2?, scale: Vec.Vec2?, rotation: number? },
 	drawFunction: () -> ()
 ): ()
+	error("Not implemented")
+end
+
+-- Apply the current transformation of `withTransformation` to the given position.
+-- You can use this to get the position of the mouse in the transformed space for example.
+function module.transform(pos: Vec.Vec2): Vec.Vec2
+	error("Not implemented")
+end
+
+-- Apply the inverse of the current transformation of `withTransformation` to the given position.
+-- You can use this to get the position of the mouse in the original space after transforming it for example.
+function module.inverseTransform(pos: Vec.Vec2): Vec.Vec2
 	error("Not implemented")
 end
 
