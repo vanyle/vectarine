@@ -198,6 +198,22 @@ pub fn setup_graphics_api(
         }
     });
 
+    add_fn_to_table(lua, &graphics_module, "transform", {
+        let batch = batch.clone();
+        move |_lua, (pos,): (Vec2,)| {
+            let current_transform = batch.borrow().affine_transform;
+            Ok(current_transform.apply(&pos))
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "inverseTransform", {
+        let batch = batch.clone();
+        move |_lua, (pos,): (Vec2,)| {
+            let current_transform = batch.borrow().affine_transform;
+            Ok(current_transform.inverse_apply(&pos))
+        }
+    });
+
     add_fn_to_table(lua, &graphics_module, "clear", {
         let batch = batch.clone();
         move |_, (color,): (Option<Vec4>,)| {
