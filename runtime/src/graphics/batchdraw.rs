@@ -191,6 +191,10 @@ impl BatchDraw2d {
             ]
         }).collect();
 
+        if points_len < 3 {
+            return; // Not enough points to form a polygon
+        }
+
         // Triangulate the polygon using a triangle fan
         let mut indices: Vec<u32> = Vec::with_capacity((points_len - 2) * 3);
         for i in 1..(points_len - 1) {
