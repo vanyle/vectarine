@@ -1,3 +1,5 @@
+use vectarine_plugin_sdk::glow;
+
 #[derive(Debug, Clone)]
 pub enum UniformValue {
     Float(f32),

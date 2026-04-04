@@ -1,6 +1,7 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
 use crate::game_resource::{Resource, ResourceId, Status};
+use vectarine_plugin_sdk::glow;
 
 /// The most simple resource, a .txt file with some content.
 pub struct TextResource {

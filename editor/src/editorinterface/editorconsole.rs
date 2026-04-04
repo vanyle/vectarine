@@ -50,7 +50,7 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                     }
                 });
 
-                egui::TopBottomPanel::bottom("bottom_panel")
+                egui::Panel::bottom("bottom_panel")
                     .resizable(true)
                     .show_inside(ui, |ui| {
                         ui.label(

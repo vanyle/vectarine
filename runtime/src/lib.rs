@@ -16,6 +16,7 @@ pub use sdl2;
 pub use vectarine_plugin_sdk::anyhow;
 pub use vectarine_plugin_sdk::egui;
 pub use vectarine_plugin_sdk::egui_glow;
+pub use vectarine_plugin_sdk::glow;
 pub use vectarine_plugin_sdk::lazy_static;
 pub use vectarine_plugin_sdk::mlua;
 pub use vectarine_plugin_sdk::rapier2d;

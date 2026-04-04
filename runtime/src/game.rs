@@ -1,8 +1,9 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
-use glow::HasContext;
 use sdl2;
 use sdl2::video::WindowPos;
+use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::glow::HasContext;
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
 
 use crate::{

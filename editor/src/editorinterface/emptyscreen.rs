@@ -269,12 +269,10 @@ pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
                                 let layer_id = response.layer_id;
                                 let is_hovering = {
                                     rect.is_positive() && {
-                                        let pointer_pos =
-                                            ui.ctx().input(|i| i.pointer.interact_pos());
+                                        let pointer_pos = ui.input(|i| i.pointer.interact_pos());
                                         if let Some(pointer_pos) = pointer_pos {
                                             rect.contains(pointer_pos)
-                                                && ui.ctx().layer_id_at(pointer_pos)
-                                                    == Some(layer_id)
+                                                && ui.layer_id_at(pointer_pos) == Some(layer_id)
                                         } else {
                                             false
                                         }

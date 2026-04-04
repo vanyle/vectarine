@@ -7,6 +7,7 @@ use crate::{
         gltypes::{DataLayout, GLTypes, UsageHint},
     },
 };
+use vectarine_plugin_sdk::glow;
 
 pub struct Shader {
     pub shader: glprogram::GLProgram,

@@ -1,6 +1,7 @@
 use std::{hint::unreachable_unchecked, sync::Arc};
 
-use glow::HasContext;
+use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::glow::HasContext;
 
 use crate::graphics::gltypes::DataLayout;
 

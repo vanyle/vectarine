@@ -4,6 +4,7 @@ use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::gltexture::{self, ImageAntialiasing, Texture},
 };
+use vectarine_plugin_sdk::glow;
 
 pub struct ImageResource {
     pub texture: RefCell<Option<Arc<gltexture::Texture>>>,
@@ -61,7 +62,9 @@ impl Resource for ImageResource {
         let texture_id = match egui_id.as_mut() {
             Some(id) => *id,
             None => {
-                let native_tex = painter.register_native_texture(tex.id());
+                let native_tex = painter.register_native_texture(
+                    vectarine_plugin_sdk::egui_glow::glow::NativeTexture(tex.id().0),
+                );
                 *egui_id = Some(native_tex);
                 native_tex
             }

@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 fontdue = "0.9.3"
-glow = "0.16.0"
 image = { version = "0.25.8", features = ["png", "bmp", "jpeg", "ico", "gif", "webp"] }
 tiled = { version = "0.15.0", features = ["wasm"] }
 zip = "6.0.0"

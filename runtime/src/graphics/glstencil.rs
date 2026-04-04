@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use glow::HasContext;
+use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::glow::HasContext;
 
 pub fn draw_with_mask<F, G>(gl: &Arc<glow::Context>, draw_mask: F, draw_content: G)
 where

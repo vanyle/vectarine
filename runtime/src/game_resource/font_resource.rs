@@ -5,6 +5,7 @@ use std::{
     rc::Rc,
     sync::{Arc, Mutex},
 };
+use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::lazy_static::lazy_static;
 
 use crate::{

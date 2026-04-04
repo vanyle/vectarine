@@ -81,7 +81,6 @@ impl Platform {
                         modifiers: self.modifiers,
                     });
                 }
-                self.egui_ctx.wants_pointer_input();
             }
             // Handle the mouse button being released
             Event::MouseButtonUp { mouse_btn, .. } => {
@@ -99,7 +98,6 @@ impl Platform {
                         modifiers: self.modifiers,
                     });
                 }
-                self.egui_ctx.wants_pointer_input();
             }
             // Handle mouse motion
             Event::MouseMotion { x, y, .. } => {
@@ -108,7 +106,6 @@ impl Platform {
                 self.raw_input
                     .events
                     .push(egui::Event::PointerMoved(self.pointer_pos));
-                self.egui_ctx.wants_pointer_input();
             }
             // Handle the mouse scrolling
             Event::MouseWheel { x, y, .. } => {
@@ -126,12 +123,12 @@ impl Platform {
                         .push(egui::Event::Zoom((delta.y * 8.0 / 125.0).exp()));
                 } else {
                     self.raw_input.events.push(egui::Event::MouseWheel {
+                        phase: egui::TouchPhase::Move,
                         delta,
                         modifiers: self.modifiers,
                         unit: egui::MouseWheelUnit::Line,
                     });
                 }
-                self.egui_ctx.wants_pointer_input();
             }
 
             // Handle a key being pressed
@@ -194,7 +191,6 @@ impl Platform {
                         });
                     }
                 }
-                self.egui_ctx.wants_keyboard_input();
             }
             // Handle a key being released
             Event::KeyUp {
@@ -235,12 +231,10 @@ impl Platform {
                         });
                     }
                 }
-                self.egui_ctx.wants_keyboard_input();
             }
             // Handle text input
             Event::TextInput { text, .. } => {
                 self.raw_input.events.push(egui::Event::Text(text.clone()));
-                self.egui_ctx.wants_keyboard_input();
             }
 
             _ => {}
