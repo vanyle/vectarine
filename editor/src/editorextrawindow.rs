@@ -184,7 +184,7 @@ pub fn send_window_resize_sync_event(
         window_id: window.id(),
         win_event: WindowEvent::Resized(width as i32, height as i32),
     };
-    platform.handle_event(&event, sdl, video);
+    platform.handle_events(&[event], sdl, video);
 }
 
 pub fn draw_centered_text(
