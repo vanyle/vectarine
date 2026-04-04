@@ -3,9 +3,13 @@ local Resource = require("@vectarine/resource")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
 
---- Graphics
----
---- Functions to draw shapes, images, text, and canvases to the screen
+--[[
+# Graphics
+
+Functions to draw shapes, images, and canvases to the screen.
+
+Uses Vec or Coord types for position and directions.
+]]
 local module = {}
 
 type Pos = Coord.ScreenPosition | Vec.Vec2
@@ -84,6 +88,8 @@ end
 --- You can use this to rotate or scale things without changing your drawing code.
 --- The translation is applied first, then the rotation, then the scale. You can nest multiple calls to `withTransformation` and the transformations will be combined.
 --- The transformations are only applied for 2d drawing functions.
+---
+--- This is used internally to implement the UI system.
 function module.withTransformation(
 	transformation: { translation: Vec.Vec2?, scale: Vec.Vec2?, rotation: number? },
 	drawFunction: () -> ()
@@ -100,6 +106,12 @@ end
 -- Apply the inverse of the current transformation of `withTransformation` to the given position.
 -- You can use this to get the position of the mouse in the original space after transforming it for example.
 function module.inverseTransform(pos: Vec.Vec2): Vec.Vec2
+	error("Not implemented")
+end
+
+--- Return the current translation, scale and rotation of the current transformation.
+--- If you have nested transformations, it returns the combined transformation.
+function module.getCurrentTransform(): (Vec.Vec2, Vec.Vec2, number)
 	error("Not implemented")
 end
 

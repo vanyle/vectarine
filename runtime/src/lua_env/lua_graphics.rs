@@ -190,8 +190,8 @@ pub fn setup_graphics_api(
                 .unwrap_or(0.0);
 
             let current_transform = batch.borrow().affine_transform;
-            let mut new_transform = AffineTransform::new(translation, scale, rotation);
-            new_transform = current_transform.combine(&new_transform);
+            let new_transform =
+                current_transform.combine(&AffineTransform::new(translation, scale, rotation));
             batch.borrow_mut().affine_transform = new_transform;
             let _ = draw_fn.call::<()>(());
             batch.borrow_mut().affine_transform = current_transform;
@@ -212,6 +212,18 @@ pub fn setup_graphics_api(
         move |_lua, (pos,): (Vec2,)| {
             let current_transform = batch.borrow().affine_transform;
             Ok(current_transform.inverse_apply(&pos))
+        }
+    });
+
+    add_fn_to_table(lua, &graphics_module, "getCurrentTransform", {
+        let batch = batch.clone();
+        move |_lua, (): ()| {
+            let current_transform = batch.borrow().affine_transform;
+            Ok((
+                current_transform.translation(),
+                current_transform.scale(),
+                current_transform.rotation(),
+            ))
         }
     });
 
