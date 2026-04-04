@@ -14,7 +14,7 @@ use crate::editorinterface::EditorState;
 const MAX_WATCHED_VARIABLES: usize = 20;
 const MAX_TABLE_INSPECTION_DEPTH: usize = 2;
 
-pub fn draw_editor_watcher(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_watcher(editor: &mut EditorState, ui: &mut egui::Ui) {
     let mut is_shown = editor.config.borrow().is_watcher_window_shown;
 
     let maybe_response = egui::Window::new("Watcher")
@@ -22,12 +22,12 @@ pub fn draw_editor_watcher(editor: &mut EditorState, ctx: &egui::Context) {
         .default_height(200.0)
         .open(&mut is_shown)
         .collapsible(false)
-        .show(ctx, |ui| {
+        .show(ui, |ui| {
             draw_editor_watcher_window(ui, editor);
         });
     if let Some(response) = maybe_response {
-        let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
-        if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+        let on_top = Some(response.response.layer_id) == ui.top_layer_id();
+        if on_top && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             is_shown = false;
         }
     }

@@ -7,7 +7,7 @@ use std::cell::{Cell, RefCell};
 const AVERAGE_SMOOTHING_WINDOW_SIZE: usize = 5;
 const Y_SCALE_SMOOTHING_FACTOR: f32 = 0.05;
 
-pub fn draw_editor_profiler(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_profiler(editor: &mut EditorState, ui: &mut egui::Ui) {
     let mut is_shown = editor.config.borrow().is_profiler_window_shown;
 
     let maybe_response = egui::Window::new("Profiler")
@@ -15,7 +15,7 @@ pub fn draw_editor_profiler(editor: &mut EditorState, ctx: &egui::Context) {
         .default_height(200.0)
         .open(&mut is_shown)
         .collapsible(false)
-        .show(ctx, |ui| {
+        .show(ui, |ui| {
             let mut project = editor.project.borrow_mut();
             let project = project.as_mut();
             let Some(project) = project else {
@@ -119,8 +119,8 @@ spent executing Lua are shown, but you can add your own metrics using Debug.time
             });
         });
     if let Some(response) = maybe_response {
-        let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
-        if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+        let on_top = Some(response.response.layer_id) == ui.top_layer_id();
+        if on_top && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             is_shown = false;
         }
     }
