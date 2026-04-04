@@ -62,7 +62,7 @@ pub struct EditorState {
     pub project: Rc<RefCell<Option<ProjectState>>>,
 
     pub start_time: std::time::Instant,
-    pub video: Rc<RefCell<sdl2::VideoSubsystem>>,
+    pub video: Rc<sdl2::VideoSubsystem>,
     pub window: Rc<RefCell<sdl2::video::Window>>,
     pub gl: Arc<glow::Context>,
 
@@ -156,7 +156,7 @@ impl EditorState {
     }
 
     pub fn new(
-        video: Rc<RefCell<sdl2::VideoSubsystem>>,
+        video: Rc<sdl2::VideoSubsystem>,
         window: Rc<RefCell<sdl2::video::Window>>,
         gl: Arc<glow::Context>,
         editor_window: sdl2::video::Window,
@@ -281,7 +281,7 @@ impl EditorState {
         draw_editor_preferences(self, &ctx);
 
         // Stop drawing the egui frame and get the full output
-        let full_output = platform.end_frame(&mut self.video.borrow_mut());
+        let full_output = platform.end_frame(&self.video);
         match full_output {
             Ok(full_output) => {
                 // Get the paint jobs
@@ -309,7 +309,7 @@ impl EditorState {
         };
         for event in latest_events {
             // Convert mouse position.
-            platform.handle_event(event, sdl, &self.video.borrow());
+            platform.handle_event(event, sdl, &self.video);
         }
     }
 

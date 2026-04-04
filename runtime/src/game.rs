@@ -43,7 +43,7 @@ impl Game {
         project_info: &ProjectInfo,
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
-        video: &Rc<RefCell<sdl2::VideoSubsystem>>,
+        video: &Rc<sdl2::VideoSubsystem>,
         window: &Rc<RefCell<sdl2::video::Window>>,
         callback: F,
     ) where
@@ -126,11 +126,11 @@ impl Game {
     /// This needs to be called before loading Lua scripts.
     fn load(
         &mut self,
-        video: &Rc<RefCell<sdl2::VideoSubsystem>>,
+        video: &Rc<sdl2::VideoSubsystem>,
         window: &Rc<RefCell<sdl2::video::Window>>,
     ) {
         // Make screen and window size accessible inside Load.
-        if let Ok(display_size) = video.borrow().display_bounds(0) {
+        if let Ok(display_size) = video.display_bounds(0) {
             self.lua_env.env_state.borrow_mut().screen_width = display_size.width();
             self.lua_env.env_state.borrow_mut().screen_height = display_size.height();
 

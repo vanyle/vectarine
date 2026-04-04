@@ -260,10 +260,7 @@ impl Platform {
     }
 
     /// Stop drawing the egui frame and return the full output
-    pub fn end_frame(
-        &mut self,
-        video: &mut sdl2::VideoSubsystem,
-    ) -> anyhow::Result<egui::FullOutput> {
+    pub fn end_frame(&mut self, video: &sdl2::VideoSubsystem) -> anyhow::Result<egui::FullOutput> {
         // Get the egui output
         let output = self.egui_ctx.end_pass();
         // Update the clipboard
