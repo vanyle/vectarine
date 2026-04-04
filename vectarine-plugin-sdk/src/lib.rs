@@ -10,6 +10,7 @@
 pub use anyhow;
 pub use egui;
 pub use egui_glow;
+pub use glow;
 pub use lazy_static;
 pub use mlua;
 pub use rapier2d;

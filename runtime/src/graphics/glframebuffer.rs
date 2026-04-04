@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use glow::HasContext;
+use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::glow::HasContext;
 
 use crate::graphics::gltexture::ImageAntialiasing;
 

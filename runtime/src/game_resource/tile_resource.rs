@@ -3,6 +3,7 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 use tiled::Loader;
 
 use crate::game_resource::{Resource, ResourceId, Status};
+use vectarine_plugin_sdk::glow;
 
 // MARK: Tileset
 

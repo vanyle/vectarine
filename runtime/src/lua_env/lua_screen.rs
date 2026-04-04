@@ -7,6 +7,7 @@ use crate::{
     io,
     lua_env::{add_fn_to_table, get_internals},
 };
+use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::mlua::IntoLua;
 use vectarine_plugin_sdk::mlua::{FromLua, UserDataMethods};
 

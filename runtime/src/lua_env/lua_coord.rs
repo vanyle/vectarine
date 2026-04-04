@@ -1,6 +1,6 @@
 use std::{ops, rc::Rc, sync::Arc};
 
-use glow::Context;
+use vectarine_plugin_sdk::glow::Context;
 use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::{

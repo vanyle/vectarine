@@ -9,7 +9,6 @@ use std::{
 };
 
 use egui_sdl2_platform::sdl2;
-use glow::HasContext;
 use notify_debouncer_full::{
     DebounceEventResult, DebouncedEvent, Debouncer, RecommendedCache, new_debouncer, notify,
 };
@@ -17,6 +16,7 @@ use runtime::{
     anyhow::{self},
     egui_glow,
     game::drawable_screen_size,
+    glow,
     graphics::batchdraw::BatchDraw2d,
     io::{
         fs::{FileSystem, ReadOnlyFileSystem},
@@ -24,6 +24,7 @@ use runtime::{
     },
     toml,
 };
+use vectarine_plugin_sdk::glow::HasContext;
 
 use crate::{
     editorconfig::{EditorConfig, WindowStyle},

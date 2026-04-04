@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use glow::{HasContext, PixelUnpackData};
+use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::glow::{HasContext, PixelUnpackData};
 
 /// Represents a texture on the GPU
 #[derive(Debug, Clone)]

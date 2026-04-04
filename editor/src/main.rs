@@ -2,7 +2,6 @@
 
 use std::{path::PathBuf, sync::mpsc::channel};
 
-use glow::HasContext;
 use runtime::{
     RenderingBlock, egui_glow,
     game::drawable_screen_size,
@@ -10,6 +9,7 @@ use runtime::{
     io::{localfs::LocalFileSystem, time::now_ms},
     sound::init_sound_system,
 };
+use vectarine_plugin_sdk::glow::HasContext;
 
 use crate::{
     editorconfig::WindowStyle,

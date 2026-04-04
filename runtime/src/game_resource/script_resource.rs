@@ -4,6 +4,7 @@ use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::run_file_and_display_error_from_lua_handle,
 };
+use vectarine_plugin_sdk::glow;
 
 pub struct ScriptResource {
     pub script: RefCell<Option<Vec<u8>>>,

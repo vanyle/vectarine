@@ -299,7 +299,7 @@ fn draw_trusted_plugin_row(
     let description_width = body.widths()[2];
 
     let ui = body.ui_mut();
-    let galley = ui.fonts(|f| {
+    let galley = ui.fonts_mut(|f| {
         f.layout_job(egui::text::LayoutJob::simple(
             plugin.description.clone(),
             font_id,
@@ -343,7 +343,7 @@ fn draw_trusted_plugin_row(
         row.col(|ui| {
             let label = Label::new(plugin.hash.to_string()).wrap();
             if ui.add(label).on_hover_text("Click to copy").clicked() {
-                ui.ctx().copy_text(plugin.hash.to_string());
+                ui.copy_text(plugin.hash.to_string());
             }
         });
         row.col(|ui| {

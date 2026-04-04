@@ -6,6 +6,7 @@ use std::{
     sync::Arc,
 };
 
+use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::mlua::IntoLua;
 use vectarine_plugin_sdk::serde::{Deserialize, Serialize};
 

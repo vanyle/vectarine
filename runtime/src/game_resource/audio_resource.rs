@@ -7,6 +7,7 @@ use crate::{
     game_resource::{Resource, ResourceId, Status},
     sound::{self, ChannelId},
 };
+use vectarine_plugin_sdk::glow;
 
 pub static AUDIO_SAMPLE_FREQUENCY: i32 = 48000; // in Hz
 pub static AUDIO_CHANNELS: i32 = 2; // Stereo

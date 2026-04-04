@@ -8,8 +8,9 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow = "1.0.100"
-egui = "0.32.2"
-egui_glow = "0.32.2"
+egui = "0.34.1"
+egui_glow = "0.34.1"
+glow = "0.17.0"
 toml = "0.9.8"
 rapier2d = "0.31.0"
 lazy_static = "1.5.0"

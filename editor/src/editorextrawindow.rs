@@ -2,17 +2,18 @@
 
 use std::sync::Arc;
 
-use glow::HasContext;
 use runtime::{
     anyhow, egui_glow,
     game::drawable_screen_size,
     game_resource::{ResourceManager, font_resource},
+    glow,
     graphics::batchdraw::BatchDraw2d,
     sdl2::{
         event::{Event, WindowEvent},
         video::{GLContext, Window},
     },
 };
+use vectarine_plugin_sdk::glow::HasContext;
 
 use crate::{editorinterface::EditorState, egui_sdl2_platform};
 

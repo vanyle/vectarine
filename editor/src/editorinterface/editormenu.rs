@@ -55,7 +55,8 @@ pub fn draw_editor_menu(editor: &mut EditorState, ctx: &egui::Context) {
         }
     }
 
-    egui::TopBottomPanel::top("toppanel").show(ctx, |ui| {
+    #[allow(deprecated)]
+    egui::Panel::top("toppanel").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.label(RichText::new("Vectarine Editor").size(18.0));
             egui::MenuBar::new().ui(ui, |ui| {

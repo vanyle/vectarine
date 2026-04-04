@@ -3,6 +3,7 @@ use std::{cell::RefCell, path::PathBuf, sync::Arc};
 use egui_extras::{Column, TableBuilder};
 use runtime::egui::ScrollArea;
 use runtime::game::Game;
+use runtime::glow;
 use runtime::{egui, egui_glow};
 
 use crate::editorinterface::EditorState;
