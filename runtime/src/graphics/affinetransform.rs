@@ -42,6 +42,24 @@ impl AffineTransform {
         )
     }
 
+    /// Returns the translation component of the affine transform.
+    pub fn translation(&self) -> Vec2 {
+        Vec2::new(self.tx, self.ty)
+    }
+
+    /// Returns the scale component of the affine transform.
+    pub fn scale(&self) -> Vec2 {
+        Vec2::new(
+            (self.a.powi(2) + self.b.powi(2)).sqrt(),
+            (self.c.powi(2) + self.d.powi(2)).sqrt(),
+        )
+    }
+
+    /// Returns the rotation component of the affine transform in radians.
+    pub fn rotation(&self) -> f32 {
+        self.b.atan2(self.a)
+    }
+
     pub fn inverse_apply(&self, v: &Vec2) -> Vec2 {
         let det = self.a * self.d - self.b * self.c;
         if det == 0.0 {
