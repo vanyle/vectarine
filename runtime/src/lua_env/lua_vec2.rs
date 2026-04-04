@@ -206,6 +206,11 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec2 {
             #[inline(always)]
             |_, (vec, other): (Vec2, Vec2)| Ok(vec * other),
         );
+        methods.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Div,
+            #[inline(always)]
+            |_, (vec, other): (Vec2, Vec2)| Ok(vec / other),
+        );
         methods.add_meta_method(
             vectarine_plugin_sdk::mlua::MetaMethod::ToString,
             #[inline(always)]

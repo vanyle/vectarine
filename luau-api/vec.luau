@@ -14,6 +14,9 @@ end
 Vec2Impl.__mul = function(a: Vec2, b: Vec2): Vec2
 	error("Not implemented")
 end
+Vec2Impl.__div = function(a: Vec2, b: Vec2): Vec2
+	error("Not implemented")
+end
 
 --- The type of 2d things
 export type Vec2Data = { x: number, y: number }
@@ -23,14 +26,14 @@ export type Vec2 = typeof(setmetatable({} :: Vec2Data, Vec2Impl))
 
 --- Create a new 2d vector
 function module.V2(x: number, y: number): Vec2
-	return nil :: any
+	error("Not implemented")
 end
 
 --- Create a new 2d vector of length `length` pointing towards the given angle (in radians)
 --- If `length` is not provided, it defaults to 1
 --- This is the same as: `V2(math.cos(angle), math.sin(angle)) * length`
 function module.fromAngle(angle: number, length: number?): Vec2
-	return nil :: any
+	error("Not implemented")
 end
 
 --- Scales the vector by the given factor

@@ -14,6 +14,9 @@ end
 Vec4Impl.__mul = function(a: Vec4, b: Vec4): Vec4
 	error("Not implemented")
 end
+Vec4Impl.__div = function(a: Vec4, b: Vec4): Vec4
+	error("Not implemented")
+end
 
 --- The type of 4D things
 export type Vec4Data = { x: number, y: number, z: number, w: number, r: number, g: number, b: number, a: number }

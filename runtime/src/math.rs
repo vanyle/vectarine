@@ -111,6 +111,14 @@ impl<const N: usize> ops::Mul<f32> for Vect<N> {
     }
 }
 
+impl<const N: usize> ops::Div for Vect<N> {
+    type Output = Self;
+    #[inline]
+    fn div(self, other: Self) -> Self {
+        Self(std::array::from_fn(|i| self.0[i] / other.0[i]))
+    }
+}
+
 impl<const N: usize> ops::Div<f32> for Vect<N> {
     type Output = Self;
     #[inline]

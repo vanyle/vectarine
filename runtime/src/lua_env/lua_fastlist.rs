@@ -485,6 +485,14 @@ pub fn setup_fastlist_api(
                 })
             },
         );
+        registry.add_meta_method(
+            mlua::MetaMethod::Div,
+            |_, this, other: mlua::AnyUserData| {
+                parse_fastlist_or_vec_with_cb(other, |parsed| {
+                    Ok(apply_binary_op(this, parsed, |a, b| a / b))
+                })
+            },
+        );
 
         registry.add_method("scale", |_, this, k: f32| {
             let data = this.data.iter().map(|v| *v * k).collect();

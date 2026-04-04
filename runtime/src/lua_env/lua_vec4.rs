@@ -188,6 +188,11 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec4 {
             vectarine_plugin_sdk::mlua::MetaMethod::Mul,
             |_, (vec, other): (Vec4, Vec4)| Ok(vec * other),
         );
+        methods.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Div,
+            #[inline(always)]
+            |_, (vec, other): (Vec4, Vec4)| Ok(vec / other),
+        );
         methods.add_meta_method(
             vectarine_plugin_sdk::mlua::MetaMethod::ToString,
             |_, vec, _any: vectarine_plugin_sdk::mlua::Value| {
