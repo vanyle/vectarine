@@ -253,84 +253,77 @@ pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
 
     // Draw the gallery projects
     GALLERY_PROJECTS.with_borrow(|gallery_projects| {
-        StripBuilder::new(ui)
-            .size(Size::initial(20.0))
-            .vertical(|mut strip| {
-                strip.cell(|ui| {
-                    for (project_file, project_info) in gallery_projects.iter().cloned() {
-                        ui.scope_builder(
-                            UiBuilder::new()
-                                .id_salt("interactive_container")
-                                .sense(Sense::click()),
-                            |ui| {
-                                let response = ui.response();
-                                let visuals = ui.style().interact(&response);
-                                let rect = response.rect;
-                                let layer_id = response.layer_id;
-                                let is_hovering = {
-                                    rect.is_positive() && {
-                                        let pointer_pos = ui.input(|i| i.pointer.interact_pos());
-                                        if let Some(pointer_pos) = pointer_pos {
-                                            rect.contains(pointer_pos)
-                                                && ui.layer_id_at(pointer_pos) == Some(layer_id)
-                                        } else {
-                                            false
-                                        }
+        egui::Grid::new("project_list")
+            .num_columns(1)
+            .spacing([0.0, 8.0])
+            .show(ui, |ui| {
+                for (project_file, project_info) in gallery_projects.iter().cloned() {
+                    ui.scope_builder(
+                        UiBuilder::new()
+                            .id_salt("interactive_container")
+                            .sense(Sense::click()),
+                        |ui| {
+                            let response = ui.response();
+                            let bg_fill = ui.style().interact(&response).bg_fill;
+                            let rect = response.rect;
+                            let layer_id = response.layer_id;
+                            let is_hovering = {
+                                rect.is_positive() && {
+                                    let pointer_pos = ui.input(|i| i.pointer.interact_pos());
+                                    if let Some(pointer_pos) = pointer_pos {
+                                        rect.contains(pointer_pos)
+                                            && ui.layer_id_at(pointer_pos) == Some(layer_id)
+                                    } else {
+                                        false
                                     }
-                                };
-                                let stroke = if is_hovering {
-                                    Stroke::new(2.0, egui::Color32::WHITE)
-                                } else {
-                                    Stroke::new(2.0, egui::Color32::TRANSPARENT)
-                                };
-                                let mut is_clicked = false;
-
-                                Frame::canvas(ui.style())
-                                    .fill(visuals.bg_fill.gamma_multiply(0.3))
-                                    .stroke(stroke)
-                                    .show(ui, |ui| {
-                                        ui.with_layout(
-                                            Layout::left_to_right(Align::Center),
-                                            |ui| {
-                                                ui.vertical(|ui| {
-                                                    let label_response = ui.label(
-                                                        RichText::new(project_info.title)
-                                                            .strong()
-                                                            .size(18.0),
-                                                    );
-                                                    is_clicked |= label_response.clicked();
-                                                    let description = trim_string_with_ellipsis(
-                                                        &project_info.description,
-                                                        80,
-                                                    );
-                                                    let label_response = ui.label(
-                                                        RichText::new(description).size(12.0),
-                                                    );
-                                                    is_clicked |= label_response.clicked();
-                                                });
-                                                let end_of_path = get_end_of_path(&project_file);
-                                                let label_response =
-                                                    ui.label(RichText::new(end_of_path).size(12.0));
-                                                is_clicked |= label_response.clicked();
-                                            },
-                                        );
-                                    });
-                                if response.clicked() || is_clicked {
-                                    state.load_project(
-                                        Box::new(LocalFileSystem),
-                                        &project_file,
-                                        |result| {
-                                            if let Err(e) = result {
-                                                // TO-DO: show error in GUI
-                                                println!("Failed to load project: {e}");
-                                            }
-                                        },
-                                    );
                                 }
-                            },
-                        );
-                    }
-                });
+                            };
+                            let stroke = if is_hovering {
+                                Stroke::new(2.0, egui::Color32::WHITE)
+                            } else {
+                                Stroke::new(2.0, egui::Color32::TRANSPARENT)
+                            };
+                            let mut is_clicked = false;
+
+                            Frame::canvas(ui.style())
+                                .fill(bg_fill.gamma_multiply(0.3))
+                                .stroke(stroke)
+                                .show(ui, |ui| {
+                                    ui.set_min_width(500.0);
+                                    ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                                        ui.vertical(|ui| {
+                                            let label_response = ui.label(
+                                                RichText::new(project_info.title)
+                                                    .strong()
+                                                    .size(18.0),
+                                            );
+                                            is_clicked |= label_response.clicked();
+                                            let description = trim_string_with_ellipsis(
+                                                &project_info.description,
+                                                80,
+                                            );
+                                            let label_response =
+                                                ui.label(RichText::new(description).size(12.0));
+                                            is_clicked |= label_response.clicked();
+                                        });
+                                    });
+                                });
+                            if response.clicked() || is_clicked {
+                                state.load_project(
+                                    Box::new(LocalFileSystem),
+                                    &project_file,
+                                    |result| {
+                                        if let Err(e) = result {
+                                            // TO-DO: show error in GUI
+                                            println!("Failed to load project: {e}");
+                                        }
+                                    },
+                                );
+                            }
+                        },
+                    );
+                    ui.end_row();
+                }
             });
     });
 }
