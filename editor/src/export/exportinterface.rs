@@ -9,7 +9,7 @@ use runtime::egui::{Color32, RichText, Widget};
 use crate::editorinterface::EditorState;
 use crate::export::exportproject::{ExportPlatform, export_project};
 
-pub fn draw_editor_export(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_export(editor: &mut EditorState, ui: &mut egui::Ui) {
     let mut is_shown = editor.config.borrow().is_export_window_shown;
 
     egui::Window::new("Export Project")
@@ -19,7 +19,7 @@ pub fn draw_editor_export(editor: &mut EditorState, ctx: &egui::Context) {
         .collapsible(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .open(&mut is_shown)
-        .show(ctx, |ui| {
+        .show(ui, |ui| {
             draw_editor_export_window(ui, editor);
         });
     editor.config.borrow_mut().is_export_window_shown = is_shown;

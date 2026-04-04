@@ -7,6 +7,7 @@ use runtime::sdl2::{
     mouse::{Cursor, MouseButton, SystemCursor},
 };
 
+use crate::editorinterface::EditorState;
 use crate::egui_sdl2_platform::conversions::ToEguiKey;
 
 /// The sdl2 platform for egui
@@ -243,7 +244,7 @@ impl Platform {
 
     /// Set the pixels per point
     pub fn set_pixels_per_point(&mut self, pixels_per_point: f32) {
-        self.context().set_pixels_per_point(pixels_per_point);
+        self.egui_ctx.set_pixels_per_point(pixels_per_point);
     }
 
     /// Update the time
@@ -251,25 +252,29 @@ impl Platform {
         self.raw_input.time = Some(duration);
     }
 
-    /// Return the processed context
-    pub fn context(&mut self) -> egui::Context {
-        // Begin the frame
-        self.egui_ctx.begin_pass(self.raw_input.take());
-        // Return the ctx
-        self.egui_ctx.clone()
-    }
+    pub fn run<F>(
+        &mut self,
+        editor_state: &mut EditorState,
+        draw_ui: &mut F,
+    ) -> anyhow::Result<egui::FullOutput>
+    where
+        F: FnMut(&mut egui::Ui, &mut EditorState),
+    {
+        let output = self.egui_ctx.run_ui(self.raw_input.take(), |ui| {
+            draw_ui(ui, editor_state);
+        });
 
-    /// Stop drawing the egui frame and return the full output
-    pub fn end_frame(&mut self, video: &sdl2::VideoSubsystem) -> anyhow::Result<egui::FullOutput> {
-        // Get the egui output
-        let output = self.egui_ctx.end_pass();
         // Update the clipboard
         for cmd in &output.platform_output.commands {
             match cmd {
                 egui::OutputCommand::CopyText(text) => {
-                    video.clipboard().set_clipboard_text(text).map_err(|e| {
-                        anyhow::anyhow!("Failed to assign text to clipboard: {}", e)
-                    })?;
+                    editor_state
+                        .video
+                        .clipboard()
+                        .set_clipboard_text(text)
+                        .map_err(|e| {
+                            anyhow::anyhow!("Failed to assign text to clipboard: {}", e)
+                        })?;
                 }
                 egui::OutputCommand::CopyImage(_) | egui::OutputCommand::OpenUrl(_) => {
                     // ...

@@ -13,7 +13,7 @@ use crate::editorconfig::TextEditor;
 use crate::editorinterface::EditorState;
 use crate::editorinterface::extra::openfileatline::open_file_at_line;
 
-pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_console(editor: &mut EditorState, ui: &egui::Ui) {
     let mut project = editor.project.borrow_mut();
     let mut is_shown = editor.config.borrow_mut().is_console_shown;
 
@@ -34,7 +34,7 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
             .open(&mut is_shown)
             .collapsible(false)
             .vscroll(false);
-        let response = window.show(ctx, |ui| {
+        let response = window.show(ui, |ui| {
                 ui.horizontal(|ui| {
                     let response = egui::TextEdit::singleline(&mut editor.text_command)
                         .hint_text("Enter command...")
@@ -78,9 +78,8 @@ pub fn draw_editor_console(editor: &mut EditorState, ctx: &egui::Context) {
                 });
         });
         if let Some(response) = response {
-            let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
-            if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
-            {
+            let on_top = Some(response.response.layer_id) == ui.top_layer_id();
+            if on_top && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
                 is_shown = false;
             }
         }

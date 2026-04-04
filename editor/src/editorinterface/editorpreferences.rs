@@ -6,7 +6,7 @@ use crate::editorinterface::EditorState;
 
 use crate::editorconfig::{TextEditor, WindowStyle};
 
-pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_preferences(editor: &mut EditorState, ui: &mut egui::Ui) {
     let mut is_shown = editor.config.borrow().is_preferences_window_shown;
     static HAS_UNSAVED_CHANGES: AtomicBool = AtomicBool::new(false);
 
@@ -15,7 +15,7 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ctx: &egui::Context) {
             .open(&mut is_shown)
             .resizable(true)
             .default_width(300.0)
-            .show(ctx, |ui| {
+            .show(ui, |ui| {
                 ui.heading("General");
                 {
                     let mut config = editor.config.borrow_mut();

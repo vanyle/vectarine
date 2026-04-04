@@ -19,7 +19,7 @@ use crate::editorinterface::{
 
 pub mod createproject;
 
-pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
     thread_local! {
         static NEW_GAME_PATH: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
     }
@@ -31,7 +31,7 @@ pub fn draw_empty_screen(state: &mut EditorState, ctx: &egui::Context) {
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-        .show(ctx, |ui| {
+        .show(ui, |ui| {
             StripBuilder::new(ui)
                 .size(Size::remainder().at_most(384.0))
                 .vertical(|mut strip| {

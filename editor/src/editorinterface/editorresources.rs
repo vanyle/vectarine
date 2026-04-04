@@ -11,7 +11,7 @@ use crate::editorinterface::EditorState;
 pub fn draw_editor_resources(
     editor: &EditorState,
     painter: &mut egui_glow::Painter,
-    ctx: &egui::Context,
+    ui: &mut egui::Ui,
 ) {
     let mut project = editor.project.borrow_mut();
     let game = match project.as_mut() {
@@ -29,14 +29,14 @@ pub fn draw_editor_resources(
         .default_height(200.0)
         .open(&mut is_shown)
         .collapsible(false)
-        .show(ctx, |ui| {
+        .show(ui, |ui| {
             ScrollArea::vertical()
                 .auto_shrink([true, false])
                 .show(ui, |ui| draw_scroll_area_content(editor, ui, game));
         });
     if let Some(response) = maybe_response {
-        let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
-        if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+        let on_top = Some(response.response.layer_id) == ui.top_layer_id();
+        if on_top && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             is_shown = false;
         }
     }
@@ -50,7 +50,7 @@ pub fn draw_editor_resources(
             res.get_path().to_string_lossy()
         ))
         .resizable(true)
-        .show(ctx, |ui| {
+        .show(ui, |ui| {
             res.draw_debug_gui(painter, ui);
         });
     };

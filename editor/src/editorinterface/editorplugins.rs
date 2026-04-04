@@ -16,14 +16,14 @@ use crate::{
 };
 
 /// Draw the debug window of all plugins for which the debug menu is open. This is called every frame in the editor.
-pub fn draw_editor_plugin_windows(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_plugin_windows(editor: &mut EditorState, ui: &egui::Ui) {
     let mut project = editor.project.borrow_mut();
     let Some(project) = project.as_mut() else {
         return;
     };
 
     let editor_plugin_interface = EditorPluginInterface {
-        gui_context: ctx,
+        gui_context: ui,
         plugin_interface: PluginInterface {
             lua: &project.game.lua_env.lua,
         },
@@ -50,7 +50,7 @@ pub fn draw_editor_plugin_windows(editor: &mut EditorState, ctx: &egui::Context)
     }
 }
 
-pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context) {
+pub fn draw_editor_plugin_manager(editor: &mut EditorState, ui: &mut egui::Ui) {
     let mut is_shown = editor.config.borrow_mut().is_plugins_window_shown;
 
     if editor.config.borrow().is_plugins_window_shown {
@@ -61,7 +61,7 @@ pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context)
             .open(&mut is_shown)
             .collapsible(false)
             .vscroll(false);
-        let response = window.show(ctx, |ui| {
+        let response = window.show(ui, |ui| {
             egui::ScrollArea::both()
                 .auto_shrink([true; 2])
                 .show(ui, |ui| {
@@ -69,9 +69,8 @@ pub fn draw_editor_plugin_manager(editor: &mut EditorState, ctx: &egui::Context)
                 });
         });
         if let Some(response) = response {
-            let on_top = Some(response.response.layer_id) == ctx.top_layer_id();
-            if on_top && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
-            {
+            let on_top = Some(response.response.layer_id) == ui.top_layer_id();
+            if on_top && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
                 is_shown = false;
             }
         }

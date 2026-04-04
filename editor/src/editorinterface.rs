@@ -262,26 +262,30 @@ impl EditorState {
     ) {
         // Update the time
         platform.update_time(self.start_time.elapsed().as_secs_f64());
-        // Get the egui context and begin drawing the frame
-        let ctx = platform.context();
-
-        draw_editor_menu(self, &ctx);
-
-        if self.project.borrow().is_none() {
-            draw_empty_screen(self, &ctx);
+        for event in latest_events {
+            // Convert mouse position.
+            platform.handle_event(event, sdl, &self.video);
         }
 
-        draw_editor_console(self, &ctx);
-        draw_editor_resources(self, painter, &ctx);
-        draw_editor_watcher(self, &ctx);
-        draw_editor_profiler(self, &ctx);
-        draw_editor_export(self, &ctx);
-        draw_editor_plugin_manager(self, &ctx);
-        draw_editor_plugin_windows(self, &ctx);
-        draw_editor_preferences(self, &ctx);
+        let full_output = platform.run(self, &mut |ui, editor_state| {
+            draw_editor_menu(editor_state, ui);
+
+            if editor_state.project.borrow().is_none() {
+                draw_empty_screen(editor_state, ui);
+            }
+
+            draw_editor_console(editor_state, ui);
+            draw_editor_resources(editor_state, painter, ui);
+            draw_editor_watcher(editor_state, ui);
+            draw_editor_profiler(editor_state, ui);
+            draw_editor_export(editor_state, ui);
+            draw_editor_plugin_manager(editor_state, ui);
+            draw_editor_plugin_windows(editor_state, ui);
+            draw_editor_preferences(editor_state, ui);
+        });
 
         // Stop drawing the egui frame and get the full output
-        let full_output = platform.end_frame(&self.video);
+        // let full_output = platform.end_frame(&self.video);
         match full_output {
             Ok(full_output) => {
                 // Get the paint jobs
@@ -307,10 +311,6 @@ impl EditorState {
             }
             Err(e) => println!("Failed to render debug ui: {e:?}"),
         };
-        for event in latest_events {
-            // Convert mouse position.
-            platform.handle_event(event, sdl, &self.video);
-        }
     }
 
     pub fn get_trusted_plugins(&self) -> Vec<TrustedPlugin> {
