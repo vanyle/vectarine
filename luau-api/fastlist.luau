@@ -199,6 +199,11 @@ function FastListImpl.__mul(self: FastList, other: FastListOrVec): FastList
 	error("Not implemented")
 end
 
+--- Element-wise division of the fastlist by another fastlist
+function FastListImpl.__div(self: FastList, other: FastListOrVec): FastList
+	error("Not implemented")
+end
+
 --- Scales the fastlist by the given factor
 function FastListImpl.scale(self: FastList, k: number): FastList
 	error("Not implemented")
