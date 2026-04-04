@@ -36,7 +36,7 @@ use crate::{
 };
 
 pub struct RenderingBlock {
-    pub video: Rc<RefCell<VideoSubsystem>>,
+    pub video: Rc<VideoSubsystem>,
     pub window: Rc<RefCell<Window>>,
     pub event_pump: EventPump,
     pub sdl: Sdl,
@@ -114,7 +114,7 @@ where
 
     RenderingBlock {
         sdl: sdl_context,
-        video: Rc::new(RefCell::new(video_subsystem)),
+        video: Rc::new(video_subsystem),
         window: Rc::new(RefCell::new(window)),
         event_pump,
         gl_context,

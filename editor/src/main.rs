@@ -65,7 +65,7 @@ fn gui_main() {
     init_sound_system(&sdl);
 
     let (editor_window, mut editor_interface) =
-        editorextrawindow::create_specific_editor_window(&video.borrow(), &gl);
+        editorextrawindow::create_specific_editor_window(&video, &gl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 
@@ -99,10 +99,10 @@ fn gui_main() {
 
     // Send a fake resize event to egui to initialize drawable area size
     // This is needed on high-DPI screen where the drawable size is greater than window size
-    send_window_resize_sync_event(&sdl, &video.borrow(), &window.borrow(), &mut platform);
+    send_window_resize_sync_event(&sdl, &video, &window.borrow(), &mut platform);
     send_window_resize_sync_event(
         &sdl,
-        &video.borrow(),
+        &video,
         &editor_state.editor_specific_window,
         &mut editor_interface.platform,
     );
