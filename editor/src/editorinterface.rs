@@ -260,12 +260,8 @@ impl EditorState {
         latest_events: &[sdl2::event::Event],
         painter: &mut egui_glow::Painter,
     ) {
-        // Update the time
         platform.update_time(self.start_time.elapsed().as_secs_f64());
-        for event in latest_events {
-            // Convert mouse position.
-            platform.handle_event(event, sdl, &self.video);
-        }
+        platform.handle_events(latest_events, sdl, &self.video);
 
         let full_output = platform.run(self, &mut |ui, editor_state| {
             draw_editor_menu(editor_state, ui);

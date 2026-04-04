@@ -22,6 +22,9 @@ pub struct Platform {
     // The raw input
     raw_input: egui::RawInput,
 
+    // We need to store this because egui doesn't register scroll events it seems.
+    smooth_scroll_delta: egui::Vec2,
+
     // The egui context
     egui_ctx: egui::Context,
 }
@@ -43,203 +46,215 @@ impl Platform {
                 )),
                 ..Default::default()
             },
+            smooth_scroll_delta: egui::Vec2::ZERO,
             modifiers: Modifiers::default(),
             egui_ctx: egui::Context::default(),
         })
     }
 
     /// Handle a sdl2 event
-    pub fn handle_event(&mut self, event: &Event, sdl: &sdl2::Sdl, video: &sdl2::VideoSubsystem) {
-        #[allow(clippy::collapsible_match)]
-        match event {
-            // Handle reizing
-            Event::Window { win_event, .. } => match win_event {
-                WindowEvent::Resized(w, h) | WindowEvent::SizeChanged(w, h) => {
-                    self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
-                        egui::Pos2::ZERO,
-                        egui::Vec2 {
-                            x: *w as f32,
-                            y: *h as f32,
-                        },
-                    ));
-                }
-                _ => {}
-            },
+    pub fn handle_events(
+        &mut self,
+        events: &[Event],
+        sdl: &sdl2::Sdl,
+        video: &sdl2::VideoSubsystem,
+    ) {
+        for event in events {
+            #[allow(clippy::collapsible_match)]
+            match event {
+                // Handle reizing
+                Event::Window { win_event, .. } => match win_event {
+                    WindowEvent::Resized(w, h) | WindowEvent::SizeChanged(w, h) => {
+                        self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
+                            egui::Pos2::ZERO,
+                            egui::Vec2 {
+                                x: *w as f32,
+                                y: *h as f32,
+                            },
+                        ));
+                    }
+                    _ => {}
+                },
 
-            // Handle the mouse button being held down
-            Event::MouseButtonDown { mouse_btn, .. } => {
-                let btn = match mouse_btn {
-                    MouseButton::Left => Some(egui::PointerButton::Primary),
-                    MouseButton::Middle => Some(egui::PointerButton::Middle),
-                    MouseButton::Right => Some(egui::PointerButton::Secondary),
-                    _ => None,
-                };
-                if let Some(btn) = btn {
-                    self.raw_input.events.push(egui::Event::PointerButton {
-                        pos: self.pointer_pos,
-                        button: btn,
-                        pressed: true,
-                        modifiers: self.modifiers,
-                    });
+                // Handle the mouse button being held down
+                Event::MouseButtonDown { mouse_btn, .. } => {
+                    let btn = match mouse_btn {
+                        MouseButton::Left => Some(egui::PointerButton::Primary),
+                        MouseButton::Middle => Some(egui::PointerButton::Middle),
+                        MouseButton::Right => Some(egui::PointerButton::Secondary),
+                        _ => None,
+                    };
+                    if let Some(btn) = btn {
+                        self.raw_input.events.push(egui::Event::PointerButton {
+                            pos: self.pointer_pos,
+                            button: btn,
+                            pressed: true,
+                            modifiers: self.modifiers,
+                        });
+                    }
                 }
-            }
-            // Handle the mouse button being released
-            Event::MouseButtonUp { mouse_btn, .. } => {
-                let btn = match mouse_btn {
-                    MouseButton::Left => Some(egui::PointerButton::Primary),
-                    MouseButton::Middle => Some(egui::PointerButton::Middle),
-                    MouseButton::Right => Some(egui::PointerButton::Secondary),
-                    _ => None,
-                };
-                if let Some(btn) = btn {
-                    self.raw_input.events.push(egui::Event::PointerButton {
-                        pos: self.pointer_pos,
-                        button: btn,
-                        pressed: false,
-                        modifiers: self.modifiers,
-                    });
+                // Handle the mouse button being released
+                Event::MouseButtonUp { mouse_btn, .. } => {
+                    let btn = match mouse_btn {
+                        MouseButton::Left => Some(egui::PointerButton::Primary),
+                        MouseButton::Middle => Some(egui::PointerButton::Middle),
+                        MouseButton::Right => Some(egui::PointerButton::Secondary),
+                        _ => None,
+                    };
+                    if let Some(btn) = btn {
+                        self.raw_input.events.push(egui::Event::PointerButton {
+                            pos: self.pointer_pos,
+                            button: btn,
+                            pressed: false,
+                            modifiers: self.modifiers,
+                        });
+                    }
                 }
-            }
-            // Handle mouse motion
-            Event::MouseMotion { x, y, .. } => {
-                // Update the pointer position
-                self.pointer_pos = egui::Pos2::new(*x as f32, *y as f32);
-                self.raw_input
-                    .events
-                    .push(egui::Event::PointerMoved(self.pointer_pos));
-            }
-            // Handle the mouse scrolling
-            Event::MouseWheel { x, y, .. } => {
-                // Calculate the delta
-                let delta = egui::Vec2::new(*x as f32, *y as f32);
-                // Check the mod state
-                use sdl2::keyboard::Mod;
-                let left_ctrl = sdl.keyboard().mod_state() & Mod::LCTRLMOD == Mod::LCTRLMOD;
-                let right_ctrl = sdl.keyboard().mod_state() & Mod::RCTRLMOD == Mod::RCTRLMOD;
-
-                // Push the egui event
-                if left_ctrl || right_ctrl {
+                // Handle mouse motion
+                Event::MouseMotion { x, y, .. } => {
+                    // Update the pointer position
+                    self.pointer_pos = egui::Pos2::new(*x as f32, *y as f32);
                     self.raw_input
                         .events
-                        .push(egui::Event::Zoom((delta.y * 8.0 / 125.0).exp()));
-                } else {
-                    self.raw_input.events.push(egui::Event::MouseWheel {
-                        phase: egui::TouchPhase::Move,
-                        delta,
-                        modifiers: self.modifiers,
-                        unit: egui::MouseWheelUnit::Line,
-                    });
+                        .push(egui::Event::PointerMoved(self.pointer_pos));
                 }
-            }
+                // Handle the mouse scrolling
+                Event::MouseWheel { x, y, .. } => {
+                    // Calculate the delta
+                    let delta = egui::Vec2::new(*x as f32, *y as f32);
+                    self.smooth_scroll_delta += delta;
 
-            // Handle a key being pressed
-            Event::KeyDown {
-                keycode, keymod, ..
-            } => {
-                // Make sure there is a keycode
-                if let Some(keycode) = keycode {
-                    // Convert the keycode to an egui key
-                    if let Some(key) = keycode.to_egui_key() {
-                        // Check the modifiers
-                        use sdl2::keyboard::Mod;
-                        let alt = (*keymod & Mod::LALTMOD == Mod::LALTMOD)
-                            || (*keymod & Mod::RALTMOD == Mod::RALTMOD);
-                        let ctrl = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
-                            || (*keymod & Mod::RCTRLMOD == Mod::RCTRLMOD);
-                        let shift = (*keymod & Mod::LSHIFTMOD == Mod::LSHIFTMOD)
-                            || (*keymod & Mod::RSHIFTMOD == Mod::RSHIFTMOD);
-                        let mac_cmd = *keymod & Mod::LGUIMOD == Mod::LGUIMOD;
-                        let command = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
-                            || (*keymod & Mod::LGUIMOD == Mod::LGUIMOD);
+                    // Check the mod state
+                    use sdl2::keyboard::Mod;
+                    let left_ctrl = sdl.keyboard().mod_state() & Mod::LCTRLMOD == Mod::LCTRLMOD;
+                    let right_ctrl = sdl.keyboard().mod_state() & Mod::RCTRLMOD == Mod::RCTRLMOD;
 
-                        let mac_and_cmd_or_ctrl =
-                            (is_on_mac() && mac_cmd) || (!is_on_mac() && ctrl);
+                    // Push the egui event
+                    if left_ctrl || right_ctrl {
+                        self.raw_input
+                            .events
+                            .push(egui::Event::Zoom((delta.y * 8.0 / 125.0).exp()));
+                    } else {
+                        self.raw_input.events.push(egui::Event::MouseWheel {
+                            phase: egui::TouchPhase::Move,
+                            delta,
+                            modifiers: self.modifiers,
+                            unit: egui::MouseWheelUnit::Point,
+                        });
+                    }
+                }
 
-                        if mac_and_cmd_or_ctrl {
-                            match key {
-                                egui::Key::C => self.raw_input.events.push(egui::Event::Copy),
-                                egui::Key::X => self.raw_input.events.push(egui::Event::Cut),
-                                egui::Key::V => {
-                                    let clipboard = video.clipboard();
-                                    if clipboard.has_clipboard_text() {
-                                        self.raw_input.events.push(egui::Event::Text(
-                                            clipboard
-                                                .clipboard_text()
-                                                .expect("Unable to get clipboard text"),
-                                        ));
+                // Handle a key being pressed
+                Event::KeyDown {
+                    keycode, keymod, ..
+                } => {
+                    // Make sure there is a keycode
+                    if let Some(keycode) = keycode {
+                        // Convert the keycode to an egui key
+                        if let Some(key) = keycode.to_egui_key() {
+                            // Check the modifiers
+                            use sdl2::keyboard::Mod;
+                            let alt = (*keymod & Mod::LALTMOD == Mod::LALTMOD)
+                                || (*keymod & Mod::RALTMOD == Mod::RALTMOD);
+                            let ctrl = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
+                                || (*keymod & Mod::RCTRLMOD == Mod::RCTRLMOD);
+                            let shift = (*keymod & Mod::LSHIFTMOD == Mod::LSHIFTMOD)
+                                || (*keymod & Mod::RSHIFTMOD == Mod::RSHIFTMOD);
+                            let mac_cmd = *keymod & Mod::LGUIMOD == Mod::LGUIMOD;
+                            let command = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
+                                || (*keymod & Mod::LGUIMOD == Mod::LGUIMOD);
+
+                            let mac_and_cmd_or_ctrl =
+                                (is_on_mac() && mac_cmd) || (!is_on_mac() && ctrl);
+
+                            if mac_and_cmd_or_ctrl {
+                                match key {
+                                    egui::Key::C => self.raw_input.events.push(egui::Event::Copy),
+                                    egui::Key::X => self.raw_input.events.push(egui::Event::Cut),
+                                    egui::Key::V => {
+                                        let clipboard = video.clipboard();
+                                        if clipboard.has_clipboard_text() {
+                                            self.raw_input.events.push(egui::Event::Text(
+                                                clipboard
+                                                    .clipboard_text()
+                                                    .expect("Unable to get clipboard text"),
+                                            ));
+                                        }
                                     }
+                                    _ => {}
                                 }
-                                _ => {}
                             }
+
+                            // Update the modifiers
+                            self.modifiers = Modifiers {
+                                alt,
+                                ctrl,
+                                shift,
+                                mac_cmd,
+                                command,
+                            };
+                            self.raw_input.modifiers = self.modifiers;
+                            // Push the event
+                            self.raw_input.events.push(egui::Event::Key {
+                                key,
+                                physical_key: Some(key),
+                                pressed: true,
+                                repeat: false,
+                                modifiers: self.modifiers,
+                            });
                         }
-
-                        // Update the modifiers
-                        self.modifiers = Modifiers {
-                            alt,
-                            ctrl,
-                            shift,
-                            mac_cmd,
-                            command,
-                        };
-                        self.raw_input.modifiers = self.modifiers;
-                        // Push the event
-                        self.raw_input.events.push(egui::Event::Key {
-                            key,
-                            physical_key: Some(key),
-                            pressed: true,
-                            repeat: false,
-                            modifiers: self.modifiers,
-                        });
                     }
                 }
-            }
-            // Handle a key being released
-            Event::KeyUp {
-                keycode, keymod, ..
-            } => {
-                // Make sure there is a keycode
-                if let Some(keycode) = keycode {
-                    // Convert the keycode to an egui key
-                    if let Some(key) = keycode.to_egui_key() {
-                        // Check the modifiers
-                        use sdl2::keyboard::Mod;
-                        let alt = (*keymod & Mod::LALTMOD == Mod::LALTMOD)
-                            || (*keymod & Mod::RALTMOD == Mod::RALTMOD);
-                        let ctrl = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
-                            || (*keymod & Mod::RCTRLMOD == Mod::RCTRLMOD);
-                        let shift = (*keymod & Mod::LSHIFTMOD == Mod::LSHIFTMOD)
-                            || (*keymod & Mod::RSHIFTMOD == Mod::RSHIFTMOD);
-                        let mac_cmd = *keymod & Mod::LGUIMOD == Mod::LGUIMOD;
-                        let command = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
-                            || (*keymod & Mod::LGUIMOD == Mod::LGUIMOD);
+                // Handle a key being released
+                Event::KeyUp {
+                    keycode, keymod, ..
+                } => {
+                    // Make sure there is a keycode
+                    if let Some(keycode) = keycode {
+                        // Convert the keycode to an egui key
+                        if let Some(key) = keycode.to_egui_key() {
+                            // Check the modifiers
+                            use sdl2::keyboard::Mod;
+                            let alt = (*keymod & Mod::LALTMOD == Mod::LALTMOD)
+                                || (*keymod & Mod::RALTMOD == Mod::RALTMOD);
+                            let ctrl = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
+                                || (*keymod & Mod::RCTRLMOD == Mod::RCTRLMOD);
+                            let shift = (*keymod & Mod::LSHIFTMOD == Mod::LSHIFTMOD)
+                                || (*keymod & Mod::RSHIFTMOD == Mod::RSHIFTMOD);
+                            let mac_cmd = *keymod & Mod::LGUIMOD == Mod::LGUIMOD;
+                            let command = (*keymod & Mod::LCTRLMOD == Mod::LCTRLMOD)
+                                || (*keymod & Mod::LGUIMOD == Mod::LGUIMOD);
 
-                        // Update the modifiers
-                        self.modifiers = Modifiers {
-                            alt,
-                            ctrl,
-                            shift,
-                            mac_cmd,
-                            command,
-                        };
-                        self.raw_input.modifiers = self.modifiers;
-                        // Push the event
-                        self.raw_input.events.push(egui::Event::Key {
-                            key,
-                            physical_key: Some(key),
-                            pressed: false,
-                            repeat: false,
-                            modifiers: self.modifiers,
-                        });
+                            // Update the modifiers
+                            self.modifiers = Modifiers {
+                                alt,
+                                ctrl,
+                                shift,
+                                mac_cmd,
+                                command,
+                            };
+                            self.raw_input.modifiers = self.modifiers;
+                            // Push the event
+                            self.raw_input.events.push(egui::Event::Key {
+                                key,
+                                physical_key: Some(key),
+                                pressed: false,
+                                repeat: false,
+                                modifiers: self.modifiers,
+                            });
+                        }
                     }
                 }
-            }
-            // Handle text input
-            Event::TextInput { text, .. } => {
-                self.raw_input.events.push(egui::Event::Text(text.clone()));
-            }
+                // Handle text input
+                Event::TextInput { text, .. } => {
+                    self.raw_input.events.push(egui::Event::Text(text.clone()));
+                }
 
-            _ => {}
+                _ => {}
+            }
         }
+
+        self.smooth_scroll_delta *= 0.95;
     }
 
     /// Set the pixels per point
@@ -261,6 +276,10 @@ impl Platform {
         F: FnMut(&mut egui::Ui, &mut EditorState),
     {
         let output = self.egui_ctx.run_ui(self.raw_input.take(), |ui| {
+            ui.input_mut(|input| {
+                input.smooth_scroll_delta = self.smooth_scroll_delta;
+            });
+
             draw_ui(ui, editor_state);
         });
 
