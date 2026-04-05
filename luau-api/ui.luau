@@ -21,13 +21,13 @@ For example, you can wrap a column widget inside a generic widget to change its 
 ]]
 local module = {}
 
-export type Widget = {
+export type Widget<T> = {
 	--- Returns the preferred size of this widget.
-	size: (self: Widget) -> Vec.Vec2,
+	size: (self: Widget<T>) -> Vec.Vec2,
 	--- Draws this widget at the current position in the batch.
-	draw: (self: Widget) -> (),
+	draw: (self: Widget<T>, extra: T) -> (),
 	--- Return the event state from the last time this widget was drawn. You can use this to react to events on the widget (e.g. mouse hover, clicks).
-	eventState: (self: Widget) -> EventState,
+	eventState: (self: Widget<T>) -> EventState,
 }
 
 export type EventState = {
@@ -70,8 +70,8 @@ export type ContainerOptions = {
 --- Can be used to create custom widgets or draw parts of the game in the UI.
 --- Can also be used for buttons, or to make part of the UI react to events
 ---@param size Vec.Vec2 — the preferred size of this widget
----@param drawFn (event: EventState) -> () — called to draw the widget content
-function module.widget(size: Vec.Vec2, drawFn: (event: EventState) -> ()): Widget
+---@param drawFn (event: EventState, extra: T) -> () — called to draw the widget content
+function module.widget<T>(size: Vec.Vec2, drawFn: (event: EventState, extra: T) -> ()): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -79,8 +79,8 @@ end
 --- The column's preferred size accounts for children sizes, gap between them, and padding.
 --- Children are drawn from top to bottom in the order provided.
 ---@param options ContainerOptions — optional padding and gap
----@param children { Widget } — ordered list of child widgets
-function module.column(options: ContainerOptions, children: { Widget }): Widget
+---@param children { Widget<T> } — ordered list of child widgets
+function module.column<T>(options: ContainerOptions, children: { Widget<T> }): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -95,19 +95,19 @@ type TextOptions = {
 --- the text fits on a single line within the given size.
 --- The `getText` function is called each frame to get the text to draw and its color. You can use it to dynamically
 --- change the text without needing to wrap the text widget in a generic widget.
-function module.text(
+function module.text<T>(
 	size: Vec.Vec2,
 	options: TextOptions,
-	getText: (event: EventState) -> { text: string, color: Vec4.Vec4 }
-): Widget
+	getText: (event: EventState, extra: T) -> { text: string, color: Vec4.Vec4 }
+): Widget<T>
 	error("Implemented in native code")
 end
 
-type ImageWidgetOptions = {
+type ImageWidgetOptions<T> = {
 	-- Should the aspect ratio of the image be preserved? If it is, there might be empty space on the sides of the image.
 	preserveAspectRatio: boolean?,
 	-- Optional color tint to apply to the image when drawing. Defaults to white (no tint).
-	tint: ((event: EventState) -> Vec4.Vec4)?,
+	tint: ((event: EventState, extra: T) -> Vec4.Vec4)?,
 	-- If provided, the image will be drawn in 9-slices to preserve its corners when scaled. This assumes that the image is
 	-- designed for this and has the appropriate borders. If preserveAspectRatio is also true, this has no effect.
 	-- The number is the ratio of the corners to the total image size (e.g. 0.2 means corners are 20% of the image size). Defaults to nil.
@@ -115,7 +115,7 @@ type ImageWidgetOptions = {
 }
 
 --- Create a widget that draws the given image. The image is scaled to fit the widget's size
-function module.image(size: Vec.Vec2, image: Image.ImageResource, options: ImageWidgetOptions): Widget
+function module.image<T>(size: Vec.Vec2, image: Image.ImageResource, options: ImageWidgetOptions<T>): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -123,8 +123,8 @@ end
 --- The row's preferred size accounts for children sizes, gap between them, and padding.
 --- Children are drawn from left to right in the order provided.
 ---@param options ContainerOptions — optional padding and gap
----@param children { Widget } — ordered list of child widgets
-function module.row(options: ContainerOptions, children: { Widget }): Widget
+---@param children { Widget<T> } — ordered list of child widgets
+function module.row<T>(options: ContainerOptions, children: { Widget<T> }): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -150,11 +150,24 @@ export type ScrollbarInfo = {
 ---@param content Widget — the content widget to scroll
 ---@param viewSize Vec.Vec2 — the visible area size
 ---@param drawScrollbar ((info: ScrollbarInfo) -> number)? — optional custom scrollbar drawing function that receives the current scroll state and returns the desired scrollbar ratio.
-function module.scrollableArea(
-	content: Widget,
+function module.scrollableArea<T>(
+	content: Widget<T>,
 	viewSize: Vec.Vec2,
 	drawScrollbar: ((info: ScrollbarInfo) -> number)?
-): Widget
+): Widget<T>
+	error("Implemented in native code")
+end
+
+type StackOptions = {
+	alignX: ("start" | "center" | "end")?,
+	alignY: ("start" | "center" | "end")?,
+}
+
+--- Create a stack that places its children on top of each other. The size of the stack is the maximum size of its children.
+--- Children are drawn in the order provided, so the first child is on the bottom and the last child is on the top.
+--- This can be used to show text with a background image for example, or to draw text twice for a shadow effect.
+---@param options StackOptions — optional alignment of children within the stack
+function module.stack<T>(options: StackOptions, content: { Widget<T> }): Widget<T>
 	error("Implemented in native code")
 end
 

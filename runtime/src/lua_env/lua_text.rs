@@ -22,6 +22,14 @@ impl FontResourceId {
     pub fn from_id(id: ResourceId) -> Self {
         FontResourceId(Some(id))
     }
+
+    pub fn default_font() -> Self {
+        FontResourceId(None)
+    }
+
+    pub fn id(&self) -> Option<ResourceId> {
+        self.0 // This is BAD, we should never need to get the id inside. We probably want a wrapper to access font_resource directly.
+    }
 }
 
 impl IntoLua for FontResourceId {

@@ -1,19 +1,40 @@
-use std::{cell::RefCell, sync::Arc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
-use crate::game_resource::font_resource;
+use crate::game_resource::ResourceManager;
+use crate::game_resource::font_resource::{self, FontResource};
 use crate::graphics::batchdraw;
 use crate::io::IoEnvState;
+use crate::lua_env::lua_text::FontResourceId;
 use crate::lua_env::lua_vec2::Vec2;
 use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::mlua;
 
-use super::{EventState, VectarineWidget};
+use super::{Alignment, EventState, VectarineWidget};
 
 pub struct TextWidget {
     pub size: Vec2,
     pub get_text_fn: mlua::Function,
     pub gl: Arc<glow::Context>,
+    pub align: Alignment,
+    pub font_id: FontResourceId,
+    pub resources: Rc<ResourceManager>,
     pub event_state: EventState,
+}
+
+impl TextWidget {
+    fn with_font<F, R>(&self, f: F) -> Option<R>
+    where
+        F: FnOnce(&mut font_resource::FontRenderingData) -> R,
+    {
+        if let Some(id) = self.font_id.id() {
+            let font_resource = self.resources.get_by_id::<FontResource>(id).ok()?;
+            let mut font_rendering = font_resource.font_rendering.borrow_mut();
+            let renderer = font_rendering.as_mut()?;
+            Some(f(renderer))
+        } else {
+            Some(font_resource::use_default_font(&self.gl, f))
+        }
+    }
 }
 
 impl VectarineWidget for TextWidget {
@@ -49,8 +70,9 @@ impl VectarineWidget for TextWidget {
         let io = io_env.borrow();
         let aspect_ratio = io.window_width as f32 / io.window_height as f32;
 
-        let gl = &self.gl;
-        font_resource::use_default_font(gl, |font_renderer| {
+        let align = self.align;
+        let gl = self.gl.clone();
+        self.with_font(|font_renderer| {
             let font_size = widget_height;
 
             let (measured_width, _measured_height, _max_ascent) =
@@ -65,11 +87,15 @@ impl VectarineWidget for TextWidget {
             let (final_width, final_height, _) =
                 font_renderer.measure_text(&text, final_font_size, aspect_ratio);
 
-            // Center the text within the widget area
-            let x = -1.0 + (widget_width - final_width) / 2.0;
+            let x = -1.0
+                + match align {
+                    Alignment::Start => 0.0,
+                    Alignment::Center => (widget_width - final_width) / 2.0,
+                    Alignment::End => widget_width - final_width,
+                };
             let y = -1.0 + (widget_height - final_height) / 2.0;
 
-            font_renderer.enrich_atlas(gl, &text);
+            font_renderer.enrich_atlas(&gl, &text);
             batch
                 .borrow_mut()
                 .draw_text(x, y, &text, color, final_font_size, font_renderer);
@@ -81,6 +107,9 @@ impl VectarineWidget for TextWidget {
             size: self.size,
             get_text_fn: self.get_text_fn.clone(),
             gl: self.gl.clone(),
+            align: self.align,
+            font_id: self.font_id,
+            resources: self.resources.clone(),
             event_state: self.event_state.clone(),
         })
     }

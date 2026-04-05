@@ -3,6 +3,7 @@ mod generic_widget;
 mod image_widget;
 mod row_widget;
 mod scrollable_area_widget;
+mod stack_widget;
 mod text_widget;
 
 use std::{cell::RefCell, rc::Rc};
@@ -21,6 +22,7 @@ use generic_widget::GenericWidget;
 use image_widget::ImageWidget;
 use row_widget::Row;
 use scrollable_area_widget::ScrollableArea;
+use stack_widget::Stack;
 use text_widget::TextWidget;
 
 // MARK: Widget Trait
@@ -304,15 +306,29 @@ pub fn setup_ui_api(
 
     ui_module.raw_set("text", {
         let gl = batch.borrow().drawing_target.gl().clone();
-        lua.create_function(move |_lua, (size, get_text_fn): (Vec2, mlua::Function)| {
-            let widget = WidgetBox(Box::new(TextWidget {
-                size,
-                get_text_fn,
-                gl: gl.clone(),
-                event_state: EventState::default(),
-            }));
-            Ok(widget)
-        })?
+        let resources = _resources.clone();
+        lua.create_function(
+            move |_lua, (size, options, get_text_fn): (Vec2, mlua::Table, mlua::Function)| {
+                let align = match options.raw_get::<String>("align").ok().as_deref() {
+                    Some("left") => Alignment::Start,
+                    Some("right") => Alignment::End,
+                    _ => Alignment::Center,
+                };
+                let font_id = options
+                    .raw_get::<crate::lua_env::lua_text::FontResourceId>("font")
+                    .unwrap_or_else(|_| crate::lua_env::lua_text::FontResourceId::default_font());
+                let widget = WidgetBox(Box::new(TextWidget {
+                    size,
+                    get_text_fn,
+                    gl: gl.clone(),
+                    align,
+                    font_id,
+                    resources: resources.clone(),
+                    event_state: EventState::default(),
+                }));
+                Ok(widget)
+            },
+        )?
     })?;
 
     ui_module.raw_set("image", {
@@ -343,6 +359,29 @@ pub fn setup_ui_api(
             },
         )?
     })?;
+
+    ui_module.raw_set(
+        "stack",
+        lua.create_function(|_lua, (options, children): (mlua::Table, Vec<WidgetBox>)| {
+            let align_x = match options.raw_get::<String>("alignX").ok().as_deref() {
+                Some("center") => Alignment::Center,
+                Some("end") => Alignment::End,
+                _ => Alignment::Start,
+            };
+            let align_y = match options.raw_get::<String>("alignY").ok().as_deref() {
+                Some("center") => Alignment::Center,
+                Some("end") => Alignment::End,
+                _ => Alignment::Start,
+            };
+            let stack = WidgetBox(Box::new(Stack {
+                children,
+                align_x,
+                align_y,
+                event_state: EventState::default(),
+            }));
+            Ok(stack)
+        })?,
+    )?;
 
     Ok(ui_module)
 }

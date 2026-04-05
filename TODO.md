@@ -5,9 +5,12 @@
   - [x] Add an imgui style button which takes a draw function and returns events
   - [x] Add a vertical container and a horizontal container which take padding, gap
   - [x] Add a scrollable container as a widget
-  - [ ] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
+  - [x] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
   - [ ] Add a text input widget (to the best of your ability...)
   - [ ] Add a slider widget
+- [ ] Allow drawing a tile from a tileset
+- [ ] Allow creating a tileset from an image
+- [ ] Allow using tileset to create guis
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object
