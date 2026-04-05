@@ -51,6 +51,7 @@ impl VectarineWidget for Row {
         io_env: &RefCell<IoEnvState>,
         _current_state: EventState,
         process_child_events: bool,
+        extra: mlua::Value,
     ) {
         let container_height = self.size().y() - self.padding.top - self.padding.bottom;
         let mut x_offset = self.padding.left;
@@ -71,7 +72,7 @@ impl VectarineWidget for Row {
             ));
             child
                 .0
-                .event_processing_draw(lua, batch, io_env, process_child_events);
+                .event_processing_draw(lua, batch, io_env, process_child_events, extra.clone());
             batch.borrow_mut().affine_transform = current_transform;
             x_offset += child_size.x() + self.gap;
         }
