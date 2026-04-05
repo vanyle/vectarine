@@ -1,7 +1,6 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use crate::game_resource::ResourceManager;
-use crate::game_resource::font_resource::{self, FontResource};
 use crate::graphics::batchdraw;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_text::FontResourceId;

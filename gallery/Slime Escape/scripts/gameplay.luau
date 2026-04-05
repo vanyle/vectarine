@@ -72,14 +72,14 @@ local function handlePlayerInput()
 	local playerMovementSpeed = 5
 	local dir = Vec.V2(0, 0)
 
-	if Io.isKeyDown("z") then
+	if Io.isKeyDown("W") then
 		dir.y = dir.y - 1
-	elseif Io.isKeyDown("s") then
+	elseif Io.isKeyDown("S") then
 		dir.y = dir.y + 1
 	end
-	if Io.isKeyDown("q") then
+	if Io.isKeyDown("A") then
 		dir.x = dir.x - 1
-	elseif Io.isKeyDown("d") then
+	elseif Io.isKeyDown("D") then
 		dir.x = dir.x + 1
 	end
 
