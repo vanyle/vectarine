@@ -21,22 +21,6 @@ pub struct TextWidget {
     pub event_state: EventState,
 }
 
-impl TextWidget {
-    fn with_font<F, R>(&self, f: F) -> Option<R>
-    where
-        F: FnOnce(&mut font_resource::FontRenderingData) -> R,
-    {
-        if let Some(id) = self.font_id.id() {
-            let font_resource = self.resources.get_by_id::<FontResource>(id).ok()?;
-            let mut font_rendering = font_resource.font_rendering.borrow_mut();
-            let renderer = font_rendering.as_mut()?;
-            Some(f(renderer))
-        } else {
-            Some(font_resource::use_default_font(&self.gl, f))
-        }
-    }
-}
-
 impl VectarineWidget for TextWidget {
     fn size(&self) -> Vec2 {
         self.size
@@ -68,35 +52,35 @@ impl VectarineWidget for TextWidget {
         let aspect_ratio = io.window_width as f32 / io.window_height as f32;
 
         let align = self.align;
-        let gl = self.gl.clone();
-        self.with_font(|font_renderer| {
-            let font_size = widget_height;
+        self.font_id
+            .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+                let font_size = widget_height;
 
-            let (measured_width, _measured_height, _max_ascent) =
-                font_renderer.measure_text(&text, font_size, aspect_ratio);
+                let (measured_width, _measured_height, _max_ascent) =
+                    font_renderer.measure_text(&text, font_size, aspect_ratio);
 
-            let final_font_size = if measured_width > widget_width {
-                font_size * (widget_width / measured_width)
-            } else {
-                font_size
-            };
-
-            let (final_width, final_height, _) =
-                font_renderer.measure_text(&text, final_font_size, aspect_ratio);
-
-            let x = -1.0
-                + match align {
-                    Alignment::Start => 0.0,
-                    Alignment::Center => (widget_width - final_width) / 2.0,
-                    Alignment::End => widget_width - final_width,
+                let final_font_size = if measured_width > widget_width {
+                    font_size * (widget_width / measured_width)
+                } else {
+                    font_size
                 };
-            let y = -1.0 + (widget_height - final_height) / 2.0;
 
-            font_renderer.enrich_atlas(&gl, &text);
-            batch
-                .borrow_mut()
-                .draw_text(x, y, &text, color, final_font_size, font_renderer);
-        });
+                let (final_width, final_height, _) =
+                    font_renderer.measure_text(&text, final_font_size, aspect_ratio);
+
+                let x = -1.0
+                    + match align {
+                        Alignment::Start => 0.0,
+                        Alignment::Center => (widget_width - final_width) / 2.0,
+                        Alignment::End => widget_width - final_width,
+                    };
+                let y = -1.0 + (widget_height - final_height) / 2.0;
+
+                font_renderer.enrich_atlas(&self.gl, &text);
+                batch
+                    .borrow_mut()
+                    .draw_text(x, y, &text, color, final_font_size, font_renderer);
+            });
         Ok(())
     }
 
