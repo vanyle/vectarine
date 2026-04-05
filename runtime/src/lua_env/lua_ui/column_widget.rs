@@ -21,7 +21,7 @@ impl VectarineWidget for Column {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
         for child in &self.children {
-            let child_size: crate::math::Vect<2> = child.0.size();
+            let child_size: crate::math::Vect<2> = child.0.borrow().size();
             width = width.max(child_size.x());
             height += child_size.y();
         }
@@ -56,8 +56,8 @@ impl VectarineWidget for Column {
         let container_width = self.size().x() - self.padding.left - self.padding.right;
         let mut y_offset = self.padding.bottom;
         // Reverse order because top is Y+, so the first child shown at the top needs to be the last drawn.
-        for child in self.children.iter_mut().rev() {
-            let child_size = child.0.size();
+        for child in self.children.iter().rev() {
+            let child_size = child.0.borrow().size();
             let child_width = child_size.x();
             let x_offset = self.padding.left
                 + match self.alignment {
@@ -71,7 +71,7 @@ impl VectarineWidget for Column {
                 Vec2::new(1.0, 1.0),
                 0.0,
             ));
-            let result = child.0.event_processing_draw(
+            let result = child.0.borrow_mut().event_processing_draw(
                 lua,
                 batch,
                 io_env,
@@ -96,7 +96,11 @@ impl VectarineWidget for Column {
     }
 
     fn debug_label(&self) -> String {
-        let children: Vec<String> = self.children.iter().map(|c| c.0.debug_label()).collect();
+        let children: Vec<String> = self
+            .children
+            .iter()
+            .map(|c| c.0.borrow().debug_label())
+            .collect();
         format!("Column({})", children.join(", "))
     }
 }

@@ -21,7 +21,7 @@ impl VectarineWidget for Row {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
         for child in &self.children {
-            let child_size: crate::math::Vect<2> = child.0.size();
+            let child_size: crate::math::Vect<2> = child.0.borrow().size();
             width += child_size.x();
             height = height.max(child_size.y());
         }
@@ -55,8 +55,8 @@ impl VectarineWidget for Row {
     ) -> mlua::Result<()> {
         let container_height = self.size().y() - self.padding.top - self.padding.bottom;
         let mut x_offset = self.padding.left;
-        for child in &mut self.children {
-            let child_size = child.0.size();
+        for child in &self.children {
+            let child_size = child.0.borrow().size();
             let child_height = child_size.y();
             let y_offset = self.padding.bottom
                 + match self.alignment {
@@ -70,7 +70,7 @@ impl VectarineWidget for Row {
                 Vec2::new(1.0, 1.0),
                 0.0,
             ));
-            let result = child.0.event_processing_draw(
+            let result = child.0.borrow_mut().event_processing_draw(
                 lua,
                 batch,
                 io_env,
@@ -95,7 +95,11 @@ impl VectarineWidget for Row {
     }
 
     fn debug_label(&self) -> String {
-        let children: Vec<String> = self.children.iter().map(|c| c.0.debug_label()).collect();
+        let children: Vec<String> = self
+            .children
+            .iter()
+            .map(|c| c.0.borrow().debug_label())
+            .collect();
         format!("Row({})", children.join(", "))
     }
 }

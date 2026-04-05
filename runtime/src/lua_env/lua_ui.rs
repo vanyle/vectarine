@@ -29,14 +29,14 @@ use text_widget::TextWidget;
 
 pub trait WidgetToAny: 'static {
     fn as_any(&self) -> &dyn std::any::Any;
-    fn as_any_rc(self: Rc<Self>) -> Rc<dyn std::any::Any>;
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
 impl<T: VectarineWidget + 'static> WidgetToAny for T {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-    fn as_any_rc(self: Rc<Self>) -> Rc<dyn std::any::Any> {
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 }
@@ -113,17 +113,19 @@ pub trait VectarineWidget: WidgetToAny {
 }
 
 /// Represents a UI widget in Lua. This is the only type Lua has access to.
-pub struct WidgetBox(pub(crate) Box<dyn VectarineWidget>);
+pub struct WidgetBox(pub(crate) RefCell<Box<dyn VectarineWidget>>);
 impl Clone for WidgetBox {
     fn clone(&self) -> Self {
-        WidgetBox(self.0.clone_box())
+        WidgetBox(RefCell::new(self.0.borrow().clone_box()))
     }
 }
 auto_impl_lua_clone!(WidgetBox, WidgetBox);
 
 impl WidgetBox {
-    pub fn get_underlying_widget<T: VectarineWidget>(&self) -> Option<&T> {
-        self.0.as_any().downcast_ref::<T>()
+    pub fn get_underlying_widget<T: VectarineWidget>(&self, f: impl FnOnce(Option<&mut T>)) {
+        let mut b = self.0.borrow_mut();
+        let widget = b.as_any_mut().downcast_mut::<T>();
+        f(widget);
     }
 }
 
@@ -223,30 +225,34 @@ pub fn setup_ui_api(
     let ui_module = lua.create_table()?;
 
     lua.register_userdata_type::<WidgetBox>(|registry| {
-        registry.add_method("size", |_, widget, (): ()| Ok(widget.0.size()));
-        registry.add_method_mut("draw", {
+        registry.add_method("size", |_, widget, (): ()| Ok(widget.0.borrow().size()));
+
+        registry.add_method("draw", {
             let batch = batch.clone();
             let io_env = env_state.clone();
-            move |lua, widget, (extra,): (mlua::Value,)| {
+            move |lua, widget: &WidgetBox, (extra,): (mlua::Value,)| {
                 widget
                     .0
+                    .borrow_mut()
                     .event_processing_draw(lua, &batch, &io_env, true, extra)
             }
         });
         registry.add_method("eventState", |lua, widget, (): ()| {
-            widget.0.event_state().to_lua(lua)
+            widget.0.borrow().event_state().to_lua(lua)
         });
-        registry.add_meta_method("__tostring", |_, widget, (): ()| Ok(widget.0.debug_label()));
+        registry.add_meta_method("__tostring", |_, widget, (): ()| {
+            Ok(widget.0.borrow().debug_label())
+        });
     })?;
 
     ui_module.raw_set(
         "widget",
         lua.create_function(|_lua, (size, draw_fn): (Vec2, mlua::Function)| {
-            let widget = WidgetBox(Box::new(GenericWidget {
+            let widget = WidgetBox(RefCell::new(Box::new(GenericWidget {
                 size,
                 draw_fn,
                 event_state: EventState::default(),
-            }));
+            })));
             Ok(widget)
         })?,
     )?;
@@ -257,13 +263,13 @@ pub fn setup_ui_api(
             let padding = parse_padding_from_table(&options);
             let gap = parse_gap_from_table(&options);
             let alignment = parse_alignment_from_table(&options);
-            let column = WidgetBox(Box::new(Column {
+            let column = WidgetBox(RefCell::new(Box::new(Column {
                 children,
                 alignment,
                 padding,
                 gap,
                 event_state: EventState::default(),
-            }));
+            })));
             Ok(column)
         })?,
     )?;
@@ -274,13 +280,13 @@ pub fn setup_ui_api(
             let padding = parse_padding_from_table(&options);
             let gap = parse_gap_from_table(&options);
             let alignment = parse_alignment_from_table(&options);
-            let row = WidgetBox(Box::new(Row {
+            let row = WidgetBox(RefCell::new(Box::new(Row {
                 children,
                 alignment,
                 padding,
                 gap,
                 event_state: EventState::default(),
-            }));
+            })));
             Ok(row)
         })?,
     )?;
@@ -295,7 +301,7 @@ pub fn setup_ui_api(
                 Vec2,
                 Option<mlua::Function>,
             )| {
-                let widget = WidgetBox(Box::new(ScrollableArea {
+                let widget = WidgetBox(RefCell::new(Box::new(ScrollableArea {
                     content,
                     view_size,
                     scroll_offset: 0.0,
@@ -305,7 +311,7 @@ pub fn setup_ui_api(
                     gl: gl.clone(),
                     event_state: EventState::default(),
                     dragging_scrollbar: false,
-                }));
+                })));
                 Ok(widget)
             },
         )?
@@ -324,7 +330,7 @@ pub fn setup_ui_api(
                 let font_id = options
                     .raw_get::<crate::lua_env::lua_text::FontResourceId>("font")
                     .unwrap_or_else(|_| crate::lua_env::lua_text::FontResourceId::default_font());
-                let widget = WidgetBox(Box::new(TextWidget {
+                let widget = WidgetBox(RefCell::new(Box::new(TextWidget {
                     size,
                     get_text_fn,
                     gl: gl.clone(),
@@ -332,7 +338,7 @@ pub fn setup_ui_api(
                     font_id,
                     resources: resources.clone(),
                     event_state: EventState::default(),
-                }));
+                })));
                 Ok(widget)
             },
         )?
@@ -353,7 +359,7 @@ pub fn setup_ui_api(
                 let tint_fn = options.raw_get::<mlua::Function>("tint").ok();
                 let nine_slicing = options.raw_get::<f32>("nineSlicing").ok();
 
-                let widget = WidgetBox(Box::new(ImageWidget {
+                let widget = WidgetBox(RefCell::new(Box::new(ImageWidget {
                     size,
                     image_id,
                     resources: resources.clone(),
@@ -361,7 +367,7 @@ pub fn setup_ui_api(
                     tint_fn,
                     nine_slicing,
                     event_state: EventState::default(),
-                }));
+                })));
                 Ok(widget)
             },
         )?
@@ -380,12 +386,12 @@ pub fn setup_ui_api(
                 Some("end") => Alignment::End,
                 _ => Alignment::Start,
             };
-            let stack = WidgetBox(Box::new(Stack {
+            let stack = WidgetBox(RefCell::new(Box::new(Stack {
                 children,
                 align_x,
                 align_y,
                 event_state: EventState::default(),
-            }));
+            })));
             Ok(stack)
         })?,
     )?;

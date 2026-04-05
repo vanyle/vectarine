@@ -20,7 +20,7 @@ impl VectarineWidget for Stack {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
         for child in &self.children {
-            let child_size = child.0.size();
+            let child_size = child.0.borrow().size();
             width = width.max(child_size.x());
             height = height.max(child_size.y());
         }
@@ -48,8 +48,8 @@ impl VectarineWidget for Stack {
         let stack_width = stack_size.x();
         let stack_height = stack_size.y();
 
-        for child in &mut self.children {
-            let child_size = child.0.size();
+        for child in &self.children {
+            let child_size = child.0.borrow().size();
             let child_width = child_size.x();
             let child_height = child_size.y();
 
@@ -70,9 +70,13 @@ impl VectarineWidget for Stack {
                 Vec2::new(1.0, 1.0),
                 0.0,
             ));
-            let result = child
-                .0
-                .event_processing_draw(lua, batch, io_env, process_child_events, extra.clone());
+            let result = child.0.borrow_mut().event_processing_draw(
+                lua,
+                batch,
+                io_env,
+                process_child_events,
+                extra.clone(),
+            );
             batch.borrow_mut().affine_transform = current_transform;
             result?;
         }
@@ -89,7 +93,11 @@ impl VectarineWidget for Stack {
     }
 
     fn debug_label(&self) -> String {
-        let children: Vec<String> = self.children.iter().map(|c| c.0.debug_label()).collect();
+        let children: Vec<String> = self
+            .children
+            .iter()
+            .map(|c| c.0.borrow().debug_label())
+            .collect();
         format!("Stack({})", children.join(", "))
     }
 }

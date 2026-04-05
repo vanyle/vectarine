@@ -25,7 +25,7 @@ pub struct ScrollableArea {
 
 impl ScrollableArea {
     fn content_height(&self) -> f32 {
-        self.content.0.size().y()
+        self.content.0.borrow().size().y()
     }
 
     fn max_scroll(&self) -> f32 {
@@ -184,7 +184,7 @@ impl VectarineWidget for ScrollableArea {
                         0.0,
                     ));
                 // Only process child events if mouse is inside the scrollable area
-                let result = self.content.0.event_processing_draw(
+                let result = self.content.0.borrow_mut().event_processing_draw(
                     lua,
                     batch,
                     io_env,
@@ -246,6 +246,6 @@ impl VectarineWidget for ScrollableArea {
     }
 
     fn debug_label(&self) -> String {
-        format!("ScrollableArea({})", self.content.0.debug_label())
+        format!("ScrollableArea({})", self.content.0.borrow().debug_label())
     }
 }
