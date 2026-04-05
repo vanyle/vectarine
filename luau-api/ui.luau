@@ -11,6 +11,10 @@ The core concept is a `Widget`, which is a rectangular area on the screen which 
 The main widget is the Generic widget obtained using the `ui.widget` function which is drawn using a function you provide.
 
 You can compose widgets together using the `ui.column` and `ui.row` widgets.
+
+Widgets are immutable: once they are created, you cannot change their content.
+Use the generic widget and its draw function to create dynamic widgets that can react to game state or user input.
+For example, you can wrap a column widget inside a generic widget to change its content by creating a new column widget and drawing it when changes are needed.
 ]]
 local module = {}
 
