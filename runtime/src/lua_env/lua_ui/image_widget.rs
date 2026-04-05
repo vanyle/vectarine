@@ -27,16 +27,15 @@ impl ImageWidget {
         lua: &mlua::Lua,
         current_state: &EventState,
         extra: &mlua::Value,
-    ) -> [f32; 4] {
+    ) -> mlua::Result<[f32; 4]> {
         if let Some(ref tint_fn) = self.tint_fn {
             let event_table = current_state
                 .to_lua(lua)
                 .expect("Conversion to table should never fail");
-            if let Ok(color) = tint_fn.call::<Vec4>((event_table, extra.clone())) {
-                return color.0;
-            }
+            let color = tint_fn.call::<Vec4>((event_table, extra.clone()))?;
+            return Ok(color.0);
         }
-        [1.0, 1.0, 1.0, 1.0]
+        Ok([1.0, 1.0, 1.0, 1.0])
     }
 
     fn draw_nine_slice(
@@ -187,17 +186,17 @@ impl VectarineWidget for ImageWidget {
         current_state: EventState,
         _process_child_events: bool,
         extra: mlua::Value,
-    ) {
-        let color = self.get_tint(lua, &current_state, &extra);
+    ) -> mlua::Result<()> {
+        let color = self.get_tint(lua, &current_state, &extra)?;
 
         let tex_resource = self.resources.get_by_id::<ImageResource>(self.image_id.0);
         let Ok(tex_resource) = tex_resource else {
-            return;
+            return Ok(());
         };
         let (img_w, img_h) = {
             let tex_borrow = tex_resource.texture.borrow();
             let Some(tex) = tex_borrow.as_ref() else {
-                return;
+                return Ok(());
             };
             (tex.width() as f32, tex.height() as f32)
         };
@@ -207,7 +206,7 @@ impl VectarineWidget for ImageWidget {
             && !self.preserve_aspect_ratio
         {
             self.draw_nine_slice(batch, io_env, slice_ratio, color, img_w, img_h);
-            return;
+            return Ok(());
         }
 
         let widget_w = self.size.x();
@@ -244,11 +243,12 @@ impl VectarineWidget for ImageWidget {
 
         let tex_borrow = tex_resource.texture.borrow();
         let Some(tex) = tex_borrow.as_ref() else {
-            return;
+            return Ok(());
         };
         batch
             .borrow_mut()
             .draw_image(draw_x, draw_y, draw_w, draw_h, tex, color);
+        Ok(())
     }
 
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
@@ -269,5 +269,9 @@ impl VectarineWidget for ImageWidget {
 
     fn event_state(&self) -> &EventState {
         &self.event_state
+    }
+
+    fn debug_label(&self) -> String {
+        "Image".to_string()
     }
 }

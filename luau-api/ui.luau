@@ -28,6 +28,8 @@ export type Widget<T> = {
 	draw: (self: Widget<T>, extra: T) -> (),
 	--- Return the event state from the last time this widget was drawn. You can use this to react to events on the widget (e.g. mouse hover, clicks).
 	eventState: (self: Widget<T>) -> EventState,
+
+	__tostring: (self: Widget<T>) -> string,
 }
 
 export type EventState = {
