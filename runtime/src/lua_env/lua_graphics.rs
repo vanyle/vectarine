@@ -152,18 +152,20 @@ pub fn setup_graphics_api(
             vectarine_plugin_sdk::mlua::Function,
         )| {
             batch.borrow_mut().draw(&resources, true);
-            draw_with_mask(
+            let (e1, e2) = draw_with_mask(
                 &gl,
-                || {
-                    let _ = mask_fn.call::<()>(());
+                || -> vectarine_plugin_sdk::mlua::Result<()> {
+                    mask_fn.call::<()>(())?;
                     batch.borrow_mut().draw(&resources, true);
+                    Ok(())
                 },
-                || {
-                    let _ = draw_fn.call::<()>(());
+                || -> vectarine_plugin_sdk::mlua::Result<()> {
+                    draw_fn.call::<()>(())?;
                     batch.borrow_mut().draw(&resources, true);
+                    Ok(())
                 },
             );
-            Ok(())
+            e1.or(e2)
         }
     });
 
@@ -193,7 +195,7 @@ pub fn setup_graphics_api(
             let new_transform =
                 current_transform.combine(&AffineTransform::new(translation, scale, rotation));
             batch.borrow_mut().affine_transform = new_transform;
-            let _ = draw_fn.call::<()>(());
+            draw_fn.call::<()>(())?;
             batch.borrow_mut().affine_transform = current_transform;
             Ok(())
         }

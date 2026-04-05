@@ -135,7 +135,7 @@ impl VectarineWidget for ScrollableArea {
         current_state: EventState,
         process_child_events: bool,
         extra: mlua::Value,
-    ) {
+    ) -> mlua::Result<()> {
         let content_height = self.content_height();
         let view_height = self.view_size.y();
         let view_width = self.view_size.x();
@@ -159,6 +159,9 @@ impl VectarineWidget for ScrollableArea {
         // Flush batch before stencil operations
         batch.borrow_mut().draw(&self.resources, true);
 
+        // Capture errors from the content draw closure since draw_with_mask expects FnOnce()
+        let mut content_error: Option<mlua::Error> = None;
+
         draw_with_mask(
             &self.gl,
             || {
@@ -181,34 +184,39 @@ impl VectarineWidget for ScrollableArea {
                         0.0,
                     ));
                 // Only process child events if mouse is inside the scrollable area
-                self.content.0.event_processing_draw(
+                let result = self.content.0.event_processing_draw(
                     lua,
                     batch,
                     io_env,
                     process_child_events,
                     extra,
                 );
+                if let Err(e) = result {
+                    content_error = Some(e);
+                }
                 batch.borrow_mut().draw(&self.resources, true);
                 batch.borrow_mut().affine_transform = current_transform;
             },
         );
+
+        if let Some(err) = content_error {
+            return Err(err);
+        }
 
         // Draw scrollbar (only when content overflows)
         if max_scroll > 0.0 {
             let scroll_ratio = self.scroll_ratio();
             let visible_ratio = self.visible_ratio();
             if let Some(ref draw_fn) = self.scrollbar_draw_fn {
-                if let Ok(info) = lua.create_table() {
-                    let _ = info.raw_set("scrollRatio", scroll_ratio);
-                    let _ = info.raw_set("visibleRatio", visible_ratio);
-                    let _ = info.raw_set("viewWidth", view_width);
-                    let _ = info.raw_set("viewHeight", view_height);
-                    let _ = info.raw_set("contentHeight", content_height);
-                    if let Ok(returned_ratio) = draw_fn.call::<f32>((info,)) {
-                        let clamped = returned_ratio.clamp(0.0, 1.0);
-                        self.scroll_offset = clamped * max_scroll;
-                    }
-                }
+                let info = lua.create_table()?;
+                info.raw_set("scrollRatio", scroll_ratio)?;
+                info.raw_set("visibleRatio", visible_ratio)?;
+                info.raw_set("viewWidth", view_width)?;
+                info.raw_set("viewHeight", view_height)?;
+                info.raw_set("contentHeight", content_height)?;
+                let returned_ratio = draw_fn.call::<f32>((info,))?;
+                let clamped = returned_ratio.clamp(0.0, 1.0);
+                self.scroll_offset = clamped * max_scroll;
             } else {
                 self.draw_default_scrollbar(
                     batch,
@@ -220,6 +228,7 @@ impl VectarineWidget for ScrollableArea {
                 );
             }
         }
+        Ok(())
     }
 
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
@@ -234,5 +243,9 @@ impl VectarineWidget for ScrollableArea {
             event_state: self.event_state.clone(),
             dragging_scrollbar: self.dragging_scrollbar,
         })
+    }
+
+    fn debug_label(&self) -> String {
+        format!("ScrollableArea({})", self.content.0.debug_label())
     }
 }

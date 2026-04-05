@@ -43,7 +43,7 @@ impl VectarineWidget for Stack {
         _current_state: EventState,
         process_child_events: bool,
         extra: mlua::Value,
-    ) {
+    ) -> mlua::Result<()> {
         let stack_size = self.size();
         let stack_width = stack_size.x();
         let stack_height = stack_size.y();
@@ -70,11 +70,13 @@ impl VectarineWidget for Stack {
                 Vec2::new(1.0, 1.0),
                 0.0,
             ));
-            child
+            let result = child
                 .0
                 .event_processing_draw(lua, batch, io_env, process_child_events, extra.clone());
             batch.borrow_mut().affine_transform = current_transform;
+            result?;
         }
+        Ok(())
     }
 
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
@@ -84,5 +86,10 @@ impl VectarineWidget for Stack {
             align_y: self.align_y,
             event_state: self.event_state.clone(),
         })
+    }
+
+    fn debug_label(&self) -> String {
+        let children: Vec<String> = self.children.iter().map(|c| c.0.debug_label()).collect();
+        format!("Stack({})", children.join(", "))
     }
 }

@@ -3,10 +3,10 @@ use std::sync::Arc;
 use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::glow::HasContext;
 
-pub fn draw_with_mask<F, G>(gl: &Arc<glow::Context>, draw_mask: F, draw_content: G)
+pub fn draw_with_mask<F, G, A, B>(gl: &Arc<glow::Context>, draw_mask: F, draw_content: G) -> (A, B)
 where
-    F: FnOnce(),
-    G: FnOnce(),
+    F: FnOnce() -> A,
+    G: FnOnce() -> B,
 {
     unsafe {
         gl.enable(glow::STENCIL_TEST);
@@ -17,7 +17,7 @@ where
         gl.stencil_func(glow::ALWAYS, 1, 0xFF);
         gl.stencil_op(glow::REPLACE, glow::REPLACE, glow::REPLACE);
     }
-    draw_mask();
+    let a = draw_mask();
 
     unsafe {
         gl.stencil_mask(0x00); // Disable writing to stencil buffer
@@ -25,9 +25,10 @@ where
         gl.stencil_func(glow::EQUAL, 1, 0xFF);
         gl.stencil_op(glow::KEEP, glow::KEEP, glow::KEEP);
     }
-    draw_content();
+    let b = draw_content();
 
     unsafe {
         gl.disable(glow::STENCIL_TEST);
     }
+    (a, b)
 }

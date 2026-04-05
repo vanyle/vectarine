@@ -50,16 +50,12 @@ impl VectarineWidget for TextWidget {
         current_state: EventState,
         _process_child_events: bool,
         extra: mlua::Value,
-    ) {
+    ) -> mlua::Result<()> {
         let event_table = current_state
             .to_lua(lua)
             .expect("Conversion to table should never fail");
-        let Ok(result) = self.get_text_fn.call::<mlua::Table>((event_table, extra)) else {
-            return;
-        };
-        let Ok(text) = result.raw_get::<String>("text") else {
-            return;
-        };
+        let result = self.get_text_fn.call::<mlua::Table>((event_table, extra))?;
+        let text = result.raw_get::<String>("text")?;
         let color: [f32; 4] = match result.raw_get::<crate::lua_env::lua_vec4::Vec4>("color") {
             Ok(c) => c.0,
             Err(_) => [1.0, 1.0, 1.0, 1.0],
@@ -101,6 +97,7 @@ impl VectarineWidget for TextWidget {
                 .borrow_mut()
                 .draw_text(x, y, &text, color, final_font_size, font_renderer);
         });
+        Ok(())
     }
 
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
@@ -121,5 +118,9 @@ impl VectarineWidget for TextWidget {
 
     fn event_state(&self) -> &EventState {
         &self.event_state
+    }
+
+    fn debug_label(&self) -> String {
+        "Text".to_string()
     }
 }

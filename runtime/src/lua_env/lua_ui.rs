@@ -52,12 +52,15 @@ pub trait VectarineWidget: WidgetToAny {
         current_state: EventState,
         process_child_events: bool,
         extra: mlua::Value,
-    );
+    ) -> mlua::Result<()>;
 
     /// A dyn-compatible version of Clone, allowing us to deep copy widgets.
     fn clone_box(&self) -> Box<dyn VectarineWidget>;
     fn event_state_mut(&mut self) -> &mut EventState;
     fn event_state(&self) -> &EventState;
+
+    /// Returns a debug string representation of this widget (e.g. "Row(Text, Image)").
+    fn debug_label(&self) -> String;
 
     fn event_processing_draw(
         &mut self,
@@ -66,7 +69,7 @@ pub trait VectarineWidget: WidgetToAny {
         io_env: &RefCell<IoEnvState>,
         process_events: bool,
         extra: mlua::Value,
-    ) {
+    ) -> mlua::Result<()> {
         let widget_size = self.size();
         let state = self.event_state_mut();
         if process_events {
@@ -105,7 +108,7 @@ pub trait VectarineWidget: WidgetToAny {
         }
         let process_child_events = process_events && state.is_mouse_inside;
         let state = state.clone();
-        self.draw(lua, batch, io_env, state, process_child_events, extra);
+        self.draw(lua, batch, io_env, state, process_child_events, extra)
     }
 }
 
@@ -224,16 +227,16 @@ pub fn setup_ui_api(
         registry.add_method_mut("draw", {
             let batch = batch.clone();
             let io_env = env_state.clone();
-            move |lua, widget, extra: mlua::Value| {
+            move |lua, widget, (extra,): (mlua::Value,)| {
                 widget
                     .0
-                    .event_processing_draw(lua, &batch, &io_env, true, extra);
-                Ok(())
+                    .event_processing_draw(lua, &batch, &io_env, true, extra)
             }
         });
         registry.add_method("eventState", |lua, widget, (): ()| {
             widget.0.event_state().to_lua(lua)
         });
+        registry.add_meta_method("__tostring", |_, widget, (): ()| Ok(widget.0.debug_label()));
     })?;
 
     ui_module.raw_set(

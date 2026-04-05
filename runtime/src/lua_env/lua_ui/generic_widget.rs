@@ -26,13 +26,13 @@ impl VectarineWidget for GenericWidget {
         current_state: EventState,
         _process_child_events: bool,
         extra: mlua::Value,
-    ) {
-        let _ = self.draw_fn.call::<()>((
+    ) -> mlua::Result<()> {
+        self.draw_fn.call::<()>((
             current_state
                 .to_lua(lua)
                 .expect("Convertion to table should never fail"),
             extra,
-        ));
+        ))
     }
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
         Box::new(self.clone())
@@ -42,5 +42,9 @@ impl VectarineWidget for GenericWidget {
     }
     fn event_state(&self) -> &EventState {
         &self.event_state
+    }
+
+    fn debug_label(&self) -> String {
+        "Widget".to_string()
     }
 }
