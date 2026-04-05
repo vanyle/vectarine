@@ -13,13 +13,13 @@ export type TilesetResource = typeof(setmetatable({}, TilesetResourceImpl)) & Re
 
 --- Get the size of a tile in pixels
 function TilesetResourceImpl:getTileSize(): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the size of a tile, as the ratio of the full image.
 --- For example, if you have 8 tiles per row and column, this will return V2(1/8, 1/8)
 function TilesetResourceImpl:getTileRatio(): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the position of a tile in the image.
@@ -29,12 +29,12 @@ function TilesetResourceImpl:getTile(tileId: number): {
 	probability: number,
 	type: string,
 }?
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Return a list of tile ids defined in the tileset provided.
 function TilesetResourceImpl:getTiles(): { number }
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --MARK: Tilemap
@@ -50,7 +50,7 @@ export type TilemapResource = typeof(setmetatable({}, TilemapResourceImpl)) & Re
 ---
 --- Returns 0 if the tilemap is not defined at the provided location, the layer does not exist or if the layer is not a tile layer.
 function TilemapResourceImpl:getTile(layer: number, x: number, y: number): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- A high-performance way to draw or access a part of a tilemap.
@@ -67,7 +67,7 @@ function TilemapResourceImpl:getTilemapPart(
 	highy: number,
 	accessFunction: (tileId: number, x: number, y: number) -> ()
 )
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

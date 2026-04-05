@@ -8,16 +8,16 @@ ScreenVecImpl.__index = ScreenVecImpl
 export type ScreenVec = typeof(setmetatable({} :: Vec.Vec2Data, ScreenVecImpl))
 
 function ScreenVecImpl.gl(self: ScreenVec): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the position as a Vec2 in the pixel coordinate system
 function ScreenVecImpl.px(self: ScreenVec): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function ScreenVecImpl.scale(self: ScreenVec, k: number): ScreenVec
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --------------------------------------
@@ -26,25 +26,25 @@ local ScreenPositionImpl = { screen_position = true }
 ScreenPositionImpl.__index = ScreenPositionImpl
 
 ScreenPositionImpl.__add = function(a: ScreenPosition, b: ScreenVec): ScreenPosition
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 local sub_function: ((ScreenPosition, ScreenPosition) -> ScreenVec) & ((ScreenPosition, ScreenVec) -> ScreenPosition) = function(
 	a: any,
 	b: any
 ): any
-	error("Not implemented")
+	error("Implemented in native code")
 end
 ScreenPositionImpl.__sub = sub_function
 
 --- Returns the position as a Vec2 in the OpenGL coordinate system
 function ScreenPositionImpl.gl(self: ScreenPosition): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the position as a Vec2 in the pixel coordinate system
 function ScreenPositionImpl.px(self: ScreenPosition, screen_size: Vec.Vec2?): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Represents somewhere on the screen. This is essentially a Vec2 with a unit.
@@ -57,7 +57,7 @@ export type ScreenPosition = typeof(setmetatable({} :: Vec.Vec2Data, ScreenPosit
 ---
 --- To perform the conversion, this function uses the screen size of the current drawing target (screen or canvas) unless `screen_size_px` is provided.
 function module.px(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenPosition
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Converts a Vec2 in pixels to a ScreenVec
@@ -65,34 +65,34 @@ end
 ---
 --- To perform the conversion, this function uses the screen size of the current drawing target (screen or canvas) unless `screen_size_px` is provided.
 function module.pxVec(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenVec
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Converts a Vec2 using the OpenGL convention to a ScreenPosition
 --- The OpenGL convention has the origin (0,0) in the center of the screen, with the bottom-left at (-1,-1) and the upper-right at (1,1)
 function module.gl(v: Vec.Vec2): ScreenPosition
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Converts a Vec2 using the OpenGL convention to a ScreenVec
 function module.glVec(v: Vec.Vec2): ScreenVec
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function module.vw(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenPosition
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function module.vwVec(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenVec
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function module.vh(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenPosition
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function module.vhVec(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenVec
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 module.CENTER = module.gl(Vec.V2(0, 0))

@@ -9,22 +9,22 @@ export type AudioResource = typeof(setmetatable({}, AudioResourceImpl)) & Resour
 --- Play an audio resource.
 --- If loop is true, the audio will loop indefinitely.
 function AudioResourceImpl.play(self: AudioResource, loop: boolean?, fadeIn: number?): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Stop an audio resource.
 --- If fadeOut is provided, the audio will fade out over that many milliseconds.
 --- Does nothing if the audio is not playing.
 function AudioResourceImpl.pause(self: AudioResource, fadeOut: number?): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function AudioResourceImpl.setVolume(self: AudioResource, volume: number): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function AudioResourceImpl.getVolume(self: AudioResource): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

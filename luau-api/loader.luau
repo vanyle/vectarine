@@ -15,7 +15,7 @@ local module = {}
 --- The return value is a ScriptResource
 --- @param path string For example scripts/monster.lua
 function module.loadScript<T>(path: string, type_hint: T): (Res.ScriptResource, T)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load an image from a path
@@ -24,7 +24,7 @@ end
 --- @param path string
 --- @return ImageResource
 function module.loadImage(path: string, antialiasing: boolean?): Image.ImageResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load a font from a path
@@ -32,7 +32,7 @@ end
 --- @return FontResource
 --- @nodiscard
 function module.loadFont(path: string): Text.FontResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load text from a path.
@@ -41,7 +41,7 @@ end
 --- @return TextResource
 --- @nodiscard
 function module.loadText(path: string): Res.TextResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load a shader from a path
@@ -49,28 +49,28 @@ end
 --- @return ShaderResource
 --- @nodiscard
 function module.loadShader(path: string): Canvas.ShaderResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load audio from a path
 --- @param path string
 --- @return AudioResource
 function module.loadAudio(path: string): Audio.AudioResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load a tileset from a path
 --- @param path string
 --- @return TilesetResource
 function module.loadTileset(path: string): Tile.TilesetResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Load a tilemap from a path
 --- @param path string
 --- @return TilemapResource
 function module.loadTilemap(path: string): Tile.TilemapResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

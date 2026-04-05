@@ -53,14 +53,14 @@ function module.drawEllipse(center: Pos, size: Direction, color: Vec4.Vec4?): ()
 ---
 --- This can be useful to crop images or scenes to specific shapes like a circle.
 function module.drawWithMask(drawFunction: () -> (), maskFunction: () -> ()): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Show a splash screen over the whole screen. This is useful to show a loading animation while the game is loading.
 --- You can configure your splash screen using the `loading_animation` field in the `.vecta` manifest.
 --- Optionally, you can pass some text to show during loading and a number between 0 and 1 to show a progress bar.
 function module.drawSplashScreen(loadingText: string?, progress: number?): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Show a splash screen if any of the resources are not ready.
@@ -79,7 +79,7 @@ end
 --- end
 --- ```
 function module.drawSplashScreenIfNeeded(resourcesToWaitFor: { Resource.Resource }, loadingText: string?): boolean
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 -- MARK: Transformations
@@ -94,25 +94,25 @@ function module.withTransformation(
 	transformation: { translation: Vec.Vec2?, scale: Vec.Vec2?, rotation: number? },
 	drawFunction: () -> ()
 ): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 -- Apply the current transformation of `withTransformation` to the given position.
 -- You can use this to get the position of the mouse in the transformed space for example.
 function module.transform(pos: Vec.Vec2): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 -- Apply the inverse of the current transformation of `withTransformation` to the given position.
 -- You can use this to get the position of the mouse in the original space after transforming it for example.
 function module.inverseTransform(pos: Vec.Vec2): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Return the current translation, scale and rotation of the current transformation.
 --- If you have nested transformations, it returns the combined transformation.
 function module.getCurrentTransform(): (Vec.Vec2, Vec.Vec2, number)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

@@ -15,13 +15,13 @@ ResourceId.__index = ResourceId
 --- When the loading is finished, the state becomes `"Loaded"` or `"Error: Description of the error"` if something went wrong.
 --- When a resource which is not `"Loaded"` is used, nothing will happen and a warning will be printed in the console.
 function ResourceId:getStatus(): string | "NotLoaded" | "Loading" | "Loaded"
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Check if a resource is ready to be used.
 --- This is the same as checking if getResourceStatus returns `"Loaded"`.
 function ResourceId:isReady(): boolean
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the ID of a resource.
@@ -29,7 +29,7 @@ end
 --- The ID stays constant between reloads (but not restarts!)
 --- @return number
 function ResourceId:getId(): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 export type Resource = typeof(setmetatable({}, ResourceId))
@@ -45,7 +45,7 @@ export type TextResource = typeof(setmetatable({}, TextResourceImpl)) & Resource
 --- Get the text of a text resource. Or nil if the resource is not loaded or does not exist.
 --- @return string?
 function TextResourceImpl:getText(): string?
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

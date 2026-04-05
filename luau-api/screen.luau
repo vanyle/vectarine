@@ -17,7 +17,7 @@ export type Screen = typeof(setmetatable({}, ScreenImpl))
 
 --- Makes a new screen with the given name.
 function module.newScreen(screen_name: string, draw_function: () -> ()): Screen
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Represents a transition between two screens.
@@ -37,23 +37,23 @@ export type ScreenTransition = {
 --- Sets the current screen, with an optional transition.
 --- If this is the first screen, it will be set immediately.
 function module.setCurrentScreen(screen: Screen, transition: ScreenTransition?)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function module.getCurrentScreen(): Screen?
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function module.drawCurrentScreen()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function ScreenImpl.name(self: Screen): string
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 function ScreenImpl.draw(self: Screen)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module
