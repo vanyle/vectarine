@@ -20,6 +20,7 @@ pub mod lua_resource;
 pub mod lua_screen;
 pub mod lua_text;
 pub mod lua_tile;
+pub mod lua_ui;
 pub mod lua_vec2;
 pub mod lua_vec4;
 
@@ -33,7 +34,7 @@ use crate::metrics::MetricsHolder;
 pub const BUILT_IN_MODULES: &[&str] = &[
     "vec", "vec4", "event", "fastlist", "camera", "audio", "tile", "loader", "image", "text",
     "graphics", "screen", "io", "debug", "persist", "resource", "physics", "color", "coord",
-    "canvas",
+    "canvas", "ui",
 ];
 
 pub struct LuaEnvironment {
@@ -147,6 +148,9 @@ impl LuaEnvironment {
 
         let loader_module = lua_loader::setup_loader_api(&lua, &resources).unwrap();
         register_vectarine_module(&lua, "loader", loader_module);
+
+        let ui_module = lua_ui::setup_ui_api(&lua, &batch, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua, "ui", ui_module);
 
         let original_require = lua
             .globals()
