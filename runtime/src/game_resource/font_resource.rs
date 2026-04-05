@@ -162,7 +162,11 @@ impl FontRenderingData {
 
     /// Given some text, rebuild the atlas to include any missing character from the text.
     /// This function can be expensive, so try to use it rarely.
+    /// If the text is already in the font altas, this function does nothing.
     pub fn enrich_atlas(&mut self, gl: &Arc<glow::Context>, text: &str) {
+        if text.chars().all(|c| self.font_cache.contains_key(&c)) {
+            return;
+        }
         // Note: we use chars and not glyphs. Support for non-Latin languages should not be too hard to add though.
         let mut chars_to_include: HashSet<char> = self.font_cache.keys().cloned().collect();
         let initial_character_count = chars_to_include.len();
