@@ -1,9 +1,10 @@
 # TO-DO
 
+- [ ] Allow drawing rectangles around all widgets for debugging (a bit like what flutter does)
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Add a slider widget
-- [ ] Allow drawing a tile from a tileset
-- [ ] Allow creating a tileset from an image
+- [ ] Allow drawing a tile from a tileset by name
+- [ ] Allow creating a tileset from an image and adding / removing tiles from a tileset
 - [ ] Allow using tileset to create guis
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible

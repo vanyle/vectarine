@@ -95,8 +95,8 @@ pub trait VectarineWidget: WidgetToAny {
 
             state.is_mouse_just_entered = is_inside && !state.is_mouse_inside;
             state.is_mouse_just_exited = !is_inside && state.is_mouse_inside;
-            state.is_mouse_just_pressed =
-                is_inside && mouse_state.is_left_down && !state.is_mouse_down;
+            // we need to use just_pressed in case the widget was created during our click.
+            state.is_mouse_just_pressed = is_inside && mouse_state.is_left_just_pressed;
             state.is_mouse_just_released =
                 is_inside && !mouse_state.is_left_down && state.is_mouse_down;
 
