@@ -1,7 +1,9 @@
 mod column_widget;
 mod generic_widget;
+mod image_widget;
 mod row_widget;
 mod scrollable_area_widget;
+mod text_widget;
 
 use std::{cell::RefCell, rc::Rc};
 
@@ -16,8 +18,10 @@ use crate::{game_resource, io, lua_env::lua_vec2::Vec2};
 
 use column_widget::Column;
 use generic_widget::GenericWidget;
+use image_widget::ImageWidget;
 use row_widget::Row;
 use scrollable_area_widget::ScrollableArea;
+use text_widget::TextWidget;
 
 // MARK: Widget Trait
 
@@ -292,6 +296,48 @@ pub fn setup_ui_api(
                     gl: gl.clone(),
                     event_state: EventState::default(),
                     dragging_scrollbar: false,
+                }));
+                Ok(widget)
+            },
+        )?
+    })?;
+
+    ui_module.raw_set("text", {
+        let gl = batch.borrow().drawing_target.gl().clone();
+        lua.create_function(move |_lua, (size, get_text_fn): (Vec2, mlua::Function)| {
+            let widget = WidgetBox(Box::new(TextWidget {
+                size,
+                get_text_fn,
+                gl: gl.clone(),
+                event_state: EventState::default(),
+            }));
+            Ok(widget)
+        })?
+    })?;
+
+    ui_module.raw_set("image", {
+        let resources = _resources.clone();
+        lua.create_function(
+            move |_lua,
+                  (size, image_id, options): (
+                Vec2,
+                crate::lua_env::lua_image::ImageResourceId,
+                mlua::Table,
+            )| {
+                let preserve_aspect_ratio = options
+                    .raw_get::<bool>("preserveAspectRatio")
+                    .unwrap_or(false);
+                let tint_fn = options.raw_get::<mlua::Function>("tint").ok();
+                let nine_slicing = options.raw_get::<f32>("nineSlicing").ok();
+
+                let widget = WidgetBox(Box::new(ImageWidget {
+                    size,
+                    image_id,
+                    resources: resources.clone(),
+                    preserve_aspect_ratio,
+                    tint_fn,
+                    nine_slicing,
+                    event_state: EventState::default(),
                 }));
                 Ok(widget)
             },

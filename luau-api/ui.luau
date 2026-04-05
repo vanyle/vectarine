@@ -1,4 +1,7 @@
+local Image = require("@vectarine/image")
+local Text = require("@vectarine/text")
 local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
 
 --[[
 # UI module
@@ -78,6 +81,41 @@ end
 ---@param options ContainerOptions — optional padding and gap
 ---@param children { Widget } — ordered list of child widgets
 function module.column(options: ContainerOptions, children: { Widget }): Widget
+	error("Implemented in native code")
+end
+
+type TextOptions = {
+	--- Horizontal alignment of the text within the widget. Defaults to "center".
+	align: ("left" | "center" | "right")?,
+	-- Optional font to use for this text. If not provided, the default font will be used.
+	font: Text.FontResource?,
+}
+
+--- Create a text widget that draws the given text. The size of the text is computed such that
+--- the text fits on a single line within the given size.
+--- The `getText` function is called each frame to get the text to draw and its color. You can use it to dynamically
+--- change the text without needing to wrap the text widget in a generic widget.
+function module.text(
+	size: Vec.Vec2,
+	options: TextOptions,
+	getText: (event: EventState) -> { text: string, color: Vec4.Vec4 }
+): Widget
+	error("Implemented in native code")
+end
+
+type ImageWidgetOptions = {
+	-- Should the aspect ratio of the image be preserved? If it is, there might be empty space on the sides of the image.
+	preserveAspectRatio: boolean?,
+	-- Optional color tint to apply to the image when drawing. Defaults to white (no tint).
+	tint: ((event: EventState) -> Vec4.Vec4)?,
+	-- If provided, the image will be drawn in 9-slices to preserve its corners when scaled. This assumes that the image is
+	-- designed for this and has the appropriate borders. If preserveAspectRatio is also true, this has no effect.
+	-- The number is the ratio of the corners to the total image size (e.g. 0.2 means corners are 20% of the image size). Defaults to nil.
+	nineSlicing: number?,
+}
+
+--- Create a widget that draws the given image. The image is scaled to fit the widget's size
+function module.image(size: Vec.Vec2, image: Image.ImageResource, options: ImageWidgetOptions): Widget
 	error("Implemented in native code")
 end
 
