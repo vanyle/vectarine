@@ -2,8 +2,8 @@
 
 - [ ] UI system
   - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation
-  - [ ] Add an imgui style button which takes a draw function and returns events. In the context of the button, (-1,-1) is the bottom left of the button and (0,0) is the center. pixels stay the same.
-  - [ ] Add a vertical container and a horizontal container which take padding, gap and a table of drawing functions as argument
+  - [x] Add an imgui style button which takes a draw function and returns events
+  - [x] Add a vertical container and a horizontal container which take padding, gap
   - [ ] Add a scrollable container as a widget
   - [ ] Add a text input widget (to the best of your ability...)
   - [ ] Add a slider widget
@@ -15,6 +15,8 @@
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
+- [ ] When creating a new project, allow to use a gallery project as a template
+- [ ] Allow scrolling in the gallery to show more projects
 - [ ] Show resources in a nicer way (draw_debug_gui)
 - [ ] Debug tooling for physics?
 - [ ] A low/no-code way to get started??
