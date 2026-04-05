@@ -21,7 +21,7 @@ export type Canvas = typeof(setmetatable({}, Canvas))
 --- The canvas is empty and fully transparent by default
 --- Creating a canvas is an expensive operation! For performance reasons, you shouldn't create canvases every frame!
 function module.createCanvas(width: number, height: number): Canvas
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Paint on the canvas.
@@ -33,7 +33,7 @@ end
 ---
 --- Once you have finished painting the canvas, you can use `graphics.drawCanvas` to draw it on the screen or on another canvas.
 function Canvas.paint(self: Canvas, draw_function: () -> ()): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- When the canvas is drawn, instead of being drawn as-is, it will be used as a texture input to the shader that
@@ -41,22 +41,22 @@ end
 --- To disable the shader, call `setShader(nil)`.
 --- You can see examples of shaders on [ShaderToy](https://www.shadertoy.com/)
 function Canvas.setShader(self: Canvas, shader: ShaderResource?): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Sets a uniform float value for the shader used when drawing this canvas.
 function Canvas.setUniform(self: Canvas, name: string, value: number): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Gets the size of the canvas or image in pixels
 function Canvas.getSize(self: Canvas): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Draws a canvas at given position and size
 function Canvas.draw(self: Canvas, pos: Vec.Vec2, size: Direction): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Draws a part canvas stretched to fit the quadrilateral delimited by the 4 destination points
@@ -70,7 +70,7 @@ function Canvas.drawPart(
 	src_pos: Vec.Vec2,
 	src_size: Vec.Vec2
 ): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

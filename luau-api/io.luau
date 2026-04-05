@@ -229,7 +229,7 @@ type Scancode =
 --- For example, `IsKeyDown("Space")`. If the name is invalid, always return false.
 --- You can use 'GetKeysDown' to find the name of keys
 function module.isKeyDown(keycode: Scancode): boolean
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Checks if a key was just pressed (this frame)
@@ -238,17 +238,17 @@ end
 --- For example, `IsKeyJustPressed("space")`. If the name is invalid, always return false.
 --- You can use 'GetKeysDown' to find the name of keys
 function module.isKeyJustPressed(keycode: Scancode): boolean
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a list of key that are currently pressed
 function module.getKeysDown(): { Scancode }
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the current mouse position in OpenGL coordinates
 function module.getMouse(): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the current mouse state
@@ -258,51 +258,51 @@ function module.getMouseState(): {
 	isLeftJustPressed: boolean,
 	isRightJustPressed: boolean,
 }
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get how much the mouse wheel has been scrolled since the last frame. The x value is for horizontal scrolling, and the y value is for vertical scrolling.
 --- This is because some mice have horizontal scroll (but i've never seen one in real life). On most mice, the x value will always be 0.
 function module.getMouseWheel(): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the current window size (in px)
 function module.getWindowSize(): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Center the window on the screen
 --- Does nothing on the web
 function module.centerWindow(): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the current screen size (in px)
 function module.getScreenSize(): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Sets the window size
 --- Does nothing on the web
 function module.setWindowSize(width: number, height: number): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Set if the window is resizeable
 function module.setResizeable(resizeable: boolean): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Set the window title
 function module.setWindowTitle(title: string): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns true if the window is currently minimized
 --- When this is the case, Vectarine will run a lot slower to save battery life and avoid draining the CPU.
 function module.isWindowMinimized(): boolean
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Set the window to fullscreen, windowed, or "desktop fullscreen" (also called fake fullscreen) mode
@@ -311,12 +311,12 @@ end
 --- On the web, the game is usually embedded in an iframe / player which already provides a fullscreen button, so this
 --- function does nothing.
 function module.setFullscreen(fullscreen: true | false | "fullscreen" | "windowed" | "desktop"): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Return a friendly string representation of arg
 function module.toString(arg: any): string
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

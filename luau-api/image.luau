@@ -15,7 +15,7 @@ type Direction = Coord.ScreenVec | Vec.Vec2
 --- You can optionally tint the image with the given color. The color of the pixels of the image
 --- are multiplied by the tint.
 function ImageResourceImpl.draw(self: ImageResource, pos: Pos, size: Direction, color: Vec4.Vec4?): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Draws a rectangular part of the image delimited by a position and a size
@@ -32,12 +32,12 @@ function ImageResourceImpl.drawPart(
 	src_size: Vec.Vec2,
 	color: Vec4.Vec4?
 ): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Gets the size of the image in pixels
 function ImageResourceImpl.getSize(self: ImageResource): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

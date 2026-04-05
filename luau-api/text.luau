@@ -26,11 +26,11 @@ function FontResourceImpl.measureText(
 	text: string,
 	size: Size
 ): { width: number, height: number, bearingY: number }
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 local function getDefaultFontPrivate(): FontResource
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- The default font (Roboto) you can use to draw without needed to load a `.ttf` file

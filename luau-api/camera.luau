@@ -11,42 +11,42 @@ export type Camera2 = typeof(setmetatable({}, Camera2Impl))
 --- A camera represents a transformation between the game world and the screen
 --- @return Camera
 function module.new(): Camera2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the screen position of a point in the world
 --- @param point Vec2
 --- @return Vec2
 function Camera2Impl:screen(point: Vec.Vec2): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- The fastlist version of Camera:screen()
 --- @param point FastList
 --- @return FastList
 function Camera2Impl:screenFastlist(point: Fastlist.FastList): Fastlist.FastList
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Get the world position of a point on the screen
 --- @param point Vec2 | FastList
 --- @return Vec2 | FastList
 function Camera2Impl:world(point: Vec.Vec2): Vec.Vec2
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- The fastlist version of Camera:world()
 --- @param point FastList
 --- @return FastList
 function Camera2Impl:worldFastlist(point: Fastlist.FastList): Fastlist.FastList
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Check if a point is visible on the screen
 --- @param point Vec2
 --- @return boolean
 function Camera2Impl:isVisible(point: Vec.Vec2): boolean
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Move the camera towards a point by a certain amount.
@@ -55,7 +55,7 @@ end
 --- @param point Vec2
 --- @param amount number
 function Camera2Impl:moveTowards(point: Vec.Vec2, amount: number): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Rotate the camera towards an angle by a certain amount.
@@ -63,7 +63,7 @@ end
 --- @param angle number
 --- @param amount number
 function Camera2Impl:rotateTowards(angle: number, amount: number): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Zoom the camera towards a zoom level by a certain amount.
@@ -71,7 +71,7 @@ end
 --- @param zoom number
 --- @param amount number
 function Camera2Impl:zoomTowards(zoom: number, amount: number): ()
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module

@@ -6,16 +6,16 @@ local module = {}
 local Vec4Impl = { vec4 = true }
 Vec4Impl.__index = Vec4Impl
 Vec4Impl.__add = function(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 Vec4Impl.__sub = function(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 Vec4Impl.__mul = function(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 Vec4Impl.__div = function(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- The type of 4D things
@@ -26,107 +26,107 @@ export type Vec4 = typeof(setmetatable({} :: Vec4Data, Vec4Impl))
 
 --- Create a new 4D vector
 function module.V4(x: number, y: number, z: number, w: number): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a quaternion representing a rotation of `angle` radians around the given axis
 --- The 4th component of the axis is ignored, it is treated as a 3d vector.
 --- The length of the result is always 1.
 function module.fromRotation(axis: Vec4, angle: number): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Scales the vector by the given factor
 function Vec4Impl.scale(a: Vec4, k: number): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Performs a quaternion multiplication of a and b, treating them as quaternions
 --- This is useful to apply rotations to 3D vectors
 --- Note that `a:qmul(b) != b:qmul(a)` in general
 function Vec4Impl.qmul(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the dot product of the two vectors
 function Vec4Impl.dot(a: Vec4, b: Vec4): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the length of the vector, defined as `math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w)`
 function Vec4Impl.length(v: Vec4): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the square of the length of the vector, defined as `v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w`
 function Vec4Impl.lengthSq(v: Vec4): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the distance between the two vectors.
 --- This is the same as `(a - b):length()`
 function Vec4Impl.distance(a: Vec4, b: Vec4): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a normalized version of the vector
 --- If the vector has zero length, returns a unit vector pointing in an arbitrary direction
 function Vec4Impl.normalized(v: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a vector with all components absolute values
 function Vec4Impl.abs(v: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a version of the vector rounded to the given number of digits of precision
 ---
 --- If `digits_of_precision` is not provided, it defaults to 0 (round to nearest integer)
 function Vec4Impl.round(v: Vec4, digits_of_precision: number?): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a vector with all components rounded down to the nearest integer
 function Vec4Impl.floor(v: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a vector with all components rounded up to the nearest integer
 function Vec4Impl.ceil(v: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the component-wise maximum of the two vectors
 function Vec4Impl.max(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the component-wise minimum of the two vectors
 function Vec4Impl.min(a: Vec4, b: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns a vector linearly interpolated between `a` and `b` by the factor `k`
 function Vec4Impl.lerp(a: Vec4, b: Vec4, k: number): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the vector containing the sign of each component of the vector
 function Vec4Impl.sign(v: Vec4): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the noise value at the given point
 --- Uses [simplex noise](https://en.wikipedia.org/wiki/OpenSimplex_noise)
 function Vec4Impl.noise(v: Vec4): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Returns the noise value at the given point
 --- Uses [Worley noise](https://en.wikipedia.org/wiki/Worley_noise)
 function Vec4Impl.worleyNoise(v: Vec4): number
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- The zero vector
@@ -136,7 +136,7 @@ module.ZERO4 = module.V4(0, 0, 0, 0)
 
 --- Alias for V4, but indicate that the Vec4 will be used as a color.
 function module.createColor(r: number, g: number, b: number, a: number): Vec4
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 module.BLACK = module.createColor(0, 0, 0, 1)

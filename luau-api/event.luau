@@ -13,7 +13,7 @@ export type Event<T> = typeof(setmetatable({}, EventTypeImpl)) & { __data_type: 
 --- @param name string The name of the event type
 --- @return EventType
 function newEvent<T>(name: string): Event<T>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 module.newEvent = newEvent
 
@@ -21,7 +21,7 @@ module.newEvent = newEvent
 --- @param event EventType<T> The type of event
 --- @param data T Additional event data
 function EventTypeImpl.dispatch<T>(event: Event<T>, data: T)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 local SubIDImpl = {}
@@ -36,33 +36,33 @@ export type SubID = typeof(setmetatable({}, SubIDImpl))
 --- @param callback fun(data: T) A function that will be called when the event is sent. The callback function will receive the event data as arguments.
 --- @return SubID A subscription ID that can be used to unsubscribe
 function EventTypeImpl.on<T>(event: Event<T>, callback: (data: T) -> ()): SubID
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all subscriptions for a given event type
 --- @param event EventType<T> The type of event
 function EventTypeImpl.clear<T>(event: Event<T>)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Stop receiving events for a given subscription ID
 --- @param id SubID The subscription ID returned by `event:on(...)`
 function SubIDImpl.unsubscribe(id: SubID)
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 -- #MARK: Default events
 
 --- Clear all previous subscriptions to the console command event and return it.
 function module.getConsoleCommandEvent(): Event<string>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all previous subscriptions to the resource loaded event and return it.
 --- This event is triggered when a resource finishes loading and is ready to be used or if it failed to load.
 --- The number is the ID of the resource loaded.
 function module.getResourceLoadedEvent(): Event<number>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all previous subscriptions to the text input event and return it.
@@ -70,27 +70,27 @@ end
 --- The string is the character that was pressed, with modifiers like shift or option.
 --- You can use this function to implement text input.
 function module.getTextInputEvent(): Event<string>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all previous subscriptions to the key up event and return it.
 function module.getKeyUpEvent(): Event<string>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all previous subscriptions to the key press event and return it.
 function module.getKeyDownEvent(): Event<string>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all previous subscriptions to the key press event and return it.
 function module.getMouseDownEvent(): Event<string>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 --- Clear all previous subscriptions to the key press event and return it.
 function module.getMouseUpEvent(): Event<string>
-	error("Not implemented")
+	error("Implemented in native code")
 end
 
 return module
