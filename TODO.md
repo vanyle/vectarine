@@ -52,7 +52,6 @@
   - [ ] Lights and shadows (set a max number of lights to 20 in the API)
   - [ ] Reflective objects like water
   - [ ] Drawing a depth buffer
-- [ ] Try using SDL3
 - [ ] Rewrite the sokoban using Vectarine
 - [ ] Joystick support
 - [ ] Android support
