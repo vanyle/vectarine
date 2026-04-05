@@ -134,6 +134,7 @@ impl VectarineWidget for ScrollableArea {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         process_child_events: bool,
+        extra: mlua::Value,
     ) {
         let content_height = self.content_height();
         let view_height = self.view_size.y();
@@ -180,9 +181,13 @@ impl VectarineWidget for ScrollableArea {
                         0.0,
                     ));
                 // Only process child events if mouse is inside the scrollable area
-                self.content
-                    .0
-                    .event_processing_draw(lua, batch, io_env, process_child_events);
+                self.content.0.event_processing_draw(
+                    lua,
+                    batch,
+                    io_env,
+                    process_child_events,
+                    extra,
+                );
                 batch.borrow_mut().draw(&self.resources, true);
                 batch.borrow_mut().affine_transform = current_transform;
             },

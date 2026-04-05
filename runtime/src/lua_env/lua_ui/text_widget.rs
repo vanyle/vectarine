@@ -49,11 +49,12 @@ impl VectarineWidget for TextWidget {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         _process_child_events: bool,
+        extra: mlua::Value,
     ) {
         let event_table = current_state
             .to_lua(lua)
             .expect("Conversion to table should never fail");
-        let Ok(result) = self.get_text_fn.call::<mlua::Table>((event_table,)) else {
+        let Ok(result) = self.get_text_fn.call::<mlua::Table>((event_table, extra)) else {
             return;
         };
         let Ok(text) = result.raw_get::<String>("text") else {

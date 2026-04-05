@@ -51,6 +51,7 @@ pub trait VectarineWidget: WidgetToAny {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         process_child_events: bool,
+        extra: mlua::Value,
     );
 
     /// A dyn-compatible version of Clone, allowing us to deep copy widgets.
@@ -64,6 +65,7 @@ pub trait VectarineWidget: WidgetToAny {
         batch: &RefCell<batchdraw::BatchDraw2d>,
         io_env: &RefCell<IoEnvState>,
         process_events: bool,
+        extra: mlua::Value,
     ) {
         let widget_size = self.size();
         let state = self.event_state_mut();
@@ -103,7 +105,7 @@ pub trait VectarineWidget: WidgetToAny {
         }
         let process_child_events = process_events && state.is_mouse_inside;
         let state = state.clone();
-        self.draw(lua, batch, io_env, state, process_child_events);
+        self.draw(lua, batch, io_env, state, process_child_events, extra);
     }
 }
 
@@ -222,8 +224,10 @@ pub fn setup_ui_api(
         registry.add_method_mut("draw", {
             let batch = batch.clone();
             let io_env = env_state.clone();
-            move |lua, widget, (): ()| {
-                widget.0.event_processing_draw(lua, &batch, &io_env, true);
+            move |lua, widget, extra: mlua::Value| {
+                widget
+                    .0
+                    .event_processing_draw(lua, &batch, &io_env, true, extra);
                 Ok(())
             }
         });

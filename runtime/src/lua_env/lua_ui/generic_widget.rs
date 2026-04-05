@@ -25,10 +25,14 @@ impl VectarineWidget for GenericWidget {
         _io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         _process_child_events: bool,
+        extra: mlua::Value,
     ) {
-        let _ = self.draw_fn.call::<(mlua::Table,)>((current_state
-            .to_lua(lua)
-            .expect("Convertion to table should never fail"),));
+        let _ = self.draw_fn.call::<()>((
+            current_state
+                .to_lua(lua)
+                .expect("Convertion to table should never fail"),
+            extra,
+        ));
     }
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
         Box::new(self.clone())

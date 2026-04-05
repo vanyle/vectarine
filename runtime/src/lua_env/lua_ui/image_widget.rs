@@ -22,12 +22,17 @@ pub struct ImageWidget {
 }
 
 impl ImageWidget {
-    fn get_tint(&self, lua: &mlua::Lua, current_state: &EventState) -> [f32; 4] {
+    fn get_tint(
+        &self,
+        lua: &mlua::Lua,
+        current_state: &EventState,
+        extra: &mlua::Value,
+    ) -> [f32; 4] {
         if let Some(ref tint_fn) = self.tint_fn {
             let event_table = current_state
                 .to_lua(lua)
                 .expect("Conversion to table should never fail");
-            if let Ok(color) = tint_fn.call::<Vec4>((event_table,)) {
+            if let Ok(color) = tint_fn.call::<Vec4>((event_table, extra.clone())) {
                 return color.0;
             }
         }
@@ -181,8 +186,9 @@ impl VectarineWidget for ImageWidget {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         _process_child_events: bool,
+        extra: mlua::Value,
     ) {
-        let color = self.get_tint(lua, &current_state);
+        let color = self.get_tint(lua, &current_state, &extra);
 
         let tex_resource = self.resources.get_by_id::<ImageResource>(self.image_id.0);
         let Ok(tex_resource) = tex_resource else {

@@ -51,6 +51,7 @@ impl VectarineWidget for Column {
         io_env: &RefCell<IoEnvState>,
         _current_state: EventState,
         process_child_events: bool,
+        extra: mlua::Value,
     ) {
         let container_width = self.size().x() - self.padding.left - self.padding.right;
         let mut y_offset = self.padding.bottom;
@@ -72,7 +73,7 @@ impl VectarineWidget for Column {
             ));
             child
                 .0
-                .event_processing_draw(lua, batch, io_env, process_child_events);
+                .event_processing_draw(lua, batch, io_env, process_child_events, extra.clone());
             batch.borrow_mut().affine_transform = current_transform;
             y_offset += child_size.y() + self.gap;
         }
