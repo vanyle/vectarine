@@ -86,4 +86,34 @@ function module.row(options: ContainerOptions, children: { Widget }): Widget
 	error("Implemented in native code")
 end
 
+--- Information passed to the scrollbar draw function.
+export type ScrollbarInfo = {
+	--- Scroll progress from 0 (top) to 1 (bottom).
+	scrollRatio: number,
+	--- Fraction of the content that is visible (0..1). Can be used to size the scrollbar thumb.
+	visibleRatio: number,
+	--- Width of the scrollable area's view.
+	viewWidth: number,
+	--- Height of the scrollable area's view.
+	viewHeight: number,
+	--- Total height of the content being scrolled.
+	contentHeight: number,
+}
+
+--- Create a scrollable area that shows a portion of its content and allows *vertical* scrolling to see the rest.
+--- If the content is smaller than the view size, the content is shown fully, centered and no scrollbar is shown.
+--- If the content is larger than the view size, mouse wheel scrolling is enabled.
+--- The optional `drawScrollbar` function is called each frame (only when scrolling is needed) to draw a custom scrollbar.
+--- It receives a `ScrollbarInfo` table with the current scroll state. Drawing coordinates are in the scrollable area's local space.
+---@param content Widget — the content widget to scroll
+---@param viewSize Vec.Vec2 — the visible area size
+---@param drawScrollbar ((info: ScrollbarInfo) -> number)? — optional custom scrollbar drawing function that receives the current scroll state and returns the desired scrollbar ratio.
+function module.scrollableArea(
+	content: Widget,
+	viewSize: Vec.Vec2,
+	drawScrollbar: ((info: ScrollbarInfo) -> number)?
+): Widget
+	error("Implemented in native code")
+end
+
 return module

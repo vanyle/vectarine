@@ -59,6 +59,10 @@ impl Vec2 {
         self.cmul(Self::new(cos_a, sin_a))
     }
     #[inline]
+    pub fn cross(self, other: Self) -> f32 {
+        self.0[0] * other.0[1] - self.0[1] * other.0[0]
+    }
+    #[inline]
     pub fn angle(self) -> f32 {
         self.0[1].atan2(self.0[0])
     }
