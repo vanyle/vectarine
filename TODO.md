@@ -4,7 +4,7 @@
   - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation
   - [x] Add an imgui style button which takes a draw function and returns events
   - [x] Add a vertical container and a horizontal container which take padding, gap
-  - [ ] Add a scrollable container as a widget
+  - [x] Add a scrollable container as a widget
   - [ ] Add a text input widget (to the best of your ability...)
   - [ ] Add a slider widget
   - [ ] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
