@@ -1,13 +1,7 @@
 # TO-DO
 
-- [ ] UI system
-  - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation
-  - [x] Add an imgui style button which takes a draw function and returns events
-  - [x] Add a vertical container and a horizontal container which take padding, gap
-  - [x] Add a scrollable container as a widget
-  - [x] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
-  - [ ] Add a text input widget (to the best of your ability...)
-  - [ ] Add a slider widget
+- [ ] Add a text input widget (to the best of your ability...)
+- [ ] Add a slider widget
 - [ ] Allow drawing a tile from a tileset
 - [ ] Allow creating a tileset from an image
 - [ ] Allow using tileset to create guis
@@ -64,6 +58,12 @@
 
 # Done
 
+- [x] UI system
+  - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation
+  - [x] Add an imgui style button which takes a draw function and returns events
+  - [x] Add a vertical container and a horizontal container which take padding, gap
+  - [x] Add a scrollable container as a widget
+  - [x] Add a text widget to make everything easy to compose with different alignement and wrapping properties. 
 - [x] Mouse wheel
 - [x] For fastlist, add a concept of a 'gap' value which is empty and is used to make filtering and slicing operations simpler. A gap is a Vec2 with NaNs. You can merge fastlist to discard the gaps.
 - [x] Modular system

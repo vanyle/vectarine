@@ -54,7 +54,7 @@ impl FontResourceId {
             };
             callback(font_resource);
         } else {
-            font_resource::use_default_font(&gl, callback);
+            font_resource::use_default_font(gl, callback);
         };
         Some(())
     }
