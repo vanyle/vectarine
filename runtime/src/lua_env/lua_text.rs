@@ -1,10 +1,13 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
-use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value};
+use vectarine_plugin_sdk::{
+    glow::Context,
+    mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value},
+};
 
 use crate::{
     game_resource::{
-        self, ResourceId, Status,
+        self, ResourceId, ResourceManager, Status,
         font_resource::{self, FontRenderingData, FontResource},
     },
     graphics::batchdraw,
@@ -27,8 +30,33 @@ impl FontResourceId {
         FontResourceId(None)
     }
 
-    pub fn id(&self) -> Option<ResourceId> {
-        self.0 // This is BAD, we should never need to get the id inside. We probably want a wrapper to access font_resource directly.
+    /// Access the underlying FontResource. Returns None if the resource is not yet loaded.
+    pub fn get_font_resource<F>(
+        &self,
+        gl: &Arc<Context>,
+        resources: &ResourceManager,
+        callback: F,
+    ) -> Option<()>
+    where
+        F: FnOnce(&mut FontRenderingData),
+    {
+        if let Some(font_id) = self.0 {
+            let font_resource = resources.get_by_id::<FontResource>(font_id);
+            let Ok(font_resource) = font_resource else {
+                unreachable!(
+                    "The font_id {} does not correspond to a valid FontResource.",
+                    font_id.get_id()
+                );
+            };
+            let mut font_resource = font_resource.font_rendering.borrow_mut();
+            let Some(font_resource) = font_resource.as_mut() else {
+                return None; // Doesn't break any invariant, font resources are allowed to not be loaded.
+            };
+            callback(font_resource);
+        } else {
+            font_resource::use_default_font(&gl, callback);
+        };
+        Some(())
     }
 }
 
