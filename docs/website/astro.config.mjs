@@ -56,6 +56,10 @@ export default defineConfig({
                             label: "Create a native plugin",
                             link: "/guides/create-a-plugin/",
                         },
+                        {
+                            label: "Making user interfaces",
+                            link: "/guides/making-uis/",
+                        }
                     ],
                 },
             ],

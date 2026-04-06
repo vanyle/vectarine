@@ -374,7 +374,19 @@ pub fn setup_ui_api(
         let gl = batch.borrow().drawing_target.gl().clone();
         let resources = _resources.clone();
         lua.create_function(
-            move |_lua, (size, options, get_text_fn): (Vec2, mlua::Table, mlua::Function)| {
+            move |lua, (size, options, get_text): (Vec2, mlua::Table, mlua::Value)| {
+                let get_text_fn = match get_text {
+                    mlua::Value::Function(f) => f,
+                    mlua::Value::Table(properties) => {
+                        lua.create_function(move |_, _: mlua::MultiValue| Ok(properties.clone()))?
+                    }
+                    other => {
+                        return Err(mlua::Error::external(format!(
+                            "text() expects a string or a function that returns a string, got {}",
+                            other.type_name()
+                        )));
+                    }
+                };
                 let align = match options.raw_get::<String>("align").ok().as_deref() {
                     Some("left") => Alignment::Start,
                     Some("right") => Alignment::End,
