@@ -25,6 +25,7 @@ impl VectarineWidget for GenericWidget {
         _io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         _process_child_events: bool,
+        _draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
         self.draw_fn.call::<()>((

@@ -134,6 +134,7 @@ impl VectarineWidget for ScrollableArea {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         process_child_events: bool,
+        draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
         let content_height = self.content_height();
@@ -189,6 +190,7 @@ impl VectarineWidget for ScrollableArea {
                     batch,
                     io_env,
                     process_child_events,
+                    draw_debug_outline,
                     extra,
                 );
                 if let Err(e) = result {

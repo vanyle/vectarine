@@ -51,6 +51,7 @@ pub trait VectarineWidget: WidgetToAny {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         process_child_events: bool,
+        draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()>;
 
@@ -68,6 +69,7 @@ pub trait VectarineWidget: WidgetToAny {
         batch: &RefCell<batchdraw::BatchDraw2d>,
         io_env: &RefCell<IoEnvState>,
         process_events: bool,
+        draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
         let widget_size = self.size();
@@ -106,9 +108,28 @@ pub trait VectarineWidget: WidgetToAny {
             // Events suppressed — clear all state
             *state = EventState::default();
         }
+
+        if draw_debug_outline && state.is_mouse_inside {
+            batch.borrow_mut().draw_rect(
+                -1.0,
+                -1.0,
+                widget_size.x(),
+                widget_size.y(),
+                [1.0, 0.0, 0.0, 0.2],
+            );
+        }
+
         let process_child_events = process_events && state.is_mouse_inside;
         let state = state.clone();
-        self.draw(lua, batch, io_env, state, process_child_events, extra)
+        self.draw(
+            lua,
+            batch,
+            io_env,
+            state,
+            process_child_events,
+            draw_debug_outline,
+            extra,
+        )
     }
 }
 
@@ -224,16 +245,44 @@ pub fn setup_ui_api(
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let ui_module = lua.create_table()?;
 
+    let is_debug_outline_enabled = Rc::new(RefCell::new(false));
+    ui_module.raw_set(
+        "withDebugOutline",
+        lua.create_function({
+            let is_debug_outline_enabled = is_debug_outline_enabled.clone();
+            move |_lua, (draw_fn, toggle): (mlua::Function, Option<bool>)| {
+                let previous_state;
+                {
+                    let mut debug_outline_ref = is_debug_outline_enabled.borrow_mut();
+                    previous_state = *debug_outline_ref;
+                    *debug_outline_ref = toggle.unwrap_or(true);
+                }
+                draw_fn.call::<()>(())?;
+                // New borrow to ensure we drop the mutable borrow before calling the draw_fn again as calls to withDebugOutline can be nested.
+                *is_debug_outline_enabled.borrow_mut() = previous_state;
+                Ok(())
+            }
+        })?,
+    )?;
+
     lua.register_userdata_type::<WidgetBox>(|registry| {
         registry.add_method("size", |_, widget, (): ()| Ok(widget.0.borrow().size()));
 
         registry.add_method("draw", {
             let batch = batch.clone();
             let io_env = env_state.clone();
+            let is_debug_outline_enabled = is_debug_outline_enabled.clone();
             move |lua, widget: &WidgetBox, (extra,): (mlua::Value,)| {
                 let result = widget.0.try_borrow_mut();
                 if let Ok(mut widget) = result {
-                    widget.event_processing_draw(lua, &batch, &io_env, true, extra)
+                    widget.event_processing_draw(
+                        lua,
+                        &batch,
+                        &io_env,
+                        true,
+                        *is_debug_outline_enabled.borrow(),
+                        extra,
+                    )
                 } else {
                     Err(mlua::Error::external(
                         "Recursive drawing of widgets is not allowed",
@@ -300,9 +349,9 @@ pub fn setup_ui_api(
         let gl = batch.borrow().drawing_target.gl().clone();
         lua.create_function(
             move |_lua,
-                  (content, view_size, scrollbar_draw_fn): (
-                WidgetBox,
+                  (view_size, content, scrollbar_draw_fn): (
                 Vec2,
+                WidgetBox,
                 Option<mlua::Function>,
             )| {
                 let widget = WidgetBox(RefCell::new(Box::new(ScrollableArea {

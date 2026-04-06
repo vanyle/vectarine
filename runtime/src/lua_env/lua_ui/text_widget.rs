@@ -32,6 +32,7 @@ impl VectarineWidget for TextWidget {
         io_env: &RefCell<IoEnvState>,
         current_state: EventState,
         _process_child_events: bool,
+        _draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
         let event_table = current_state

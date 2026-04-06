@@ -153,8 +153,8 @@ export type ScrollbarInfo = {
 ---@param viewSize Vec.Vec2 — the visible area size
 ---@param drawScrollbar ((info: ScrollbarInfo) -> number)? — optional custom scrollbar drawing function that receives the current scroll state and returns the desired scrollbar ratio.
 function module.scrollableArea<T>(
-	content: Widget<T>,
 	viewSize: Vec.Vec2,
+	content: Widget<T>,
 	drawScrollbar: ((info: ScrollbarInfo) -> number)?
 ): Widget<T>
 	error("Implemented in native code")
@@ -170,6 +170,13 @@ type StackOptions = {
 --- This can be used to show text with a background image for example, or to draw text twice for a shadow effect.
 ---@param options StackOptions — optional alignment of children within the stack
 function module.stack<T>(options: StackOptions, content: { Widget<T> }): Widget<T>
+	error("Implemented in native code")
+end
+
+--- Debugging function that makes all widgets drawn inside to show a debugging outline.
+--- This can be used to visualize the layout of widgets and understand what is taking up space on the screen.
+--- You can set toggle to true / false to quickly enable or disable the outline.
+function module.withDebugOutline<T>(drawFn: () -> (), toggle: boolean?): ()
 	error("Implemented in native code")
 end
 
