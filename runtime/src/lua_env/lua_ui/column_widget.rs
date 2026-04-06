@@ -51,6 +51,7 @@ impl VectarineWidget for Column {
         io_env: &RefCell<IoEnvState>,
         _current_state: EventState,
         process_child_events: bool,
+        draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
         let container_width = self.size().x() - self.padding.left - self.padding.right;
@@ -76,6 +77,7 @@ impl VectarineWidget for Column {
                 batch,
                 io_env,
                 process_child_events,
+                draw_debug_outline,
                 extra.clone(),
             );
             batch.borrow_mut().affine_transform = current_transform;

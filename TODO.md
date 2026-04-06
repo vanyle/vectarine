@@ -1,6 +1,5 @@
 # TO-DO
 
-- [ ] Allow drawing rectangles around all widgets for debugging (a bit like what flutter does)
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Add a slider widget
 - [ ] Allow drawing a tile from a tileset by name
@@ -58,6 +57,7 @@
 
 # Done
 
+- [x] Allow drawing rectangles around all widgets for debugging (a bit like what flutter does)
 - [x] UI system
   - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation
   - [x] Add an imgui style button which takes a draw function and returns events

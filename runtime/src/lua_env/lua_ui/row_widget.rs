@@ -51,6 +51,7 @@ impl VectarineWidget for Row {
         io_env: &RefCell<IoEnvState>,
         _current_state: EventState,
         process_child_events: bool,
+        draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
         let container_height = self.size().y() - self.padding.top - self.padding.bottom;
@@ -75,6 +76,7 @@ impl VectarineWidget for Row {
                 batch,
                 io_env,
                 process_child_events,
+                draw_debug_outline,
                 extra.clone(),
             );
             batch.borrow_mut().affine_transform = current_transform;
