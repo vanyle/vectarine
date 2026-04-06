@@ -231,10 +231,14 @@ pub fn setup_ui_api(
             let batch = batch.clone();
             let io_env = env_state.clone();
             move |lua, widget: &WidgetBox, (extra,): (mlua::Value,)| {
-                widget
-                    .0
-                    .borrow_mut()
-                    .event_processing_draw(lua, &batch, &io_env, true, extra)
+                let result = widget.0.try_borrow_mut();
+                if let Ok(mut widget) = result {
+                    widget.event_processing_draw(lua, &batch, &io_env, true, extra)
+                } else {
+                    Err(mlua::Error::external(
+                        "Recursive drawing of widgets is not allowed",
+                    ))
+                }
             }
         });
         registry.add_method("eventState", |lua, widget, (): ()| {
