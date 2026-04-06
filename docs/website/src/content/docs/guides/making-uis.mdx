@@ -391,6 +391,50 @@ end
 Vectarine has more widgets including a scrollable area and sliders, but they all work the same way: you pass options, children and
 you draw them.
 
+For example, here is how to create a slider widget and display its value:
+
+```luau
+local Graphics = require("@vectarine/graphics")
+local Ui = require("@vectarine/ui")
+local Vec = require("@vectarine/vec")
+local Vec4 = require("@vectarine/vec4")
+local V2 = Vec.V2
+
+function coloredSquareWidget(size: Vec.Vec2, color: Vec4.Vec4): Ui.Widget
+	return Ui.widget(size, function()
+		Graphics.drawRect(V2(-1, -1), size, color)
+	end)
+end
+
+local sliderValue = 0
+
+local slider = Ui.slider(V2(0.5, 0.1), {
+	min = 0,
+	max = 1,
+	initialValue = 0,
+	onChange = function(newValue)
+		sliderValue = newValue
+	end,
+}, coloredSquareWidget(V2(0.5, 0.1), Vec4.BLUE), coloredSquareWidget(V2(0.1, 0.1), Vec4.RED))
+
+-- Create a text widget
+local firstLine = Ui.text(V2(0.4, 0.1), {}, { text = "Hello, Vectarine!", color = Vec4.WHITE })
+-- Create another text widget. Instead of passing a string, you can also pass a function that returns a string
+-- This is useful to make the text reactive as we'll see layer.
+local secondLine = Ui.text(V2(0.4, 0.1), {}, function()
+	return { text = "Slider = " .. tostring(math.round(sliderValue * 100) / 100), color = Vec4.WHITE }
+end)
+
+local column = Ui.column({ padding = 0.1 }, { firstLine, secondLine, slider })
+
+function Update(deltaTime: number)
+	Graphics.clear(Vec4.BLACK)
+	column:draw()
+end
+```
+
+![The slider widget of vectarine](../../../assets/widget_slider.png)
+
 Remember that a widget = a *size* + a *draw function*.
 
 If you need to create a custom widget, use a generic widget and compose it with existing widgets or simply draw the custom graphics

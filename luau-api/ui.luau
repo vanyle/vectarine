@@ -173,6 +173,26 @@ function module.stack<T>(options: StackOptions, content: { Widget<T> }): Widget<
 	error("Implemented in native code")
 end
 
+type SliderOptions = {
+	-- The minimum value of the slider. Defaults to 0.
+	min: number?,
+	-- The maximum value of the slider. Defaults to 1.
+	max: number?,
+	-- The initial value of the slider. Defaults to min.
+	initialValue: number?,
+	-- The step size of the slider. If provided, the slider value will snap to multiples of this step size between min and max.
+	-- Defaults to 0.01
+	step: number?,
+	-- Callback function that is called when the slider value changes. The new value is passed as an argument.
+	onChange: (value: number) -> (),
+}
+
+--- Create a slider widget that allows the user to select a value by horizontally dragging a handle along a track.
+--- You need to pass a track and handle widget to provide the appearance of the slider.
+function module.slider<T>(size: Vec.Vec2, options: SliderOptions, track: Widget<T>, handle: Widget<T>): Widget<T>
+	error("Implemented in native code")
+end
+
 --- Debugging function that makes all widgets drawn inside to show a debugging outline.
 --- This can be used to visualize the layout of widgets and understand what is taking up space on the screen.
 --- You can set toggle to true / false to quickly enable or disable the outline.
