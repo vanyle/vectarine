@@ -1,7 +1,6 @@
 # TO-DO
 
 - [ ] Add a text input widget (to the best of your ability...)
-- [ ] Add a slider widget
 - [ ] Allow drawing a tile from a tileset by name
 - [ ] Allow creating a tileset from an image and adding / removing tiles from a tileset
 - [ ] Allow using tileset to create guis
@@ -57,6 +56,7 @@
 
 # Done
 
+- [x] Add a slider widget
 - [x] Allow drawing rectangles around all widgets for debugging (a bit like what flutter does)
 - [x] UI system
   - [x] Add transform, scale, pop, rotate and reset to graphics API which push transformation

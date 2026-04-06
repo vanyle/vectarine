@@ -3,6 +3,7 @@ mod generic_widget;
 mod image_widget;
 mod row_widget;
 mod scrollable_area_widget;
+mod slider_widget;
 mod stack_widget;
 mod text_widget;
 
@@ -22,6 +23,7 @@ use generic_widget::GenericWidget;
 use image_widget::ImageWidget;
 use row_widget::Row;
 use scrollable_area_widget::ScrollableArea;
+use slider_widget::Slider;
 use stack_widget::Stack;
 use text_widget::TextWidget;
 
@@ -459,6 +461,32 @@ pub fn setup_ui_api(
             })));
             Ok(stack)
         })?,
+    )?;
+
+    ui_module.raw_set(
+        "slider",
+        lua.create_function(
+            |_lua, (size, options, track, handle): (Vec2, mlua::Table, WidgetBox, WidgetBox)| {
+                let min = options.raw_get::<f32>("min").unwrap_or(0.0);
+                let max = options.raw_get::<f32>("max").unwrap_or(1.0);
+                let initial_value = options.raw_get::<f32>("initialValue").unwrap_or(min);
+                let step = options.raw_get::<f32>("step").unwrap_or(0.01);
+                let on_change = options.raw_get::<mlua::Function>("onChange").ok();
+                let widget = WidgetBox(RefCell::new(Box::new(Slider {
+                    size,
+                    min,
+                    max,
+                    value: initial_value.clamp(min, max),
+                    step,
+                    on_change,
+                    track,
+                    handle,
+                    event_state: EventState::default(),
+                    dragging: false,
+                })));
+                Ok(widget)
+            },
+        )?,
     )?;
 
     Ok(ui_module)
