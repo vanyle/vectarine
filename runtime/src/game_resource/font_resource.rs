@@ -27,6 +27,7 @@ pub struct FontRenderingData {
     pub font_cache: HashMap<char, CharacterInfo>,
     pub font_loader: fontdue::Font,
     pub font_size: f32,
+    max_baseline_height: f32, // The maximum distance from the bottom to the baseline.
 }
 
 pub struct FontResource {
@@ -53,12 +54,14 @@ where
     let font = fontdue::Font::from_bytes(font_bytes.as_ref(), fontdue::FontSettings::default())
         .expect("The default font file contains a valid font.");
     let chars: Vec<char> = CHARSET.chars().collect();
-    let (atlas_texture, font_cache) = initialize_cache_and_texture(gl, &font, chars);
+    let (atlas_texture, font_cache, max_baseline_height) =
+        initialize_cache_and_texture(gl, &font, chars);
     let mut font = FontRenderingData {
         font_atlas: atlas_texture,
         font_cache,
         font_loader: font,
         font_size: FONT_DETAIL,
+        max_baseline_height,
     };
     let result = f(&mut font);
     *default_font = Some(font);
@@ -88,7 +91,8 @@ impl Resource for FontResource {
 
         // Initialize the font atlas
         let chars: Vec<char> = CHARSET.chars().collect();
-        let (atlas_texture, font_cache) = initialize_cache_and_texture(&gl, &font, chars);
+        let (atlas_texture, font_cache, max_baseline_height) =
+            initialize_cache_and_texture(&gl, &font, chars);
 
         // Store the results
         self.font_rendering.replace(Some(FontRenderingData {
@@ -96,6 +100,7 @@ impl Resource for FontResource {
             font_cache,
             font_loader: font,
             font_size: FONT_DETAIL,
+            max_baseline_height,
         }));
         Status::Loaded
     }
@@ -138,17 +143,23 @@ impl Resource for FontResource {
 }
 
 impl FontRenderingData {
+    /// Measures how much space the given text would take if rendered with this font at the given font size.
+    /// The aspect_ratio of the window needs to be provided too. The result is linear in the font size.
+    /// Returns (width, height, max_ascent).
+    /// Width: The width of the text when rendered.
+    /// Height: The height of the text when rendered.
+    /// Max ascent: The maximum distance from the baseline to the top of any character in the text. This is useful for vertical alignment.
     pub fn measure_text(&self, text: &str, font_size: f32, aspect_ratio: f32) -> (f32, f32, f32) {
         let mut width = 0.0;
-        let mut height = 0.0;
         let mut max_ascent = 0.0;
+        let mut height = 0.0;
 
         for c in text.chars() {
             if let Some(char_info) = self.font_cache.get(&c) {
                 let bounds = char_info.metrics.bounds;
                 width += char_info.metrics.advance_width;
-                max_ascent = f32::max(max_ascent, bounds.height - bounds.ymin);
-                height = f32::max(height, bounds.height);
+                height = f32::max(height, bounds.height - bounds.ymin);
+                max_ascent = f32::max(max_ascent, bounds.height);
             }
         }
 
@@ -158,6 +169,10 @@ impl FontRenderingData {
             height * scale,
             max_ascent * scale,
         )
+    }
+
+    pub fn get_max_baseline_height(&self, font_size: f32) -> f32 {
+        self.max_baseline_height * (font_size / self.font_size)
     }
 
     /// Given some text, rebuild the atlas to include any missing character from the text.
@@ -178,12 +193,13 @@ impl FontRenderingData {
             return;
         }
 
-        let (atlas_texture, font_cache) =
+        let (atlas_texture, font_cache, max_baseline_height) =
             initialize_cache_and_texture(gl, &self.font_loader, chars_to_include);
 
         // Store the results
         self.font_atlas = atlas_texture;
         self.font_cache = font_cache;
+        self.max_baseline_height = max_baseline_height;
     }
 }
 
@@ -191,7 +207,7 @@ fn initialize_cache_and_texture(
     gl: &Arc<glow::Context>,
     font: &fontdue::Font,
     chars: impl IntoIterator<Item = char>,
-) -> (Arc<gltexture::Texture>, HashMap<char, CharacterInfo>) {
+) -> (Arc<gltexture::Texture>, HashMap<char, CharacterInfo>, f32) {
     let mut char_data: Vec<(char, fontdue::Metrics, Vec<u8>)> = Vec::new();
     let mut total_width = 0u32;
     let mut max_height = 0u32;
@@ -211,6 +227,7 @@ fn initialize_cache_and_texture(
 
     let mut atlas_data = vec![0u8; (atlas_width * atlas_height) as usize];
     let mut current_x = PADDING;
+    let mut max_baseline_height: f32 = 0.0;
 
     let mut font_cache = HashMap::new();
 
@@ -231,6 +248,8 @@ fn initialize_cache_and_texture(
         let atlas_width_norm = metrics.width as f32 / atlas_width as f32;
         let atlas_height_norm = metrics.height as f32 / atlas_height as f32;
 
+        max_baseline_height = max_baseline_height.max(-metrics.bounds.ymin);
+
         // Store character info with atlas coordinates
         let char_info = CharacterInfo {
             metrics,
@@ -248,5 +267,5 @@ fn initialize_cache_and_texture(
     let atlas_texture =
         gltexture::Texture::new_grayscale(gl, &atlas_data, atlas_width, atlas_height);
 
-    (atlas_texture, font_cache)
+    (atlas_texture, font_cache, max_baseline_height)
 }

@@ -53,32 +53,37 @@ impl VectarineWidget for TextWidget {
         let align = self.align;
         self.font_id
             .get_font_resource(&self.gl, &self.resources, |font_renderer| {
-                let font_size = widget_height;
-
+                // Because font_size is linear, we calculate everything based on a font size of 1.0
                 let (measured_width, _measured_height, _max_ascent) =
-                    font_renderer.measure_text(&text, font_size, aspect_ratio);
+                    font_renderer.measure_text(&text, 1.0, aspect_ratio);
 
-                let final_font_size = if measured_width > widget_width {
-                    font_size * (widget_width / measured_width)
-                } else {
-                    font_size
-                };
+                let font_size_that_fills_the_height = widget_height;
 
-                let (final_width, final_height, _) =
-                    font_renderer.measure_text(&text, final_font_size, aspect_ratio);
+                let final_font_size =
+                    if measured_width * font_size_that_fills_the_height > widget_width {
+                        widget_width / measured_width
+                    } else {
+                        font_size_that_fills_the_height
+                    };
+
+                let text_width = measured_width * final_font_size;
 
                 let x = -1.0
                     + match align {
                         Alignment::Start => 0.0,
-                        Alignment::Center => (widget_width - final_width) / 2.0,
-                        Alignment::End => widget_width - final_width,
+                        Alignment::Center => (widget_width - text_width) / 2.0,
+                        Alignment::End => widget_width - text_width,
                     };
-                let y = -1.0 + (widget_height - final_height) / 2.0;
 
                 font_renderer.enrich_atlas(&self.gl, &text);
-                batch
-                    .borrow_mut()
-                    .draw_text(x, y, &text, color, final_font_size, font_renderer);
+                batch.borrow_mut().draw_text(
+                    x,
+                    -1.0 + font_renderer.get_max_baseline_height(final_font_size),
+                    &text,
+                    color,
+                    final_font_size,
+                    font_renderer,
+                );
             });
         Ok(())
     }
