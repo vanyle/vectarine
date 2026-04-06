@@ -100,7 +100,7 @@ type TextOptions = {
 function module.text<T>(
 	size: Vec.Vec2,
 	options: TextOptions,
-	getText: (event: EventState, extra: T) -> { text: string, color: Vec4.Vec4 }
+	getText: { text: string, color: Vec4.Vec4 } | ((event: EventState, extra: T) -> { text: string, color: Vec4.Vec4 })
 ): Widget<T>
 	error("Implemented in native code")
 end
