@@ -12,11 +12,6 @@ local Vec4 = require("@vectarine/vec4")
 local print = Debug.print
 local fprint = Debug.fprint
 
--- You can load API's from plugins just like native vectarine APIs.
-local myPlugin = require("@vectarine/plugin_template")
-print(myPlugin)
-print(myPlugin.square(5))
-
 local V2 = Vec.V2
 
 --print("You can display messages in the console using the print function.")
