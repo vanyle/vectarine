@@ -329,6 +329,56 @@ impl BatchDraw2d {
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, BatchShader::Texture);
     }
 
+    /// List draw_image_part, but draws lots of images with the same texture and shader. Ideal for efficiently drawing many tiles.
+    /// All draw calls already are batched by default, but this reduces allocation a bit by reducing append that can grow the array and cause reallocations.
+    pub fn draw_images_part(
+        &mut self,
+        quads: &[Quad],
+        texture: &Arc<Texture>,
+        uv_pos_size: &[(Vec2, Vec2)],
+        color: [f32; 4],
+    ) {
+        let vertices: Box<[f32]> = quads
+            .iter()
+            .zip(uv_pos_size)
+            .flat_map(|(pos_size, (uv_pos, uv_size))| {
+                let uv_x1 = uv_pos.x();
+                let uv_y1 = uv_pos.y();
+                let uv_x2 = uv_pos.x() + uv_size.x();
+                let uv_y2 = uv_pos.y() + uv_size.y();
+
+                let p1 = self.affine_transform.apply(&pos_size.p1);
+                let p2 = self.affine_transform.apply(&pos_size.p2);
+                let p3 = self.affine_transform.apply(&pos_size.p3);
+                let p4 = self.affine_transform.apply(&pos_size.p4);
+
+                #[rustfmt::skip]
+                let vertices = [
+                    // positions       // tex coords
+                    p1.x(), p1.y(), uv_x1, uv_y2, // bottom left
+                    p2.x(), p2.y(), uv_x2, uv_y2, // bottom right
+                    p3.x(), p3.y(), uv_x2, uv_y1, // top right
+                    p4.x(), p4.y(), uv_x1, uv_y1, // top left
+                ];
+                vertices
+            })
+            .collect::<Box<[f32]>>();
+        let mut uniforms = Uniforms::new();
+
+        uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
+        uniforms.add(
+            "tint_color",
+            UniformValue::Vec4([color[0], color[1], color[2], color[3]]),
+        );
+
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &INDICES_FOR_QUAD,
+            uniforms,
+            BatchShader::Texture,
+        );
+    }
+
     pub fn draw_canvas(
         &mut self,
         pos: Vec2,

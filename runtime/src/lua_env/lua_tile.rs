@@ -5,7 +5,7 @@ use vectarine_plugin_sdk::mlua::{FromLua, IntoLua, UserDataMethods};
 use crate::{
     game_resource::{
         ResourceId, ResourceManager,
-        tile_resource::{TilemapResource, TilesetResource},
+        tile_resource::{TilemapResource, TilesetContent, TilesetResource},
     },
     lua_env::{
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
@@ -18,13 +18,13 @@ use crate::{
 pub struct TilesetResourceId(ResourceId);
 make_resource_lua_compatible!(TilesetResourceId);
 
-fn get_tileset_from_resource_id<F, R>(
+pub fn get_tileset_from_resource_id<F, R>(
     resources: &Rc<ResourceManager>,
     tileset_resource_id: TilesetResourceId,
     f: F,
 ) -> Option<R>
 where
-    F: FnOnce(&mut tiled::Tileset) -> Option<R>,
+    F: FnOnce(&mut TilesetContent) -> Option<R>,
 {
     let tileset_res = resources.get_by_id::<TilesetResource>(tileset_resource_id.0);
     let Ok(tileset_res) = tileset_res else {
@@ -34,8 +34,6 @@ where
     let tileset_content = tileset_content.as_mut()?;
     f(tileset_content)
 }
-
-// ...
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct TilemapResourceId(ResourceId);
@@ -56,12 +54,12 @@ pub fn setup_tile_api(
                 &resources,
                 *tileset_resource_id,
                 |tileset_content| {
-                    let image = tileset_content.image.as_ref()?;
-                    let tile = tileset_content.get_tile(tile_id)?;
-                    let columns = tileset_content.columns;
-                    let x = ((tile_id % columns) * tileset_content.tile_width) as f32
+                    let image = tileset_content.tiled.image.as_ref()?;
+                    let tile = tileset_content.tiled.get_tile(tile_id)?;
+                    let columns = tileset_content.tiled.columns;
+                    let x = ((tile_id % columns) * tileset_content.tiled.tile_width) as f32
                         / image.width as f32;
-                    let y = ((tile_id / columns) * tileset_content.tile_height) as f32
+                    let y = ((tile_id / columns) * tileset_content.tiled.tile_height) as f32
                         / image.height as f32;
 
                     let user_type = tile
@@ -93,8 +91,8 @@ pub fn setup_tile_api(
                 *tileset_resource_id,
                 |tileset_content| {
                     Some(Vec2::new(
-                        tileset_content.tile_width as f32,
-                        tileset_content.tile_height as f32,
+                        tileset_content.tiled.tile_width as f32,
+                        tileset_content.tiled.tile_height as f32,
                     ))
                 },
             ) {
@@ -109,9 +107,9 @@ pub fn setup_tile_api(
                 &resources,
                 *tileset_resource_id,
                 |tileset_content| {
-                    let image = tileset_content.image.as_ref()?;
-                    let tile_width = tileset_content.tile_width as f32;
-                    let tile_height = tileset_content.tile_height as f32;
+                    let image = tileset_content.tiled.image.as_ref()?;
+                    let tile_width = tileset_content.tiled.tile_width as f32;
+                    let tile_height = tileset_content.tiled.tile_height as f32;
                     Some(Vec2::new(
                         image.width as f32 / tile_width,
                         image.height as f32 / tile_height,
@@ -130,7 +128,7 @@ pub fn setup_tile_api(
                 *tileset_resource_id,
                 |tileset_content| {
                     let table = lua.create_table().ok()?;
-                    for tile in tileset_content.tiles() {
+                    for tile in tileset_content.tiled.tiles() {
                         table.push(tile.0).ok()?;
                     }
                     Some(table)

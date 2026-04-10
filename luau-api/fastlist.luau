@@ -313,4 +313,18 @@ function FastListImpl.drawImageParts(self: FastList, image: Image.ImageResource,
 	error("Implemented in native code")
 end
 
+--- Take the fastlist by groups of 3 Vec2 ( (tileId, empty), pos, size).
+--- For each of these groups, perform the same operation as `imageWithTileset:drawTile`
+--- This is a lot faster than calling `imageWithTileset:drawTile` in a loop
+function FastListImpl.drawTiles(self: FastList, imageWithTileset: Image.ImageWithTileset, color: Vec4.Vec4?)
+	error("Implemented in native code")
+end
+
+--- Take the fastlist by groups of 5 Vec2 ( (tileId, empty), p1, p2, p3, p4).
+--- For each of these groups, perform the same operation as `imageWithTileset:drawTileQuad`
+--- This is a lot faster than calling `imageWithTileset:drawTileQuad` in a loop
+function FastListImpl.drawTileQuads(self: FastList, imageWithTileset: Image.ImageWithTileset, color: Vec4.Vec4?)
+	error("Implemented in native code")
+end
+
 return module

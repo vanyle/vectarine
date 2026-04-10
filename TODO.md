@@ -1,9 +1,11 @@
 # TO-DO
 
 - [ ] Add a text input widget (to the best of your ability...)
-- [ ] Allow drawing a tile from a tileset by name
-- [ ] Allow creating a tileset from an image and adding / removing tiles from a tileset
 - [ ] Allow using tileset to create guis
+- [ ] Deprecate the screen API and replace it with a "screen" widget.
+  - The screen widget takes multiple widgets as input and displays one of them at a time
+  - You can call functions on the screen widget to pick what widget is displayed
+  - You have built-in transitions to animation switching between widgets (we can also make cooler transitions now thanks to withTransformation)
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object
@@ -18,8 +20,8 @@
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Data files
+- [ ] Test runner in windowless environments
 - [ ] Add a command palette to the editor
-- [ ] Screens (from the screen API) should be called layers. You should have a stack of layers.
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor
@@ -56,6 +58,7 @@
 
 # Done
 
+- [x] Allow drawing a tile from a tileset by name
 - [x] Add a slider widget
 - [x] Allow drawing rectangles around all widgets for debugging (a bit like what flutter does)
 - [x] UI system

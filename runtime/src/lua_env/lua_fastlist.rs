@@ -6,6 +6,7 @@ use vectarine_plugin_sdk::mlua;
 use vectarine_plugin_sdk::mlua::UserDataMethods;
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 
+use crate::lua_env::lua_image::{ImageWithTileset, draw_tile_part};
 use crate::{
     game_resource::{self, image_resource::ImageResource},
     graphics::{batchdraw, shape::Quad},
@@ -597,10 +598,7 @@ pub fn setup_fastlist_api(
             let batch = batch.clone();
             move |_, this: &FastList, ()| {
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks(4) {
-                    if chunk.len() < 4 {
-                        break;
-                    }
+                for chunk in this.data.chunks_exact(4) {
                     let pos = chunk[0];
                     let size = chunk[1];
                     let c1 = chunk[2];
@@ -616,10 +614,7 @@ pub fn setup_fastlist_api(
             let batch = batch.clone();
             move |_, this: &FastList, ()| {
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks(6) {
-                    if chunk.len() < 6 {
-                        break;
-                    }
+                for chunk in this.data.chunks_exact(6) {
                     let p1 = chunk[0];
                     let p2 = chunk[1];
                     let p3 = chunk[2];
@@ -647,10 +642,7 @@ pub fn setup_fastlist_api(
                 };
 
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks(2) {
-                    if chunk.len() < 2 {
-                        break;
-                    }
+                for chunk in this.data.chunks_exact(2) {
                     let pos = chunk[0];
                     let size = chunk[1];
                     batch.draw_image(
@@ -680,10 +672,7 @@ pub fn setup_fastlist_api(
                 };
 
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks(6) {
-                    if chunk.len() < 6 {
-                        break;
-                    }
+                for chunk in this.data.chunks_exact(6) {
                     let p1 = chunk[0];
                     let p2 = chunk[1];
                     let p3 = chunk[2];
@@ -693,6 +682,72 @@ pub fn setup_fastlist_api(
                     let quad = Quad { p1, p2, p3, p4 };
                     batch.draw_image_part(quad, tex, src_pos, src_size, color.unwrap_or(WHITE).0);
                 }
+                Ok(())
+            }
+        });
+
+        registry.add_method("drawTiles", {
+            let batch = batch.clone();
+            let resources = resources.clone();
+            move |_,
+                  this: &FastList,
+                  (image_with_tileset, color): (ImageWithTileset, Option<Vec4>)| {
+                let data: Vec<(f32, Quad)> = this
+                    .data
+                    .chunks_exact(3)
+                    .map(|chunk| {
+                        (
+                            chunk[0].x(),
+                            Quad {
+                                p1: chunk[1],
+                                p2: chunk[1] + chunk[2].with_y(0.0),
+                                p3: chunk[1] + chunk[2],
+                                p4: chunk[1] + chunk[2].with_x(0.0),
+                            },
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                draw_tile_part(
+                    &resources,
+                    &batch,
+                    &image_with_tileset,
+                    &data,
+                    |v, _| Some(*v as i64),
+                    color,
+                );
+                Ok(())
+            }
+        });
+
+        registry.add_method("drawTileQuads", {
+            let batch = batch.clone();
+            let resources = resources.clone();
+            move |_,
+                  this: &FastList,
+                  (image_with_tileset, color): (ImageWithTileset, Option<Vec4>)| {
+                let data: Vec<(f32, Quad)> = this
+                    .data
+                    .chunks_exact(5)
+                    .map(|chunk| {
+                        (
+                            chunk[0].x(),
+                            Quad {
+                                p1: chunk[1],
+                                p2: chunk[2],
+                                p3: chunk[3],
+                                p4: chunk[4],
+                            },
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                draw_tile_part(
+                    &resources,
+                    &batch,
+                    &image_with_tileset,
+                    &data,
+                    |v, _| Some(*v as i64),
+                    color,
+                );
                 Ok(())
             }
         });

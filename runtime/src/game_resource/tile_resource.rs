@@ -1,4 +1,4 @@
-use std::{cell::RefCell, path::Path, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc};
 
 use tiled::Loader;
 
@@ -7,8 +7,30 @@ use vectarine_plugin_sdk::glow;
 
 // MARK: Tileset
 
+pub struct TilesetContent {
+    pub tiled: tiled::Tileset,
+    pub type_mapping: HashMap<Vec<u8>, u32>,
+}
+
+impl TilesetContent {
+    pub fn from_tiled_tileset(tileset: tiled::Tileset) -> Self {
+        let type_mapping = tileset
+            .tiles()
+            .filter_map(|(id, tile)| {
+                tile.user_type
+                    .as_ref()
+                    .map(|t| (t.clone().into_bytes(), id))
+            })
+            .collect::<HashMap<_, _>>();
+        Self {
+            tiled: tileset,
+            type_mapping,
+        }
+    }
+}
+
 pub struct TilesetResource {
-    pub content: RefCell<Option<tiled::Tileset>>,
+    pub content: RefCell<Option<TilesetContent>>,
 }
 
 impl Resource for TilesetResource {
@@ -38,7 +60,8 @@ impl Resource for TilesetResource {
                         "No image tag inside the tileset. Only tileset based on an image are supported".to_string(),
                     )
                 } else {
-                    self.content.replace(Some(tileset));
+                    self.content
+                        .replace(Some(TilesetContent::from_tiled_tileset(tileset)));
                     Status::Loaded
                 }
             }
@@ -53,10 +76,10 @@ impl Resource for TilesetResource {
         ui.label("Tileset Resource");
         let content = self.content.borrow();
         if let Some(data) = &*content {
-            ui.label(format!("name: {}", data.name));
-            ui.label(format!("tile width: {}", data.tile_width));
-            ui.label(format!("tile height: {}", data.tile_height));
-            ui.label(format!("tile count: {}", data.tilecount));
+            ui.label(format!("name: {}", data.tiled.name));
+            ui.label(format!("tile width: {}", data.tiled.tile_width));
+            ui.label(format!("tile height: {}", data.tiled.tile_height));
+            ui.label(format!("tile count: {}", data.tiled.tilecount));
         } else {
             ui.label("<No content loaded>");
         }
