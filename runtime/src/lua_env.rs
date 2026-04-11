@@ -58,9 +58,18 @@ impl LuaEnvironment {
     ) -> Self {
         let batch = Rc::new(RefCell::new(batch));
         let lua_options = vectarine_plugin_sdk::mlua::LuaOptions::default();
+        // We add everything except:
+        // vector as we have our own vector type
+        // We'd prefer not to add buffer as we have fastlist which does the same, but for compatibility
+        // with existing Luau code, we keep it.
         let lua_libs = vectarine_plugin_sdk::mlua::StdLib::MATH
             | vectarine_plugin_sdk::mlua::StdLib::TABLE
-            | vectarine_plugin_sdk::mlua::StdLib::STRING;
+            | vectarine_plugin_sdk::mlua::StdLib::STRING
+            | vectarine_plugin_sdk::mlua::StdLib::COROUTINE
+            | vectarine_plugin_sdk::mlua::StdLib::UTF8
+            | vectarine_plugin_sdk::mlua::StdLib::BUFFER
+            | vectarine_plugin_sdk::mlua::StdLib::BIT
+            | vectarine_plugin_sdk::mlua::StdLib::DEBUG;
         let gl = batch.borrow().drawing_target.gl().clone();
 
         let lua = Rc::new(
