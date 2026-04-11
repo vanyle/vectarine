@@ -193,6 +193,32 @@ function module.slider<T>(size: Vec.Vec2, options: SliderOptions, track: Widget<
 	error("Implemented in native code")
 end
 
+export type TabAnimation<T> = {
+	duration: number, -- duration of the animation in seconds
+	animationType: "slideLeft"
+		| "slideRight"
+		| "slideUp"
+		| "slideDown"
+		| "toon"
+		| (T, Widget<T>, Widget<T>, number) -> (), -- custom animation function with T, old widget, new widget and progress (0 to 1)
+}
+
+export type TabWidget<T> = {
+	--- Switch to the tab with the given name. The content of the tab will be drawn and its events will be processed.
+	setActiveTab: (self: TabWidget<T>, tabName: string, animation: TabAnimation<T>?) -> (),
+	--- Get the currently active tab. During a transition, this will return the new tab name.
+	getActiveTab: (self: TabWidget<T>) -> string,
+} & Widget<T>
+
+--- Create a tab widget that allows switching between different child widgets using setActiveTab.
+--- The `tabs` widgets provides built-in animations when switching tabs.
+--- The tabs widget has the size of the widget it is currently displaying.
+--- The `tabs` parameter is a table mapping tab names to widgets.
+--- By default, widget corresponding to the "" tabName is shown. If there is no "" tab, another tab is picked in an unspecified manner.
+function module.tabs<T>(tabs: { [string]: Widget<T> }): TabWidget<T>
+	error("Implemented in native code")
+end
+
 --- Debugging function that makes all widgets drawn inside to show a debugging outline.
 --- This can be used to visualize the layout of widgets and understand what is taking up space on the screen.
 --- You can set toggle to true / false to quickly enable or disable the outline.

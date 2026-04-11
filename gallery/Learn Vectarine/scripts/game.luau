@@ -6,6 +6,7 @@ local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
 local Screen = require("@vectarine/screen")
+local Ui = require("@vectarine/ui")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
 
@@ -14,8 +15,8 @@ local fprint = Debug.fprint
 
 local V2 = Vec.V2
 
---print("You can display messages in the console using the print function.")
---print("You can enter commands in the console. Try typing 'zoom' and pressing Enter.")
+print("You can display messages in the console using the print function.")
+print("You can enter commands in the console. Try typing 'zoom' or 'shrink' and pressing Enter.")
 
 local textSize = 0.1
 
@@ -50,7 +51,8 @@ function drawTextCentered(
 end
 
 local timer = 0.0
-local screen0: Screen.Screen = Screen.newScreen("secret_screen", function()
+
+local secret_screen: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	timer += 2.0 / 60.0
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.2, 0.4, 1, 1))
 
@@ -71,7 +73,7 @@ local screen0: Screen.Screen = Screen.newScreen("secret_screen", function()
 	logoResource:drawPart(p1, p2, p3, p4, V2(0, 0), V2(1, 1))
 end)
 
-local screen1: Screen.Screen = Screen.newScreen("screen_1", function()
+local screen1: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.2, 0, 0, 1))
 	if logoResource:isReady() then
 		logoResource:draw(Coord.gl(V2(0, 0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
@@ -84,7 +86,8 @@ local screen1: Screen.Screen = Screen.newScreen("screen_1", function()
 		Vec4.createColor(0.7, 0.7, 0.7, 1)
 	)
 end)
-local screen2: Screen.Screen = Screen.newScreen("screen_2", function()
+
+local screen2: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.1, 0.4, 0.5, 1))
 	drawTextCentered("Open the console with Ctrl+1 or the tools menu", Coord.CENTER, textSize, Vec4.WHITE)
 	fontResource:drawText(
@@ -101,7 +104,7 @@ local screen2: Screen.Screen = Screen.newScreen("screen_2", function()
 	)
 end)
 
-local screen3: Screen.Screen = Screen.newScreen("screen_3", function()
+local screen3: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0, 0.2, 0, 1))
 	drawTextCentered("Open the resources with Ctrl+2 or the tools menu", Coord.CENTER, textSize, Vec4.WHITE)
 	drawTextCentered(
@@ -131,7 +134,7 @@ local screen3: Screen.Screen = Screen.newScreen("screen_3", function()
 	)
 end)
 
-local screen4: Screen.Screen = Screen.newScreen("screen_4", function()
+local screen4: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.7, 0.5, 0, 1))
 	drawTextCentered(
 		"Open the watcher with Ctrl+3 or the tools menu",
@@ -156,7 +159,7 @@ end)
 
 local circlePosX = 0.0
 local circleDirection = 1.0
-local screen5: Screen.Screen = Screen.newScreen("screen_5", function()
+local screen5: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.2, 0.5, 0.3, 1))
 	drawTextCentered(
 		"When you edit scripts, the project updates automatically!",
@@ -195,7 +198,7 @@ local screen5: Screen.Screen = Screen.newScreen("screen_5", function()
 	end
 end)
 
-local screen6: Screen.Screen = Screen.newScreen("screen_6", function()
+local screen6: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.2, 0.5, 0.3, 1))
 	drawTextCentered(
 		"When you edit any resource, it updates!",
@@ -214,7 +217,7 @@ local screen6: Screen.Screen = Screen.newScreen("screen_6", function()
 	end
 end)
 
-local screen7: Screen.Screen = Screen.newScreen("screen_7", function()
+local screen7: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	Graphics.drawRect(Coord.gl(V2(-1, -1)), Coord.glVec(V2(2, 2)), Vec4.createColor(0.2, 0.5, 0.3, 1))
 	drawTextCentered("You are ready to make games!", Coord.CENTER + Coord.glVec(V2(0, 0.2)), 0.10, Vec4.WHITE)
 	drawTextCentered(
@@ -237,11 +240,22 @@ local screen7: Screen.Screen = Screen.newScreen("screen_7", function()
 	)
 end)
 
-Screen.setCurrentScreen(screen1)
+local screens: { [string]: Ui.Widget<any> } = {
+	["0"] = secret_screen,
+	["1"] = screen1,
+	["2"] = screen2,
+	["3"] = screen3,
+	["4"] = screen4,
+	["5"] = screen5,
+	["6"] = screen6,
+	["7"] = screen7,
+}
+local screenCount = 8
 
-local screens: { Screen.Screen | nil } = { screen0, screen1, screen2, screen3, screen4, screen5, screen6, screen7 }
+local widget: Ui.TabWidget<any> = Ui.tabs(screens)
+widget:setActiveTab("1")
 
-local currentScreenIndex = Persist.onReload({ index = 2 }, "current_screen_index")
+local currentScreenIndex = Persist.onReload({ index = 1 }, "current_screen_index")
 local fullscreen = Persist.onReload({ is_on = false }, "fullscreen")
 local frame_times = Persist.onReload({}, "frame_times")
 local mouse_position = Persist.onReload({ x = 0.0, y = 0.0 }, "mouse_position")
@@ -269,34 +283,29 @@ function Update(time_delta: number)
 	mouse_position.x = Io.getMouse().x
 	mouse_position.y = Io.getMouse().y
 
-	local screen: Screen.Screen? = Screen.getCurrentScreen()
-	if screen == nil then
-		return
-	end
-
-	local target_screen = screens[currentScreenIndex.index]
-	if target_screen ~= nil and screen ~= target_screen then
-		Screen.setCurrentScreen(target_screen, {
+	local current_tab = widget:getActiveTab()
+	if current_tab ~= tostring(currentScreenIndex.index) then
+		widget:setActiveTab(tostring(currentScreenIndex.index), {
 			duration = 1.0,
-			transition_style = "toon",
+			animationType = "toon",
 		})
 	end
 
 	if Io.isKeyJustPressed("Space") then
 		textSize = 0.1
 		currentScreenIndex.index = currentScreenIndex.index + 1
-		if currentScreenIndex.index > #screens then
-			currentScreenIndex.index = 2
+		if currentScreenIndex.index > screenCount - 1 then
+			currentScreenIndex.index = 1
 		end
 	end
 
 	if Io.isKeyJustPressed("Backspace") then
 		textSize = 0.1
 		currentScreenIndex.index = currentScreenIndex.index - 1
-		if currentScreenIndex.index < 1 then
-			currentScreenIndex.index = 1
+		if currentScreenIndex.index < 0 then
+			currentScreenIndex.index = 0
 		end
 	end
 
-	Screen.drawCurrentScreen()
+	widget:draw()
 end

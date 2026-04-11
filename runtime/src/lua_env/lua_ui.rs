@@ -5,9 +5,10 @@ mod row_widget;
 mod scrollable_area_widget;
 mod slider_widget;
 mod stack_widget;
+mod tab_widget;
 mod text_widget;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::auto_impl_lua_clone;
 use crate::graphics::batchdraw;
@@ -25,6 +26,7 @@ use row_widget::Row;
 use scrollable_area_widget::ScrollableArea;
 use slider_widget::Slider;
 use stack_widget::Stack;
+use tab_widget::{TabTransitionStyle, TabWidget};
 use text_widget::TextWidget;
 
 // MARK: Widget Trait
@@ -298,6 +300,60 @@ pub fn setup_ui_api(
         registry.add_meta_method("__tostring", |_, widget, (): ()| {
             Ok(widget.0.borrow().debug_label())
         });
+
+        registry.add_method(
+            "setActiveTab",
+            |_lua, widget: &WidgetBox, (tab_name, animation): (String, Option<mlua::Table>)| {
+                let mut b = widget.0.borrow_mut();
+                let tw = b.as_any_mut().downcast_mut::<TabWidget>().ok_or_else(|| {
+                    mlua::Error::external("setActiveTab can only be called on a tab widget")
+                })?;
+                let transition = if let Some(anim_table) = animation {
+                    let duration: f32 = anim_table.raw_get("duration")?;
+                    let style_value: mlua::Value = anim_table.raw_get("animationType")?;
+                    let style = match style_value {
+                        mlua::Value::String(s) => {
+                            let style_str = s.to_str()?;
+                            if style_str == "slideLeft" {
+                                TabTransitionStyle::SlideLeft
+                            } else if style_str == "slideRight" {
+                                TabTransitionStyle::SlideRight
+                            } else if style_str == "slideUp" {
+                                TabTransitionStyle::SlideUp
+                            } else if style_str == "slideDown" {
+                                TabTransitionStyle::SlideDown
+                            } else if style_str == "toon" {
+                                TabTransitionStyle::Toon
+                            } else {
+                                return Err(mlua::Error::external(format!(
+                                    "Unknown animation type: {}",
+                                    style_str
+                                )));
+                            }
+                        }
+                        mlua::Value::Function(f) => TabTransitionStyle::Custom(f),
+                        _ => {
+                            return Err(mlua::Error::external(
+                                "animationType must be a string or function",
+                            ));
+                        }
+                    };
+                    Some((duration, style))
+                } else {
+                    None
+                };
+                tw.set_active_tab(tab_name, transition);
+                Ok(())
+            },
+        );
+
+        registry.add_method("getActiveTab", |_lua, widget: &WidgetBox, (): ()| {
+            let b = widget.0.borrow();
+            let tw = b.as_any().downcast_ref::<TabWidget>().ok_or_else(|| {
+                mlua::Error::external("getActiveTab can only be called on a tab widget")
+            })?;
+            Ok(tw.current_tab.clone())
+        });
     })?;
 
     ui_module.raw_set(
@@ -488,6 +544,32 @@ pub fn setup_ui_api(
             },
         )?,
     )?;
+
+    ui_module.raw_set("tabs", {
+        let resources = _resources.clone();
+        let gl = batch.borrow().drawing_target.gl().clone();
+        lua.create_function(move |_lua, (tabs_table,): (mlua::Table,)| {
+            let mut tabs = HashMap::new();
+            for pair in tabs_table.pairs::<String, WidgetBox>() {
+                let (key, value) = pair?;
+                tabs.insert(key, value);
+            }
+            let current_tab = if tabs.contains_key("") {
+                String::new()
+            } else {
+                tabs.keys().next().cloned().unwrap_or_default()
+            };
+            let widget = WidgetBox(RefCell::new(Box::new(TabWidget {
+                tabs,
+                current_tab,
+                transition: None,
+                gl: gl.clone(),
+                resources: resources.clone(),
+                event_state: EventState::default(),
+            })));
+            Ok(widget)
+        })?
+    })?;
 
     Ok(ui_module)
 }

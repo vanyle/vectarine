@@ -496,35 +496,49 @@ function Update()
 end
 ```
 
-### Organising rendering using Screens
+### Organising rendering using Widgets
 
-You can use `Screens` to organise your rendering code. A screen can be a menu, an inventory or the main game screen.
-Screens also help keep reloading snappy as Vectarine only needs to reload the code for the current screen.
+You can use `Widgets` to organise your rendering code. A widget can be a menu, an inventory or the main game screen.
+Widgets also help keep reloading snappy as Vectarine only needs to reload the code for the current screen.
 
 ```lua
-local my_screen: Screen.Screen = Screen.newScreen("name_of_the_screen", function()
-    -- Code for drawing the screen.
+local Ui = require("@vectarine/ui")
+local Io = require("@vectarine/io")
+local Vec = require("@vectarine/vec")
+
+local size_of_the_widget = Vec.V2(2, 2)
+local widget: Ui.Widget<any> = Ui.widget(size_of_the_widget, function()
+    -- Code for drawing the widget.
 end)
 
-Screen.setCurrentScreen(my_screen) -- Set the screen to be the current screen
+local another_widget: Ui.Widget<any> = Ui.widget(size_of_the_widget, function()
+    -- Code for drawing the other widget.
+end)
+
+-- List all the widgets you want to draw here
+local tabs: Ui.TabWidget<any> = Ui.tabs({ "default_tab_name" = widget, "another_tab_name" = another_widget })
+tabs:setActiveTab("default_tab_name")
 
 function Update(time_delta: number)
     
-    if true then
-        -- Depending on the player action, you can switch to another screen
-        Screen.setCurrentScreen(my_screen, {
-            -- You can add transition between screens if you want
+    if Io.isKeyJustPressed("Space") then
+        -- Depending on the player action, you can switch to another widget
+        tabs:setActiveTab("another_tab_name", {
+            -- You can add transition between screens if you want, or transition directly
+            -- You can also use a custom function as the animationType
             duration = 1.0,
-			transition_style = "slide_up",
+			animationType = "slide_up",
         })
     end
 
-    -- Don't forget to draw the current screen!
-    Screen.drawCurrentScreen()
+    -- Don't forget to draw tabs widget!
+    tabs:draw()
 end
 ```
 
-You can have one file per screen to split logic and rendering code.
+You can have one main widget per file to split logic and rendering code. There is
+more information about using widgets to make complex interfaces [in the dedicated page](./making-uis).
+
 
 ## 🌁 Using Shaders
 

@@ -1,37 +1,61 @@
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Screen = require("@vectarine/screen")
+local graphics = require("@vectarine/graphics")
+local io = require("@vectarine/io")
+local loader = require("@vectarine/loader")
+local persist = require("@vectarine/persist")
+local ui = require("@vectarine/ui")
 
-local _menuResource, menu = Loader.loadScript("scripts/menu.luau", require("menu.luau"))
-local _gameResource, game = Loader.loadScript("scripts/gameplay.luau", require("gameplay.luau"))
+local menuResource, menu = loader.loadScript("scripts/menu.luau", require("menu.luau"))
+local gameResource, game = loader.loadScript("scripts/gameplay.luau", require("gameplay.luau"))
 
-Io.setResizeable(true)
+io.setResizeable(true)
 
-function Load() end
+local isReady = persist.onReload({ isReady = false }, "isReady")
+local currentScreen: { currentScreen: string? } = persist.onReload({ currentScreen = "Menu" }, "currentScreen")
 
-function handleScreenTransitions(screen: Screen.Screen)
-	if screen:name() == "Menu" and Io.isKeyDown("Space") then
+function initRootWidget()
+	local rootWidget = ui.tabs({
+		["Menu"] = menu.widget,
+		["Game"] = game.widget,
+	})
+	rootWidget:setActiveTab("Menu")
+	return rootWidget
+end
+
+local rootWidget = initRootWidget()
+
+function Load()
+	rootWidget = initRootWidget()
+end
+
+function handleScreenTransitions()
+	if currentScreen.currentScreen == "Menu" and io.isKeyDown("Space") then
 		-- Transition to game screen with fade effect
-		Screen.setCurrentScreen(game.screen, {
+		rootWidget:setActiveTab("Game", {
 			duration = 1.0,
-			transition_style = "slide_up",
+			animationType = "slideUp",
 		})
-	elseif screen:name() == "Game" and Io.isKeyDown("Escape") then
+		currentScreen.currentScreen = "Game"
+	elseif currentScreen.currentScreen == "Game" and io.isKeyDown("Escape") then
 		-- Transition back to menu with slide effect
-		Screen.setCurrentScreen(menu.screen, {
+		rootWidget:setActiveTab("Menu", {
 			duration = 1.0,
-			transition_style = "toon",
+			animationType = "toon",
 		})
+		currentScreen.currentScreen = "Menu"
 	end
 end
 
 function Update(time_delta: number)
-	_G.deltaTime = time_delta
-
-	local screen = Screen.getCurrentScreen()
-	if screen ~= nil then
-		handleScreenTransitions(screen)
+	if graphics.drawSplashScreenIfNeeded({ menuResource, gameResource }) then
+		return
+	end
+	if not isReady.isReady then
+		Load()
+		isReady.isReady = true
 	end
 
-	Screen.drawCurrentScreen()
+	_G.deltaTime = time_delta
+
+	handleScreenTransitions()
+	rootWidget:draw()
 end

@@ -6,14 +6,13 @@ local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
-local Screen = require("@vectarine/screen")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
-local entity = require("./entity")
+local ui = require("@vectarine/ui")
 
 -- local logoResource = Loader.loadImage("textures/logo.png")
 local fontResource = Loader.loadFont("fonts/arial.ttf")
-local _, entity = Loader.loadScript("scripts/entity.luau", require("entity.luau"))
+local _, entity = Loader.loadScript("scripts/entity.luau", require("./entity.luau"))
 
 type Player = {
 	position: Vec.Vec2,
@@ -257,7 +256,7 @@ function renderGameplay()
 	end
 end
 
-module.screen = Screen.newScreen("Game", function()
+module.widget = ui.widget(Vec.V2(2, 2), function()
 	renderGameplay()
 end)
 
