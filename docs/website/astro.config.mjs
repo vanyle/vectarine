@@ -49,17 +49,21 @@ export default defineConfig({
                     label: "Guides",
                     items: [
                         {
+                            label: "Drawing images and levels with tilesets",
+                            link: "/guides/tilemaps-and-tilesets/",
+                        },
+                        {
                             label: "Optimizing your game",
                             link: "/guides/use-fastlists/",
                         },
                         {
+                            label: "Making user interfaces",
+                            link: "/guides/making-uis/",
+                        },
+                                                {
                             label: "Create a native plugin",
                             link: "/guides/create-a-plugin/",
                         },
-                        {
-                            label: "Making user interfaces",
-                            link: "/guides/making-uis/",
-                        }
                     ],
                 },
             ],
