@@ -3,10 +3,13 @@ local Coord = require("@vectarine/coord")
 local Debug = require("@vectarine/debug")
 local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
+local Graphics = require("@vectarine/graphics")
 local Image = require("@vectarine/image")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
+local Text = require("@vectarine/text")
+local Ui = require("@vectarine/ui")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
 
@@ -351,6 +354,17 @@ function render_sign_overlay()
 		local display_size = Coord.pxVec(V2(target_width_px, target_height_px), currentWindowSize)
 		local display_pos = Coord.px(V2(window_width / 2 - target_width_px / 2, padding), currentWindowSize)
 		current_asset:draw(display_pos, display_size)
+
+		if GameState.waiting_for_input and GameState.displayed_asset_name == "menu" then
+			local text = Ui.text(V2(1.5, 0.5), {}, function()
+				return { text = "Use WASD or the Arrow keys to move", color = Vec4.WHITE }
+			end)
+			local stack = Ui.stack({ alignX = "center", alignY = "center" }, {
+				text,
+				Ui.widget(Vec.V2(2, 2), function() end),
+			})
+			stack:draw({})
+		end
 	end
 end
 
@@ -771,16 +785,16 @@ end
 function manage_player(time_delta: number)
 	-- player movement
 	local dx, dy = 0, 0
-	if Io.isKeyDown("q") or Io.isKeyDown("left") then
+	if Io.isKeyDown("A") or Io.isKeyDown("Left") then
 		dx = dx - 1
 	end
-	if Io.isKeyDown("d") or Io.isKeyDown("right") then
+	if Io.isKeyDown("D") or Io.isKeyDown("Right") then
 		dx = dx + 1
 	end
-	if Io.isKeyDown("z") or Io.isKeyDown("up") then
+	if Io.isKeyDown("W") or Io.isKeyDown("Up") then
 		dy = dy - 1
 	end
-	if Io.isKeyDown("s") or Io.isKeyDown("down") then
+	if Io.isKeyDown("S") or Io.isKeyDown("Down") then
 		dy = dy + 1
 	end
 

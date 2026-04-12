@@ -62,6 +62,14 @@ pub fn setup_io_api(
         }
     });
 
+    add_fn_to_table(lua, &io_module, "getTextInput", {
+        let env_state = env_state.clone();
+        move |_, ()| {
+            let text_input = env_state.borrow().text_input.clone();
+            Ok(text_input)
+        }
+    });
+
     add_fn_to_table(lua, &io_module, "getMouse", {
         let env_state = env_state.clone();
         move |_, ()| {

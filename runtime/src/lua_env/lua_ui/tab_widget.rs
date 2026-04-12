@@ -213,6 +213,7 @@ impl VectarineWidget for TabWidget {
 
 impl TabWidget {
     /// Draws a wipe transition (slide) between old and new tabs using stencil masks.
+    #[allow(clippy::too_many_arguments)]
     fn draw_wipe(
         &mut self,
         lua: &mlua::Lua,
@@ -292,6 +293,7 @@ impl TabWidget {
     }
 
     /// Draws a circle-wipe (toon) transition: old tab fully visible, new tab revealed through expanding circle.
+    #[allow(clippy::too_many_arguments)]
     fn draw_toon(
         &mut self,
         lua: &mlua::Lua,

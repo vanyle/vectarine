@@ -232,6 +232,11 @@ function module.isKeyDown(keycode: Scancode): boolean
 	error("Implemented in native code")
 end
 
+--- Get the text inputed since the last frame. This should be used for typing text, while `IsKeyDown` should be used for checking if a key is pressed for actions.
+function module.getTextInput(): string
+	error("Implemented in native code")
+end
+
 --- Checks if a key was just pressed (this frame)
 --- The keys are independent from the keyboard layout, so "Q" is always the top-left letter, even on AZERTY layouts.
 --- This is the function you need to map button presses to actions, but not for typing text.

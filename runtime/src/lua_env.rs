@@ -37,6 +37,11 @@ pub const BUILT_IN_MODULES: &[&str] = &[
     "canvas", "ui",
 ];
 
+pub const DEPRECATED_MODULES: &[(&str, &str)] = &[(
+    "screen",
+    "The screen module is deprecated as is being replaced by the ui module. You can use Ui.tabs to have the same behavior. Read the guide about using Uis to organize rendering for more information.",
+)];
+
 pub struct LuaEnvironment {
     pub lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
     pub env_state: Rc<RefCell<IoEnvState>>,
@@ -170,6 +175,12 @@ impl LuaEnvironment {
             // - Can require @vectarine/* modules (like @vectarine/vec)
             // - Can require files in the script folder by their names.
             if module_name.starts_with("@vectarine/") {
+                for (deprecated_module, message) in DEPRECATED_MODULES {
+                    if module_name == format!("@vectarine/{}", deprecated_module) {
+                        print_warn(message.to_string());
+                    }
+                }
+
                 return original_require.call(module_name);
             }
             let module = lua.create_table()?;

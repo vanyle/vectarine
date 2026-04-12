@@ -34,6 +34,8 @@ pub struct IoEnvState {
     pub mouse_state: MouseState,
     pub keyboard_state: HashMap<Scancode, bool>,
     pub keyboard_just_pressed_state: HashMap<Scancode, bool>,
+    // The text typed since the last frame.
+    pub text_input: String,
 
     pub start_time: std::time::Instant,
 
@@ -58,6 +60,7 @@ impl Default for IoEnvState {
             mouse_state: MouseState::default(),
             keyboard_state: HashMap::new(),
             keyboard_just_pressed_state: HashMap::new(),
+            text_input: String::new(),
 
             start_time: std::time::Instant::now(),
 
@@ -83,6 +86,7 @@ pub fn process_events(
         env_state.mouse_state.is_right_just_pressed = false;
         env_state.mouse_state.wheel_x = 0.0;
         env_state.mouse_state.wheel_y = 0.0;
+        env_state.text_input.clear();
     }
 
     for event in events.iter() {
@@ -123,6 +127,10 @@ pub fn process_events(
             }
             Event::TextInput { text, .. } => {
                 let lua = &game.lua_env.lua;
+                {
+                    let mut env_state = game.lua_env.env_state.borrow_mut();
+                    env_state.text_input.push_str(text);
+                }
                 let _ = game.lua_env.default_events.text_input_event.trigger(
                     text.clone()
                         .into_lua(lua)

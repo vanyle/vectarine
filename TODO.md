@@ -2,10 +2,6 @@
 
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Allow using tileset to create guis
-- [ ] Deprecate the screen API and replace it with a "screen" widget.
-  - The screen widget takes multiple widgets as input and displays one of them at a time
-  - You can call functions on the screen widget to pick what widget is displayed
-  - You have built-in transitions to animation switching between widgets (we can also make cooler transitions now thanks to withTransformation)
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object
@@ -58,6 +54,10 @@
 
 # Done
 
+- [x] Deprecate the screen API and replace it with a "tabs" widget.
+  - The tabs widget takes multiple widgets as input and displays one of them at a time
+  - You can call functions on the tabs widget to pick what widget is displayed
+  - You have built-in transitions to animation switching between widgets (we can also make cooler transitions now thanks to withTransformation)
 - [x] Allow drawing a tile from a tileset by name
 - [x] Add a slider widget
 - [x] Allow drawing rectangles around all widgets for debugging (a bit like what flutter does)

@@ -25,8 +25,12 @@ pub fn reload_assets_if_needed(
         let EventKind::Modify(modify) = event.kind else {
             continue;
         };
-        // We only care about data modifications, not metadata.
-        if !matches!(modify, ModifyKind::Data(_) | ModifyKind::Any) {
+        // We only care about data modifications, not metadata, but on some platforms (like macOS) metadata modifications are triggered instead of data modifications
+        // so we also check for metadata and any modifications.
+        if !matches!(
+            modify,
+            ModifyKind::Data(_) | ModifyKind::Any | ModifyKind::Metadata(_)
+        ) {
             continue;
         }
 

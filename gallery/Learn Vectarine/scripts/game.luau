@@ -5,7 +5,6 @@ local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
-local Screen = require("@vectarine/screen")
 local Ui = require("@vectarine/ui")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
@@ -252,10 +251,11 @@ local screens: { [string]: Ui.Widget<any> } = {
 }
 local screenCount = 8
 
-local widget: Ui.TabWidget<any> = Ui.tabs(screens)
-widget:setActiveTab("1")
-
 local currentScreenIndex = Persist.onReload({ index = 1 }, "current_screen_index")
+
+local widget: Ui.TabWidget<any> = Ui.tabs(screens)
+widget:setActiveTab(tostring(currentScreenIndex.index))
+
 local fullscreen = Persist.onReload({ is_on = false }, "fullscreen")
 local frame_times = Persist.onReload({}, "frame_times")
 local mouse_position = Persist.onReload({ x = 0.0, y = 0.0 }, "mouse_position")

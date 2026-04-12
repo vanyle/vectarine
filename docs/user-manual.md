@@ -237,7 +237,7 @@ function Update()
     end
 
     -- If you need to perform something only once when a key is pressed, you can use `isKeyJustPressed`
-    if Io.isKeyJustPressed("r") then
+    if Io.isKeyJustPressed("R") then
         Debug.print("R was just pressed!")
     end
 
@@ -247,6 +247,12 @@ function Update()
     Debug.fprint(Io.getMouseState())
 end
 ```
+
+`isKeyJustPressed("W")` checks if the key with the *scancode* W was pressed, not the key with the **W** sticker.
+The key with the *W* scancode is the second letter of the top row. This means that if you are using letters for actions,
+users with different keyboards layouts (azerty, qwerty, etc.) will have the same experience, which is what you want.
+
+If you want to obtain the text typed by the user, use `Io.getTextInput()` instead which also takes uppercase into account. Alternatively, you can also use events to get this text.
 
 ## Events
 
@@ -498,9 +504,9 @@ function Update()
 end
 ```
 
-## Organising rendering using Widgets
+## Organizing rendering using Widgets
 
-You can use `Widgets` to organise your rendering code. A widget can be a menu, an inventory or the main game screen.
+You can use `Widgets` to organize your rendering code. A widget can be a menu, an inventory or the main game screen.
 Widgets also help keep reloading snappy as Vectarine only needs to reload the code for the current screen.
 
 ```lua

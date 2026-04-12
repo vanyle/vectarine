@@ -1,7 +1,6 @@
 local Coord = require("@vectarine/coord")
 local Graphics = require("@vectarine/graphics")
 local Loader = require("@vectarine/loader")
-local Screen = require("@vectarine/screen")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
 local ui = require("@vectarine/ui")

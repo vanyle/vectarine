@@ -48,14 +48,14 @@ end
 
 -- Check if any movement input is pressed
 function is_any_movement_input_pressed(): boolean
-	return Io.isKeyDown("q")
-		or Io.isKeyDown("d")
-		or Io.isKeyDown("z")
-		or Io.isKeyDown("s")
-		or Io.isKeyDown("left")
-		or Io.isKeyDown("right")
-		or Io.isKeyDown("up")
-		or Io.isKeyDown("down")
+	return Io.isKeyDown("A")
+		or Io.isKeyDown("D")
+		or Io.isKeyDown("W")
+		or Io.isKeyDown("S")
+		or Io.isKeyDown("Left")
+		or Io.isKeyDown("Right")
+		or Io.isKeyDown("Up")
+		or Io.isKeyDown("Down")
 end
 
 -- Export the module functions

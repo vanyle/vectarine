@@ -8,11 +8,13 @@ local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
+local entity = require("entity.luau")
 local ui = require("@vectarine/ui")
+local _ = nil
 
 -- local logoResource = Loader.loadImage("textures/logo.png")
 local fontResource = Loader.loadFont("fonts/arial.ttf")
-local _, entity = Loader.loadScript("scripts/entity.luau", require("./entity.luau"))
+_, entity = Loader.loadScript("scripts/entity.luau", require("./entity.luau"))
 
 type Player = {
 	position: Vec.Vec2,

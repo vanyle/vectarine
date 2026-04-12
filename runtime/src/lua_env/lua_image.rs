@@ -211,7 +211,9 @@ pub fn setup_image_api(
 
 fn lua_value_to_tile_id(lua_value: &mlua::Value, tileset: &TilesetContent) -> Option<i64> {
     match lua_value {
-        mlua::Value::Integer(id) => Some(*id),
+        // Lua integers are i32 or i64 depending on the platform, so we need this cast.
+        #[allow(clippy::unnecessary_cast)]
+        mlua::Value::Integer(id) => Some(*id as i64),
         mlua::Value::String(name) => {
             let id = tileset.type_mapping.get(&*name.as_bytes());
             let Some(id) = id else {
