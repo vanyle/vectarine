@@ -71,8 +71,6 @@ pub struct EditorState {
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 
     pub plugins: Vec<PluginEntry>,
-
-    pub game_error: Option<crate::luau::InfiniteLoopError>,
 }
 
 impl EditorState {
@@ -186,7 +184,6 @@ impl EditorState {
                 )
                 .expect("Failed to create debouncer"),
             )),
-            game_error: None,
             plugins: trustedplugin::load_plugins(),
         }
     }
