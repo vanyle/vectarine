@@ -19,9 +19,12 @@ pub fn setup_luau_hooks(lua: &mlua::Lua) -> (HookTiming, HookError) {
     let hook_error_for_hook = hook_error.clone();
 
     lua.set_interrupt(move |lua| {
+        // 700ms is a bit long, but sometimes, a frame can be long, like when going to fullscreen.
+        // It avoid this, we could have 2 thresholds, one for a specific frame (like 1sec), and one for the average of the last 3 frames (like 500ms).
+        // But for now, this works fine.
         if frame_start_time_for_hook
             .borrow()
-            .filter(|s| s.elapsed().as_millis() > 500)
+            .filter(|s| s.elapsed().as_millis() > 700)
             .is_some()
         {
             let mut file = "unknown".to_string();
@@ -48,7 +51,7 @@ pub fn setup_luau_hooks(lua: &mlua::Lua) -> (HookTiming, HookError) {
             *hook_error_for_hook.borrow_mut() = Some(InfiniteLoopError { file, line });
 
             return Err(mlua::Error::RuntimeError(
-                "Abnormally long frame (more than 500ms). Stopping execution.".into(),
+                "Abnormally long frame (more than 700ms). Stopping execution.".into(),
             ));
         }
         Ok(mlua::VmState::Continue)

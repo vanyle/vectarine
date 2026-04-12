@@ -151,7 +151,6 @@ fn gui_main() {
             );
 
             if script_reloaded {
-                editor_state.game_error = None;
                 *project.hook_error.borrow_mut() = None;
             }
 
@@ -164,7 +163,7 @@ fn gui_main() {
                 gl.viewport(0, 0, w as i32, h as i32);
             }
 
-            if let Some(ref error) = editor_state.game_error {
+            if let Some(ref error) = *project.hook_error.borrow() {
                 clear_window(&gl);
                 draw_error_in_game_window(
                     &gl,
@@ -176,10 +175,6 @@ fn gui_main() {
                 *project.hook_timing.borrow_mut() = Some(std::time::Instant::now());
                 game.main_loop(&game_window_events, &window, delta_duration, true);
                 *project.hook_timing.borrow_mut() = None;
-
-                if let Some(error) = project.hook_error.borrow_mut().take() {
-                    editor_state.game_error = Some(error);
-                }
             }
         } else {
             // Clear the screen when no project is loaded
