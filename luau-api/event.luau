@@ -1,5 +1,3 @@
-local Resource = require("@vectarine/resource")
-
 local module = {}
 
 local EventTypeImpl = {}

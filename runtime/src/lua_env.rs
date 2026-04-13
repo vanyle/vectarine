@@ -194,7 +194,7 @@ impl LuaEnvironment {
             Ok(module)
         });
 
-        // Add this to utils module?
+        // Add this to Debug module?
         add_global_fn(
             &lua,
             "toString",

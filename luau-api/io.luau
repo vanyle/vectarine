@@ -319,9 +319,4 @@ function module.setFullscreen(fullscreen: true | false | "fullscreen" | "windowe
 	error("Implemented in native code")
 end
 
---- Return a friendly string representation of arg
-function module.toString(arg: any): string
-	error("Implemented in native code")
-end
-
 return module
