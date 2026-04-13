@@ -172,6 +172,8 @@ def make_macos_release(
     # For macOS, we put the runtime also in the bundle. Only the docs are outside
     copy_runtime_files(root_path, os.path.join(root_path, f"engine-release/{friendly_name}.app"))
 
+    # Put the manual in the bundle so that it can be used when vectarine is installed in the Applications folder.
+    copy_from_root(root_path, "docs/user-manual.pdf", f"engine-release/{friendly_name}.app/vectarine-guide.pdf")
     copy_from_root(root_path, "assets/logo.png", f"engine-release/{friendly_name}.app/vectaIcon.png")
     copy_from_root(root_path, "assets/logo.png", f"engine-release/{friendly_name}.app/Default.png")
 
