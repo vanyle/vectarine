@@ -67,7 +67,7 @@ impl EventType {
             return Ok(());
         };
         for callback in subscription.subscriptions.values() {
-            let _ = callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone());
+            callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone())?;
         }
         Ok(())
     }
