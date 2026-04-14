@@ -55,7 +55,7 @@ pub fn setup_io_api(
             let table = lua.create_table()?;
             for (keycode, is_pressed) in env_state.borrow().keyboard_state.iter() {
                 if *is_pressed {
-                    let _ = table.set(table.raw_len() + 1, keycode.name());
+                    table.raw_set(table.raw_len() + 1, keycode.name())?;
                 }
             }
             Ok(table)
@@ -91,10 +91,10 @@ pub fn setup_io_api(
         move |lua, ()| {
             let mouse_state = env_state.borrow().mouse_state.clone();
             let table = lua.create_table()?;
-            let _ = table.set("isLeftDown", mouse_state.is_left_down);
-            let _ = table.set("isRightDown", mouse_state.is_right_down);
-            let _ = table.set("isLeftJustPressed", mouse_state.is_left_just_pressed);
-            let _ = table.set("isRightJustPressed", mouse_state.is_right_just_pressed);
+            table.raw_set("isLeftDown", mouse_state.is_left_down)?;
+            table.raw_set("isRightDown", mouse_state.is_right_down)?;
+            table.raw_set("isLeftJustPressed", mouse_state.is_left_just_pressed)?;
+            table.raw_set("isRightJustPressed", mouse_state.is_right_just_pressed)?;
             Ok(table)
         }
     });

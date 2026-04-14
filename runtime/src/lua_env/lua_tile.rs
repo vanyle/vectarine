@@ -176,7 +176,9 @@ pub fn setup_tile_api(
             )| {
                 let tileset_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
                 let Ok(tileset_res) = tileset_res else {
-                    return Ok(());
+                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                        "Tilemap resource not found".to_string(),
+                    ));
                 };
                 let mut tileset_content = tileset_res.content.borrow_mut();
                 let tileset_content = tileset_content.as_mut();
@@ -184,14 +186,17 @@ pub fn setup_tile_api(
                     .and_then(|content| content.layers().nth(layer as usize))
                     .and_then(|l| l.as_tile_layer());
                 let Some(layer) = layer else {
-                    return Ok(());
+                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                        "Tilemap layer not found".to_string(),
+                    ));
                 };
+
                 match layer {
                     tiled::TileLayer::Finite(finite_layer) => {
                         for x in lx..hx {
                             for y in ly..hy {
                                 if let Some(tile) = finite_layer.get_tile_data(x, y) {
-                                    let _ = access_fn.call::<()>((tile.id(), x, y));
+                                    access_fn.call::<()>((tile.id(), x, y))?;
                                 }
                             }
                         }
@@ -200,7 +205,7 @@ pub fn setup_tile_api(
                         for x in lx..hx {
                             for y in ly..hy {
                                 if let Some(tile) = infinite_layer.get_tile_data(x, y) {
-                                    let _ = access_fn.call::<()>((tile.id(), x, y));
+                                    access_fn.call::<()>((tile.id(), x, y))?;
                                 }
                             }
                         }

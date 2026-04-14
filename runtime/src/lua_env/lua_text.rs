@@ -181,9 +181,9 @@ pub fn setup_text_api(
                         Ok(result) => result,
                         Err(e) => return Err(e)
                     };
-                    let _ = result.set("width", 0.0);
-                    let _ = result.set("height", 0.0);
-                    let _ = result.set("bearingY", 0.0);
+                    result.raw_set("width", 0.0)?;
+                    result.raw_set("height", 0.0)?;
+                    result.raw_set("bearingY", 0.0)?;
                     Ok(result)
                 };
                 let make_measurement = |font_renderer: &mut FontRenderingData|{
@@ -195,9 +195,9 @@ pub fn setup_text_api(
                         Ok(result) => result,
                         Err(e) => return Err(e)
                     };
-                    let _ = result.set("width", width);
-                    let _ = result.set("height", height);
-                    let _ = result.set("bearingY", max_ascent);
+                    result.raw_set("width", width)?;
+                    result.raw_set("height", height)?;
+                    result.raw_set("bearingY", max_ascent)?;
                     Ok(result)
                 };
 
