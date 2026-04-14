@@ -8,6 +8,7 @@ pub struct LuaError {
     pub message: String,
     pub file: String,
     pub line: usize,
+    pub line_content: [String; 5], // 2 lines before, the line itself, and 2 lines after
     pub repeat_count: u32,
 }
 
@@ -39,6 +40,7 @@ pub enum ConsoleMessage {
     Warning(RepeatableMessage),
     Error(RepeatableMessage),
     LuaError(LuaError),
+    Reload,
 }
 
 impl std::fmt::Display for ConsoleMessage {
@@ -48,6 +50,7 @@ impl std::fmt::Display for ConsoleMessage {
             ConsoleMessage::Warning(warning) => write!(f, "{}", warning),
             ConsoleMessage::Error(error) => write!(f, "{}", error),
             ConsoleMessage::LuaError(err) => write!(f, "{}", err),
+            ConsoleMessage::Reload => write!(f, "Reloading..."),
         }
     }
 }
@@ -68,6 +71,7 @@ impl ConsoleMessage {
             ConsoleMessage::Warning(warning) => &warning.message,
             ConsoleMessage::Error(error) => &error.message,
             ConsoleMessage::LuaError(err) => &err.message,
+            ConsoleMessage::Reload => "Reloading...",
         }
     }
     pub fn repeat_count(&self) -> u32 {
@@ -76,6 +80,7 @@ impl ConsoleMessage {
             ConsoleMessage::Warning(warning) => warning.repeat_count,
             ConsoleMessage::Error(error) => error.repeat_count,
             ConsoleMessage::LuaError(err) => err.repeat_count,
+            ConsoleMessage::Reload => 1,
         }
     }
     pub fn is_same_kind(&self, other: &ConsoleMessage) -> bool {
@@ -85,6 +90,7 @@ impl ConsoleMessage {
                 | (ConsoleMessage::Warning(_), ConsoleMessage::Warning(_))
                 | (ConsoleMessage::Error(_), ConsoleMessage::Error(_))
                 | (ConsoleMessage::LuaError(_), ConsoleMessage::LuaError(_))
+                | (ConsoleMessage::Reload, ConsoleMessage::Reload)
         )
     }
 }
@@ -138,6 +144,10 @@ impl Logger {
                     return;
                 }
             }
+            (ConsoleMessage::Reload, ConsoleMessage::Reload) => {
+                // Never show a reload message twice in a row.
+                return;
+            }
             _ => {}
         }
         self.messages.push_back(message);
@@ -149,6 +159,7 @@ impl Logger {
             .iter()
             .enumerate()
             .rev()
+            .take_while(|m| !matches!(m.1, ConsoleMessage::Reload)) // skip reload messages when looking for a repeat
             .find(|m| m.1.is_same_kind(&message));
         if let Some((index, _)) = last_log {
             self.add_message_without_repeat(message, index);
@@ -174,11 +185,18 @@ impl Logger {
         self.log(ConsoleMessage::Error(RepeatableMessage::new(msg)));
         self.trim();
     }
-    fn log_lua_error(&mut self, message: String, file: String, line: usize) {
+    fn log_lua_error(
+        &mut self,
+        message: String,
+        file: String,
+        line: usize,
+        line_content: [String; 5],
+    ) {
         self.log(ConsoleMessage::LuaError(LuaError {
             message,
             file,
             line,
+            line_content,
             repeat_count: 1,
         }));
         self.trim();
@@ -224,15 +242,21 @@ pub fn print_info(msg: String) {
     }
 }
 
-pub fn print_lua_error(msg: String, file: String, line: usize) {
+pub fn print_lua_error(msg: String, file: String, line: usize, line_content: [String; 5]) {
     if let Ok(mut logger) = LOGGER.lock() {
-        logger.log_lua_error(msg, file, line);
+        logger.log_lua_error(msg, file, line, line_content);
     }
 }
 
 pub fn print_frame(msg: String) {
     if let Ok(mut logger) = LOGGER.lock() {
         logger.log_frame(msg);
+    }
+}
+
+pub fn print_reload() {
+    if let Ok(mut logger) = LOGGER.lock() {
+        logger.log(ConsoleMessage::Reload);
     }
 }
 
@@ -254,18 +278,6 @@ where
         return;
     };
     logger.messages.drain(..).for_each(f)
-}
-
-#[deprecated]
-/// Use consume_frame_logs instead
-pub fn get_frame_logs<F>(mut f: F)
-where
-    F: FnMut(&str),
-{
-    let Ok(logger) = LOGGER.lock() else {
-        return;
-    };
-    logger.frame_messages.iter().for_each(|m| f(m))
 }
 
 pub fn consume_frame_logs<F>(f: F)

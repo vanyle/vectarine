@@ -445,7 +445,31 @@ pub fn is_valid_data_type<T: 'static>(value: &vectarine_plugin_sdk::mlua::Value)
 }
 
 pub fn print_lua_error_from_error(error: &vectarine_plugin_sdk::mlua::Error) {
+    // We need access to the project path here, which is tough as we are inside the runtime...
+    // Maybe we can pass around a debug handle which is an empty struct is release, but with the project path inside the editor...
+    #[cfg(feature = "editor")]
+    pub fn extract_file_lines_from_error(file_path: &str, line: usize) -> [String; 5] {
+        println!("reading the file path: {}", file_path);
+        let content = std::fs::read_to_string(file_path);
+        let Ok(content) = content else {
+            return Default::default();
+        };
+        let mut content = content
+            .lines()
+            .skip(line - 3) // lines are 0-indexed, but error.line is 1-indexed
+            .take(5);
+
+        [(); 5].map(|_| content.next().unwrap_or_default().to_string())
+    }
+    #[cfg(not(feature = "editor"))]
+    pub fn extract_file_lines_from_error(_file_path: &str, _line: usize) -> [String; 5] {
+        println!("default");
+        Default::default()
+    }
+
     let error_msg = error.to_string();
     let (line, file_path) = get_line_and_file_of_error(error);
-    print_lua_error(error_msg, file_path, line);
+    println!("extract_file_lines");
+    let line_content = extract_file_lines_from_error(&file_path, line);
+    print_lua_error(error_msg, file_path, line, line_content);
 }
