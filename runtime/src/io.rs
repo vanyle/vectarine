@@ -1,4 +1,4 @@
-use crate::game::Game;
+use crate::{game::Game, lua_env::print_lua_error_from_error};
 use sdl2::{self, event::Event, keyboard::Scancode, video::FullscreenType};
 use std::collections::HashMap;
 use vectarine_plugin_sdk::mlua::IntoLua;
@@ -101,12 +101,15 @@ pub fn process_events(
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 env_state.keyboard_state.insert(*scancode, false);
 
-                let _ = game.lua_env.default_events.keyup_event.trigger(
+                let lua_res = game.lua_env.default_events.keyup_event.trigger(
                     scancode
                         .name()
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert Keycode to Lua"),
                 );
+                if let Err(err) = lua_res {
+                    print_lua_error_from_error(&err);
+                }
             }
             Event::KeyDown { scancode, .. } => {
                 let Some(scancode) = scancode else {
@@ -118,12 +121,15 @@ pub fn process_events(
                     .keyboard_just_pressed_state
                     .insert(*scancode, true);
 
-                let _ = game.lua_env.default_events.keydown_event.trigger(
+                let lua_res = game.lua_env.default_events.keydown_event.trigger(
                     scancode
                         .name()
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert Keycode to Lua"),
                 );
+                if let Err(err) = lua_res {
+                    print_lua_error_from_error(&err);
+                }
             }
             Event::TextInput { text, .. } => {
                 let lua = &game.lua_env.lua;
@@ -131,11 +137,14 @@ pub fn process_events(
                     let mut env_state = game.lua_env.env_state.borrow_mut();
                     env_state.text_input.push_str(text);
                 }
-                let _ = game.lua_env.default_events.text_input_event.trigger(
+                let lua_res = game.lua_env.default_events.text_input_event.trigger(
                     text.clone()
                         .into_lua(lua)
                         .expect("Failed to convert text to Lua"),
                 );
+                if let Err(err) = lua_res {
+                    print_lua_error_from_error(&err);
+                }
             }
             Event::MouseButtonUp { mouse_btn, .. } => {
                 {
@@ -148,11 +157,14 @@ pub fn process_events(
                     }
                 }
                 let mouse_button = mouse_button_to_str(*mouse_btn);
-                let _ = game.lua_env.default_events.mouse_up_event.trigger(
+                let lua_res = game.lua_env.default_events.mouse_up_event.trigger(
                     mouse_button
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert mouse button to Lua"),
                 );
+                if let Err(err) = lua_res {
+                    print_lua_error_from_error(&err);
+                }
             }
             Event::MouseButtonDown { mouse_btn, .. } => {
                 {
@@ -167,11 +179,14 @@ pub fn process_events(
                     }
                 }
                 let mouse_button = mouse_button_to_str(*mouse_btn);
-                let _ = game.lua_env.default_events.mouse_down_event.trigger(
+                let lua_res = game.lua_env.default_events.mouse_down_event.trigger(
                     mouse_button
                         .into_lua(&game.lua_env.lua)
                         .expect("Failed to convert mouse button to Lua"),
                 );
+                if let Err(err) = lua_res {
+                    print_lua_error_from_error(&err);
+                }
             }
             Event::MouseWheel {
                 timestamp: _,
