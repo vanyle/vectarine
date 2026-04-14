@@ -173,7 +173,7 @@ impl EditorState {
             editor_specific_window: editor_window,
             debouncer: Rc::new(RefCell::new(
                 new_debouncer(
-                    Duration::from_millis(10),
+                    Duration::from_millis(50),
                     None,
                     move |result: DebounceEventResult| match result {
                         Ok(events) => events.iter().for_each(|event| {

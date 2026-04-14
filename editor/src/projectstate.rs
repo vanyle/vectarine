@@ -10,6 +10,7 @@ use std::{
 
 use runtime::{
     anyhow::{self},
+    console,
     game::Game,
     glow,
     io::fs::ReadOnlyFileSystem,
@@ -43,6 +44,7 @@ pub struct ProjectState {
 
 impl ProjectState {
     pub fn reload(&mut self) {
+        console::print_reload();
         let gl = self.game.gl.clone();
         Game::from_project(
             &self.project_path,

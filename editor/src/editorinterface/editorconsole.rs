@@ -162,6 +162,9 @@ fn draw_console_content(
                     ConsoleMessage::LuaError(msg) => {
                         render_lua_error(ui, msg, project_path, prefered_text_editor)
                     }
+                    ConsoleMessage::Reload => {
+                        ui.separator();
+                    }
                 };
             });
         });
@@ -177,38 +180,26 @@ fn render_lua_error(
     project_path: Option<&Path>,
     prefered_text_editor: Option<TextEditor>,
 ) {
-    let Some(project_path) = project_path else {
-        render_error_fallback(ui, &error.message);
-        return;
-    };
-    let file = project_path.join(&error.file);
-    if !file.exists() {
-        render_error_fallback(ui, &error.message);
-        return;
-    }
-    let content = std::fs::read_to_string(&file);
-    let Ok(content) = content else {
-        render_error_fallback(ui, &error.message);
-        return;
-    };
-    content
-        .lines()
-        .skip(error.line - 3) // lines are 0-indexed, but error.line is 1-indexed
-        .take(5)
-        .enumerate()
-        .for_each(|(i, line)| {
-            let marker = if i == 2 { "=>" } else { "  " };
-            let label = ui
-                .label(
-                    RichText::new(format!("{}:{}{}", i + error.line - 2, marker, &line))
-                        .color(egui::Color32::WHITE)
-                        .monospace(),
-                )
-                .on_hover_cursor(egui::CursorIcon::PointingHand);
-            if label.clicked() {
+    error.line_content.iter().enumerate().for_each(|(i, line)| {
+        let marker = if i == 2 { "=>" } else { "  " };
+        let label = ui
+            .label(
+                RichText::new(format!("{}:{}{}", i + error.line - 2, marker, &line))
+                    .color(egui::Color32::WHITE)
+                    .monospace(),
+            )
+            .on_hover_cursor(egui::CursorIcon::PointingHand);
+        if label.clicked() {
+            let Some(project_path) = project_path else {
+                render_error_fallback(ui, &error.message);
+                return;
+            };
+            let file = project_path.join(&error.file);
+            if file.exists() {
                 open_file_at_line(&file, error.line, prefered_text_editor);
             }
-        });
+        }
+    });
 
     render_error_fallback(ui, &error.message);
 }
