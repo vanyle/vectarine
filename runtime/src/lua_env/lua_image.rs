@@ -261,13 +261,15 @@ pub fn draw_tile_part<T>(
                 let x = id % column_count * (tile_width + spacing) + margin;
                 let y = id / column_count * (tile_height + spacing) + margin;
 
+                // To make everything pixel perfect and avoid sampling from neighboring pixels, we need to add an epsilon to the uvs.
+                let epsilon = 0.2;
                 let src_pos = Vec2::new(
-                    x as f32 / tex.width() as f32,
-                    y as f32 / tex.height() as f32,
+                    (x as f32 + epsilon) / tex.width() as f32,
+                    (y as f32 + epsilon) / tex.height() as f32,
                 );
                 let src_size = Vec2::new(
-                    tile_width as f32 / tex.width() as f32,
-                    tile_height as f32 / tex.height() as f32,
+                    (tile_width as f32 - epsilon * 2.0) / tex.width() as f32,
+                    (tile_height as f32 - epsilon * 2.0) / tex.height() as f32,
                 );
                 Some((*quad, (src_pos, src_size)))
             })
