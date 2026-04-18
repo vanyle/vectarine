@@ -2,7 +2,10 @@ use std::{rc::Rc, sync::Arc};
 
 use notify_debouncer_full::{
     DebouncedEvent,
-    notify::{EventKind, event::ModifyKind},
+    notify::{
+        EventKind,
+        event::{MetadataKind, ModifyKind, RenameMode},
+    },
 };
 use runtime::glow;
 use runtime::{
@@ -25,11 +28,15 @@ pub fn reload_assets_if_needed(
         let EventKind::Modify(modify) = event.kind else {
             continue;
         };
+
         // We only care about data modifications, not metadata, but on some platforms (like macOS) metadata modifications are triggered instead of data modifications
         // so we also check for metadata and any modifications.
         if !matches!(
             modify,
-            ModifyKind::Data(_) | ModifyKind::Any | ModifyKind::Metadata(_)
+            ModifyKind::Data(_)
+                | ModifyKind::Any
+                | ModifyKind::Name(RenameMode::Any)
+                | ModifyKind::Metadata(MetadataKind::WriteTime)
         ) {
             continue;
         }
