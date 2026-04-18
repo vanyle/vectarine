@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 
+use regex::Regex;
 use runtime::console;
 use runtime::console::ConsoleMessage;
 use runtime::console::LuaError;
@@ -170,10 +171,6 @@ fn draw_console_content(
         });
 }
 
-fn render_error_fallback(ui: &mut egui::Ui, error: &str) {
-    ui.label(RichText::new(error).color(egui::Color32::RED).monospace());
-}
-
 fn render_lua_error(
     ui: &mut egui::Ui,
     error: &LuaError,
@@ -181,17 +178,20 @@ fn render_lua_error(
     prefered_text_editor: Option<TextEditor>,
 ) {
     error.line_content.iter().enumerate().for_each(|(i, line)| {
-        let marker = if i == 2 { "=>" } else { "  " };
+        let line_color = if i == 2 {
+            egui::Color32::RED
+        } else {
+            egui::Color32::WHITE
+        };
         let label = ui
             .label(
-                RichText::new(format!("{}:{}{}", i + error.line - 2, marker, &line))
-                    .color(egui::Color32::WHITE)
+                RichText::new(format!("{}: {}", i + error.line - 2, &line))
+                    .color(line_color)
                     .monospace(),
             )
             .on_hover_cursor(egui::CursorIcon::PointingHand);
         if label.clicked() {
             let Some(project_path) = project_path else {
-                render_error_fallback(ui, &error.message);
                 return;
             };
             let file = project_path.join(&error.file);
@@ -201,5 +201,81 @@ fn render_lua_error(
         }
     });
 
-    render_error_fallback(ui, &error.message);
+    if let Some(project_path) = project_path {
+        let mut lines = error.message.split('\n');
+        if let Some(first_line) = lines.next() {
+            render_error_line_with_links(ui, first_line, error, project_path, prefered_text_editor);
+        }
+        for line in lines {
+            ui.label(RichText::new(line).color(egui::Color32::RED).monospace());
+        }
+    } else {
+        ui.label(
+            RichText::new(&error.message)
+                .color(egui::Color32::RED)
+                .monospace(),
+        );
+    }
+}
+
+fn render_error_line_with_links(
+    ui: &mut egui::Ui,
+    line: &str,
+    error: &LuaError,
+    project_path: &Path,
+    prefered_text_editor: Option<TextEditor>,
+) {
+    // Render error message, with clickable file:line links on the first line
+    static FILE_LINE_RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"([^\s:]+\.\w+):(\d+)").expect("Regex to be valid"));
+
+    let matches: Vec<_> = FILE_LINE_RE.find_iter(line).collect();
+    if matches.is_empty() {
+        ui.label(RichText::new(line).color(egui::Color32::RED).monospace());
+        return;
+    }
+
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        let mut last_end = 0;
+        for m in &matches {
+            if m.start() > last_end {
+                ui.label(
+                    RichText::new(&line[last_end..m.start()])
+                        .color(egui::Color32::RED)
+                        .monospace(),
+                );
+            }
+
+            let link = ui
+                .label(
+                    RichText::new(m.as_str())
+                        .color(egui::Color32::LIGHT_BLUE)
+                        .monospace(),
+                )
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_text(format!("Open {}", m.as_str()));
+
+            if link.hovered() {
+                link.clone().highlight();
+            }
+
+            if link.clicked() {
+                let file = project_path.join(&error.file);
+                if file.exists() {
+                    open_file_at_line(&file, error.line, prefered_text_editor);
+                }
+            }
+
+            last_end = m.end();
+        }
+
+        if last_end < line.len() {
+            ui.label(
+                RichText::new(&line[last_end..])
+                    .color(egui::Color32::RED)
+                    .monospace(),
+            );
+        }
+    });
 }
