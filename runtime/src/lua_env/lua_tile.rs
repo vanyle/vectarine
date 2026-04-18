@@ -180,10 +180,11 @@ pub fn setup_tile_api(
                         "Tilemap resource not found".to_string(),
                     ));
                 };
-                let mut tileset_content = tileset_res.content.borrow_mut();
-                let tileset_content = tileset_content.as_mut();
+                let tileset_content = tileset_res.content.borrow();
+                let tileset_content = tileset_content.as_ref();
+
                 let layer = tileset_content
-                    .and_then(|content| content.layers().nth(layer as usize))
+                    .and_then(|content| content.get_layer(layer as usize))
                     .and_then(|l| l.as_tile_layer());
                 let Some(layer) = layer else {
                     return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
