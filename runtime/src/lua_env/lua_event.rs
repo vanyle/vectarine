@@ -63,15 +63,26 @@ impl EventType {
         &self,
         data: vectarine_plugin_sdk::mlua::Value,
     ) -> vectarine_plugin_sdk::mlua::Result<()> {
-        // Maybe no-op instead of panic?
-        let event_manager = self.1.upgrade().expect("Event manager should exist");
-        let event_manager = event_manager.borrow();
-        let subscription = event_manager.event_map.get(self.0);
-        let Some(subscription) = subscription else {
-            return Ok(());
-        };
-        for callback in subscription.subscriptions.values() {
-            callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone())?; // double borrow issue here.
+        let callbacks;
+        {
+            // Maybe no-op instead of panic?
+            let event_manager = self.1.upgrade().expect("Event manager should exist");
+            let event_manager = event_manager.borrow();
+            let subscription = event_manager.event_map.get(self.0);
+            let Some(subscription) = subscription else {
+                return Ok(());
+            };
+            // The .call can also borrow the event manager again, so we cannot keep it borrowed while calling the callbacks.
+            // To avoid this, we clone the callbacks. As all Lua values are behind reference counted pointers, this is not a problem.
+            callbacks = subscription
+                .subscriptions
+                .values()
+                .cloned()
+                .collect::<Vec<_>>();
+        }
+
+        for callback in callbacks {
+            callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone())?;
         }
         Ok(())
     }
