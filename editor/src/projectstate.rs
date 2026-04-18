@@ -57,7 +57,8 @@ impl ProjectState {
                 let Ok(game) = result else {
                     return;
                 };
-                let (hook_timing, hook_error) = luau::setup_luau_hooks(&game.lua_env.lua);
+                let (hook_timing, hook_error) =
+                    luau::setup_luau_hooks(&game.lua_env.lua_handle.lua);
                 self.hook_timing = hook_timing;
                 self.hook_error = hook_error;
                 self.game = game;
@@ -108,7 +109,8 @@ impl ProjectState {
                     )));
                     return;
                 };
-                let (hook_timing, hook_error) = luau::setup_luau_hooks(&game.lua_env.lua);
+                let (hook_timing, hook_error) =
+                    luau::setup_luau_hooks(&game.lua_env.lua_handle.lua);
                 let result = Self {
                     project_path: project_path.to_path_buf(),
                     project_info,

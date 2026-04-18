@@ -176,7 +176,7 @@ pub struct DefaultEvents {
 }
 
 pub fn setup_event_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
 ) -> vectarine_plugin_sdk::mlua::Result<(
     vectarine_plugin_sdk::mlua::Table,
     DefaultEvents,

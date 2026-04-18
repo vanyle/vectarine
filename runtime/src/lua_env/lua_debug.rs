@@ -6,7 +6,7 @@ use crate::lua_env::{add_fn_to_table, stringify_lua_value};
 use crate::metrics::MetricsHolder;
 
 pub fn setup_debug_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     metrics: &Rc<RefCell<MetricsHolder>>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let debug_module = lua.create_table()?;

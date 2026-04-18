@@ -6,6 +6,7 @@ use crate::{
         glprogram,
         gltypes::{DataLayout, GLTypes, UsageHint},
     },
+    lua_env::LuaHandle,
 };
 use vectarine_plugin_sdk::glow;
 
@@ -35,7 +36,7 @@ impl Resource for ShaderResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,

@@ -85,7 +85,7 @@ impl Game {
 
                 game.load(video, window);
                 game.plugin_env.init(PluginInterface {
-                    lua: &game.lua_env.lua,
+                    lua: &game.lua_env.lua_handle.lua,
                 });
 
                 // Load the starting script
@@ -93,7 +93,7 @@ impl Game {
                 game.lua_env.resources.load_resource::<ScriptResource>(
                     path,
                     gl,
-                    game.lua_env.lua.clone(),
+                    game.lua_env.lua_handle.clone(),
                     game.lua_env.default_events.resource_loaded_event.clone(),
                 );
 
@@ -264,24 +264,28 @@ impl Game {
         }
 
         let plugin_interface = PluginInterface {
-            lua: &self.lua_env.lua,
+            lua: &self.lua_env.lua_handle.lua,
         };
         self.plugin_env.pre_lua_hook(plugin_interface);
 
         // Update screen transitions
-        lua_screen::update_screen_transition(&self.lua_env.lua, delta_time.as_secs_f32());
+        lua_screen::update_screen_transition(
+            &self.lua_env.lua_handle.lua,
+            delta_time.as_secs_f32(),
+        );
 
         let start_of_lua_update = std::time::Instant::now();
         if self.was_main_script_executed {
             let update_fn = self
                 .lua_env
+                .lua_handle
                 .lua
                 .globals()
                 .get::<vectarine_plugin_sdk::mlua::Function>("Update");
             if let Ok(update_fn) = update_fn {
                 let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
                 if let Err(err) = err {
-                    print_lua_error_from_error(&err);
+                    print_lua_error_from_error(&self.lua_env.lua_handle, &err);
                 }
             } else {
                 print_warn("Update() function not found".to_string());
@@ -297,7 +301,7 @@ impl Game {
         }
 
         let plugin_interface = PluginInterface {
-            lua: &self.lua_env.lua,
+            lua: &self.lua_env.lua_handle.lua,
         };
         self.plugin_env.post_lua_hook(plugin_interface);
 
@@ -310,9 +314,10 @@ impl Game {
             .record_duration_metric(TOTAL_FRAME_TIME_METRIC_NAME, delta_time);
 
         // Default Counter metrics
-        self.metrics_holder
-            .borrow_mut()
-            .record_number_metric(LUA_HEAP_SIZE_METRIC_NAME, self.lua_env.lua.used_memory());
+        self.metrics_holder.borrow_mut().record_number_metric(
+            LUA_HEAP_SIZE_METRIC_NAME,
+            self.lua_env.lua_handle.lua.used_memory(),
+        );
         self.metrics_holder.borrow_mut().record_number_metric(
             DRAW_CALL_METRIC_NAME,
             self.lua_env
@@ -344,7 +349,7 @@ impl Game {
             self.lua_env.resources.clone().reload(
                 resource_id,
                 self.gl.clone(),
-                self.lua_env.lua.clone(),
+                self.lua_env.lua_handle.clone(),
                 self.lua_env.default_events.resource_loaded_event.clone(),
             );
         }

@@ -1,6 +1,9 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use crate::game_resource::{Resource, ResourceId, Status};
+use crate::{
+    game_resource::{Resource, ResourceId, Status},
+    lua_env::LuaHandle,
+};
 use vectarine_plugin_sdk::glow;
 
 /// The most simple resource, a .txt file with some content.
@@ -13,7 +16,7 @@ impl Resource for TextResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,

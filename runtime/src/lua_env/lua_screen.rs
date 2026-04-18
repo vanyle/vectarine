@@ -68,7 +68,7 @@ pub fn update_screen_transition(lua: &vectarine_plugin_sdk::mlua::Lua, delta_tim
 }
 
 pub fn setup_screen_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     _env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,

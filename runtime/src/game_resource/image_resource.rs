@@ -3,6 +3,7 @@ use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::gltexture::{self, ImageAntialiasing, Texture},
+    lua_env::LuaHandle,
 };
 use vectarine_plugin_sdk::glow;
 
@@ -20,7 +21,7 @@ impl Resource for ImageResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,

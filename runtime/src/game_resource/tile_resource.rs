@@ -2,7 +2,10 @@ use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc};
 
 use tiled::Loader;
 
-use crate::game_resource::{Resource, ResourceId, Status};
+use crate::{
+    game_resource::{Resource, ResourceId, Status},
+    lua_env::LuaHandle,
+};
 use vectarine_plugin_sdk::glow;
 
 // MARK: Tileset
@@ -38,7 +41,7 @@ impl Resource for TilesetResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
@@ -110,7 +113,7 @@ impl Resource for TilemapResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,

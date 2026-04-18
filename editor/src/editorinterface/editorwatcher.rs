@@ -46,7 +46,7 @@ fn draw_editor_watcher_window(ui: &mut egui::Ui, editor: &mut EditorState) {
         return;
     };
 
-    let globals = game.lua_env.lua.globals();
+    let globals = game.lua_env.lua_handle.lua.globals();
 
     thread_local! {
         static SEARCH_BOX_CONTENT: RefCell<String> = const { RefCell::new(String::new()) };
@@ -79,7 +79,13 @@ fn draw_editor_watcher_window(ui: &mut egui::Ui, editor: &mut EditorState) {
                     .show(ui, |ui| {
                         WATCHED_VARIABLES_NAMES.with_borrow_mut(|vars| {
                             for idx in 0..vars.len() {
-                                draw_watched_variable(ui, &game.lua_env.lua, &globals, vars, idx);
+                                draw_watched_variable(
+                                    ui,
+                                    &game.lua_env.lua_handle.lua,
+                                    &globals,
+                                    vars,
+                                    idx,
+                                );
                             }
                         });
                     });

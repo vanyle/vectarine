@@ -11,6 +11,7 @@ use vectarine_plugin_sdk::lazy_static::lazy_static;
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
     graphics::gltexture,
+    lua_env::LuaHandle,
 };
 
 #[derive(Debug, Clone)]
@@ -76,7 +77,7 @@ impl Resource for FontResource {
         self: Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         gl: Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,
