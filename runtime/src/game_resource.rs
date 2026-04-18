@@ -223,6 +223,25 @@ impl DependencyReporter {
         };
         resource_manager.declare_dependency::<T>(id, path);
     }
+
+    /// Obtain a ResourceId to a resource you depend on. If the resource is not loaded yet, return None.
+    /// This function runs in O(N) currently.
+    /// In that case, you should declare the dependency and return Unloaded to wait for the resource to be loaded.
+    pub fn obtain_resource_id(&self, path: &Path) -> Option<ResourceId> {
+        let resource_manager = self.resource_manager.upgrade()?;
+        resource_manager.get_id_by_path(path)
+    }
+
+    pub fn obtain_resource<T: Resource + 'static>(
+        &self,
+        resource_id: &ResourceId,
+    ) -> Result<Rc<T>, String> {
+        let resource_manager = self
+            .resource_manager
+            .upgrade()
+            .ok_or_else(|| "Failed to upgrade ResourceManager".to_string())?;
+        resource_manager.get_by_id::<T>(*resource_id)
+    }
 }
 
 impl ResourceManager {
