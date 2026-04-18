@@ -30,13 +30,17 @@ auto_impl_lua_clone!(SubscriptionId, SubscriptionId);
 
 #[derive(Default)]
 pub struct EventSubscriptions {
+    // A number that always increases and is used to give a unique id to each subscription for a given event type.
     next_id: usize,
     name: String,
     subscriptions: HashMap<SubscriptionId, vectarine_plugin_sdk::mlua::Function>,
 }
 
+// Global event manager that all events can access to find who subscribed to them, and to perform unsubscribed properly.
 struct EventManager {
+    // List of events, by name
     registered_events: HashMap<String, EventType>,
+    // List of subscriptions for each event, by event id (the usize in EventType)
     event_map: Vec<EventSubscriptions>,
 }
 
@@ -67,19 +71,24 @@ impl EventType {
             return Ok(());
         };
         for callback in subscription.subscriptions.values() {
-            callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone())?;
+            callback.call::<vectarine_plugin_sdk::mlua::Value>(data.clone())?; // double borrow issue here.
         }
         Ok(())
     }
-    pub fn clear_subscription(&self) {
+    pub fn clear_subscription(&self) -> vectarine_plugin_sdk::mlua::Result<()> {
         let event_manager = self.1.upgrade().expect("Event manager should exist");
-        let mut event_manager = event_manager.borrow_mut();
+        let Ok(mut event_manager) = event_manager.try_borrow_mut() else {
+            return Err(vectarine_plugin_sdk::mlua::Error::external(
+                "Failed to access the global event manager, this is a bug, please report it.",
+            ));
+        };
         let subscriptions = &mut event_manager.event_map;
         let entry = subscriptions
             .get_mut(self.0)
             .expect("Event type should exist");
         entry.subscriptions.clear();
         entry.next_id = 0;
+        Ok(())
     }
 }
 
@@ -88,7 +97,11 @@ pub fn create_event(
     _lua: &vectarine_plugin_sdk::mlua::Lua,
     name: String,
 ) -> vectarine_plugin_sdk::mlua::Result<EventType> {
-    let mut em = event_manager.0.borrow_mut();
+    let Ok(mut em) = event_manager.0.try_borrow_mut() else {
+        return Err(vectarine_plugin_sdk::mlua::Error::external(
+            "Failed to access the global event manager, this is a bug, please report it.",
+        ));
+    };
     {
         let entry = em.registered_events.get(&name).cloned();
         if let Some(event_type) = entry {
@@ -129,7 +142,7 @@ pub fn create_event_constant_in_event_module(
         lua.create_function({
             let event_type = event_type.clone();
             move |_lua, ()| {
-                event_type.clear_subscription();
+                event_type.clear_subscription()?;
                 Ok(event_type.clone())
             }
         })?,
@@ -179,15 +192,18 @@ pub fn setup_event_api(
         });
         registry.add_method("clear", {
             move |_lua, event_type, ()| {
-                event_type.clear_subscription();
-                Ok(())
+                event_type.clear_subscription()
             }
         });
         registry.add_method("on", {
             let event_manager = event_manager.clone();
             move |_lua, event_type, callback: vectarine_plugin_sdk::mlua::Function| {
                 // We can access the outside using lua.globals()
-                let mut subscriptions = event_manager.0.borrow_mut();
+                let Ok(mut subscriptions) = event_manager.0.try_borrow_mut() else {
+                    return Err(vectarine_plugin_sdk::mlua::Error::external(
+                        "Failed to access the global event manager, this is a bug, please report it.",
+                    ));
+                };
                 let subscriptions = &mut subscriptions.event_map;
                 let entry = subscriptions
                     .get_mut(event_type.0)
@@ -203,7 +219,12 @@ pub fn setup_event_api(
     lua.register_userdata_type::<SubscriptionId>(|registry| {
         let event_manager = event_manager.clone();
         registry.add_method("unsubscribe", move |_lua, id, ()| {
-            let mut em = event_manager.0.borrow_mut();
+            // What if they already unsubscribed?
+            let Ok(mut em) = event_manager.0.try_borrow_mut() else {
+                return Err(vectarine_plugin_sdk::mlua::Error::external(
+                    "Failed to access the global event manager, this is a bug, please report it.",
+                ));
+            };
             let subscriptions = &mut em.event_map;
             let entry = subscriptions
                 .get_mut(id.1.0)
