@@ -24,7 +24,10 @@ function newEvent<T>(name: string): Event<T>
 end
 module.newEvent = newEvent
 
---- Dispatch an event to the bus
+--- Dispatch an event to the bus which will call all the subscribers to that event type with the data passed.
+---
+--- If you unsubscribe from an event during the dispatch, all the subscribers that existed at the start of the dispatch will still be called.
+--- If you add subscribers to an event during the dispatch, they will not be called during that dispatch.
 --- @param event EventType<T> The type of event
 --- @param data T Additional event data
 function EventTypeImpl.dispatch<T>(event: Event<T>, data: T)
