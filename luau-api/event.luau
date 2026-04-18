@@ -1,3 +1,4 @@
+--- A module for creating and subscribing to events. See `newEvent` for how to create and use events.
 local module = {}
 
 local EventTypeImpl = {}
@@ -8,6 +9,14 @@ export type Event<T> = typeof(setmetatable({}, EventTypeImpl)) & { __data_type: 
 --- The name should be unique and is used for debugging purposes.
 --- If you try to create newEvent with the same name, you will get the same event type, but
 --- all its subscriptions will be cleared.
+--- You can pass any type when triggering the event and it will be forwarded to its subscribers. For example:
+--- ```
+--- local event: Event.Event<number> = Event.newEvent("hit")
+--- event:on(function(damage: number)
+---     print("Hit with damage: " .. damage)
+--- end)
+--- event:dispatch(10) -- This will print "Hit with damage: 10"
+--- ```
 --- @param name string The name of the event type
 --- @return EventType
 function newEvent<T>(name: string): Event<T>
@@ -29,7 +38,6 @@ SubIDImpl.__index = SubIDImpl
 export type SubID = typeof(setmetatable({}, SubIDImpl))
 
 --- Subscribe to an event type. When that event is triggered, the callback function will be called.
---- Note: When a file is reloaded, all subscriptions get auto-unsubscribed to prevent memory leaks.
 --- @param event EventType<T> The type of event
 --- @param callback fun(data: T) A function that will be called when the event is sent. The callback function will receive the event data as arguments.
 --- @return SubID A subscription ID that can be used to unsubscribe
