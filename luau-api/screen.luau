@@ -1,12 +1,5 @@
 --[[
-Screens are parts of your game like a menu, a pause, an inventory or the actual game
-You can transition between screens, and each screen can have its own logic and rendering.
-
-You can use screens to better organize your game code.
-
-If you do, you need to call 'drawCurrentScreen' in your Update function to draw the current screen.
-
-Tip: you can draw a screen on a canvas for debugging if needed.
+Screens are deprecated, use the new ui module instead.
 ]]
 --
 local module = {}
@@ -16,6 +9,7 @@ ScreenImpl.__index = ScreenImpl
 export type Screen = typeof(setmetatable({}, ScreenImpl))
 
 --- Makes a new screen with the given name.
+@deprecated
 function module.newScreen(screen_name: string, draw_function: () -> ()): Screen
 	error("Implemented in native code")
 end
@@ -36,22 +30,27 @@ export type ScreenTransition = {
 
 --- Sets the current screen, with an optional transition.
 --- If this is the first screen, it will be set immediately.
+@deprecated
 function module.setCurrentScreen(screen: Screen, transition: ScreenTransition?)
 	error("Implemented in native code")
 end
 
+@deprecated
 function module.getCurrentScreen(): Screen?
 	error("Implemented in native code")
 end
 
+@deprecated
 function module.drawCurrentScreen()
 	error("Implemented in native code")
 end
 
+@deprecated
 function ScreenImpl.name(self: Screen): string
 	error("Implemented in native code")
 end
 
+@deprecated
 function ScreenImpl.draw(self: Screen)
 	error("Implemented in native code")
 end
