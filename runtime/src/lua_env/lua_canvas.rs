@@ -49,7 +49,7 @@ impl RcFramebuffer {
 }
 
 pub fn setup_canvas_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,

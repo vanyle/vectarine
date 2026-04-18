@@ -84,7 +84,7 @@ impl Default for Camera2 {
 }
 
 pub fn setup_camera_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     lua.register_userdata_type::<Camera2>(|registry| {

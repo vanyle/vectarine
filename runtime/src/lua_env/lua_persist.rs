@@ -1,4 +1,4 @@
-use std::{fs::OpenOptions, io::Write, path::PathBuf, rc::Rc};
+use std::{fs::OpenOptions, io::Write, path::PathBuf};
 
 use serde_json;
 use vectarine_plugin_sdk::mlua::LuaSerdeExt;
@@ -75,7 +75,7 @@ fn load_data_from_kv_store(key: String) -> Option<Box<[u8]>> {
 }
 
 pub fn setup_persist_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let persist_module = lua.create_table()?;
 

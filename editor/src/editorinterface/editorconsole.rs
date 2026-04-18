@@ -92,7 +92,7 @@ pub fn try_send_command_to_game(game: &Option<&mut Game>, command: &str) {
         return;
     };
     let _ = game.lua_env.default_events.console_command_event.trigger(
-        to_lua(game.lua_env.lua.as_ref(), command).expect("Failed to convert command to lua"),
+        to_lua(&game.lua_env.lua_handle.lua, command).expect("Failed to convert command to lua"),
     );
 }
 

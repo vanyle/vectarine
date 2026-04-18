@@ -156,7 +156,7 @@ struct ExtraObjectData {
 auto_impl_lua_take!(Object2, Object2);
 
 pub fn setup_physics_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let physics_module = lua.create_table()?;
 

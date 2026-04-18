@@ -13,7 +13,7 @@ use vectarine_plugin_sdk::serde::{Deserialize, Serialize};
 use crate::{
     game_resource::script_resource::ScriptResource,
     io::{dummyfs::DummyFileSystem, fs::ReadOnlyFileSystem},
-    lua_env::lua_event::EventType,
+    lua_env::{LuaHandle, lua_event::EventType},
 };
 
 pub mod audio_resource;
@@ -80,7 +80,7 @@ impl ResourceHolder {
         assigned_id: ResourceId,
         resource_manager: Rc<ResourceManager>,
         gl: Arc<glow::Context>,
-        lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
+        lua: Rc<LuaHandle>,
         resource_event: EventType,
     ) {
         if self.is_loading() {
@@ -125,7 +125,7 @@ impl ResourceHolder {
                 let _ = resource_event.trigger(
                     assigned_id
                         .get_id()
-                        .into_lua(&lua)
+                        .into_lua(&lua.lua)
                         .expect("Failed to convert usize to Lua"),
                 );
             }),
@@ -319,7 +319,7 @@ impl ResourceManager {
         self: &Rc<Self>,
         path: &Path,
         gl: Arc<glow::Context>,
-        lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
+        lua: Rc<LuaHandle>,
         loaded_event: EventType,
     ) -> ResourceId {
         if let Some(id) = self.get_id_by_path(path) {
@@ -355,7 +355,7 @@ impl ResourceManager {
         self: &Rc<Self>,
         id: ResourceId,
         gl: Arc<glow::Context>,
-        lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
+        lua: Rc<LuaHandle>,
         loaded_event: EventType,
     ) {
         let resource = self.get_holder_by_id(id);
@@ -470,7 +470,7 @@ pub trait Resource: ResourceToAny {
         self: Rc<Self>,
         assigned_id: ResourceId,
         dependency_reporter: &DependencyReporter,
-        lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        lua: &Rc<LuaHandle>,
         gl: Arc<glow::Context>,
         path: &Path,
         data: Box<[u8]>,

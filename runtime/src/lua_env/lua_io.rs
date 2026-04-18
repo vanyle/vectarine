@@ -12,7 +12,7 @@ use crate::{
 /// For example, the keyboard, the mouse, the window, etc...
 /// This is called the IO API.
 pub fn setup_io_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let io_module = lua.create_table()?;

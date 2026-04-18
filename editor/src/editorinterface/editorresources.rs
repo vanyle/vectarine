@@ -161,7 +161,7 @@ fn draw_resource_table(
                             resources.reload(
                                 id,
                                 gl,
-                                game.lua_env.lua.clone(),
+                                game.lua_env.lua_handle.clone(),
                                 game.lua_env.default_events.resource_loaded_event.clone(),
                             );
                         }

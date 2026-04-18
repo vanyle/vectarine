@@ -5,6 +5,7 @@ use symphonia::core::io::MediaSourceStream;
 
 use crate::{
     game_resource::{Resource, ResourceId, Status},
+    lua_env::LuaHandle,
     sound::{self, ChannelId},
 };
 use vectarine_plugin_sdk::glow;
@@ -43,7 +44,7 @@ impl Resource for AudioResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        _lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        _lua: &Rc<LuaHandle>,
         _gl: std::sync::Arc<glow::Context>,
         _path: &Path,
         data: Box<[u8]>,

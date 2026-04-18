@@ -242,7 +242,7 @@ fn parse_alignment_from_table(table: &mlua::Table) -> Alignment {
 }
 
 pub fn setup_ui_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     batch: &Rc<RefCell<batchdraw::BatchDraw2d>>,
     env_state: &Rc<RefCell<io::IoEnvState>>,
     _resources: &Rc<game_resource::ResourceManager>,

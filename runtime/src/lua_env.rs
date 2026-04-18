@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::path::PathBuf;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
 use vectarine_plugin_sdk::mlua::ObjectLike;
@@ -42,8 +43,13 @@ pub const DEPRECATED_MODULES: &[(&str, &str)] = &[(
     "The screen module is deprecated as is being replaced by the ui module. You can use Ui.tabs to have the same behavior. Read the guide about using Uis to organize rendering for more information.",
 )];
 
+pub struct LuaHandle {
+    pub lua: vectarine_plugin_sdk::mlua::Lua,
+    pub project_path: PathBuf,
+}
+
 pub struct LuaEnvironment {
-    pub lua: Rc<vectarine_plugin_sdk::mlua::Lua>,
+    pub lua_handle: Rc<LuaHandle>,
     pub env_state: Rc<RefCell<IoEnvState>>,
 
     pub batch: Rc<RefCell<BatchDraw2d>>,
@@ -77,126 +83,140 @@ impl LuaEnvironment {
             | vectarine_plugin_sdk::mlua::StdLib::DEBUG;
         let gl = batch.borrow().drawing_target.gl().clone();
 
-        let lua = Rc::new(
-            vectarine_plugin_sdk::mlua::Lua::new_with(lua_libs, lua_options)
-                .expect("Failed to create Lua"),
-        );
+        let lua = vectarine_plugin_sdk::mlua::Lua::new_with(lua_libs, lua_options)
+            .expect("Failed to create Lua");
         lua.set_compiler(
             vectarine_plugin_sdk::mlua::Compiler::new()
                 .set_optimization_level(2)
                 .set_type_info_level(1),
         );
         let _ = lua.sandbox(false);
+        let lua_handle = Rc::new(LuaHandle {
+            lua,
+            project_path: resources.get_resource_path(),
+        });
 
         // We create a table used to store rust state that is tied to the lua environment, for internal use.
         // An example of such state is the current screen object (from the screen.luau module)
         // This screen can only be set/get from lua using function and direct variable access is not allowed, but it needs to be saved somewhere.
         // Hence an internal table.
-        lua.globals()
-            .raw_set(UNSAFE_INTERNALS_KEY, lua.create_table().unwrap())
+        lua_handle
+            .lua
+            .globals()
+            .raw_set(UNSAFE_INTERNALS_KEY, lua_handle.lua.create_table().unwrap())
             .unwrap();
 
         let env_state = Rc::new(RefCell::new(IoEnvState::default()));
 
-        let persist_module = lua_persist::setup_persist_api(&lua).unwrap();
-        register_vectarine_module(&lua, "persist", persist_module);
+        let persist_module = lua_persist::setup_persist_api(&lua_handle.lua).unwrap();
+        register_vectarine_module(&lua_handle.lua, "persist", persist_module);
 
-        let vec2_module = lua_vec2::setup_vec_api(&lua).unwrap();
-        register_vectarine_module(&lua, "vec", vec2_module);
+        let vec2_module = lua_vec2::setup_vec_api(&lua_handle.lua).unwrap();
+        register_vectarine_module(&lua_handle.lua, "vec", vec2_module);
 
-        let vec4_module = lua_vec4::setup_vec_api(&lua).unwrap();
-        register_vectarine_module(&lua, "vec4", vec4_module);
+        let vec4_module = lua_vec4::setup_vec_api(&lua_handle.lua).unwrap();
+        register_vectarine_module(&lua_handle.lua, "vec4", vec4_module);
 
-        let resource_module = lua.create_table().unwrap(); // type-only module
-        register_vectarine_module(&lua, "resource", resource_module);
+        let resource_module = lua_handle.lua.create_table().unwrap(); // type-only module
+        register_vectarine_module(&lua_handle.lua, "resource", resource_module);
 
-        let fastlist_module = lua_fastlist::setup_fastlist_api(&lua, &batch, &resources).unwrap();
-        register_vectarine_module(&lua, "fastlist", fastlist_module);
+        let fastlist_module =
+            lua_fastlist::setup_fastlist_api(&lua_handle.lua, &batch, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "fastlist", fastlist_module);
 
-        let color_module = lua.create_table().unwrap();
-        register_vectarine_module(&lua, "color", color_module);
+        let color_module = lua_handle.lua.create_table().unwrap();
+        register_vectarine_module(&lua_handle.lua, "color", color_module);
 
-        let coords_module = lua_coord::setup_coords_api(&lua, &gl).unwrap();
-        register_vectarine_module(&lua, "coord", coords_module);
+        let coords_module = lua_coord::setup_coords_api(&lua_handle.lua, &gl).unwrap();
+        register_vectarine_module(&lua_handle.lua, "coord", coords_module);
 
         let (event_module, default_events, _event_manager) =
-            lua_event::setup_event_api(&lua).unwrap();
-        register_vectarine_module(&lua, "event", event_module);
+            lua_event::setup_event_api(&lua_handle.lua).unwrap();
+        register_vectarine_module(&lua_handle.lua, "event", event_module);
 
         let canvas_module =
-            lua_canvas::setup_canvas_api(&lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "canvas", canvas_module);
+            lua_canvas::setup_canvas_api(&lua_handle.lua, &batch, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "canvas", canvas_module);
 
         let image_module =
-            lua_image::setup_image_api(&lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "image", image_module);
+            lua_image::setup_image_api(&lua_handle.lua, &batch, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "image", image_module);
 
-        let text_module = lua_text::setup_text_api(&lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "text", text_module);
+        let text_module =
+            lua_text::setup_text_api(&lua_handle.lua, &batch, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "text", text_module);
 
         let graphics_module =
-            lua_graphics::setup_graphics_api(&lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "graphics", graphics_module);
+            lua_graphics::setup_graphics_api(&lua_handle.lua, &batch, &env_state, &resources)
+                .unwrap();
+        register_vectarine_module(&lua_handle.lua, "graphics", graphics_module);
 
         let screen_module =
-            lua_screen::setup_screen_api(&lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "screen", screen_module);
+            lua_screen::setup_screen_api(&lua_handle.lua, &batch, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "screen", screen_module);
 
-        let io_module = lua_io::setup_io_api(&lua, &env_state).unwrap();
-        register_vectarine_module(&lua, "io", io_module);
+        let io_module = lua_io::setup_io_api(&lua_handle.lua, &env_state).unwrap();
+        register_vectarine_module(&lua_handle.lua, "io", io_module);
 
-        let camera_module = lua_camera::setup_camera_api(&lua, &env_state).unwrap();
-        register_vectarine_module(&lua, "camera", camera_module);
+        let camera_module = lua_camera::setup_camera_api(&lua_handle.lua, &env_state).unwrap();
+        register_vectarine_module(&lua_handle.lua, "camera", camera_module);
 
-        let debug_module = lua_debug::setup_debug_api(&lua, &metrics).unwrap();
-        register_vectarine_module(&lua, "debug", debug_module);
+        let debug_module = lua_debug::setup_debug_api(&lua_handle.lua, &metrics).unwrap();
+        register_vectarine_module(&lua_handle.lua, "debug", debug_module);
 
-        let audio_module = lua_audio::setup_audio_api(&lua, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "audio", audio_module);
+        let audio_module =
+            lua_audio::setup_audio_api(&lua_handle.lua, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "audio", audio_module);
 
-        let physics_module = lua_physics::setup_physics_api(&lua).unwrap();
-        register_vectarine_module(&lua, "physics", physics_module);
+        let physics_module = lua_physics::setup_physics_api(&lua_handle.lua).unwrap();
+        register_vectarine_module(&lua_handle.lua, "physics", physics_module);
 
-        let tile_module = lua_tile::setup_tile_api(&lua, &resources).unwrap();
-        register_vectarine_module(&lua, "tile", tile_module);
+        let tile_module = lua_tile::setup_tile_api(&lua_handle.lua, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "tile", tile_module);
 
-        let loader_module = lua_loader::setup_loader_api(&lua, &resources).unwrap();
-        register_vectarine_module(&lua, "loader", loader_module);
+        let loader_module = lua_loader::setup_loader_api(&lua_handle.lua, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "loader", loader_module);
 
-        let ui_module = lua_ui::setup_ui_api(&lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua, "ui", ui_module);
+        let ui_module =
+            lua_ui::setup_ui_api(&lua_handle.lua, &batch, &env_state, &resources).unwrap();
+        register_vectarine_module(&lua_handle.lua, "ui", ui_module);
 
-        let original_require = lua
+        let original_require = lua_handle
+            .lua
             .globals()
             .get::<vectarine_plugin_sdk::mlua::Function>("require")
             .unwrap();
-        add_global_fn(&lua, "require", move |lua, module_name: String| {
-            // We provide a custom require with the following features:
-            // - Can require @vectarine/* modules (like @vectarine/vec)
-            // - Can require files in the script folder by their names.
-            if module_name.starts_with("@vectarine/") {
-                for (deprecated_module, message) in DEPRECATED_MODULES {
-                    if module_name == format!("@vectarine/{}", deprecated_module) {
-                        print_warn(message.to_string());
+        add_global_fn(
+            &lua_handle.lua,
+            "require",
+            move |lua, module_name: String| {
+                // We provide a custom require with the following features:
+                // - Can require @vectarine/* modules (like @vectarine/vec)
+                // - Can require files in the script folder by their names.
+                if module_name.starts_with("@vectarine/") {
+                    for (deprecated_module, message) in DEPRECATED_MODULES {
+                        if module_name == format!("@vectarine/{}", deprecated_module) {
+                            print_warn(message.to_string());
+                        }
                     }
-                }
 
-                return original_require.call(module_name);
-            }
-            let module = lua.create_table()?;
-            module.raw_set("@vectarine/filename", module_name)?;
-            module.raw_set(
-                "info",
-                "Thank you cowboy! But your module is in another castle!",
-            )?;
-            // We return an empty table as this is just for the types.
-            // We put a message to indicate that. loadScript is what loads the script, not require.
-            Ok(module)
-        });
+                    return original_require.call(module_name);
+                }
+                let module = lua.create_table()?;
+                module.raw_set("@vectarine/filename", module_name)?;
+                module.raw_set(
+                    "info",
+                    "Thank you cowboy! But your module is in another castle!",
+                )?;
+                // We return an empty table as this is just for the types.
+                // We put a message to indicate that. loadScript is what loads the script, not require.
+                Ok(module)
+            },
+        );
 
         // Add this to Debug module?
         add_global_fn(
-            &lua,
+            &lua_handle.lua,
             "toString",
             move |_, (arg,): (vectarine_plugin_sdk::mlua::Value,)| {
                 let string = stringify_lua_value(&arg);
@@ -205,7 +225,7 @@ impl LuaEnvironment {
         );
 
         LuaEnvironment {
-            lua,
+            lua_handle,
             env_state,
             batch,
             default_events,
@@ -215,12 +235,12 @@ impl LuaEnvironment {
     }
 
     pub fn run_file_and_display_error(&self, file_content: &[u8], file_path: &Path) {
-        run_file_and_display_error_from_lua_handle(&self.lua, file_content, file_path, None);
+        run_file_and_display_error_from_lua_handle(&self.lua_handle, file_content, file_path, None);
     }
 }
 
 #[allow(clippy::unwrap_used)]
-pub fn add_global_fn<F, A, R>(lua: &Rc<vectarine_plugin_sdk::mlua::Lua>, name: &str, func: F)
+pub fn add_global_fn<F, A, R>(lua: &vectarine_plugin_sdk::mlua::Lua, name: &str, func: F)
 where
     F: Fn(&vectarine_plugin_sdk::mlua::Lua, A) -> vectarine_plugin_sdk::mlua::Result<R> + 'static,
     A: vectarine_plugin_sdk::mlua::FromLuaMulti,
@@ -233,7 +253,7 @@ where
 
 #[allow(clippy::unwrap_used)]
 pub fn add_fn_to_table<F, A, R>(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     table: &vectarine_plugin_sdk::mlua::Table,
     name: &str,
     func: F,
@@ -248,13 +268,13 @@ pub fn add_fn_to_table<F, A, R>(
 /// Run the given Lua file content assuming it is at the given path.
 /// If the file returns a table, and a target_table is provided, the table will be merged into the target_table.
 pub fn run_file_and_display_error_from_lua_handle(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua_handle: &LuaHandle,
     file_content: &[u8],
     file_path: &Path,
     target_table: Option<&vectarine_plugin_sdk::mlua::Table>,
 ) {
     // lua.set_compiler(compiler);
-    let lua_chunk = lua.load(file_content);
+    let lua_chunk = lua_handle.lua.load(file_content);
     // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
     let result = lua_chunk
         .set_name(format!("@{}", file_path.to_string_lossy()))
@@ -262,7 +282,7 @@ pub fn run_file_and_display_error_from_lua_handle(
 
     match result {
         Err(error) => {
-            print_lua_error_from_error(&error);
+            print_lua_error_from_error(lua_handle, &error);
         }
         Ok(value) => {
             // Merge the table with the argument table if provided.
@@ -444,13 +464,17 @@ pub fn is_valid_data_type<T: 'static>(value: &vectarine_plugin_sdk::mlua::Value)
     }
 }
 
-pub fn print_lua_error_from_error(error: &vectarine_plugin_sdk::mlua::Error) {
-    // We need access to the project path here, which is tough as we are inside the runtime...
-    // Maybe we can pass around a debug handle which is an empty struct is release, but with the project path inside the editor...
+pub fn print_lua_error_from_error(
+    lua_handle: &LuaHandle,
+    error: &vectarine_plugin_sdk::mlua::Error,
+) {
     #[cfg(feature = "editor")]
-    pub fn extract_file_lines_from_error(file_path: &str, line: usize) -> [String; 5] {
-        println!("reading the file path: {}", file_path);
-        let content = std::fs::read_to_string(file_path);
+    pub fn extract_file_lines_from_error(
+        lua_handle: &LuaHandle,
+        file_path: &str,
+        line: usize,
+    ) -> [String; 5] {
+        let content = std::fs::read_to_string(lua_handle.project_path.join(file_path));
         let Ok(content) = content else {
             return Default::default();
         };
@@ -462,14 +486,17 @@ pub fn print_lua_error_from_error(error: &vectarine_plugin_sdk::mlua::Error) {
         [(); 5].map(|_| content.next().unwrap_or_default().to_string())
     }
     #[cfg(not(feature = "editor"))]
-    pub fn extract_file_lines_from_error(_file_path: &str, _line: usize) -> [String; 5] {
+    pub fn extract_file_lines_from_error(
+        _lua_handle: &LuaHandle,
+        _file_path: &str,
+        _line: usize,
+    ) -> [String; 5] {
         println!("default");
         Default::default()
     }
 
     let error_msg = error.to_string();
     let (line, file_path) = get_line_and_file_of_error(error);
-    println!("extract_file_lines");
-    let line_content = extract_file_lines_from_error(&file_path, line);
+    let line_content = extract_file_lines_from_error(lua_handle, &file_path, line);
     print_lua_error(error_msg, file_path, line, line_content);
 }

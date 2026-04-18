@@ -14,7 +14,7 @@ pub struct AudioResourceId(ResourceId);
 make_resource_lua_compatible!(AudioResourceId);
 
 pub fn setup_audio_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     _env_state: &Rc<RefCell<io::IoEnvState>>,
     resources: &Rc<game_resource::ResourceManager>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {

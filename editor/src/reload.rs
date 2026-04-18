@@ -52,7 +52,7 @@ pub fn reload_assets_if_needed(
                     resources.reload(
                         res_id,
                         gl.clone(),
-                        lua_for_reload.lua.clone(),
+                        lua_for_reload.lua_handle.clone(),
                         lua_for_reload.default_events.resource_loaded_event.clone(),
                     );
                 }

@@ -25,7 +25,7 @@ pub fn draw_editor_plugin_windows(editor: &mut EditorState, ui: &egui::Ui) {
     let editor_plugin_interface = EditorPluginInterface {
         gui_context: ui,
         plugin_interface: PluginInterface {
-            lua: &project.game.lua_env.lua,
+            lua: &project.game.lua_env.lua_handle.lua,
         },
     };
 

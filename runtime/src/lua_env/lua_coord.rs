@@ -1,4 +1,4 @@
-use std::{ops, rc::Rc, sync::Arc};
+use std::{ops, sync::Arc};
 
 use vectarine_plugin_sdk::glow::Context;
 use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
@@ -103,7 +103,7 @@ impl ops::Add<ScreenVec> for ScreenPosition {
 }
 
 pub fn setup_coords_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     gl: &Arc<Context>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let coords_module = lua.create_table()?;

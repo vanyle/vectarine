@@ -40,7 +40,7 @@ pub struct TilemapResourceId(ResourceId);
 make_resource_lua_compatible!(TilemapResourceId);
 
 pub fn setup_tile_api(
-    lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+    lua: &vectarine_plugin_sdk::mlua::Lua,
     resources: &Rc<ResourceManager>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let tile_module = lua.create_table()?;

@@ -2,7 +2,7 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 
 use crate::{
     game_resource::{Resource, ResourceId, Status},
-    lua_env::run_file_and_display_error_from_lua_handle,
+    lua_env::{LuaHandle, run_file_and_display_error_from_lua_handle},
 };
 use vectarine_plugin_sdk::glow;
 
@@ -17,7 +17,7 @@ impl Resource for ScriptResource {
         self: std::rc::Rc<Self>,
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
-        lua: &Rc<vectarine_plugin_sdk::mlua::Lua>,
+        lua: &Rc<LuaHandle>,
         _gl: std::sync::Arc<glow::Context>,
         path: &Path,
         data: Box<[u8]>,
