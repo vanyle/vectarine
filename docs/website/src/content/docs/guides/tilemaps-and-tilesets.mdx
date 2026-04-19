@@ -77,11 +77,11 @@ local Graphics = require("@vectarine/graphics")
 local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 
-local level_tileset_image = Loader.loadImage("./textures/level_tileset.png", false)
-local level_tileset_data = Loader.loadTileset("./textures/level_tileset.tsx")
+local level_tileset_image = Loader.loadImage("textures/level_tileset.png", false)
+local level_tileset_data = Loader.loadTileset("textures/level_tileset.tsx")
 local level_tileset = level_tileset_image:withTileset(level_tileset_data)
 
-local tilemap = Loader.loadTilemap("./levels/level.tmx")
+local tilemap = Loader.loadTilemap("levels/level.tmx")
 
 -- Once a tilemap is loaded, you can get a tile at (x,y) on a specific layer with getTile.
 local tileId = tilemap:getTile(0, 1, 2) -- Get the tile on layer 0 at position (x=1, y=2)
