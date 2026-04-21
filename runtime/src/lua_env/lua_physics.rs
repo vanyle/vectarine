@@ -18,7 +18,13 @@ use vectarine_plugin_sdk::rapier2d::{
 
 use crate::{
     auto_impl_lua_take,
-    lua_env::{add_fn_to_table, is_valid_data_type, lua_camera::Camera2, lua_vec2::Vec2},
+    game_resource::ResourceManager,
+    lua_env::{
+        add_fn_to_table, is_valid_data_type,
+        lua_camera::Camera2,
+        lua_tile::{TilemapResourceId, get_tilemap_from_resource_id},
+        lua_vec2::Vec2,
+    },
 };
 
 // MARK: World2
@@ -157,6 +163,7 @@ auto_impl_lua_take!(Object2, Object2);
 
 pub fn setup_physics_api(
     lua: &vectarine_plugin_sdk::mlua::Lua,
+    resources: &Rc<ResourceManager>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let physics_module = lua.create_table()?;
 
@@ -516,6 +523,67 @@ pub fn setup_physics_api(
         }
     });
 
+    add_fn_to_table(lua, &physics_module, "newVoxelCollider", {
+        let resources = resources.clone();
+        move |_,
+              (voxel_size, tilemap_resource_id, layer, low, high, filled_tile_ids): (
+            Vec2,
+            TilemapResourceId,
+            i32,
+            Vec2,
+            Vec2,
+            Vec<i32>,
+        )| {
+            let voxel_size = nalgebra::vector![voxel_size.x(), voxel_size.y()];
+            let voxel_data = get_tilemap_from_resource_id(&resources, tilemap_resource_id, |map| {
+                let mut points: Vec<nalgebra::Point<i32, 2>> = Vec::new();
+                let layer = map.get_layer(layer as usize)?;
+                let layer = layer.as_tile_layer()?;
+                let lx = low.x().floor() as i32;
+                let ly = low.y().floor() as i32;
+                let hx = high.x().ceil() as i32;
+                let hy = high.y().ceil() as i32;
+                match layer {
+                    tiled::TileLayer::Finite(finite_layer) => {
+                        for x in lx..hx {
+                            for y in ly..hy {
+                                if let Some(tile) = finite_layer.get_tile_data(x, y)
+                                    && filled_tile_ids.contains(&(tile.id() as i32))
+                                {
+                                    points.push(vectarine_plugin_sdk::rapier2d::prelude::point![
+                                        x, y
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    tiled::TileLayer::Infinite(infinite_layer) => {
+                        for x in lx..hx {
+                            for y in ly..hy {
+                                if let Some(tile) = infinite_layer.get_tile_data(x, y)
+                                    && filled_tile_ids.contains(&(tile.id() as i32))
+                                {
+                                    points.push(vectarine_plugin_sdk::rapier2d::prelude::point![
+                                        x, y
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                };
+                Some(points)
+            });
+            let Some(voxel_data) = voxel_data else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid tilemap, or layer".to_string(),
+                ));
+            };
+
+            let collider = ColliderBuilder::voxels(voxel_size, &voxel_data).build();
+            Ok(Collider2 { collider })
+        }
+    });
+
     // MARK: Object2 fn
     lua.register_userdata_type::<Object2>(|registry| {
         registry.add_field_method_get("position", |_, object| {
@@ -745,6 +813,27 @@ fn get_points_of_collider(collider: &Collider) -> Vec<Vec2> {
             .points()
             .iter()
             .map(|p| collider.position() * p)
+            .map(|p| Vec2::new(p.x, p.y))
+            .collect()
+    } else if let Some(shape) = shape.as_voxels() {
+        let size = shape.voxel_size();
+        let half = nalgebra::point![size.x, size.y] / 2.0;
+        let collider_pos = collider.position();
+        shape
+            .voxels()
+            .flat_map(|p| {
+                let center = p.center;
+                let p1 = nalgebra::point![p.center.x - half.x, p.center.y - half.y];
+                let p2 = nalgebra::point![center.x + half.x, center.y - half.y];
+                let p3 = nalgebra::point![p.center.x + half.x, p.center.y + half.y];
+                let p4 = nalgebra::point![center.x - half.x, center.y + half.y];
+                vec![
+                    collider_pos * p1,
+                    collider_pos * p2,
+                    collider_pos * p3,
+                    collider_pos * p4,
+                ]
+            })
             .map(|p| Vec2::new(p.x, p.y))
             .collect()
     } else {
