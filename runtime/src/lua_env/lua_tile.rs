@@ -205,6 +205,8 @@ pub fn setup_tile_api(
                     tiled::TileLayer::Infinite(infinite_layer) => {
                         for x in lx..hx {
                             for y in ly..hy {
+                                // This could probably be optimized to first fetch the relevant chunks and then iterate over them.
+                                // I'm assuming that the Lua call time is much higher than the Rust overhead of fetching the tile.
                                 if let Some(tile) = infinite_layer.get_tile_data(x, y) {
                                     access_fn.call::<()>((tile.id(), x, y))?;
                                 }

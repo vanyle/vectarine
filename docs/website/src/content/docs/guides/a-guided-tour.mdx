@@ -5,8 +5,10 @@ description: A tour of most of Vectarine's features
 
 import { Aside } from "@astrojs/starlight/components";
 
-This tour will go through most Vectarine features and show how to use them. It is not an exhaustive list of all APIs.
+This tour will go through most essential Vectarine features and show how to use them. It is not an exhaustive list of all APIs.
+Read the dedicated articles on UI, widgets, performance, etc. for more in-depth information about specific features.
 
+The goal of this guide is to give you the building blocks to make your first 2D game with Vectarine and to serve as a quick reference with simple examples.
 
 ## 🌱 Introduction
 
@@ -395,6 +397,11 @@ end
 ### Sound and Music
 
 Loading sounds works just like images, but you call the `loadAudio` function instead of `loadImage`.
+
+### Others
+
+There are many other types of resources, but they all work the same way, you call a `loadX` function and get a resource handle that you can check for readiness using `isReady`.
+Once this resource is ready, you can call resource specific function on it, for example, `draw` for images or `play` for audio.
 
 ## ✂️ Splitting and organizing your code
 
