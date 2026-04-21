@@ -168,7 +168,7 @@ impl LuaEnvironment {
             lua_audio::setup_audio_api(&lua_handle.lua, &env_state, &resources).unwrap();
         register_vectarine_module(&lua_handle.lua, "audio", audio_module);
 
-        let physics_module = lua_physics::setup_physics_api(&lua_handle.lua).unwrap();
+        let physics_module = lua_physics::setup_physics_api(&lua_handle.lua, &resources).unwrap();
         register_vectarine_module(&lua_handle.lua, "physics", physics_module);
 
         let tile_module = lua_tile::setup_tile_api(&lua_handle.lua, &resources).unwrap();

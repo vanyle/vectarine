@@ -39,6 +39,23 @@ where
 pub struct TilemapResourceId(ResourceId);
 make_resource_lua_compatible!(TilemapResourceId);
 
+pub fn get_tilemap_from_resource_id<F, R>(
+    resources: &Rc<ResourceManager>,
+    tilemap_resource_id: TilemapResourceId,
+    f: F,
+) -> Option<R>
+where
+    F: FnOnce(&mut tiled::Map) -> Option<R>,
+{
+    let tilemap_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
+    let Ok(tilemap_res) = tilemap_res else {
+        return None;
+    };
+    let mut tilemap_content = tilemap_res.content.borrow_mut();
+    let tilemap_content = tilemap_content.as_mut()?;
+    f(tilemap_content)
+}
+
 pub fn setup_tile_api(
     lua: &vectarine_plugin_sdk::mlua::Lua,
     resources: &Rc<ResourceManager>,

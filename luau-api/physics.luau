@@ -1,5 +1,7 @@
 local Camera2 = require("@vectarine/camera")
+local Tile = require("@vectarine/tile")
 local Vec = require("@vectarine/vec")
+
 --- A Physics API for 2D
 ---
 --- This API is experimental and can change.
@@ -59,7 +61,7 @@ end
 function World2Impl:getObjectsIntersectingRay(
 	position: Vec.Vec2,
 	direction: Vec.Vec2,
-	max_time_of_impact: number?
+	maxTimeOfImpact: number?
 ): { { object: Object2, timeOfImpact: number } }
 	error("Implemented in native code")
 end
@@ -99,6 +101,31 @@ function module.newPolygonCollider(points: { Vec.Vec2 }): Collider2
 	error("Implemented in native code")
 end
 
+--- Create a voxel collider
+--- A voxel collider is a efficient representation of a 2D grid of square colliders.
+--- If the tilemap resource is not loaded, this will produce an error.
+--- It is useful for building levels.
+--- You can split your terrain in parts and use multiple voxel colliders to have infinite terrain if needed.
+---
+--- You can create multiple voxel colliders on the same region with different filledTileIds to have different objects react differently to entities (for example, wall block the player, spikes hurt them, etc.)
+---
+--- @param voxelSize Vec2 The size of a single voxel
+--- @param voxelsData TilemapResource A tilemap resource containing the data of the voxels. The tileId of each voxel will be used to determine if it is filled or not.
+--- @param layer number The layer of the tilemap resource to use for the voxels data
+--- @param low Vec2 The lowest coordinate of the voxel collider in the tilemap, it is rounded down to get an integer coordinate.
+--- @param high Vec2 The highest coordinate of the voxel collider in the tilemap, it is rounded down to get an integer coordinate.
+--- @param filledTileIds { number } A list of tileIds that are considered filled and will be colliders. All other tileIds will be considered empty and won't have colliders.
+function module.newVoxelCollider(
+	voxelSize: Vec.Vec2,
+	voxelsData: Tile.TilemapResource,
+	layer: number,
+	low: Vec.Vec2,
+	high: Vec.Vec2,
+	filledTileIds: { number }
+): Collider2
+	error("Implemented in native code")
+end
+
 --MARK: Object2
 
 local Object2Impl = { type = "object2" }
@@ -119,6 +146,7 @@ export type Object2 = typeof(setmetatable({} :: Object2Type, Object2Impl))
 
 --- Return the points of the collider in the object space
 --- If the collider is not a polygon (for example a circle), return a close approximation.
+--- For tilemap colliders, this will return 4 point per filled tile, representing the corner of the tile.
 --- @return { Vec2 }
 function Object2Impl:getPoints(): { Vec.Vec2 }
 	error("Implemented in native code")
