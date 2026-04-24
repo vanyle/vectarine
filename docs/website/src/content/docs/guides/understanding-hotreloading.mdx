@@ -1,0 +1,150 @@
+---
+title: Understanding hot-reloading
+description: Learn how hot reloading works and build projects that take advantage of it.
+---
+
+Vectarine thinks in terms of resources. A resource is basically a file, it can be code, an image, sound, etc.
+Each resource is hot-reloaded individually.
+
+There is a shortcut <kdb>Ctrl</kdb> + <kdb>R</kdb> to reload the entire project which is the same as closing and reopening the project.
+This is different from hot-reloading.
+
+When you edit a file, Vectarine hot-reloads it, meaning it rereads its content and updates the corresponding resource.
+
+Each resource can depend on other resource, for example a Luau script can draw an image. Because the script holds a pointer
+to the image resource, when the image is hot-reloaded, the script will use the new version of the image without needing to be reloaded itself.
+
+You need to keep this in mind, when dealing will scripts requiring other scripts.
+
+Let's consider the following example:
+
+```lua main.luau
+local Loader = require("@vectarine/loader")
+local res, other = Loader.loadScript("./scripts/other.luau", require("other.luau"))
+
+local value = nil
+if res:isReady() then
+    value = other.getPopulation()
+end
+
+function Update()
+    Debug.fprint("Value is ", value)
+end
+```
+
+```lua other.luau
+local module = {}
+function module.getPopulation()
+    return 3
+end
+```
+
+In this example:
+
+- When the game is first loaded, `other` is not ready, so `nil` will be printed in the console.
+- If we edit `main.luau`, `other` will be ready this time and `3` will be printed in the console.
+- If we edit `other.luau` to replace the `3` by a `6`, main won't be reloaded, so `3` will still be printed.
+- If we edit `main.luau` again, `other.getPopulation` will be called once again `6` will be printed in the console.
+
+Now let's say we update `other.luau` to the following and reload the whole project.
+
+```lua other.luau
+local module = {}
+
+local Population = {}
+Population.count = function(self)
+    return self.humans + self.aliens
+end
+
+function module.getPopulation()
+    local data = {
+        humans = 3,
+        aliens = 5,
+    }
+    setmetatable(data, { __index = Population })
+    return data
+end
+```
+
+After hot-reloading `main.luau`, it will display `{human = 3, aliens = 5}`.
+
+Now, let's say we edit the count function in `other.luau`. Nothing will change. This is because the count function is located on the `Population` table.
+When `other.luau` is hot-reloaded, the `value` variable in `main.luau` stays the same and still uses the reference to the old `count` function.
+
+This design where we initialize an object with functions in its properties in `other.luau` and keep it in `main.luau` is not hot-reloading friendly.
+
+Now, let's say we change `main.luau` to the following:
+
+```lua main.luau
+local Loader = require("@vectarine/loader")
+local Event = require("@vectarine/event")
+local res, other = Loader.loadScript("./scripts/other.luau", require("other.luau"))
+
+local value = nil
+Event.getResourceLoadedEvent():on(function(r)
+    if res:isReady() then
+        value = other.getPopulation()
+    end
+end)
+
+function Update()
+    if res:isReady() then
+        local population = other.getPopulation()
+        Debug.fprint("Population is " .. population:count())
+    else
+        Debug.fprint("Other script is not loaded yet")
+    end
+end
+```
+
+This will work, but it is a lot more verbose, especially if you have multuple modules and you want to keep track what needs to be reloaded when.
+
+The best solution is to rethink the structure of the code:
+
+```lua other.luau
+local module = {}
+
+local Population = {}
+-- The count function is now attached to the module.
+function module.count(self: Population): number
+    return self.humans + self.aliens
+end
+
+function module.getPopulation()
+    local data = {
+        humans = 3,
+        aliens = 5,
+    }
+    setmetatable(data, { __index = Population })
+    return data
+end
+```
+
+```lua main.luau
+local Loader = require("@vectarine/loader")
+local res, other = Loader.loadScript("./scripts/other.luau", require("other.luau"))
+
+local population
+if res:isReady() then
+    population = other.getPopulation()
+end
+
+function Update()
+    Debug.fprint("Population is ", other.count(population))
+end
+```
+
+What is happening here is that when you hot-reload `other.luau`, module is not recreated. The same table is kept and its old content is merged with the new one.
+This means that `main.luau` has a reference to the newest version of the `count` function and hot-reloading works as expected!
+
+# Lessons for organizing code
+
+We can thus learn the following principles for organizing code in a hot-reloading friendly way:
+
+- Except for `main.luau`, avoid putting code in the global scope. Instead, put it inside functions. You don't know when code in the global scope will be executed which can lead to issues with loading order.
+- Use function in modules and avoid storing functions in objects
+
+
+
+
+

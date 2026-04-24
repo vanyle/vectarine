@@ -53,6 +53,10 @@ export default defineConfig({
                             link: "/guides/tilemaps-and-tilesets/",
                         },
                         {
+                            label: "Understanding hot-reloading",
+                            link: "/guides/understanding-hotreloading/",
+                        },
+                        {
                             label: "Optimizing your game",
                             link: "/guides/use-fastlists/",
                         },
