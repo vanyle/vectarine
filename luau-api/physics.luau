@@ -131,15 +131,18 @@ end
 local Object2Impl = { type = "object2" }
 Object2Impl.__index = Object2Impl
 type Object2Type = {
+	--- Where is object currently is
 	position: Vec.Vec2,
+	--- Where is object is going (and how fast)
 	speed: Vec.Vec2,
-	-- How much friction the object has. 0 is no friction, 1> like moving in a fluid.
+	--- How much friction the object has when moving in air. 0 is no friction, 1> like moving in a fluid.
 	linearDamping: number,
 	rotation: number,
 	rotationSpeed: number,
 	--- How much the object resists to rotation. 0 is no resistance
 	angularDamping: number,
 	tags: { string },
+	-- Any extra data you want to store on this object.
 	extra: any,
 }
 export type Object2 = typeof(setmetatable({} :: Object2Type, Object2Impl))
@@ -180,7 +183,8 @@ function Object2Impl:setRestitution(restitution: number)
 	error("Implemented in native code")
 end
 
---- Set the friction of the object. Higher values make objects slide less.
+--- Set the friction of the object. Friction hinders movement of objects in contacts. This is different from linear damping which exists even when an object is alone in a scene.
+--- Higher values make objects slide less.
 --- Defaults to 0.5
 function Object2Impl:setFriction(friction: number)
 	error("Implemented in native code")
@@ -189,9 +193,9 @@ end
 --- Create a new object into the world. Objects are specific to a given world.
 --- You can give the object tags to find it later
 --- Objects can have 3 body types:
---- - static: objects that don't move and don't react to collisions (like the ground)
---- - dynamic: objects that move and react to collisions
---- - kinematic: objects that can be manually moved with code but don't react to collisions (like moving platforms or elevators)
+--- - static: objects never move (like the ground)
+--- - dynamic: objects that move and react to collisions (player, enemies, pushable crates, etc.)
+--- - kinematic: objects that can be manually moved with code but cannot be moved by other objects (like moving platforms or elevators)
 --- @param position Vec2
 --- @param mass number Must be greater than 0
 --- @param collider Collider

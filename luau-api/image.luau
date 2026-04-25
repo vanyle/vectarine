@@ -54,7 +54,6 @@ end
 
 --- Draw a part of the image corresponding to the tile specified by its id or type.
 --- If there are multiple tiles with the same type, one of them will be choosen in an unspecified manner.
---- TODO: We'll need a fastlist version of this.
 function ImageWithTileset:drawTile(tileIdOrType: number | string, pos: Pos, size: Direction, color: Vec4.Vec4?): ()
 	error("Implemented in native code")
 end
