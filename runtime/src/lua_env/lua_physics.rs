@@ -349,6 +349,9 @@ pub fn setup_physics_api(
 
         registry.add_method_mut("getObjectsInArea", {
             move |_, lua_world, (position, size): (Vec2, Vec2)| {
+                use vectarine_plugin_sdk::rapier2d::prelude;
+                use vectarine_plugin_sdk::rapier2d::parry;
+
                 let world = lua_world.0.borrow();
                 let world = &*world;
                 let filter = QueryFilter::default();
@@ -358,11 +361,14 @@ pub fn setup_physics_api(
                     &world.collider_set,
                     filter,
                 );
-                let mins = vectarine_plugin_sdk::rapier2d::prelude::point![position.x(), position.y()];
-                let maxs =
-                    vectarine_plugin_sdk::rapier2d::prelude::point![position.x() + size.x(), position.y() + size.y()];
-                let aabb = vectarine_plugin_sdk::rapier2d::prelude::Aabb::new(mins, maxs);
-                let matches = query_pipeline.intersect_aabb_conservative(aabb);
+                let cuboid_size = prelude::vector![size.x() / 2.0, size.y() / 2.0];
+                let shape = parry::shape::Cuboid::new(cuboid_size);
+                let shape_pos = prelude::Isometry::translation(
+                    position.x() + size.x() / 2.0,
+                    position.y() + size.y() / 2.0
+                );
+                let matches = query_pipeline.intersect_shape(shape_pos, &shape);
+
                 Ok(matches
                     .filter_map(|m| m.1.parent())
                     .map(|parent| Object2 {
