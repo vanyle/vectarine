@@ -1,9 +1,13 @@
 local module = {}
 
+--- Get a value that persist when the script is hot-reloaded. The value is stored as a global variable named `globalName`
+--- and can be inspected in the watcher.
 function module.onReload<T>(defaultValue: T, globalName: string): T
 	error("Implemented in native code")
 end
 
+--- Same as `onReload`, but instead of taking a default value, it takes a provider function.
+--- This is useful if the default value is expensive to create so it is not created on hot-reload.
 function module.onReloadWithProvider<T>(provider: () -> T, globalName: string): T
 	error("Implemented in native code")
 end
