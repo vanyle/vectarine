@@ -116,10 +116,14 @@ pub fn process_events(
                     return;
                 };
                 let mut env_state = game.lua_env.env_state.borrow_mut();
+                // The key is not just pressed if the keyboard_state contains true.
+                if env_state.keyboard_state.get(scancode).copied() != Some(true) {
+                    env_state
+                        .keyboard_just_pressed_state
+                        .insert(*scancode, true);
+                }
+
                 env_state.keyboard_state.insert(*scancode, true);
-                env_state
-                    .keyboard_just_pressed_state
-                    .insert(*scancode, true);
 
                 let lua_res = game.lua_env.default_events.keydown_event.trigger(
                     scancode
