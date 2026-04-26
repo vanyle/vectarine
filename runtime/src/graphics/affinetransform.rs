@@ -22,16 +22,22 @@ impl AffineTransform {
             ty: 0.0,
         }
     }
+
+    /// The translation is applied first, then the scale and finally the rotation.
     pub fn new(translation: Vec2, scale: Vec2, rotation: f32) -> Self {
         let cos_r = rotation.cos();
         let sin_r = rotation.sin();
+        let a = cos_r * scale.x();
+        let b = sin_r * scale.x();
+        let c = -sin_r * scale.y();
+        let d = cos_r * scale.y();
         Self {
-            a: cos_r * scale.x(),
-            b: sin_r * scale.x(),
-            c: -sin_r * scale.y(),
-            d: cos_r * scale.y(),
-            tx: translation.x(),
-            ty: translation.y(),
+            a,
+            b,
+            c,
+            d,
+            tx: a * translation.x() + c * translation.y(),
+            ty: b * translation.x() + d * translation.y(),
         }
     }
 
@@ -44,7 +50,14 @@ impl AffineTransform {
 
     /// Returns the translation component of the affine transform.
     pub fn translation(&self) -> Vec2 {
-        Vec2::new(self.tx, self.ty)
+        let det = self.a * self.d - self.b * self.c;
+        if det == 0.0 {
+            return Vec2::new(0.0, 0.0);
+        }
+        Vec2::new(
+            (self.d * self.tx - self.c * self.ty) / det,
+            (-self.b * self.tx + self.a * self.ty) / det,
+        )
     }
 
     /// Returns the scale component of the affine transform.
@@ -96,5 +109,63 @@ impl AffineTransform {
             tx: self.a * other.tx + self.c * other.ty + self.tx,
             ty: self.b * other.tx + self.d * other.ty + self.ty,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::f32::consts::PI;
+
+    fn approx_eq(a: f32, b: f32) -> bool {
+        (a - b).abs() < 1e-5
+    }
+
+    fn vec2_approx_eq(a: Vec2, b: Vec2) -> bool {
+        approx_eq(a.x(), b.x()) && approx_eq(a.y(), b.y())
+    }
+
+    fn assert_vec2_approx_eq(a: Vec2, b: Vec2) {
+        assert!(
+            vec2_approx_eq(a, b),
+            "Expected {:?} to be approximately equal to {:?}",
+            a,
+            b
+        );
+    }
+
+    #[test]
+    fn new_recovers_components() {
+        let translation = Vec2::new(3.0, 4.0);
+        let scale = Vec2::new(2.0, 3.0);
+        let rotation = PI / 4.0;
+        let t = AffineTransform::new(translation, scale, rotation);
+
+        assert_vec2_approx_eq(t.translation(), translation);
+        assert_vec2_approx_eq(t.scale(), scale);
+        assert!(approx_eq(t.rotation(), rotation));
+    }
+
+    #[test]
+    fn apply() {
+        let t = AffineTransform::new(Vec2::new(1.0, 2.0), Vec2::new(2.0, 1.0), 0.0);
+
+        assert_vec2_approx_eq(t.apply(&Vec2::new(0.0, 0.0)), Vec2::new(2.0, 2.0));
+        assert_vec2_approx_eq(t.apply(&Vec2::new(1.0, 1.0)), Vec2::new(4.0, 3.0));
+    }
+
+    #[test]
+    fn combine() {
+        let t1 = AffineTransform::new(Vec2::new(0.0, 1.0), Vec2::new(4.0, 2.0), 3.0);
+        let t2 = AffineTransform::new(Vec2::new(1.0, 0.0), Vec2::new(1.0, -1.0), 1.0);
+
+        // (t1 combine t2).apply(v) == t1.apply(t2.apply(v))
+        let combined = t1.combine(&t2);
+
+        let v1 = Vec2::new(3.0, 4.0);
+        let v2 = Vec2::new(0.0, 0.0);
+
+        assert_vec2_approx_eq(combined.apply(&v1), t1.apply(&t2.apply(&v1)));
+        assert_vec2_approx_eq(combined.apply(&v2), t1.apply(&t2.apply(&v2)));
     }
 }
