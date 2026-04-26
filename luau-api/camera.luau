@@ -5,7 +5,7 @@ local Vec = require("@vectarine/vec")
 
 local Camera2Impl = { type = "camera", position = Vec.ZERO2, rotation = 0, zoom = 1 }
 Camera2Impl.__index = Camera2Impl
-export type Camera2 = typeof(setmetatable({}, Camera2Impl))
+export type Camera2 = typeof(setmetatable({} :: typeof(Camera2Impl), Camera2Impl))
 
 --- Create a new camera for 2D
 --- A camera represents a transformation between the game world and the screen
