@@ -97,6 +97,11 @@ function module.withTransformation(
 	error("Implemented in native code")
 end
 
+--- Reset the transformation to the default inside the drawFunction. You can still call `withTransformation` inside the drawFunction, this just resets the transformation to the default for the duration of the drawFunction.
+function module.withoutTransformation(drawFunction: () -> ()): ()
+	error("Implemented in native code")
+end
+
 -- Apply the current transformation of `withTransformation` to the given position.
 -- You can use this to get the position of the mouse in the transformed space for example.
 function module.transform(pos: Vec.Vec2): Vec.Vec2
