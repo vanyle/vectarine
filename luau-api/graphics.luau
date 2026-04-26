@@ -86,7 +86,7 @@ end
 
 --- All drawing function called inside `withTransformation` will be transformed by the given translation, scale and rotation.
 --- You can use this to rotate or scale things without changing your drawing code.
---- The translation is applied first, then the rotation, then the scale. You can nest multiple calls to `withTransformation` and the transformations will be combined.
+--- The translation is applied first, then the scale, and finally the rotation. You can nest multiple calls to `withTransformation` and the transformations will be combined.
 --- The transformations are only applied for 2d drawing functions.
 ---
 --- This is used internally to implement the UI system.
