@@ -201,6 +201,17 @@ pub fn setup_graphics_api(
         }
     });
 
+    add_fn_to_table(lua, &graphics_module, "withoutTransformation", {
+        let batch = batch.clone();
+        move |_lua, draw_fn: vectarine_plugin_sdk::mlua::Function| {
+            let current_transform = batch.borrow().affine_transform;
+            batch.borrow_mut().affine_transform = AffineTransform::identity();
+            draw_fn.call::<()>(())?;
+            batch.borrow_mut().affine_transform = current_transform;
+            Ok(())
+        }
+    });
+
     add_fn_to_table(lua, &graphics_module, "transform", {
         let batch = batch.clone();
         move |_lua, (pos,): (Vec2,)| {
