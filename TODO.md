@@ -6,6 +6,7 @@
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object
 - [ ] Animation system from multiple PNG files
+- [ ] Support creating tilesets from shoebox files (xml with TextureAtlas and SubTexture)
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets

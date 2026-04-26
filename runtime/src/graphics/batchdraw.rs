@@ -140,6 +140,11 @@ impl BatchDraw2d {
         uniforms: Uniforms,
         shader_to_use: BatchShader,
     ) {
+        // Trying to draw empty data can lead to crashes.
+        if vertices.is_empty() || indices.is_empty() {
+            return;
+        }
+
         let last_item = self.vertex_data.last_mut();
         let Some(last_item) = last_item else {
             self.add_to_batch_as_new_entry(vertices, indices, uniforms, shader_to_use);
