@@ -91,6 +91,11 @@ type TextOptions = {
 	align: ("left" | "center" | "right")?,
 	-- Optional font to use for this text. If not provided, the default font will be used.
 	font: Text.FontResource?,
+
+	-- How to make the text fit within the widget?
+	-- "shrink": the text size is adjusted to make it fit in the widget.
+	-- {size: number}: the text size is fixed to the given number, there can be line breaks and the text might end with "..." if it doesn't fit.
+	fitting: "shrink" | { size: number } | nil,
 }
 
 --- Create a text widget that draws the given text. The size of the text is computed such that

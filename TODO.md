@@ -56,6 +56,7 @@
 
 # Done
 
+- [x] Make the text widget usable (fixed font size and line breaks)
 - [x] Deprecate the screen API and replace it with a "tabs" widget.
   - The tabs widget takes multiple widgets as input and displays one of them at a time
   - You can call functions on the tabs widget to pick what widget is displayed
