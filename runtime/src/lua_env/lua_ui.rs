@@ -453,6 +453,17 @@ pub fn setup_ui_api(
                 let font_id = options
                     .raw_get::<crate::lua_env::lua_text::FontResourceId>("font")
                     .unwrap_or_else(|_| crate::lua_env::lua_text::FontResourceId::default_font());
+                let fitting = match options.raw_get::<mlua::Value>("fitting") {
+                    Ok(mlua::Value::Table(t)) => {
+                        let size = t.raw_get::<f32>("size").map_err(|_| {
+                            mlua::Error::external(
+                                "fitting table must have a 'size' field of type number",
+                            )
+                        })?;
+                        text_widget::TextFitting::FixedSize(size)
+                    }
+                    _ => text_widget::TextFitting::Shrink,
+                };
                 let widget = WidgetBox(RefCell::new(Box::new(TextWidget {
                     size,
                     get_text_fn,
@@ -461,6 +472,7 @@ pub fn setup_ui_api(
                     font_id,
                     resources: resources.clone(),
                     event_state: EventState::default(),
+                    fitting,
                 })));
                 Ok(widget)
             },
