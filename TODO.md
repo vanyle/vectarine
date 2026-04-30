@@ -18,6 +18,8 @@
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Data files
+- [ ] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.
+  -> This allows users to distribute games as a single file (which self-decompresses)
 - [ ] Test runner in windowless environments
 - [ ] Add a command palette to the editor
 - [ ] Screenshot API
