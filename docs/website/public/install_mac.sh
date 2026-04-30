@@ -19,7 +19,7 @@ if ! command -v unzip > /dev/null; then
     exit 1
 fi
 
-DOWNLOAD_URL=$(curl -L -s https://api.github.com/repos/vanyle/vectarine/releases/latest | grep "vectarine.macos.arm64.zip" | sed -n '2p' | grep -o -E 'https?://[^"]+')
+DOWNLOAD_URL=$(curl -L -s https://api.github.com/repos/vanyle/vectarine/releases/latest | grep "vectarine.macos.arm64" | sed -n '2p' | grep -o -E 'https?://[^"]+')
 
 if [ -z "$DOWNLOAD_URL" ]; then
     echo "Failed to find the latest macOS release. Please check https://github.com/vanyle/vectarine/releases"
