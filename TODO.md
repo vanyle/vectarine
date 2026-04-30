@@ -1,7 +1,6 @@
 # TO-DO
 
 - [ ] Add a text input widget (to the best of your ability...)
-- [ ] Allow using tileset to create guis
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object

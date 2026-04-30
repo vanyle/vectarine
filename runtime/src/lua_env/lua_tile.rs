@@ -9,10 +9,13 @@ use crate::{
     },
     lua_env::{
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
+        lua_tile::tilemap::GeneratedTilemap,
         lua_vec2::Vec2,
     },
     make_resource_lua_compatible,
 };
+
+pub mod tilemap;
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub struct TilesetResourceId(ResourceId);
@@ -159,83 +162,31 @@ pub fn setup_tile_api(
 
     lua.register_userdata_type::<TilemapResourceId>(|registry| {
         register_resource_id_methods_on_type(resources, registry);
-
-        registry.add_method("getTile", {
-            let resources = resources.clone();
-            move |_lua, tilemap_resource_id, (layer, x, y): (i32, i32, i32)| {
-                let tileset_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
-                let Ok(tileset_res) = tileset_res else {
-                    return Ok(0);
-                };
-                let mut tileset_content = tileset_res.content.borrow_mut();
-                let tileset_content = tileset_content.as_mut();
-                let tile_id = tileset_content
-                    .and_then(|content| content.layers().nth(layer as usize))
-                    .and_then(|l| l.as_tile_layer())
-                    .and_then(|l| l.get_tile(x, y))
-                    .map(|tile| tile.id())
-                    .unwrap_or(0);
-                Ok(tile_id)
-            }
-        });
-
-        registry.add_method("getTilemapPart", {
-            let resources = resources.clone();
-            move |_lua,
-                  tilemap_resource_id,
-                  (layer, lx, ly, hx, hy, access_fn): (
-                i32,
-                i32,
-                i32,
-                i32,
-                i32,
-                vectarine_plugin_sdk::mlua::Function,
-            )| {
-                let tileset_res = resources.get_by_id::<TilemapResource>(tilemap_resource_id.0);
-                let Ok(tileset_res) = tileset_res else {
-                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
-                        "Tilemap resource not found".to_string(),
-                    ));
-                };
-                let tileset_content = tileset_res.content.borrow();
-                let tileset_content = tileset_content.as_ref();
-
-                let layer = tileset_content
-                    .and_then(|content| content.get_layer(layer as usize))
-                    .and_then(|l| l.as_tile_layer());
-                let Some(layer) = layer else {
-                    return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
-                        "Tilemap layer not found".to_string(),
-                    ));
-                };
-
-                match layer {
-                    tiled::TileLayer::Finite(finite_layer) => {
-                        for x in lx..hx {
-                            for y in ly..hy {
-                                if let Some(tile) = finite_layer.get_tile_data(x, y) {
-                                    access_fn.call::<()>((tile.id(), x, y))?;
-                                }
-                            }
-                        }
-                    }
-                    tiled::TileLayer::Infinite(infinite_layer) => {
-                        for x in lx..hx {
-                            for y in ly..hy {
-                                // This could probably be optimized to first fetch the relevant chunks and then iterate over them.
-                                // I'm assuming that the Lua call time is much higher than the Rust overhead of fetching the tile.
-                                if let Some(tile) = infinite_layer.get_tile_data(x, y) {
-                                    access_fn.call::<()>((tile.id(), x, y))?;
-                                }
-                            }
-                        }
-                    }
-                };
-
-                Ok(())
-            }
-        });
+        tilemap::register_tilemap_methods_on_type(resources, registry);
     })?;
+
+    lua.register_userdata_type::<GeneratedTilemap>(|registry| {
+        tilemap::register_tilemap_methods_on_type(resources, registry);
+
+        registry.add_method_mut(
+            "invalidate",
+            |_lua, this, (layer, x, y): (i32, i32, i32)| {
+                this.invalidate(layer, x, y);
+                Ok(())
+            },
+        );
+    })?;
+
+    tile_module.set(
+        "createGeneratedTilemap",
+        lua.create_function(|lua, generator: vectarine_plugin_sdk::mlua::Function| {
+            let tilemap = GeneratedTilemap {
+                get_chunk_fn: generator,
+                cache: std::collections::HashMap::new(),
+            };
+            lua.create_any_userdata(tilemap)
+        })?,
+    )?;
 
     Ok(tile_module)
 }
