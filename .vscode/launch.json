@@ -1,0 +1,58 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug executable 'vecta'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": ["run", "--bin=vecta", "--package=editor"]
+			},
+			"args": []
+		},
+		{
+			"name": "Debug unit tests in executable 'vecta'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": ["test", "--bin=vecta", "--package=editor"]
+			}
+		},
+		{
+			"name": "Debug unit tests in library 'runtime'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": ["test", "--package=runtime"]
+			}
+		},
+		{
+			"name": "Debug executable 'runtime'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": ["run", "--bin=runtime", "--package=runtime"]
+			},
+			"args": []
+		},
+		{
+			"name": "Debug unit tests in executable 'runtime'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": ["test", "--bin=runtime", "--package=runtime"]
+			}
+		},
+		{
+			"name": "Debug unit tests in library 'vectarine_plugin_sdk'",
+			"type": "lldb",
+			"request": "launch",
+			"cargo": {
+				"args": ["test", "--package=vectarine-plugin-sdk"]
+			}
+		}
+	]
+}
