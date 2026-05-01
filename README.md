@@ -38,6 +38,19 @@ Additionally, you'll need:
 - A text editor. I recommend [Visual Studio Code](https://code.visualstudio.com/), but you can use Notepad or anything really.
 - (Optional) Installing a Luau extension for your editor
 
+> [!TIP]
+> You can also install and update Vectarine to the latest version using these one-liners:
+>
+>
+> On Linux: `curl -fsSL https://vectarine.surge.sh/install_linux.sh | sh`
+>
+> On Mac: `curl -fsSL https://vectarine.surge.sh/install_mac.sh | sh`
+>
+> On Windows with Powershell: `irm https://vectarine.surge.sh/install_nt.sh | iex`
+>
+
+<br>
+
 See **[The guided tour](https://vectarine.surge.sh/guides/a-guided-tour.html)** for detailed information on how to make games with vectarine.
 
 If this is your first time making games, read the guide to [create your first game](https://vectarine.surge.sh/guides/getting-started.html)
@@ -46,7 +59,7 @@ If you prefer watching rather than reading, there is a **[video presentation](ht
 
 Feel free to join our [Discord server](https://discord.gg/zPwg3VDydz) if you have any questions or want to chat with other developers.
 
-Below are information on how to work and improve the engine.
+Below are information on how to improve the engine.
 
 ## Plugins
 
