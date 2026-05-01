@@ -117,7 +117,7 @@ end
 --- @param filledTileIds { number } A list of tileIds that are considered filled and will be colliders. All other tileIds will be considered empty and won't have colliders.
 function module.newVoxelCollider(
 	voxelSize: Vec.Vec2,
-	voxelsData: Tile.TilemapResource,
+	voxelsData: Tile.TilemapResource | Tile.GeneratedTilemap,
 	layer: number,
 	low: Vec.Vec2,
 	high: Vec.Vec2,

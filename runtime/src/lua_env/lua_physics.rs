@@ -5,7 +5,7 @@ use std::{
 };
 
 use nalgebra::Isometry2;
-use vectarine_plugin_sdk::mlua::{FromLua, IntoLua, UserDataFields, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataFields, UserDataMethods};
 use vectarine_plugin_sdk::rapier2d::{
     math::Vector,
     prelude::{
@@ -22,7 +22,10 @@ use crate::{
     lua_env::{
         add_fn_to_table, is_valid_data_type,
         lua_camera::Camera2,
-        lua_tile::{TilemapResourceId, get_tilemap_from_resource_id},
+        lua_tile::{
+            TilemapResourceId,
+            tilemap::{GeneratedTilemap, Tilemap},
+        },
         lua_vec2::Vec2,
     },
 };
@@ -532,58 +535,81 @@ pub fn setup_physics_api(
     add_fn_to_table(lua, &physics_module, "newVoxelCollider", {
         let resources = resources.clone();
         move |_,
-              (voxel_size, tilemap_resource_id, layer, low, high, filled_tile_ids): (
+              (voxel_size, tilemap_ud, layer, low, high, filled_tile_ids): (
             Vec2,
-            TilemapResourceId,
+            AnyUserData,
             i32,
             Vec2,
             Vec2,
             Vec<i32>,
         )| {
+            // We need to write this in a weird way because
+            fn fill_voxel_data<T: Tilemap>(
+                tilemap: &mut T,
+                resources: &Rc<ResourceManager>,
+                layer: i32,
+                lx: i32,
+                ly: i32,
+                hx: i32,
+                hy: i32,
+                filled_tile_ids: &[i32],
+                voxel_data: &mut Vec<nalgebra::Point<i32, 2>>,
+            ) -> vectarine_plugin_sdk::mlua::Result<()> {
+                tilemap.get_tile_part(resources, layer, lx, ly, hx, hy, |id, x, y| {
+                    if filled_tile_ids.contains(&(id as i32)) {
+                        voxel_data.push(vectarine_plugin_sdk::rapier2d::prelude::point![x, y]);
+                    }
+                    Ok(())
+                })
+            }
+
+            let lx = low.x().floor() as i32;
+            let ly = low.y().floor() as i32;
+            let hx = high.x().ceil() as i32;
+            let hy = high.y().ceil() as i32;
             let voxel_size = nalgebra::vector![voxel_size.x(), voxel_size.y()];
-            let voxel_data = get_tilemap_from_resource_id(&resources, tilemap_resource_id, |map| {
-                let mut points: Vec<nalgebra::Point<i32, 2>> = Vec::new();
-                let layer = map.get_layer(layer as usize)?;
-                let layer = layer.as_tile_layer()?;
-                let lx = low.x().floor() as i32;
-                let ly = low.y().floor() as i32;
-                let hx = high.x().ceil() as i32;
-                let hy = high.y().ceil() as i32;
-                match layer {
-                    tiled::TileLayer::Finite(finite_layer) => {
-                        for x in lx..hx {
-                            for y in ly..hy {
-                                if let Some(tile) = finite_layer.get_tile_data(x, y)
-                                    && filled_tile_ids.contains(&(tile.id() as i32))
-                                {
-                                    points.push(vectarine_plugin_sdk::rapier2d::prelude::point![
-                                        x, y
-                                    ]);
-                                }
-                            }
-                        }
-                    }
-                    tiled::TileLayer::Infinite(infinite_layer) => {
-                        for x in lx..hx {
-                            for y in ly..hy {
-                                if let Some(tile) = infinite_layer.get_tile_data(x, y)
-                                    && filled_tile_ids.contains(&(tile.id() as i32))
-                                {
-                                    points.push(vectarine_plugin_sdk::rapier2d::prelude::point![
-                                        x, y
-                                    ]);
-                                }
-                            }
-                        }
-                    }
-                };
-                Some(points)
-            });
-            let Some(voxel_data) = voxel_data else {
-                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
-                    "Invalid tilemap, or layer".to_string(),
-                ));
-            };
+            let mut voxel_data: Vec<nalgebra::Point<i32, 2>> = Vec::new();
+
+            let tilemap_id = tilemap_ud.borrow::<TilemapResourceId>();
+            if let Ok(tilemap_id) = tilemap_id {
+                let mut tilemap_id = *tilemap_id;
+                fill_voxel_data(
+                    &mut tilemap_id,
+                    &resources,
+                    layer,
+                    lx,
+                    ly,
+                    hx,
+                    hy,
+                    &filled_tile_ids,
+                    &mut voxel_data,
+                )
+            } else {
+                tilemap_ud
+                    .borrow_mut_scoped::<GeneratedTilemap, vectarine_plugin_sdk::mlua::Result<()>>(
+                        |generated_tilemap| {
+                            fill_voxel_data(
+                                generated_tilemap,
+                                &resources,
+                                layer,
+                                lx,
+                                ly,
+                                hx,
+                                hy,
+                                &filled_tile_ids,
+                                &mut voxel_data,
+                            )
+                        },
+                    )
+                    .flatten()
+            }?;
+
+            if voxel_data.is_empty() {
+                // Voxel colliders created with no voxels cause NaN in AABB and thus panics.
+                // We use a 0-sized ball instead.
+                let collider = ColliderBuilder::ball(0.0).build();
+                return Ok(Collider2 { collider });
+            }
 
             let collider = ColliderBuilder::voxels(voxel_size, &voxel_data).build();
             Ok(Collider2 { collider })
