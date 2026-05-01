@@ -1,5 +1,5 @@
 ---
-
+import Default from '@astrojs/starlight/components/SocialIcons.astro'
 ---
 
 <iframe
@@ -10,3 +10,7 @@
     height="30"
     title="GitHub star count"
     style="display:block; align-self:center;"></iframe>
+
+<Default>
+<slot />
+</Default>

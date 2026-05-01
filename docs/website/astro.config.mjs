@@ -11,6 +11,7 @@ export default defineConfig({
         format: "file",
     },
     base: "/",
+    site: 'https://vectarine.surge.sh',
     integrations: [
         expressiveCode(),
         starlight({
@@ -25,6 +26,11 @@ export default defineConfig({
                     icon: "github",
                     label: "GitHub",
                     href: "https://github.com/vanyle/vectarine",
+                },
+                {
+                    icon: 'discord',
+                    label: 'Discord',
+                    href: 'https://discord.gg/zPwg3VDydz'
                 },
             ],
             sidebar: [
