@@ -1,8 +1,19 @@
 name: ✨ Lint, Build & Test
 
 on:
-    push:
-    pull_request:
+  push:
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'clippy.toml'
+      - 'cross.toml'
+      - 'mise.toml'
+      - 'rust-toolchain.toml'
+      - 'runtime/**'
+      - 'editor/**'
+      - 'vectarine-plugin-sdk/**'
+      - 'vectarine-plugin-template/**'
+  pull_request:
 
 env:
     CARGO_TERM_COLOR: always

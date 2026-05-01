@@ -12,7 +12,7 @@
 
 *[Vectarine](https://vectarine.surge.sh) is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
 
-## Goals by importance
+## Goals
 
 - Your time is valuable
   - **Luau** scripting: Instant reload and strong typing
