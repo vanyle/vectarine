@@ -18,7 +18,6 @@ pub mod lua_loader;
 pub mod lua_persist;
 pub mod lua_physics;
 pub mod lua_resource;
-pub mod lua_screen;
 pub mod lua_text;
 pub mod lua_tile;
 pub mod lua_ui;
@@ -34,14 +33,10 @@ use crate::metrics::MetricsHolder;
 
 pub const BUILT_IN_MODULES: &[&str] = &[
     "vec", "vec4", "event", "fastlist", "camera", "audio", "tile", "loader", "image", "text",
-    "graphics", "screen", "io", "debug", "persist", "resource", "physics", "color", "coord",
-    "canvas", "ui",
+    "graphics", "io", "debug", "persist", "resource", "physics", "color", "coord", "canvas", "ui",
 ];
 
-pub const DEPRECATED_MODULES: &[(&str, &str)] = &[(
-    "screen",
-    "The screen module is deprecated as is being replaced by the ui module. You can use Ui.tabs to have the same behavior. Read the guide about using Uis to organize rendering for more information.",
-)];
+pub const DEPRECATED_MODULES: &[(&str, &str)] = &[];
 
 pub struct LuaHandle {
     pub lua: vectarine_plugin_sdk::mlua::Lua,
@@ -150,10 +145,6 @@ impl LuaEnvironment {
             lua_graphics::setup_graphics_api(&lua_handle.lua, &batch, &env_state, &resources)
                 .unwrap();
         register_vectarine_module(&lua_handle.lua, "graphics", graphics_module);
-
-        let screen_module =
-            lua_screen::setup_screen_api(&lua_handle.lua, &batch, &env_state, &resources).unwrap();
-        register_vectarine_module(&lua_handle.lua, "screen", screen_module);
 
         let io_module = lua_io::setup_io_api(&lua_handle.lua, &env_state).unwrap();
         register_vectarine_module(&lua_handle.lua, "io", io_module);

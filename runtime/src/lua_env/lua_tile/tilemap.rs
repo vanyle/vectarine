@@ -38,20 +38,13 @@ pub struct GeneratedTilemap {
 }
 
 impl IntoLua for GeneratedTilemap {
-    fn into_lua(
-        self,
-        lua: &mlua::Lua,
-    ) -> mlua::Result<mlua::Value> {
-        lua.create_any_userdata(self)
-            .map(mlua::Value::UserData)
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        lua.create_any_userdata(self).map(mlua::Value::UserData)
     }
 }
 
 impl FromLua for GeneratedTilemap {
-    fn from_lua(
-        value: mlua::Value,
-        _: &mlua::Lua,
-    ) -> mlua::Result<Self> {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
             mlua::Value::UserData(ud) => ud.take::<Self>(),
             _ => Err(mlua::Error::FromLuaConversionError {

@@ -13,7 +13,7 @@ use crate::{
     },
     graphics::batchdraw::BatchDraw2d,
     io::{fs::ReadOnlyFileSystem, process_events},
-    lua_env::{LuaEnvironment, lua_screen, print_lua_error_from_error},
+    lua_env::{LuaEnvironment, print_lua_error_from_error},
     metrics::{
         DRAW_CALL_METRIC_NAME, LUA_HEAP_SIZE_METRIC_NAME, LUA_SCRIPT_TIME_METRIC_NAME,
         MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
@@ -267,12 +267,6 @@ impl Game {
             lua: &self.lua_env.lua_handle.lua,
         };
         self.plugin_env.pre_lua_hook(plugin_interface);
-
-        // Update screen transitions
-        lua_screen::update_screen_transition(
-            &self.lua_env.lua_handle.lua,
-            delta_time.as_secs_f32(),
-        );
 
         let start_of_lua_update = std::time::Instant::now();
         if self.was_main_script_executed {
