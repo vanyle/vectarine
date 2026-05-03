@@ -254,6 +254,7 @@ pub fn print_frame(msg: String) {
     }
 }
 
+/// Prints an indicator that a project was unloaded. Currently, this is a horizontal separator.
 pub fn print_reload() {
     if let Ok(mut logger) = LOGGER.lock() {
         logger.log(ConsoleMessage::Reload);

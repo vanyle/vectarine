@@ -77,7 +77,7 @@ local screen1: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	if logoResource:isReady() then
 		logoResource:draw(Coord.gl(V2(0, 0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
 	end
-	drawTextCentered("Welcome to Vectarine", Coord.CENTER, 0.16, Vec4.WHITE)
+	drawTextCentered("Welcome to Vectarine", Coord.CENTER, textSize, Vec4.WHITE)
 	fontResource:drawText(
 		"Press SPACE to continue",
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),
@@ -257,13 +257,13 @@ local widget: Ui.TabWidget<any> = Ui.tabs(screens)
 widget:setActiveTab(tostring(currentScreenIndex.index))
 
 local fullscreen = Persist.onReload({ is_on = false }, "fullscreen")
-local frame_times = Persist.onReload({}, "frame_times")
-local mouse_position = Persist.onReload({ x = 0.0, y = 0.0 }, "mouse_position")
 
-function Load()
-	print("Loading ...")
-	fullscreen.is_on = false
-	table.clear(frame_times)
+local function Once()
+	_G.onceCalled = true
+	Io.centerWindow()
+end
+if not _G.onceCalled then
+	Once()
 end
 
 function Update(time_delta: number)
@@ -280,8 +280,7 @@ function Update(time_delta: number)
 		Io.setFullscreen(false)
 	end
 
-	mouse_position.x = Io.getMouse().x
-	mouse_position.y = Io.getMouse().y
+	_G.mouse_position = Io.getMouse()
 
 	local current_tab = widget:getActiveTab()
 	if current_tab ~= tostring(currentScreenIndex.index) then

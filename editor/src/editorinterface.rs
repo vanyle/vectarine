@@ -14,7 +14,7 @@ use notify_debouncer_full::{
 };
 use runtime::{
     anyhow::{self},
-    egui_glow,
+    console, egui_glow,
     game::drawable_screen_size,
     glow,
     graphics::batchdraw::BatchDraw2d,
@@ -247,6 +247,7 @@ impl EditorState {
 
         self.project.borrow_mut().take();
         self.config.borrow_mut().opened_project_path = None;
+        console::print_reload();
         self.save_config();
     }
 
