@@ -20,7 +20,7 @@ Let's consider the following example:
 
 ```lua main.luau
 local Loader = require("@vectarine/loader")
-local res, other = Loader.loadScript("./scripts/other.luau", require("other.luau"))
+local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local value = nil
 if res:isReady() then
@@ -78,7 +78,7 @@ Now, let's say we change `main.luau` to the following:
 ```lua main.luau
 local Loader = require("@vectarine/loader")
 local Event = require("@vectarine/event")
-local res, other = Loader.loadScript("./scripts/other.luau", require("other.luau"))
+local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local value = nil
 Event.getResourceLoadedEvent():on(function(r)
@@ -122,7 +122,7 @@ end
 
 ```lua main.luau
 local Loader = require("@vectarine/loader")
-local res, other = Loader.loadScript("./scripts/other.luau", require("other.luau"))
+local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local population
 if res:isReady() then

@@ -24,10 +24,10 @@ local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
 
 -- Script resources
-local fRes, f = Loader.loadScript("./scripts/f.luau", require("./f"))
-local InteractableRes, Interactable = Loader.loadScript("./scripts/interactable.luau", require("./interactable"))
+local fRes, f = Loader.loadScript("scripts/f.luau", require("./f"))
+local InteractableRes, Interactable = Loader.loadScript("scripts/interactable.luau", require("./interactable"))
 local InteractableTypes = require("./interactable")
-local WorldRes, World = Loader.loadScript("./scripts/world.luau", require("./world"))
+local WorldRes, World = Loader.loadScript("scripts/world.luau", require("./world"))
 local WorldTypes = require("./world")
 
 -- Constants

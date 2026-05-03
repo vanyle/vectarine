@@ -6,6 +6,7 @@ local Event = require("@vectarine/event")
 local Graphics = require("@vectarine/graphics")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
+local Persist = require("@vectarine/persist")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
 local V2 = Vec.V2
@@ -37,12 +38,10 @@ local screenSize = Io.getScreenSize()
 local aspectRatio = screenSize.x / screenSize.y
 
 -- Make this persistent across script reloads
-if _G.paused == nil then
-	_G.paused = false
-end
-if _G.gameover == nil then
-	_G.gameover = false
-end
+local state = Persist.onReload({
+	paused = false,
+	gameover = false,
+}, "state")
 
 local score = 0
 local Direction = V2(0, -1)
@@ -123,7 +122,6 @@ end
 local function drawEnvironment()
 	local p1 = gamePosToScreen(V2(-1, -1))
 	local size = Vec.V2(scalingFactor / aspectRatio, scalingFactor):scale(8)
-	fprint("drawn.")
 	environmentImage:draw(p1, size)
 end
 
@@ -135,14 +133,14 @@ local keyEvent = Event.getKeyDownEvent()
 keyEvent:on(function(key: string)
 	print("Key pressed: ", key)
 	if key == "Space" then
-		if _G.gameover and _G.paused then
-			_G.gameover = false
+		if state.gameover and state.paused then
+			state.gameover = false
 			score = 0
 			Direction = Vec.V2(0, -1)
 			resetSnake()
 			placeCherry()
 		end
-		_G.paused = not _G.paused
+		state.paused = not state.paused
 	end
 end)
 
@@ -226,8 +224,6 @@ function Update(timeDelta: number)
 			drawSnake(Vec.V2(segment.x, segment.y), segmentType)
 		end
 
-		fprint("SPOS: ", Snake[1])
-
 		-- Draw the next direction
 		local head = Snake[1]
 		local nextPos = head + Direction
@@ -257,7 +253,7 @@ function Update(timeDelta: number)
 
 		-- Move Snake
 		if timer > 0.5 then
-			if not _G.paused then
+			if not state.paused then
 				local newHead = Snake[1] + Direction
 				if isPositionValid(newHead) then
 					table.insert(Snake, 1, newHead)
@@ -286,13 +282,13 @@ function Update(timeDelta: number)
 			end
 		end
 		if not canMove then
-			_G.paused = true
-			_G.gameover = true
+			state.paused = true
+			state.gameover = true
 			score = #Snake
 		end
 
-		if _G.paused then
-			if _G.gameover then
+		if state.paused then
+			if state.gameover then
 				if fontResource:isReady() then
 					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, Vec4.WHITE)
 					fontResource:drawText("Score: " .. tostring(score), V2(-0.2, 0.25), 0.15, Vec4.WHITE)

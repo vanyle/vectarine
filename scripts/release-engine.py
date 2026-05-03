@@ -42,15 +42,15 @@ def copy_runtime_files(root_path: str, dest: str = ""):
     copy_from_root(root_path, "target/x86_64-pc-windows-msvc/release/runtime.exe", os.path.join(dest, "runtime.exe"))
     copy_from_root(root_path, "target/x86_64-unknown-linux-gnu/release/runtime", os.path.join(dest, "runtime-linux"), chmodx=True)
     copy_from_root(root_path, "target/aarch64-apple-darwin/release/runtime", os.path.join(dest, "runtime-macos"), chmodx=True)
-    copy_from_root(root_path, "target/wasm32-unknown-emscripten/release/runtime.js", os.path.join(dest, "runtime.js"))
-    copy_from_root(root_path, "target/wasm32-unknown-emscripten/release/runtime.wasm", os.path.join(dest, "runtime.wasm"))
+    copy_from_root(root_path, "target/wasm32-unknown-emscripten/release-emscripten/runtime.js", os.path.join(dest, "runtime.js"))
+    copy_from_root(root_path, "target/wasm32-unknown-emscripten/release-emscripten/runtime.wasm", os.path.join(dest, "runtime.wasm"))
 
     console.print("[blue]Patching index.html")
     index_html = ""
     with open(os.path.join(root_path, "index.html"), "r") as f:
         index_html = f.read()
         index_html = index_html.replace(
-            "target/wasm32-unknown-emscripten/release/runtime.js",
+            "target/wasm32-unknown-emscripten/release-emscripten/runtime.js",
             "runtime.js",
         ).replace(
             "target/wasm32-unknown-emscripten/debug/runtime.js",

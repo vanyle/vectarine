@@ -1,3 +1,4 @@
+local Debug = require("@vectarine/debug")
 local Fastlist = require("@vectarine/fastlist")
 local Graphics = require("@vectarine/graphics")
 local Image = require("@vectarine/image")
@@ -130,11 +131,13 @@ end
 function module.draw(w: IWorld)
 	local p1 = Graphics.inverseTransform(Vec.V2(-1, -1))
 	local p2 = Graphics.inverseTransform(Vec.V2(1, 1))
-	local low1 = p1:scale(1 / w.chunkSize):floor()
-	local low2 = p2:scale(1 / w.chunkSize):ceil()
+	p1 = p1:scale(1 / w.chunkSize)
+	p2 = p2:scale(1 / w.chunkSize)
+	local low = Vec.V2(math.min(p1.x, p2.x), math.min(p1.y, p2.y)):floor()
+	local high = Vec.V2(math.max(p1.x, p2.x), math.max(p1.y, p2.y)):ceil()
 
-	for x = low1.x - 1, low2.x + 1, 1 do
-		for y = low1.y - 1, low2.y + 1, 1 do
+	for x = low.x - 1, high.x + 1, 1 do
+		for y = low.y - 1, high.y + 1, 1 do
 			for _, layer in w.layers do
 				local lvl: Tile.TilemapResource = w.level :: Tile.TilemapResource
 				lvl:getTilemapPart(

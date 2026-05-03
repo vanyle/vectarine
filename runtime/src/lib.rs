@@ -130,7 +130,8 @@ where
 {
     #[cfg(target_os = "emscripten")]
     {
-        emscripten_functions::emscripten::set_main_loop(loop_fn, 0, true);
+        // Setting simulate_infinite_loop to true throws an exception which we cannot catch (this is bad).
+        emscripten_functions::emscripten::set_main_loop(loop_fn, 0, false);
     }
 
     #[cfg(not(target_os = "emscripten"))]
@@ -191,12 +192,14 @@ pub fn lib_main() {
 
                     // These are for debug and are never displayed in the runtime.
                     // We still need to clear them to avoid memory leaks.
+                    #[allow(unused_variables)]
                     {
-                        #![cfg(debug_assertions)]
                         console::consume_logs(|log| {
+                            #[cfg(debug_assertions)]
                             println!("{}", log);
                         });
                         console::consume_frame_logs(|log| {
+                            #[cfg(debug_assertions)]
                             println!("{}", log);
                         });
                     }

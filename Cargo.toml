@@ -13,12 +13,21 @@ overflow-checks = true
 [profile.dev.package.rapier2d]
 opt-level = 3
 
+[profile.release-emscripten]
+inherits = "release"
+# Emscripten doesn't like full LTO (it crashes with table index out of bounds during the shader creation)
+lto = "thin"
+# When removing overflow checks and debug-assertions I get: The application has corrupted its heap memory area
+# The issue seem to be related to set_main_loop.
+overflow-checks = true
+debug-assertions = true
+
 [profile.release]
 # Extra 
 lto = "fat"
 strip = "symbols"
 # Same as usual
 opt-level = 3
+overflow-checks = false
 debug = false
 debug-assertions = false
-overflow-checks = false
