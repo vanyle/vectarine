@@ -26,8 +26,9 @@ debug-assertions = true
 # Extra 
 lto = "fat"
 strip = "symbols"
+# Size is important for on the web, but also desktop. Especially as be ship 4 runtimes + the editor in a release.
+opt-level = "s"
 # Same as usual
-opt-level = 3
 overflow-checks = false
 debug = false
 debug-assertions = false
