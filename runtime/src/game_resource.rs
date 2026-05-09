@@ -354,9 +354,12 @@ impl ResourceManager {
         resource_id: ResourceId,
         path: &Path,
     ) {
-        let resources = self.resources.borrow();
-        let Some(resource) = resources.get(resource_id.0) else {
-            unreachable!("Incorrect resource id {}", resource_id.0);
+        let resource: Rc<ResourceHolder> = {
+            let resources = self.resources.borrow();
+            let Some(resource) = resources.get(resource_id.0) else {
+                unreachable!("Incorrect resource id {}", resource_id.0);
+            };
+            resource.clone()
         };
         // Check if the dependency is already exists. Create it if not.
         let holder = &self
