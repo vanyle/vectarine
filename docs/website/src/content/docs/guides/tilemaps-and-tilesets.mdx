@@ -98,6 +98,11 @@ for x = 0, 10 do
 end
 ```
 
+Because by default the coordinate system increases to the right and up, when creating your level in Tiled, try setting the tile render order to "right-up".
+You can also just draw the tiles with a negative scale on the y axis to flip them vertically.
+
+Check the Platformer game in the gallery for a complete example of tilemaps and tilesets in action.
+
 ## Things that are not yet supported
 
 Tilemap `.tmx` file can contain other informations about tiles like objects (that have non-integer positions), properties, etc.
