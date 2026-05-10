@@ -205,6 +205,11 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec2 {
             #[inline(always)]
             |_, (vec, other): (Vec2, Vec2)| Ok(vec - other),
         );
+        methods.add_meta_method(
+            vectarine_plugin_sdk::mlua::MetaMethod::Unm,
+            #[inline(always)]
+            |_, vec, ()| Ok(Vec2::new(-vec.0[0], -vec.0[1])),
+        );
         methods.add_meta_function(
             vectarine_plugin_sdk::mlua::MetaMethod::Mul,
             #[inline(always)]

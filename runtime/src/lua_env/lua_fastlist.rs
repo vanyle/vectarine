@@ -478,6 +478,14 @@ pub fn setup_fastlist_api(
                 })
             },
         );
+        registry.add_meta_method(mlua::MetaMethod::Unm, |_, this, ()| {
+            let data = this
+                .data
+                .iter()
+                .map(|v| Vec2::new(-v.x(), -v.y()))
+                .collect();
+            Ok(FastList::from_vec(data))
+        });
         registry.add_meta_method(
             mlua::MetaMethod::Mul,
             |_, this, other: mlua::AnyUserData| {

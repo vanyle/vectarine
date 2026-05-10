@@ -194,6 +194,11 @@ function FastListImpl.__sub(self: FastList, other: FastListOrVec): FastList
 	error("Implemented in native code")
 end
 
+--- Element-wise negation of the fastlist
+function FastListImpl.__unm(self: FastList): FastList
+	error("Implemented in native code")
+end
+
 --- Element-wise multiplication of the fastlist by another fastlist
 function FastListImpl.__mul(self: FastList, other: FastListOrVec): FastList
 	error("Implemented in native code")

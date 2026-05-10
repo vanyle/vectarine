@@ -11,6 +11,9 @@ end
 Vec4Impl.__sub = function(a: Vec4, b: Vec4): Vec4
 	error("Implemented in native code")
 end
+Vec4Impl.__unm = function(a: Vec4): Vec4
+	error("Implemented in native code")
+end
 Vec4Impl.__mul = function(a: Vec4, b: Vec4): Vec4
 	error("Implemented in native code")
 end

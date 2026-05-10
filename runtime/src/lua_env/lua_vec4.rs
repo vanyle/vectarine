@@ -184,6 +184,11 @@ impl vectarine_plugin_sdk::mlua::UserData for Vec4 {
             vectarine_plugin_sdk::mlua::MetaMethod::Sub,
             |_, (vec, other): (Vec4, Vec4)| Ok(vec - other),
         );
+        methods.add_meta_method(
+            vectarine_plugin_sdk::mlua::MetaMethod::Unm,
+            #[inline(always)]
+            |_, vec, ()| Ok(Vec4::new(-vec.0[0], -vec.0[1], -vec.0[2], -vec.0[3])),
+        );
         methods.add_meta_function(
             vectarine_plugin_sdk::mlua::MetaMethod::Mul,
             |_, (vec, other): (Vec4, Vec4)| Ok(vec * other),
