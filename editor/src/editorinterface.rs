@@ -70,6 +70,9 @@ pub struct EditorState {
     pub editor_batch_draw: BatchDraw2d,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 
+    pub editor_want_keyboard: bool,
+    pub editor_want_mouse: bool,
+
     pub plugins: Vec<PluginEntry>,
 }
 
@@ -184,6 +187,8 @@ impl EditorState {
                 )
                 .expect("Failed to create debouncer"),
             )),
+            editor_want_keyboard: false,
+            editor_want_mouse: false,
             plugins: trustedplugin::load_plugins(),
         }
     }
@@ -261,6 +266,9 @@ impl EditorState {
         platform.update_time(self.start_time.elapsed().as_secs_f64());
         platform.handle_events(latest_events, sdl, &self.video);
 
+        let mut egui_eats_keyboard = false;
+        let mut egui_eats_mouse = false;
+
         let full_output = platform.run(self, &mut |ui, editor_state| {
             draw_editor_menu(editor_state, ui);
 
@@ -276,7 +284,13 @@ impl EditorState {
             draw_editor_plugin_manager(editor_state, ui);
             draw_editor_plugin_windows(editor_state, ui);
             draw_editor_preferences(editor_state, ui);
+
+            egui_eats_keyboard = ui.egui_wants_keyboard_input();
+            egui_eats_mouse = ui.egui_wants_pointer_input() || ui.is_pointer_over_egui();
         });
+
+        self.editor_want_keyboard = egui_eats_keyboard;
+        self.editor_want_mouse = egui_eats_mouse;
 
         // Stop drawing the egui frame and get the full output
         // let full_output = platform.end_frame(&self.video);
@@ -336,6 +350,27 @@ pub fn clear_window(gl: &glow::Context) {
         gl.clear_color(0.1, 0.1, 0.1, 1.0);
         gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
     }
+}
+
+pub fn filter_events(
+    events: &[sdl2::event::Event],
+    should_filter_mouse_events: bool,
+    should_filter_keyboard_events: bool,
+) -> impl Iterator<Item = &sdl2::event::Event> {
+    use sdl2::event::Event;
+    events.iter().filter(move |e| {
+        let needs_filtering_because_keyboard = should_filter_keyboard_events
+            && matches!(e, Event::KeyDown { .. } | Event::KeyUp { .. });
+        let needs_filtering_because_mouse = should_filter_mouse_events
+            && matches!(
+                e,
+                Event::MouseButtonUp { .. }
+                    | Event::MouseButtonDown { .. }
+                    | Event::MouseMotion { .. }
+            );
+
+        !needs_filtering_because_keyboard && !needs_filtering_because_mouse
+    })
 }
 
 pub fn make_gl_context(video_subsystem: &runtime::sdl2::VideoSubsystem) -> glow::Context {

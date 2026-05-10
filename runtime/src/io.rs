@@ -73,9 +73,9 @@ impl Default for IoEnvState {
     }
 }
 
-pub fn process_events(
+pub fn process_events<'a>(
     game: &mut Game,
-    events: &[sdl2::event::Event],
+    events: impl Iterator<Item = &'a sdl2::event::Event>,
     framebuffer_width: f32,
     framebuffer_height: f32,
 ) {
@@ -89,7 +89,7 @@ pub fn process_events(
         env_state.text_input.clear();
     }
 
-    for event in events.iter() {
+    for event in events {
         match event {
             Event::Quit { .. } => {
                 std::process::exit(0);

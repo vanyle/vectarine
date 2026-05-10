@@ -172,8 +172,14 @@ fn gui_main() {
                     error,
                 );
             } else {
+                let game_events = editorinterface::filter_events(
+                    &game_window_events,
+                    editor_state.editor_want_mouse,
+                    editor_state.editor_want_keyboard,
+                );
+
                 *project.hook_timing.borrow_mut() = Some(std::time::Instant::now());
-                game.main_loop(&game_window_events, &window, delta_duration, true);
+                game.main_loop(game_events, &window, delta_duration, true);
                 *project.hook_timing.borrow_mut() = None;
             }
         } else {

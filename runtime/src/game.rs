@@ -170,9 +170,9 @@ impl Game {
         Some(res)
     }
 
-    pub fn main_loop(
+    pub fn main_loop<'a>(
         &mut self,
-        events: &[sdl2::event::Event],
+        events: impl Iterator<Item = &'a sdl2::event::Event>,
         window: &Rc<RefCell<sdl2::video::Window>>,
         delta_time: std::time::Duration,
         _in_editor: bool,
