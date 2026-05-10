@@ -61,6 +61,7 @@ impl VectarineWidget for TextWidget {
         let event_table = current_state
             .to_lua(lua)
             .expect("Conversion to table should never fail");
+        // Double-borrow issue can happen here as get_text_fn might need to borrow self.
         let result = self.get_text_fn.call::<mlua::Table>((event_table, extra))?;
         let text = result.raw_get::<String>("text")?;
         let color: [f32; 4] = match result.raw_get::<crate::lua_env::lua_vec4::Vec4>("color") {

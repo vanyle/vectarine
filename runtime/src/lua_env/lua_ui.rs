@@ -304,7 +304,12 @@ pub fn setup_ui_api(
         registry.add_method(
             "setActiveTab",
             |_lua, widget: &WidgetBox, (tab_name, animation): (String, Option<mlua::Table>)| {
-                let mut b = widget.0.borrow_mut();
+                let b = widget.0.try_borrow_mut();
+                let Ok(mut b) = b else {
+                    return Err(mlua::Error::external(
+                        "Cannot call setActiveTab while the widget is being drawn",
+                    ));
+                };
                 let tw = b.as_any_mut().downcast_mut::<TabWidget>().ok_or_else(|| {
                     mlua::Error::external("setActiveTab can only be called on a tab widget")
                 })?;
