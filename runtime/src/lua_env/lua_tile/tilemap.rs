@@ -110,7 +110,10 @@ impl GeneratedTilemap {
         if self.cache.contains_key(&(layer, chunk_x, chunk_y)) {
             return Some(());
         }
-        let result: mlua::Table = self.get_chunk_fn.call((layer, chunk_x, chunk_y)).ok()?;
+        let result: mlua::Table = self
+            .get_chunk_fn
+            .call((layer, chunk_x * CHUNK_SIZE, chunk_y * CHUNK_SIZE))
+            .ok()?;
         let size = (CHUNK_SIZE * CHUNK_SIZE) as usize;
         let chunk: Vec<u32> = (1..=size)
             .map(|i| result.get::<u32>(i).unwrap_or(0))
