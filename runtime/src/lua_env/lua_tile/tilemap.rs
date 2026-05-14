@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::rc::Rc;
+use std::{cell::RefCell, collections::HashMap};
 
 use vectarine_plugin_sdk::mlua::{self, FromLua, IntoLua, UserDataMethods, UserDataRegistry};
 
@@ -11,15 +11,9 @@ use crate::{
 const CHUNK_SIZE: i32 = 16;
 
 pub trait Tilemap {
-    fn get_tile(
-        &mut self,
-        resources: &Rc<ResourceManager>,
-        layer: i32,
-        x: i32,
-        y: i32,
-    ) -> Option<u32>;
+    fn get_tile(&self, resources: &Rc<ResourceManager>, layer: i32, x: i32, y: i32) -> Option<u32>;
     fn get_tile_part(
-        &mut self,
+        &self,
         resources: &Rc<ResourceManager>,
         layer: i32,
         lx: i32,
@@ -34,7 +28,7 @@ pub trait Tilemap {
 /// and is not stored as a resource. It can be used to create infinite tilemaps for example.
 pub struct GeneratedTilemap {
     pub get_chunk_fn: mlua::Function,
-    pub cache: HashMap<(i32, i32, i32), Vec<u32>>,
+    pub cache: RefCell<HashMap<(i32, i32, i32), Vec<u32>>>,
 }
 
 impl IntoLua for GeneratedTilemap {
@@ -58,7 +52,7 @@ impl FromLua for GeneratedTilemap {
 
 impl Tilemap for GeneratedTilemap {
     fn get_tile(
-        &mut self,
+        &self,
         _resources: &Rc<ResourceManager>,
         layer: i32,
         x: i32,
@@ -67,14 +61,15 @@ impl Tilemap for GeneratedTilemap {
         let chunk_x = x.div_euclid(CHUNK_SIZE);
         let chunk_y = y.div_euclid(CHUNK_SIZE);
         self.ensure_chunk(layer, chunk_x, chunk_y)?;
-        let chunk = self.cache.get(&(layer, chunk_x, chunk_y))?;
+        let cache = self.cache.borrow();
+        let chunk = cache.get(&(layer, chunk_x, chunk_y))?;
         let local_x = x.rem_euclid(CHUNK_SIZE) as usize;
         let local_y = y.rem_euclid(CHUNK_SIZE) as usize;
         chunk.get(local_y * CHUNK_SIZE as usize + local_x).copied()
     }
 
     fn get_tile_part(
-        &mut self,
+        &self,
         _resources: &Rc<ResourceManager>,
         layer: i32,
         lx: i32,
@@ -90,7 +85,7 @@ impl Tilemap for GeneratedTilemap {
                 if self.ensure_chunk(layer, chunk_x, chunk_y).is_none() {
                     continue;
                 }
-                if let Some(chunk) = self.cache.get(&(layer, chunk_x, chunk_y)) {
+                if let Some(chunk) = self.cache.borrow().get(&(layer, chunk_x, chunk_y)) {
                     let local_x = x.rem_euclid(CHUNK_SIZE) as usize;
                     let local_y = y.rem_euclid(CHUNK_SIZE) as usize;
                     if let Some(&tile) = chunk.get(local_y * CHUNK_SIZE as usize + local_x) {
@@ -106,8 +101,8 @@ impl Tilemap for GeneratedTilemap {
 impl GeneratedTilemap {
     /// Ensures the chunk at (layer, chunk_x, chunk_y) is in the cache.
     /// Calls the Lua generator function if the chunk is missing.
-    fn ensure_chunk(&mut self, layer: i32, chunk_x: i32, chunk_y: i32) -> Option<()> {
-        if self.cache.contains_key(&(layer, chunk_x, chunk_y)) {
+    fn ensure_chunk(&self, layer: i32, chunk_x: i32, chunk_y: i32) -> Option<()> {
+        if self.cache.borrow().contains_key(&(layer, chunk_x, chunk_y)) {
             return Some(());
         }
         let result: mlua::Table = self
@@ -118,25 +113,21 @@ impl GeneratedTilemap {
         let chunk: Vec<u32> = (1..=size)
             .map(|i| result.get::<u32>(i).unwrap_or(0))
             .collect();
-        self.cache.insert((layer, chunk_x, chunk_y), chunk);
+        self.cache
+            .borrow_mut()
+            .insert((layer, chunk_x, chunk_y), chunk);
         Some(())
     }
 
-    pub fn invalidate(&mut self, layer: i32, x: i32, y: i32) {
+    pub fn invalidate(&self, layer: i32, x: i32, y: i32) {
         let chunk_x = x.div_euclid(CHUNK_SIZE);
         let chunk_y = y.div_euclid(CHUNK_SIZE);
-        self.cache.remove(&(layer, chunk_x, chunk_y));
+        self.cache.borrow_mut().remove(&(layer, chunk_x, chunk_y));
     }
 }
 
 impl Tilemap for TilemapResourceId {
-    fn get_tile(
-        &mut self,
-        resources: &Rc<ResourceManager>,
-        layer: i32,
-        x: i32,
-        y: i32,
-    ) -> Option<u32> {
+    fn get_tile(&self, resources: &Rc<ResourceManager>, layer: i32, x: i32, y: i32) -> Option<u32> {
         let tilemap_res = resources.get_by_id::<TilemapResource>(self.0).ok()?;
         let content = tilemap_res.content.borrow();
         let content = content.as_ref()?;
@@ -149,7 +140,7 @@ impl Tilemap for TilemapResourceId {
     }
 
     fn get_tile_part(
-        &mut self,
+        &self,
         resources: &Rc<ResourceManager>,
         layer: i32,
         lx: i32,
@@ -203,14 +194,14 @@ pub fn register_tilemap_methods_on_type<T: Tilemap + 'static>(
     resources: &Rc<ResourceManager>,
     registry: &mut UserDataRegistry<T>,
 ) {
-    registry.add_method_mut("getTile", {
+    registry.add_method("getTile", {
         let resources = resources.clone();
         move |_lua, this, (layer, x, y): (i32, i32, i32)| {
             Ok(this.get_tile(&resources, layer, x, y).unwrap_or(0))
         }
     });
 
-    registry.add_method_mut("getTilemapPart", {
+    registry.add_method("getTilemapPart", {
         let resources = resources.clone();
         move |_lua,
               this,

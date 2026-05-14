@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua, UserDataMethods};
 
@@ -168,7 +168,7 @@ pub fn setup_tile_api(
     lua.register_userdata_type::<GeneratedTilemap>(|registry| {
         tilemap::register_tilemap_methods_on_type(resources, registry);
 
-        registry.add_method_mut(
+        registry.add_method(
             "invalidate",
             |_lua, this, (layer, x, y): (i32, i32, i32)| {
                 this.invalidate(layer, x, y);
@@ -182,7 +182,7 @@ pub fn setup_tile_api(
         lua.create_function(|lua, generator: vectarine_plugin_sdk::mlua::Function| {
             let tilemap = GeneratedTilemap {
                 get_chunk_fn: generator,
-                cache: std::collections::HashMap::new(),
+                cache: RefCell::new(std::collections::HashMap::new()),
             };
             lua.create_any_userdata(tilemap)
         })?,
