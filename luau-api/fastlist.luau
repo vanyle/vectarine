@@ -70,6 +70,11 @@ function FastListImpl.toTable(self: FastList): { Vec.Vec2 }
 	error("Implemented in native code")
 end
 
+--- Returns a table of numbers from the fast list, by taking the x component of each Vec2
+function FastListImpl.toNumberTableX(self: FastList): { number }
+	error("Implemented in native code")
+end
+
 --MARK: Manipulation
 
 --- Apply a function to each Vec2 in the fast list. You can modify the vector in-place
