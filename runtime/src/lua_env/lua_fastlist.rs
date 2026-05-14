@@ -148,6 +148,11 @@ pub fn setup_fastlist_api(
 
         registry.add_method("toTable", |_, this, ()| Ok(this.data.clone()));
 
+        registry.add_method("toNumberTableX", |_, this, ()| {
+            let number_table: Vec<f32> = this.data.iter().map(|v| v.x()).collect();
+            Ok(number_table)
+        });
+
         registry.add_method_mut("forEach", |_, this, func: mlua::Function| {
             for (i, vec) in this.data.iter_mut().enumerate() {
                 // 1-indexed for Lua
@@ -502,6 +507,26 @@ pub fn setup_fastlist_api(
                 })
             },
         );
+
+        registry.add_meta_method(mlua::MetaMethod::ToString, |_, this, ()| {
+            // Fastlist{V2(a,b), V2(b,c), ..., V2(x,y)}(len=N)
+            let inside: String = this
+                .data
+                .iter()
+                .take(10)
+                // We only show 1 decimal as the fastlist can be very long.
+                .map(|v| format!("V2({:.1},{:.1})", v.x(), v.y()))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let ellipsis = if this.data.len() > 10 { ", ... " } else { "" };
+            let s = format!(
+                "FastList{{{}{}}}(len={})",
+                inside,
+                ellipsis,
+                this.data.len()
+            );
+            Ok(s)
+        });
 
         registry.add_method("scale", |_, this, k: f32| {
             let data = this.data.iter().map(|v| *v * k).collect();
