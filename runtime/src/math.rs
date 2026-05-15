@@ -75,7 +75,15 @@ impl<const N: usize> Vect<N> {
     }
     #[inline]
     pub fn sign(self) -> Self {
-        Self(std::array::from_fn(|i| self.0[i].signum()))
+        Self(std::array::from_fn(|i| {
+            if self.0[i] > 0.0 {
+                1.0
+            } else if self.0[i] < 0.0 {
+                -1.0
+            } else {
+                0.0
+            }
+        }))
     }
 }
 
