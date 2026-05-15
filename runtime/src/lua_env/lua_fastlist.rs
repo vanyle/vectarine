@@ -509,7 +509,6 @@ pub fn setup_fastlist_api(
         );
 
         registry.add_meta_method(mlua::MetaMethod::ToString, |_, this, ()| {
-            // Fastlist{V2(a,b), V2(b,c), ..., V2(x,y)}(len=N)
             let inside: String = this
                 .data
                 .iter()

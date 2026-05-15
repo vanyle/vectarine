@@ -62,6 +62,24 @@ pub fn setup_io_api(
         }
     });
 
+    add_fn_to_table(lua, &io_module, "getKeyName", {
+        move |lua, keycode_name: String| {
+            let scancode = Scancode::from_name(&keycode_name);
+            let Some(scancode) = scancode else {
+                return Ok(vectarine_plugin_sdk::mlua::Nil);
+            };
+
+            let Some(name) =
+                sdl2::keyboard::Keycode::from_scancode(scancode).map(|keycode| keycode.name())
+            else {
+                return Ok(vectarine_plugin_sdk::mlua::Nil);
+            };
+
+            lua.create_string(name)
+                .map(vectarine_plugin_sdk::mlua::Value::String)
+        }
+    });
+
     add_fn_to_table(lua, &io_module, "getTextInput", {
         let env_state = env_state.clone();
         move |_, ()| {
