@@ -1,0 +1,9 @@
+title = "Sokoban"
+main_script_path = "scripts/game.luau"
+logo_path = ""
+description = "A variation on the classic Sokoban puzzle game with undo"
+tags = []
+loading_animation = "pixel"
+default_screen_width = 800
+default_screen_height = 600
+plugins = []
