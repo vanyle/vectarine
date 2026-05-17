@@ -39,6 +39,27 @@ export default defineConfig({
                     link: "/",
                 },
                 {
+                    label: "Gallery",
+                    items: [
+                        {
+                            label: "What is the Gallery?",
+                            link: "/gallery/the-gallery/",
+                        },
+                        {
+                            label: "Snake",
+                            link: "/gallery/snake/",
+                        },
+                        {
+                            label: "Sokoban",
+                            link: "/gallery/sokoban/",
+                        },
+                        {
+                            label: "Xmas AAA",
+                            link: "/gallery/xmas-3a/",
+                        }
+                    ]
+                },
+                {
                     label: "Introductions",
                     items: [
                         {
@@ -75,7 +96,7 @@ export default defineConfig({
                             link: "/guides/create-a-plugin/",
                         },
                     ],
-                },
+                }
             ],
         }),
         react(),

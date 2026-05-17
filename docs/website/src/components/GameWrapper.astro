@@ -1,0 +1,98 @@
+---
+// src/components/GameWrapper.astro
+interface Props {
+  src: string;
+  width?: string;
+  height?: string;
+}
+
+const { src, width = "800px", height = "600px" } = Astro.props;
+---
+
+<div class="game-container" style={`width: ${width}; height: ${height};`}>
+  <iframe frameborder="0" class="game-iframe" data-src={src}></iframe>
+  <div class="focus-overlay">Click to Play</div>
+</div>
+
+<style>
+  .game-container {
+    position: relative;
+    margin: 2rem 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .game-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .focus-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.1);
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--sl-font-sans);
+    font-size: 2rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-shadow: 0 0 6px black;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    z-index: 10;
+  }
+
+  .game-container.is-focused .focus-overlay {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Allows mouse clicks to hit the game canvas */
+  }
+</style>
+
+<script>
+  function setupGameContainers() {
+    const containers = document.querySelectorAll('.game-container');
+
+    containers.forEach(container => {
+      const iframe = container.querySelector('.game-iframe') as HTMLIFrameElement;
+      const overlay = container.querySelector('.focus-overlay') as HTMLDivElement;
+
+      if (!iframe || !overlay) return;
+
+      overlay.addEventListener('click', () => {
+        if (!iframe.src && iframe.dataset.src) {
+          iframe.src = iframe.dataset.src;
+        }
+        iframe.focus();
+        container.classList.add('is-focused');
+      });
+
+      window.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (document.activeElement === iframe) {
+            container.classList.add('is-focused');
+          }
+        }, 100);
+      });
+
+      window.addEventListener('focus', () => {
+        setTimeout(() => {
+          if (document.activeElement !== iframe) {
+            container.classList.remove('is-focused');
+          }
+        }, 100);
+      });
+    });
+  }
+
+  setupGameContainers();  
+  document.addEventListener('astro:after-swap', setupGameContainers);
+</script>

@@ -1,0 +1,2 @@
+# Put the bundles in Git LFS
+*.vecta filter=lfs diff=lfs merge=lfs -text
