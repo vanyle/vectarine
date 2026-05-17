@@ -1,9 +1,11 @@
 # TO-DO
 
+- [ ] Android support
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object
+- [ ] Joystick/gamepad support
 - [ ] Animation system from multiple PNG files
 - [ ] Support creating tilesets from shoebox files (xml with TextureAtlas and SubTexture)
 - [ ] Aseprite support
@@ -19,7 +21,6 @@
 - [ ] Data files
 - [ ] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.
   -> This allows users to distribute games as a single file (which self-decompresses)
-- [ ] Test runner in windowless environments
 - [ ] Add a command palette to the editor
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
@@ -28,6 +29,7 @@
 - [ ] Add a CLI version of the editor
   - [ ] The editor is compiled with -mwindow
   - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
+  - [ ] The CLI can test the code for correctness and generate screenshots
 - [ ] Event system, part II
   - [ ] Action system (you map actions to keys and actions to functions)
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)
@@ -51,12 +53,10 @@
   - [ ] Lights and shadows (set a max number of lights to 20 in the API)
   - [ ] Reflective objects like water
   - [ ] Drawing a depth buffer
-- [ ] Rewrite the sokoban using Vectarine
-- [ ] Joystick support
-- [ ] Android support
 
 # Done
 
+- [x] Rewrite the sokoban using Vectarine
 - [x] Make the text widget usable (fixed font size and line breaks)
 - [x] Deprecate the screen API and replace it with a "tabs" widget.
   - The tabs widget takes multiple widgets as input and displays one of them at a time

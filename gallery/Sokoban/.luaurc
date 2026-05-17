@@ -1,0 +1,10 @@
+{
+	"languageMode": "strict",
+	"lintErrors": false,
+	"lint": {
+		"FunctionUnused": false
+	},
+	"aliases": {
+		"vectarine": "luau-api"
+	}
+}

@@ -11,12 +11,15 @@ static DEFAULT_CODE: &str = "local Debug = require('@vectarine/debug')
 local Graphics = require('@vectarine/graphics')
 local Vec4 = require('@vectarine/vec4')
 local Vec = require('@vectarine/vec')
+
 Debug.print(\"Loaded.\")
+
 function Update(deltaTime: number)
     Graphics.clear(Vec4.WHITE)
     Graphics.drawSplashScreen(\"Empty game\", 0.0)
     Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
-end";
+end
+";
 
 static DEFAULT_LUAURC: &str = r#"{
 	"languageMode": "strict",
