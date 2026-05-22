@@ -215,6 +215,8 @@ fn add_file_to_zip_from_path(
         options
     };
 
+    // Note: itch like tar files for web games, maybe this should be an option.
+    // zip + zstd are smaller though.
     zip.start_file(zip_path, options)?;
     let mut f = fs::File::open(file_path)?;
     io::copy(&mut f, zip)?;

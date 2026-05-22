@@ -26,10 +26,20 @@ else
     exit 1
 fi
 
-DOWNLOAD_URL=$(curl -L -s https://api.github.com/repos/vanyle/vectarine/releases/latest | grep "vectarine.linux.x86_64" | sed -n '2p' | grep -o -E 'https?://[^"]+') || true
+API_RESPONSE=$(curl -L -s -w "\n%{http_code}" https://api.github.com/repos/vanyle/vectarine/releases/latest) || true
+HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
+API_BODY=$(echo "$API_RESPONSE" | sed '$d')
+
+if [ "$HTTP_CODE" != "200" ]; then
+    echo "GitHub API request failed with status $HTTP_CODE"
+    echo "Please retry or visit https://github.com/vanyle/vectarine/releases/latest for a manual download."
+    exit 1
+fi
+
+DOWNLOAD_URL=$(echo "$API_BODY" | grep "vectarine.linux.x86_64" | sed -n '2p' | grep -o -E 'https?://[^"]+') || true
 
 if [ -z "$DOWNLOAD_URL" ]; then
-    echo "Failed to find download URL. GitHub API may be rate-limited."
+    echo "Failed to find the latest Linux release. Retry or visit https://github.com/vanyle/vectarine/releases/latest for a manual download."
     exit 1
 fi
 
