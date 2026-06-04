@@ -3,6 +3,10 @@ name = "vectarine-cli"
 version = "0.1.0"
 edition = "2024"
 
+[dependencies]
+clap = { version = "4.6.0", features = ["derive"] }
+vectarine-plugin-sdk = { path = "../vectarine-plugin-sdk" }
+
 [lints.clippy]
 enum_glob_use = "warn"
 elidable_lifetime_names = "warn"
@@ -18,6 +22,3 @@ ref_option = "warn"
 ref_option_ref = "warn"
 unwrap_used = "warn"
 unnecessary_wraps = "warn"
-
-[dependencies]
-clap = { version = "4.6.0", features = ["derive"] }
