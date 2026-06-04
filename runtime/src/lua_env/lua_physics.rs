@@ -800,7 +800,7 @@ pub fn setup_physics_api(
                     })
                     .flatten()
                     .collect::<Vec<_>>();
-                touching_objects.sort_by(|a, b| a.0.cmp(&b.0));
+                touching_objects.sort_by_key(|a| a.0);
                 touching_objects.dedup();
                 touching_objects
                     .iter()
