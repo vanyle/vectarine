@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use sdl2;
-use sdl2::keyboard::Scancode;
+use vectarine_plugin_sdk::sdl2;
+use vectarine_plugin_sdk::sdl2::keyboard::Scancode;
 
 use crate::{
     io::IoEnvState,

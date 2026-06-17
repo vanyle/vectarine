@@ -3,7 +3,8 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 
-use sdl2::Sdl;
+use vectarine_plugin_sdk::sdl2;
+use vectarine_plugin_sdk::sdl2::Sdl;
 
 static DURATION_OF_BUFFER_IN_MS: f32 = 150.0;
 

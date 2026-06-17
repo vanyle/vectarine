@@ -651,9 +651,9 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
 name = "cmake"
-version = "0.1.57"
+version = "0.1.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75443c44cd6b379beb8c5b45d85d0773baf31cce901fe7bb252f4eff3008ef7d"
+checksum = "c0f78a02292a74a88ac736019ab962ece0bc380e3f977bf72e376c5d78ff0678"
 dependencies = [
  "cc",
 ]
@@ -2078,9 +2078,9 @@ dependencies = [
 
 [[package]]
 name = "luau0-src"
-version = "0.19.1+luau714"
+version = "0.20.3+luau723"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b824c0a50062396dbb03e1d786e21406a5c29ae5e8f3a862ad34adbe404ab59"
+checksum = "fcbb400b4091c9b9f5559e4a2c91757cf402bc21dd54a99f3a823c09a383cd2d"
 dependencies = [
  "cc",
 ]
@@ -2172,8 +2172,8 @@ dependencies = [
 
 [[package]]
 name = "mlua"
-version = "0.12.0-dev.1"
-source = "git+https://github.com/mlua-rs/mlua?rev=c5aadc68cdc475871d30cc53411b059f02daceb8#c5aadc68cdc475871d30cc53411b059f02daceb8"
+version = "0.12.0-rc.1"
+source = "git+https://github.com/mlua-rs/mlua?rev=15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69#15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69"
 dependencies = [
  "bstr",
  "either",
@@ -2189,8 +2189,8 @@ dependencies = [
 
 [[package]]
 name = "mlua-sys"
-version = "0.10.0"
-source = "git+https://github.com/mlua-rs/mlua?rev=c5aadc68cdc475871d30cc53411b059f02daceb8#c5aadc68cdc475871d30cc53411b059f02daceb8"
+version = "0.11.0-rc.1"
+source = "git+https://github.com/mlua-rs/mlua?rev=15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69#15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69"
 dependencies = [
  "cc",
  "cfg-if",
@@ -3101,7 +3101,6 @@ dependencies = [
  "noise",
  "num-traits",
  "regex",
- "sdl2",
  "serde_json",
  "symphonia",
  "tiled",
@@ -3878,6 +3877,7 @@ name = "vectarine-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "runtime",
  "vectarine-plugin-sdk",
 ]
 
@@ -3892,6 +3892,7 @@ dependencies = [
  "lazy_static",
  "mlua",
  "rapier2d",
+ "sdl2",
  "serde",
  "toml",
 ]

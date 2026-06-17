@@ -17,15 +17,27 @@ lazy_static = "1.5.0"
 serde = { version = "1.0.219", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-# Mar 28, 2026 commit, needed for Rust 1.94 compatibility, >0.11.6
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
+# Jun 1, 2026 commit, needed for Rust 1.94 compatibility, >0.11.6
 # Targets Luau 0.714
-mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau-jit", "serde", "vendored"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "macos"))'.dependencies]
-mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau-jit", "serde", "vendored"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
-mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau-jit", "serde", "vendored"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69", features = ["luau-jit", "serde", "vendored"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
-mlua = { git = "https://github.com/mlua-rs/mlua", rev = "c5aadc68cdc475871d30cc53411b059f02daceb8", features = ["luau", "serde", "vendored"] }
+sdl2 = { version = "0.38", default-features = false, features = [] }
+mlua = { git = "https://github.com/mlua-rs/mlua", rev = "15fb63b2a24be7dd3cdeb55b1f762a9d213f0a69", features = ["luau", "serde", "vendored"] }
+
+[package.metadata.vcpkg]
+dependencies = ["sdl2"]
+git = "https://github.com/microsoft/vcpkg"
+
+# To check for a new release, check https://github.com/microsoft/vcpkg/releases
+# https://github.com/microsoft/vcpkg/commit/50c0cb48a0cf2f6fc5c7b2c0d2bafbe26d0a7ca2
+rev = "50c0cb4"

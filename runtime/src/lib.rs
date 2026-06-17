@@ -2,6 +2,7 @@ pub mod console;
 pub mod game;
 pub mod game_resource;
 pub mod graphics;
+pub mod inithelpers;
 pub mod io;
 pub mod loader;
 pub mod lua_env;
@@ -12,7 +13,8 @@ pub mod projectinfo;
 pub mod sound;
 
 // Re-export commonly used crates for the editor
-pub use sdl2;
+use crate::inithelpers::RenderingBlock;
+use crate::inithelpers::set_opengl_attributes;
 pub use vectarine_plugin_sdk::anyhow;
 pub use vectarine_plugin_sdk::egui;
 pub use vectarine_plugin_sdk::egui_glow;
@@ -20,29 +22,21 @@ pub use vectarine_plugin_sdk::glow;
 pub use vectarine_plugin_sdk::lazy_static;
 pub use vectarine_plugin_sdk::mlua;
 pub use vectarine_plugin_sdk::rapier2d;
+pub use vectarine_plugin_sdk::sdl2;
 pub use vectarine_plugin_sdk::serde;
 pub use vectarine_plugin_sdk::toml;
 
 use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
 
 use sdl2::{
-    EventPump, Sdl, VideoSubsystem,
-    video::{SwapInterval, Window, gl_attr::GLAttr},
+    VideoSubsystem,
+    video::{SwapInterval, Window},
 };
 
 use crate::{
     game_resource::audio_resource::{AUDIO_CHANNELS, AUDIO_SAMPLE_FREQUENCY},
     sound::init_sound_system,
 };
-
-pub struct RenderingBlock {
-    pub video: Rc<VideoSubsystem>,
-    pub window: Rc<RefCell<Window>>,
-    pub event_pump: EventPump,
-    pub sdl: Sdl,
-    pub gl: Arc<glow::Context>,
-    pub gl_context: ManuallyDrop<sdl2::video::GLContext>,
-}
 
 pub fn get_shader_version() -> &'static str {
     #[cfg(target_os = "macos")]
@@ -53,26 +47,6 @@ pub fn get_shader_version() -> &'static str {
     {
         "#version 300 es"
     }
-}
-
-#[cfg(target_os = "macos")]
-pub fn set_opengl_attributes(gl_attr: GLAttr) {
-    // MacOS does not support OpenGL ES.
-    gl_attr.set_context_version(3, 0);
-    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
-    gl_attr.set_multisample_buffers(1);
-    gl_attr.set_multisample_samples(4);
-    gl_attr.set_stencil_size(8); // Request 8-bit stencil buffer
-    gl_attr.set_context_flags().forward_compatible().set(); // for macOS
-}
-
-#[cfg(not(target_os = "macos"))]
-pub fn set_opengl_attributes(gl_attr: GLAttr) {
-    gl_attr.set_context_version(3, 0);
-    gl_attr.set_multisample_buffers(1);
-    gl_attr.set_multisample_samples(4);
-    gl_attr.set_stencil_size(8); // Request 8-bit stencil buffer
-    // gl_attr.set_context_profile(vectarine_plugin_sdk::sdl2::video::GLProfile::Core);
 }
 
 pub fn init_sdl<F>(make_gl_from_video_system: F) -> RenderingBlock

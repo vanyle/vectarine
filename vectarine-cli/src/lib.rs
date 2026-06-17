@@ -2,6 +2,7 @@ use clap::Parser;
 
 pub mod cliarg;
 pub mod features;
+pub mod headless;
 pub mod project;
 
 pub fn lib_main() {
