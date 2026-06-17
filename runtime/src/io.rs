@@ -1,7 +1,7 @@
 use crate::{game::Game, lua_env::print_lua_error_from_error};
-use sdl2::{self, event::Event, keyboard::Scancode, video::FullscreenType};
 use std::collections::HashMap;
 use vectarine_plugin_sdk::mlua::IntoLua;
+use vectarine_plugin_sdk::sdl2::{self, event::Event, keyboard::Scancode, video::FullscreenType};
 
 pub mod dummyfs;
 pub mod fs;

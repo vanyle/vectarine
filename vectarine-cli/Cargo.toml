@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.6.0", features = ["derive"] }
 vectarine-plugin-sdk = { path = "../vectarine-plugin-sdk" }
+runtime = { path = "../runtime" }
 
 [lints.clippy]
 enum_glob_use = "warn"

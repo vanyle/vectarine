@@ -1,6 +1,7 @@
 # Vectarine CLI
 
 The vectarine CLI can be used to programmatically manage projects and run tests.
+You can use it in a CI to generate builds of your game or generate screenshots, etc.
 
 Goals:
 

@@ -2,6 +2,8 @@
 name = "editor"
 version = "0.1.0"
 edition = "2024"
+description = "The Vectarine Editor, used to create and edit vectarine projects."
+homepage = "https://github.com/vanyle/vectarine"
 
 [dependencies]
 egui_extras = "0.34.1"

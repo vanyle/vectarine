@@ -20,31 +20,13 @@ vectarine-plugin-sdk = { path = "../vectarine-plugin-sdk" }
 [target.'cfg(not(target_os = "emscripten"))'.dependencies]
 libloading = "0.9.0"
 
-[target.'cfg(target_os = "windows")'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
-
-[target.'cfg(any(target_os = "macos"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
-
-[target.'cfg(any(target_os = "linux"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled"] }
-
 [target.'cfg(target_os = "emscripten")'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = [] }
 emscripten-val = { git = "https://github.com/vanyle/emscripten-val", package = "emscripten-val", rev = "2f77cc9" }
 emscripten-functions = "0.3.0"
 base64 = "0.22.1"
 
 [build-dependencies]
 winresource = "0.1.23"
-
-[package.metadata.vcpkg]
-dependencies = ["sdl2"]
-git = "https://github.com/microsoft/vcpkg"
-
-# To check for a new release, check https://github.com/microsoft/vcpkg/releases
-# https://github.com/microsoft/vcpkg/commit/50c0cb48a0cf2f6fc5c7b2c0d2bafbe26d0a7ca2
-rev = "50c0cb4"
 
 [package.metadata.vcpkg.target]
 x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }

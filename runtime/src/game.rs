@@ -1,10 +1,10 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
-use sdl2;
-use sdl2::video::WindowPos;
 use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::glow::HasContext;
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
+use vectarine_plugin_sdk::sdl2;
+use vectarine_plugin_sdk::sdl2::video::WindowPos;
 
 use crate::{
     console::print_warn,
@@ -103,6 +103,19 @@ impl Game {
                 callback(Ok(game));
             },
         );
+    }
+
+    /// Create a new game instance from the given project path without loading any plugins.
+    /// We also assume that you have access to a sync filesystem, which is not the case in the browser.
+    pub fn from_project_safe_sync(
+        project_path: &Path,
+        project_info: &ProjectInfo,
+        file_system: Box<dyn ReadOnlyFileSystem>,
+        gl: Arc<glow::Context>,
+        video: &Rc<sdl2::VideoSubsystem>,
+        window: &Rc<RefCell<sdl2::video::Window>>,
+    ) -> vectarine_plugin_sdk::anyhow::Result<Self> {
+        todo!("WIP");
     }
 
     fn from_lua(

@@ -14,6 +14,7 @@ pub use glow;
 pub use lazy_static;
 pub use mlua;
 pub use rapier2d;
+pub use sdl2;
 pub use serde;
 pub use toml;
 
