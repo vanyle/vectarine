@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -7,6 +7,7 @@ use clap::Parser;
 pub enum VectarineCliFeatures {
     Screenshot(ScreenshotArgs),
     New(NewArgs),
+    Export(ExportArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -21,4 +22,23 @@ pub struct ScreenshotArgs {
 pub struct NewArgs {
     #[arg(short, long)]
     pub name: String,
+}
+
+#[derive(clap::ValueEnum, Parser, Debug, Clone, PartialEq, Eq)]
+#[clap(rename_all = "kebab_case")]
+pub enum ExportTarget {
+    Windows,
+    Linux,
+    MacOS,
+    Web,
+}
+
+#[derive(Parser, Debug)]
+pub struct ExportArgs {
+    #[arg(long, short)]
+    pub output: Option<PathBuf>,
+    #[arg(long, short)]
+    pub project: PathBuf,
+    #[arg(long, short, value_enum)]
+    pub target: ExportTarget,
 }
