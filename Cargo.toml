@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["editor", "runtime", "vectarine-plugin-template", "vectarine-plugin-sdk"]
+members = ["editor", "runtime", "vectarine-plugin-template", "vectarine-plugin-sdk", "vectarine-cli"]
 
 [profile.dev]
 # Emscripten does not like -O2 + debug info
