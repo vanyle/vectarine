@@ -109,12 +109,12 @@ impl PluginEnvironment {
                     .join("plugins")
                     .join(&full_name);
 
-                fs.read_file(&format!("gamedata/plugins/{}", &full_name), {
+                fs.read_file(&format!("gamedata/plugins/{}", full_name), {
                     let full_name = full_name.clone();
                     Box::new(move |result| {
                         // Copy the content to the true file system so that we can load it as a native library.
                         let Some(data) = result else {
-                            println!("Plugin {} not found in the game bundle", &full_name);
+                            println!("Plugin {} not found in the game bundle", full_name);
                             return;
                         };
                         if plugin_path.exists() {

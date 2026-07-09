@@ -185,7 +185,7 @@ fn render_lua_error(
         };
         let label = ui
             .label(
-                RichText::new(format!("{}: {}", i + error.line - 2, &line))
+                RichText::new(format!("{}: {}", i + error.line - 2, line))
                     .color(line_color)
                     .monospace(),
             )
