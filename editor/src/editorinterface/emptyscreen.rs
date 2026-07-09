@@ -279,9 +279,9 @@ pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
                                 }
                             };
                             let stroke = if is_hovering {
-                                Stroke::new(2.0, egui::Color32::WHITE)
+                                Stroke::new(2.0_f32, egui::Color32::WHITE)
                             } else {
-                                Stroke::new(2.0, egui::Color32::TRANSPARENT)
+                                Stroke::new(2.0_f32, egui::Color32::TRANSPARENT)
                             };
                             let mut is_clicked = false;
 

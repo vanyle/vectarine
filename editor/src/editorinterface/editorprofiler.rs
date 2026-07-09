@@ -184,5 +184,5 @@ fn draw_graph_impl<T: Measurable>(
         })
         .collect();
 
-    painter.add(egui::Shape::line(points, egui::Stroke::new(1.0, color)));
+    painter.add(egui::Shape::line(points, egui::Stroke::new(1.0_f32, color)));
 }
