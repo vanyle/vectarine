@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt::Display;
 use std::fs;
 use std::mem::ManuallyDrop;
 use std::path::Path;
@@ -7,13 +8,14 @@ use std::sync::Arc;
 
 use runtime::anyhow;
 use runtime::console;
+use runtime::console::ConsoleMessage;
 use runtime::game::Game;
+use runtime::glow::HasContext;
+use runtime::glow::PixelPackData;
 use runtime::inithelpers::RenderingBlock;
 use runtime::inithelpers::set_opengl_attributes;
 use runtime::io::localfs::LocalFileSystem;
-use runtime::io::time::now_ms;
 use runtime::projectinfo::get_project_info;
-use runtime::set_main_loop_wrapper;
 use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::sdl2;
 use vectarine_plugin_sdk::sdl2::video::{SwapInterval, Window};
@@ -62,89 +64,145 @@ where
     }
 }
 
-/// Represents a running instance of a game that is externally controlled.
-pub struct GameHeadlessRunner {
-    game: Game,
+/// Represents information about what happened during a single frame of the game (logs, Lua errors, etc.)
+pub struct FrameResult {
+    pub logs: Vec<ConsoleMessage>,
+    pub frame_logs: Vec<String>,
 }
 
-pub fn run_game_headless(project_path: &Path) -> Result<GameHeadlessRunner, anyhow::Error> {
-    let RenderingBlock {
-        sdl,
-        video,
-        window,
-        mut event_pump,
-        gl,
-        ..
-    } = init_sdl_headless(|video_subsystem| unsafe {
-        glow::Context::from_loader_function(|name| {
-            video_subsystem.gl_get_proc_address(name) as *const _
-        })
-    });
+impl FrameResult {
+    pub fn has_errors(&self) -> bool {
+        self.logs
+            .iter()
+            .any(|log| matches!(log, ConsoleMessage::Error(_)))
+    }
+}
 
-    // init_sound_system(&sdl); // headless mode does not simulate sound.
-    // init_fs(); // headless mode does not run in a browser, so no need to init IDBFS.
+impl Display for FrameResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for log in &self.logs {
+            match log {
+                ConsoleMessage::Info(msg) => writeln!(f, "[LOG] {}", msg)?,
+                ConsoleMessage::Warning(msg) => writeln!(f, "[WARN] {}", msg)?,
+                ConsoleMessage::Error(msg) => writeln!(f, "[ERROR] {}", msg)?,
+                ConsoleMessage::LuaError(msg) => writeln!(f, "[ERROR] {}", msg)?,
+                ConsoleMessage::Reload => writeln!(f, "--- Reload ---")?,
+            }
+        }
+        writeln!(f, "--- Frame logs ---")?;
+        for frame_log in &self.frame_logs {
+            writeln!(f, "{}", frame_log)?;
+        }
+        Ok(())
+    }
+}
 
-    let local_fs = Box::new(LocalFileSystem);
+/// Represents a running instance of a game that is externally controlled.
+///
+/// You can use this to step the game forward, inspect it, take screenshots, etc.
+pub struct GameHeadlessRunner {
+    game: Game,
+    window: Rc<RefCell<Window>>,
+}
 
-    let Ok(project_manifest_content) = fs::read_to_string(project_path) else {
-        return Err(anyhow::anyhow!(
-            "Failed to read the project manifest at {:?}",
-            project_path
-        ));
-    };
+impl GameHeadlessRunner {
+    pub fn new(project_path: &Path) -> vectarine_plugin_sdk::anyhow::Result<Self> {
+        let RenderingBlock {
+            sdl: _sdl,
+            video,
+            window,
+            event_pump: _event_pump,
+            gl,
+            ..
+        } = init_sdl_headless(|video_subsystem| unsafe {
+            glow::Context::from_loader_function(|name| {
+                video_subsystem.gl_get_proc_address(name) as *const _
+            })
+        });
 
-    let Ok(project_info) = get_project_info(&project_manifest_content) else {
-        return Err(anyhow::anyhow!(
-            "Failed to parse the project manifest at {:?}",
-            project_path
-        ));
-    };
+        // init_sound_system(&sdl); // headless mode does not simulate sound.
+        // init_fs(); // headless mode does not run in a browser, so no need to init IDBFS.
 
-    // TODO: instead of running the game here, provide an object with function to step one frame, etc.
+        let local_fs = Box::new(LocalFileSystem);
 
-    Game::from_project(
-        &project_path,
-        &project_info,
-        local_fs,
-        gl,
-        &video,
-        &window.clone(),
-        |result| {
-            let Ok(mut game) = result else {
-                panic!("Failed to load the game project at {:?}", project_path);
-            };
-            let mut now = now_ms();
+        println!("Loading project from {:?}", project_path);
 
-            set_main_loop_wrapper(move || {
-                let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
-                game.load_resource_as_needed();
-                let now_instant = now_ms();
-                let delta_duration =
-                    std::time::Duration::from_micros(((now_instant - now) * 1000.0) as u64);
-                now = now_instant;
-                game.main_loop(latest_events.iter(), &window, delta_duration, false);
+        let Ok(project_manifest_content) = fs::read_to_string(project_path) else {
+            return Err(anyhow::anyhow!(
+                "Failed to read the project manifest at {:?}",
+                project_path
+            ));
+        };
 
-                // These are for debug and are never displayed in the runtime.
-                // We still need to clear them to avoid memory leaks.
-                #[allow(unused_variables)]
-                {
-                    console::consume_logs(|log| {
-                        #[cfg(debug_assertions)]
-                        println!("{}", log);
-                    });
-                    console::consume_frame_logs(|log| {
-                        #[cfg(debug_assertions)]
-                        println!("{}", log);
-                    });
-                }
-                console::clear_all_logs();
+        let Ok(project_info) = get_project_info(&project_manifest_content) else {
+            return Err(anyhow::anyhow!(
+                "Failed to parse the project manifest at {:?}",
+                project_path
+            ));
+        };
 
-                window.borrow().gl_swap_window();
-            });
-        },
-    );
+        let result = Game::from_project_safe_sync(
+            project_path,
+            &project_info,
+            local_fs,
+            gl,
+            &video,
+            &window,
+        );
 
-    Ok(GameHeadlessRunner{
-        // ...
-    })
+        let game = match result {
+            Ok(game) => game,
+            Err(err) => {
+                return Err(anyhow::anyhow!(
+                    "Failed to load the game project at {:?}: {}",
+                    project_path,
+                    err
+                ));
+            }
+        };
+
+        Ok(GameHeadlessRunner { game, window })
+    }
+
+    /// Steps the game forward by the given duration. You can pass a fake duration to see how the game behaves on slow hardware.
+    /// You need to pass the events that occurred since last step to simulate user input (you can pass an empty vector.)
+    pub fn step(
+        &mut self,
+        delta_duration: std::time::Duration,
+        latest_events: Vec<sdl2::event::Event>,
+    ) -> FrameResult {
+        self.game.load_resource_as_needed();
+
+        self.game
+            .main_loop(latest_events.iter(), &self.window, delta_duration, false);
+
+        let mut logs: Vec<ConsoleMessage> = Vec::new();
+        let mut frame_logs: Vec<String> = Vec::new();
+        console::consume_logs(|log| {
+            logs.push(log);
+        });
+        console::consume_frame_logs(|log| {
+            frame_logs.push(log);
+        });
+        console::clear_all_logs();
+
+        self.window.borrow().gl_swap_window();
+
+        FrameResult { logs, frame_logs }
+    }
+
+    /// Takes a screenshot of the current game state and return the raw RGBA pixel data along with the width and height of the image.
+    pub fn screenshot(&self) -> vectarine_plugin_sdk::anyhow::Result<(Vec<u8>, u32, u32)> {
+        let (width, height) = self.window.borrow().drawable_size();
+        let mut pixel_buffer = vec![0u8; (width * height * 4) as usize];
+        unsafe {
+            let format = glow::RGBA;
+            let gltype = glow::UNSIGNED_BYTE;
+            let pixels = PixelPackData::Slice(Some(pixel_buffer.as_mut_slice()));
+            self.game
+                .gl
+                .read_pixels(0, 0, width as i32, height as i32, format, gltype, pixels);
+        }
+        Ok((pixel_buffer, width, height))
+    }
 }

@@ -71,6 +71,12 @@ pub struct PluginEnvironment {
 }
 
 impl PluginEnvironment {
+    pub fn new_empty_environment() -> Self {
+        Self {
+            loaded_plugins: Vec::new(),
+        }
+    }
+
     #[cfg(target_os = "emscripten")]
     pub fn load_plugins(
         _plugin_names: &[String],

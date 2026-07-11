@@ -3,9 +3,10 @@
 use std::{path::PathBuf, sync::mpsc::channel};
 
 use runtime::{
-    RenderingBlock, egui_glow,
+    egui_glow,
     game::drawable_screen_size,
     init_sdl,
+    inithelpers::RenderingBlock,
     io::{localfs::LocalFileSystem, time::now_ms},
     sound::init_sound_system,
 };
