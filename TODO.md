@@ -26,10 +26,12 @@
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor
   - [ ] Button to record a short gif in the editor
-- [ ] Add a CLI version of the editor
-  - [ ] The editor is compiled with -mwindow
-  - [ ] The CLI can scafold project, automate exports and run the editor with a console if needed
-  - [ ] The CLI can test the code for correctness and generate screenshots
+- [x] Add a CLI version of the editor
+  - [x] The editor is compiled with -mwindow
+  - [ ] The CLI can scafold project
+  - [x] The CLI can exports projects
+  - [x] The CLI can generate screenshots
+  - [ ] The CLI can test the code for correctness
 - [ ] Event system, part II
   - [ ] Action system (you map actions to keys and actions to functions)
   - [ ] Add event channels (you can have an on-hit event with per-entity filtering. Channels are strings with a hashmap lookup, They are cheap)

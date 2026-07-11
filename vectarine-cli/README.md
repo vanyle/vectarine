@@ -13,7 +13,7 @@ vecta-cli screenshot --project ./project/project.vecta --output ./screenshot.png
 Goals:
 
 - [x] Run a project and generate a screenshot.
+- [x] Export a project
 - [ ] Run a project and get console output
-- [ ] Export a project
 - [ ] Scaffold a new project
 - [ ] Run a test file

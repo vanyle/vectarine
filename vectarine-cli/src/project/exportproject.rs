@@ -131,7 +131,6 @@ pub fn export_project(
     if !obfuscate {
         // Add game data folder
         // Adding .vecta file as executable as you can run it using a shebang.
-
         let game_data_files = get_project_files(project_path);
         for (file_path, zip_path) in game_data_files {
             add_file_to_zip_from_path(&mut zip, &file_path, &zip_path, false, false)
