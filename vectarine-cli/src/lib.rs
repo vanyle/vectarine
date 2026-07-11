@@ -5,11 +5,14 @@ pub mod features;
 pub mod headless;
 pub mod project;
 
+// Re-export libs consumed by the editor
+pub use regex;
+pub use zip;
+
 pub fn lib_main() {
     let args = cliarg::VectarineCliFeatures::parse();
 
     match args {
-        // vecta-cli screenshot projectname.vecta --output screenshot.png
         cliarg::VectarineCliFeatures::Screenshot(screenshot_args) => {
             match features::screenshot::take_screenshot(
                 &screenshot_args.project,
@@ -24,7 +27,17 @@ pub fn lib_main() {
                 }
             }
         }
-        cliarg::VectarineCliFeatures::New(_new_args) => todo!(),
-        cliarg::VectarineCliFeatures::Export(_export_args) => todo!(),
+        cliarg::VectarineCliFeatures::New(_new_args) => {
+            // Create an empty vectarine project with reasonable defaults
+            todo!()
+        }
+        cliarg::VectarineCliFeatures::Export(_export_args) => {
+            // Export the project
+            todo!()
+        }
+        cliarg::VectarineCliFeatures::Test(_test_args) => {
+            // Run tests from a test.toml file
+            todo!()
+        }
     }
 }

@@ -1,4 +1,4 @@
-/// This file contains functions to get paths of assets that are supposed to be shipped with the editor.
+/// This file contains functions to get paths of assets that are supposed to be shipped with an executable performing exports / testing (editor or cli).
 /// It contains additional logic to be able to work seamlessly in dev mode (where the executable is inside the rust target folder).
 use std::{
     env,

@@ -12,12 +12,13 @@ use runtime::{
 };
 use serde::Deserialize;
 
-use crate::{
-    editorinterface::extra::geteditorpaths::{
-        PLUGIN_FILE_EXTENSION, does_path_end_with, get_editor_plugins_path,
-    },
-    export::exportproject::ExportPlatform,
-    pluginsystem::hash::Hash,
+use crate::pluginsystem::hash::Hash;
+
+use vectarine_cli::project::exportproject::ExportPlatform;
+
+use vectarine_cli::{
+    project::geteditorpaths::{PLUGIN_FILE_EXTENSION, does_path_end_with, get_editor_plugins_path},
+    zip,
 };
 
 /// A trusted plugin is a plugin in the list of plugins that the editor knows about.

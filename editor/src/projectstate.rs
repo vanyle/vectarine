@@ -20,14 +20,15 @@ use runtime::{
 use runtime::{io::localfs::LocalFileSystem, sdl2};
 
 use crate::{
-    editorinterface::extra::geteditorpaths::{
-        PLUGIN_FILE_EXTENSION, does_path_end_with, get_luau_api_path,
-    },
     luau,
     pluginsystem::{
         gameplugin::GamePlugin,
         trustedplugin::{TrustedPlugin, is_dynamic_library_file},
     },
+};
+
+use vectarine_cli::project::geteditorpaths::{
+    PLUGIN_FILE_EXTENSION, does_path_end_with, get_luau_api_path,
 };
 
 pub struct ProjectState {

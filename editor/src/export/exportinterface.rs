@@ -7,7 +7,7 @@ use runtime::egui;
 use runtime::egui::{Color32, RichText, Widget};
 
 use crate::editorinterface::EditorState;
-use crate::export::exportproject::{ExportPlatform, export_project};
+use vectarine_cli::project::exportproject::{ExportPlatform, export_project};
 
 pub fn draw_editor_export(editor: &mut EditorState, ui: &mut egui::Ui) {
     let mut is_shown = editor.config.borrow().is_export_window_shown;

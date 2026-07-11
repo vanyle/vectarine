@@ -1,1 +1,2 @@
-pub mod projectinfo;
+pub mod exportproject;
+pub mod geteditorpaths;

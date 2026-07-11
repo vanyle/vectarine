@@ -4,18 +4,16 @@ use std::{
 };
 
 use egui_extras::{Size, StripBuilder};
-use regex::Regex;
 use runtime::egui;
 use runtime::egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
 use runtime::{
     io::localfs::LocalFileSystem,
     projectinfo::{ProjectInfo, get_project_info},
 };
+use vectarine_cli::regex::Regex;
 
-use crate::editorinterface::{
-    EditorState, emptyscreen::createproject::create_game_and_open_it,
-    extra::geteditorpaths::get_end_of_path, geteditorpaths::get_gallery_path,
-};
+use crate::editorinterface::{EditorState, emptyscreen::createproject::create_game_and_open_it};
+use vectarine_cli::project::geteditorpaths::{get_end_of_path, get_gallery_path};
 
 pub mod createproject;
 

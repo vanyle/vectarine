@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 
-use regex::Regex;
 use runtime::console;
 use runtime::console::ConsoleMessage;
 use runtime::console::LuaError;
@@ -9,6 +8,7 @@ use runtime::egui;
 use runtime::egui::{RichText, Widget};
 use runtime::game::Game;
 use runtime::lua_env::to_lua;
+use vectarine_cli::regex::Regex;
 
 use crate::editorconfig::TextEditor;
 use crate::editorinterface::EditorState;
