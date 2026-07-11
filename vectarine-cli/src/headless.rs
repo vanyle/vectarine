@@ -125,8 +125,6 @@ impl GameHeadlessRunner {
 
         let local_fs = Box::new(LocalFileSystem);
 
-        println!("Loading project from {:?}", project_path);
-
         let Ok(project_manifest_content) = fs::read_to_string(project_path) else {
             return Err(anyhow::anyhow!(
                 "Failed to read the project manifest at {:?}",
