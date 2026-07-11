@@ -15,6 +15,7 @@ pub mod sound;
 // Re-export commonly used crates for the editor
 use crate::inithelpers::RenderingBlock;
 use crate::inithelpers::set_opengl_attributes;
+pub use image;
 pub use vectarine_plugin_sdk::anyhow;
 pub use vectarine_plugin_sdk::egui;
 pub use vectarine_plugin_sdk::egui_glow;

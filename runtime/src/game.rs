@@ -115,7 +115,53 @@ impl Game {
         video: &Rc<sdl2::VideoSubsystem>,
         window: &Rc<RefCell<sdl2::video::Window>>,
     ) -> vectarine_plugin_sdk::anyhow::Result<Self> {
-        todo!("WIP");
+        // TODO: from_project_safe_sync contains duplicated code with from_project. A refacto would be cool.
+        let project_dir = project_path.parent();
+        let Some(project_dir) = project_dir else {
+            return Err(vectarine_plugin_sdk::anyhow::anyhow!(
+                "Invalid project path"
+            ));
+        };
+
+        let _ = window.borrow_mut().set_title(&project_info.title);
+        let _ = window.borrow_mut().set_size(
+            project_info.default_screen_width,
+            project_info.default_screen_height,
+        );
+
+        // Create all the things we need for a game
+        let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
+        let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
+        let resources = Rc::new(ResourceManager::new(file_system, project_dir));
+
+        let lua_env = LuaEnvironment::new(batch, metrics.clone(), resources);
+
+        let mut game = Game::from_lua(
+            &gl,
+            lua_env,
+            project_info.main_script_path.clone(),
+            metrics,
+            PluginEnvironment::new_empty_environment(),
+        );
+
+        game.load(video, window);
+        game.plugin_env.init(PluginInterface {
+            lua: &game.lua_env.lua_handle.lua,
+        });
+
+        // Load the starting script
+        let path = Path::new(&game.main_script_path);
+        game.lua_env.resources.load_resource::<ScriptResource>(
+            path,
+            gl,
+            game.lua_env.lua_handle.clone(),
+            game.lua_env.default_events.resource_loaded_event.clone(),
+        );
+
+        // New game means new sounds, so we discard the previous ones (this is useful only for the editor).
+        sound::flush_all_samples();
+
+        Ok(game)
     }
 
     fn from_lua(

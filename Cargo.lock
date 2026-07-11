@@ -919,6 +919,7 @@ dependencies = [
  "sdl2-sys",
  "serde",
  "toml_edit 0.25.4+spec-1.1.0",
+ "vectarine-cli",
  "vectarine-plugin-sdk",
  "which",
  "winresource",
