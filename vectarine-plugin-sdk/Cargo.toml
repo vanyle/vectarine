@@ -14,7 +14,7 @@ glow = "0.17.0"
 toml = "0.9.8"
 rapier2d = "0.31.0"
 lazy_static = "1.5.0"
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0.221", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }

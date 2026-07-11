@@ -5,15 +5,13 @@ use runtime::egui::{self, Label};
 use vectarine_plugin_sdk::plugininterface::{EditorPluginInterface, PluginInterface};
 
 use crate::{
-    editorinterface::{
-        EditorState,
-        extra::geteditorpaths::{get_editor_plugins_path, get_end_of_path},
-    },
+    editorinterface::EditorState,
     pluginsystem::trustedplugin::{
         self, PluginEntry, TrustedPlugin, get_available_filename_for_trusted_plugin,
     },
     projectstate::ProjectState,
 };
+use vectarine_cli::project::geteditorpaths::{get_editor_plugins_path, get_end_of_path};
 
 /// Draw the debug window of all plugins for which the debug menu is open. This is called every frame in the editor.
 pub fn draw_editor_plugin_windows(editor: &mut EditorState, ui: &egui::Ui) {

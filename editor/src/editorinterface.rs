@@ -32,7 +32,6 @@ use crate::{
         editorplugins::{draw_editor_plugin_manager, draw_editor_plugin_windows},
         editorpreferences::draw_editor_preferences,
         emptyscreen::draw_empty_screen,
-        extra::geteditorpaths,
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
@@ -44,6 +43,7 @@ use editormenu::draw_editor_menu;
 use editorprofiler::draw_editor_profiler;
 use editorresources::draw_editor_resources;
 use editorwatcher::draw_editor_watcher;
+use vectarine_cli::project::geteditorpaths;
 
 pub mod editorconsole;
 pub mod editormenu;

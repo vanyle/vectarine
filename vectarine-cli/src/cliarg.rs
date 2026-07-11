@@ -8,6 +8,7 @@ pub enum VectarineCliFeatures {
     Screenshot(ScreenshotArgs),
     New(NewArgs),
     Export(ExportArgs),
+    Test(TestArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -41,4 +42,10 @@ pub struct ExportArgs {
     pub project: PathBuf,
     #[arg(long, short, value_enum)]
     pub target: ExportTarget,
+}
+
+#[derive(Parser, Debug)]
+pub struct TestArgs {
+    #[arg(long, short)]
+    pub test_file_path: PathBuf,
 }
