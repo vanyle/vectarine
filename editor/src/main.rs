@@ -22,7 +22,6 @@ use crate::{
 };
 
 pub mod buildinfo;
-pub mod copydirall;
 pub mod editorconfig;
 pub mod editorextrawindow;
 pub mod editorinterface;

@@ -10,12 +10,10 @@ use runtime::{
     io::localfs::LocalFileSystem,
     projectinfo::{ProjectInfo, get_project_info},
 };
-use vectarine_cli::regex::Regex;
+use vectarine_cli::{project::createproject::create_game_and_get_path, regex::Regex};
 
-use crate::editorinterface::{EditorState, emptyscreen::createproject::create_game_and_open_it};
+use crate::editorinterface::EditorState;
 use vectarine_cli::project::geteditorpaths::{get_end_of_path, get_gallery_path};
-
-pub mod createproject;
 
 pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
     thread_local! {
@@ -149,7 +147,24 @@ pub fn draw_new_game_window_content(
     ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
         if ui.button("Create the game and open it!").clicked() {
             GAME_NAME.with_borrow(|game_name| {
-                create_game_and_open_it(state, game_name, new_game_path);
+                let result_path = create_game_and_get_path(game_name, new_game_path);
+                match result_path {
+                    Ok(project_file_path) => {
+                        state.load_project(
+                            Box::new(LocalFileSystem),
+                            &project_file_path,
+                            |result| {
+                                if let Err(e) = result {
+                                    // TODO: show error in GUI
+                                    println!("Failed to load project: {e}");
+                                }
+                            },
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating game: {:?}", e);
+                    }
+                }
             });
             exit_new_game_window = true;
         }
