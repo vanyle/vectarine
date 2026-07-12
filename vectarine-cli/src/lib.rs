@@ -27,9 +27,16 @@ pub fn lib_main() {
                 }
             }
         }
-        cliarg::VectarineCliFeatures::New(_new_args) => {
-            // Create an empty vectarine project with reasonable defaults
-            todo!()
+        cliarg::VectarineCliFeatures::New(new_args) => {
+            let cwd = std::env::current_dir().expect("Failed to get current working directory");
+            match features::createproject::create_project(&cwd, &new_args.name) {
+                Ok(project_path) => {
+                    println!("Created new project at {:?}", project_path);
+                }
+                Err(e) => {
+                    eprintln!("Error creating project: {:?}", e);
+                }
+            }
         }
         cliarg::VectarineCliFeatures::Export(export_args) => {
             match features::export::export(

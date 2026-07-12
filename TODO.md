@@ -28,7 +28,7 @@
   - [ ] Button to record a short gif in the editor
 - [x] Add a CLI version of the editor
   - [x] The editor is compiled with -mwindow
-  - [ ] The CLI can scafold project
+  - [x] The CLI can scafold project
   - [x] The CLI can exports projects
   - [x] The CLI can generate screenshots
   - [ ] The CLI can test the code for correctness

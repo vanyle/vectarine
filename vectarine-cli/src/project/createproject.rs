@@ -1,16 +1,20 @@
+use std::path::PathBuf;
 use std::{fs, path::Path};
 
-use runtime::{io::localfs::LocalFileSystem, projectinfo::ProjectInfo, toml};
+use runtime::anyhow;
+use runtime::{projectinfo::ProjectInfo, toml};
 
-use crate::{
-    copydirall::copy_dir_all,
-    editorinterface::{EditorState, geteditorpaths::get_luau_api_path},
-};
+use crate::project::copydirall::copy_dir_all;
+use crate::project::geteditorpaths::get_luau_api_path;
 
 static DEFAULT_CODE: &str = "local Debug = require('@vectarine/debug')
 local Graphics = require('@vectarine/graphics')
 local Vec4 = require('@vectarine/vec4')
 local Vec = require('@vectarine/vec')
+
+-- Need help to get started?
+-- Read: https://github.com/vanyle/vectarine/blob/main/docs/user-manual.md
+-- The manual is available offline in the Help menu.
 
 Debug.print(\"Loaded.\")
 
@@ -38,7 +42,7 @@ fn copy_default_luau_api(project_folder: &Path) -> Result<(), std::io::Error> {
     copy_dir_all(reference_luau_api_path, luau_api_path)
 }
 
-pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_path: &Path) {
+pub fn create_game_and_get_path(game_name: &str, game_path: &Path) -> anyhow::Result<PathBuf> {
     let project_folder = game_path.join(game_name);
     let project_file_path = project_folder.join("game.vecta");
     let script_folder = project_folder.join("scripts");
@@ -66,17 +70,11 @@ pub fn create_game_and_open_it(state: &mut EditorState, game_name: &str, game_pa
     setup_failed = setup_failed.or(fs::write(project_folder.join(".luaurc"), DEFAULT_LUAURC).err());
 
     if let Some(setup_failed) = setup_failed {
-        println!(
+        return Err(anyhow::anyhow!(
             "Unable to create a project at the provided location: {}",
             setup_failed
-        );
-        return;
+        ));
     }
 
-    state.load_project(Box::new(LocalFileSystem), &project_file_path, |result| {
-        if let Err(e) = result {
-            // TODO: show error in GUI
-            println!("Failed to load project: {e}");
-        }
-    });
+    Ok(project_file_path)
 }
