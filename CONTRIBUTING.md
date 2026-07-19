@@ -125,19 +125,29 @@ More information about [debugging wasm code is available here](https://developer
 
 ## Structure
 
+Vectarine is divided into the SDK `vectarine-plugin-sdk`, the CLI `vectarine-cli`, the `runtime` and the `editor`
+
+The dependency chain is: `editor` --depends on--> `vectarine-cli` --> `runtime` --> `vectarine-plugin-sdk`.
+
+### SDK
+
+The SDK located at `vectarine-plugin-sdk` contains functions common to the plugins, the runtime and the editor.
+It also contains the dependencies that every other package needs like Lua and SDL. Every other package uses these dependencies to ensure
+everybody uses the same version.
+
 ### Runtime
 
 The main package (with code inside `runtime`) is a hybrid lib/bin package that can compile to the web without all the editor features like debugging.
-It provides the run time code for stuff like asset loading with multiple implementations per target.
+It provides the runtime code for stuff like asset loading with multiple implementations per target. It also defines the Lua API used by games.
+
+## CLI
+
+The `vectarine-cli` package is a lib/bin hybrid package that produces the vectarine CLI (named `vecta`) that is used to manage projects (create them, export them, run tests).
+It provides project management functions that are used by the editor GUI, for example to export projects.
 
 ### Editor
 
-The `editor` is a bin package that builds the `vecta` executable.
-
-`vecta` executable is a cross between a CLI and a GUI tool. Running it alone starts the editor where
-you can select and run projects or see the documentation.
-Running it with options allows you to create new project from templates, to open a specific project
-or to build one.
+The `editor` is a bin package that builds the `VectarineEditor` executable.
 
 The `editor` package is a wrapper around the `runtime` package that adds editor features like
 debugging, hot reloading, etc...

@@ -280,7 +280,7 @@ jobs:
         run: uv run scripts/release-engine.py
 
       - name: ✨ Create a GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         # This can fail if the release already exists. Let's ignore that.
         continue-on-error: true
         env:
@@ -292,4 +292,6 @@ jobs:
             tag_name: "${{ inputs.tag || github.ref_name }}"
             generate_release_notes: false
             draft: true
-            files: "vectarine.*.zip"
+            files: |
+              "vectarine.*.zip"
+              ./target/x86_64-unknown-linux-gnu/release/vectarine-cli

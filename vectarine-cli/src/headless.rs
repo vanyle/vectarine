@@ -13,7 +13,6 @@ use runtime::game::Game;
 use runtime::glow::HasContext;
 use runtime::glow::PixelPackData;
 use runtime::inithelpers::RenderingBlock;
-use runtime::inithelpers::set_opengl_attributes;
 use runtime::io::localfs::LocalFileSystem;
 use runtime::projectinfo::get_project_info;
 use vectarine_plugin_sdk::glow;
@@ -29,13 +28,19 @@ where
         .video()
         .expect("Failed to initialize video subsystem");
     let gl_attr = video_subsystem.gl_attr();
-    set_opengl_attributes(gl_attr);
+
+    // Use the same OpenGL version no matter the platform to avoid pixel differences.
+    gl_attr.set_context_version(3, 0);
+    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
+    gl_attr.set_multisample_buffers(1);
+    gl_attr.set_multisample_samples(4);
+    gl_attr.set_stencil_size(8); // Request 8-bit stencil buffer
 
     let window: Window = video_subsystem
         .window("Vectarine", 800, 600)
         .opengl()
         .hidden()
-        .allow_highdpi() // For Retina displays on macOS
+        //    .allow_highdpi() // Disallow high DPI for consistency in screenshots and testing regardless of the platform.
         .build()
         .expect("Failed to create window");
 
@@ -146,6 +151,7 @@ impl GameHeadlessRunner {
             gl,
             &video,
             &window,
+            true,
         );
 
         let game = match result {

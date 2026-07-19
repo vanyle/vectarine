@@ -12,14 +12,37 @@ This guide is made for *beginners* and doesn't go into the details of Vectarine.
 
 ## Installation
 
-First, download [Vectarine from Github](https://github.com/vanyle/vectarine/releases). You need to download the zip file for your platform.
-You can unzip it anywhere you like and run "vecta" executable to get started.
+To install Vectarine, you can run the following command in a terminal depending on your platform
+
+<Tabs>
+<TabItem label="Windows">
+
+You need to use `powershell`, not `cmd.exe`
+
+```powershell
+irm https://vectarine.surge.sh/install_nt.sh | iex
+```
+</TabItem>
+<TabItem label="Linux">
+```bash
+curl -fsSL https://vectarine.surge.sh/install_linux.sh | sh
+```
+</TabItem>
+<TabItem label="Mac">
+```bash
+curl -fsSL https://vectarine.surge.sh/install_mac.sh | sh
+```
+</TabItem>
+</Tabs>
+
+Alternatively, if you prefer, you can download [Vectarine from Github](https://github.com/vanyle/vectarine/releases). In that case, you need to download the zip file for your platform.
+You can unzip it anywhere you like and run `VectarineEditor` executable to get started.
 
 <Aside type='caution'>
-On MacOS, executables from the internet are quarantined by default. You might see this message
-when attempting to run vecta.app: "This app is damaged".
+On MacOS, executables from the internet are quarantined by default. If you install Vectarine manually, you might see this message
+when attempting to run `VectarineEditor.app`: "This app is damaged".
 
-You need to run this command to allow the execution: <pre>xattr -d com.apple.quarantine ./vecta.app</pre>
+You need to run this command to allow the execution: <pre>xattr -d com.apple.quarantine ./VectarineEditor.app</pre>
 </Aside>
 
 You can press *Create a new project* to select the location where you want to create your project.

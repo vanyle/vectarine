@@ -1,5 +1,5 @@
 [project]
-path = "../../gallery/snake/game.vecta"
+path = "../../gallery/Snake/game.vecta"
 description = "The game responds to arrow keys"
 
 [[step]]
@@ -29,16 +29,13 @@ wait_for_frames = 2
 run_lua_code = "state.paused = true"
 
 [[step]]
-run_lua_code = "print('Hello from the test')"
-
-[[step]]
 wait_for_frames = 2
 
 [[step]]
-save_screenshot_to = "./screenshot1.png"
+compare_screenshot_to = "./snake-screenshot.png"
 
 [[step]]
-save_logs_to = "./logs1.txt"
+compare_logs_to = "./snake-logs.txt"
 
 [[step]]
 expect_no_errors = {}

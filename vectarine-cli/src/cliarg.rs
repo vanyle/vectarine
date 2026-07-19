@@ -46,6 +46,20 @@ pub struct ExportArgs {
 
 #[derive(Parser, Debug)]
 pub struct TestArgs {
+    /// Path to a test file to run or a directory containing test files (which must end with vecta-test.toml)
+    /// A test file is a toml file with a project and a list of tests to run on that project.
     #[arg(long, short)]
-    pub testfile: PathBuf,
+    pub path: PathBuf,
+
+    /// Whether to overwrite the reference images and text files for the tests instead of comparing them to the existing ones.
+    /// This is useful when you want to update the references locally.
+    #[arg(long, short = 'r', default_value_t = false)]
+    pub overwrite_references: bool,
+
+    /// The acceptable pixel difference for image comparison.
+    /// If a pixel's value is [255, 0, 0, 255] and the reference is [250, 3, 2, 255], the difference is 5 (the max of the components).
+    /// As long as the maximal difference between the pixels is less than this value, the images are considered equal.
+    /// This is useful as some platforms may have different rendering results due to different graphics drivers or hardware.
+    #[arg(long, short = 'd', default_value_t = 10)]
+    pub acceptable_pixel_difference: u32,
 }

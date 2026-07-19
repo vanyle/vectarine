@@ -1,0 +1,21 @@
+[project]
+path = "../../gallery/Snake/game.vecta"
+description = "The test system clears logs."
+
+[[step]]
+wait_for_frames = 2
+
+[[step]]
+clear_logs = {}
+
+[[step]]
+run_lua_code = "print('Hello from the test')"
+
+[[step]]
+wait_for_frames = 2
+
+[[step]]
+compare_logs_to = "./snake2-greeting.txt"
+
+[[step]]
+expect_no_errors = {}

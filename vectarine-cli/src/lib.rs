@@ -53,12 +53,17 @@ pub fn lib_main() {
             }
         }
         cliarg::VectarineCliFeatures::Test(test_args) => {
-            match features::testproject::test_project(&test_args.testfile) {
+            match features::testproject::test_project(
+                &test_args.path,
+                test_args.overwrite_references,
+                test_args.acceptable_pixel_difference,
+            ) {
                 Ok(_) => {
-                    println!("Test project executed successfully.");
+                    println!("✅ Test passed.");
                 }
                 Err(e) => {
-                    eprintln!("Error executing test project: {:?}", e);
+                    eprintln!("❌ Test failed:\n{:?}", e);
+                    std::process::exit(1);
                 }
             }
         }
