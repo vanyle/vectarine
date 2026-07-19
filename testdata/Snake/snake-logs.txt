@@ -1,0 +1,3 @@
+Info: Initializing snake
+Info: Initializing cherry
+Info: Key pressed: Up

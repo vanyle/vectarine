@@ -29,14 +29,14 @@ We assume you have some experience with programming and game making. You know th
 I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text editor with the [Luau extension](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp) but
 you are free to use any text editor you want, for example [Zed](https://zed.dev/) or [Neovim](https://neovim.io/).
 
-Start the engine by running the `vecta` executable. A window should open.
+Start the editor by running the `VectarineEditor` executable. A window should open.
 
 ![The Start Screen of Vectarine](./screenshots/startscreen.png){width=400}
 
 > ⚠️ On MacOS, executables from the internet are quarantined by default.
-> You might see this message when attempting to run `vecta.app`: "This app is damaged"
+> You might see this message when attempting to run `VectarineEditor.app`: "This app is damaged"
 > You need to run this command to allow the execution:
-> `xattr -d com.apple.quarantine ./vecta.app`
+> `xattr -d com.apple.quarantine ./VectarineEditor.app`
 
 You can press *Create a new project* to select the location where you want to create your project.
 
@@ -889,3 +889,59 @@ If you don't know Git, do not use it, it is complex to learn.
 You use shared folder using Google Drive, Dropbox to have multiple people working on the same project.
 You just need to share the folder with the `game.vecta` file.
 
+# 🧪 Automatically testing Vectarine Projects
+
+In large projects involving multiple people, automated testing is a convenient way to make sure people don't break the features you implemented.
+
+Vectarine provides tools to easily test your project. To get started with testing, create a file named `vecta-test.toml` with this content:
+
+```toml
+[project]
+path = "../game.vecta" # Put the path to your game.vecta file here
+description = "The game loads without errors and looks normal"
+
+# Then, you define the steps of your test.
+[[step]]
+wait_for_frames = 5 # Just let the game run for a bit
+
+# Compare the appearance of the game to a reference. If the reference does not exist, it is automatically created.
+# All paths are relative to the location of this toml file.
+[[step]]
+compare_screenshot_to = "./reference_screenshot.png"
+
+[[step]]
+expect_no_errors = {}
+```
+
+You can then run the test using the `vecta` command line tool: `vecta test --path vecta-test.toml`
+This will make sure your game runs without any errors and generate a screenshot of the starting screen.
+
+The `vecta` tool runs your game in a simulated deterministic environment. You can various steps to your test:
+
+```toml
+# Run code and checks that it produces no error
+[[step]]
+run_lua_code = "print('hello')"
+
+# Press the up button for 2 frames.
+[[step]]
+press_keys = ["up"]
+
+[[step]]
+wait_for_frames = 2
+
+[[step]]
+release_keys = ["up"]
+
+# You can run "clear" logs to get only the logs related to a specific section of your game.
+# If you clear the logs, any errors inside them will be cleared and "expect_no_errors" will always succeed.
+[[step]]
+clear_logs = {}
+```
+
+You can add multiple test files in a folder and have their names end with `vecta-test.toml` and run all of them with `vecta test --path ./your-folder`.
+
+In case the screenshot don't match, `vecta` will notify you that the test failed and will pin-point the difference. You can use `vecta test --path ./your-folder -r`
+to overwrite the reference screenshots if the difference is an intended change.
+
+This allows you to have up-to-date images of your game on hand quickly and to make sure that nothing breaks without you noticing.

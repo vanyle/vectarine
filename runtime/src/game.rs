@@ -114,6 +114,7 @@ impl Game {
         gl: Arc<glow::Context>,
         video: &Rc<sdl2::VideoSubsystem>,
         window: &Rc<RefCell<sdl2::video::Window>>,
+        deterministic: bool,
     ) -> vectarine_plugin_sdk::anyhow::Result<Self> {
         // TODO: from_project_safe_sync contains duplicated code with from_project. A refacto would be cool.
         let project_dir = project_path.parent();
@@ -143,6 +144,11 @@ impl Game {
             metrics,
             PluginEnvironment::new_empty_environment(),
         );
+
+        if deterministic {
+            let chunk = game.lua_env.lua_handle.lua.load("math.randomseed(1)");
+            let _ = chunk.exec();
+        }
 
         game.load(video, window);
         game.plugin_env.init(PluginInterface {

@@ -146,6 +146,7 @@ impl GameHeadlessRunner {
             gl,
             &video,
             &window,
+            true,
         );
 
         let game = match result {

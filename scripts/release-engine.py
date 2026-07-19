@@ -77,12 +77,11 @@ def copy_lua_and_docs(root_path: str):
         os.path.join(root_path, "gallery"),
         os.path.join(root_path, "engine-release/gallery"),
     )
-    # We copy gamedata so that the runtime works by default, but we might not do so in the future.
-    # gamedata is the folder loaded by default by the runtime when there is no bundle.vecta file available.
-    shutil.copytree(
-        os.path.join(root_path, "gamedata"),
-        os.path.join(root_path, "engine-release/gamedata"),
-    )
+    # We don't copy gamedata. The user should open the editor, not the runtime.
+    # shutil.copytree(
+    #     os.path.join(root_path, "gamedata"),
+    #     os.path.join(root_path, "engine-release/gamedata"),
+    # )
 
 
 def get_clean_engine_release_folder(root_path: str) -> str:
@@ -153,6 +152,7 @@ def make_macos_release(
     # https://developer.apple.com/documentation/bundleresources/information-property-list?language=objc
     output_zip_name = "vectarine.macos.arm64"  # no need to add .zip
     friendly_name = "VectarineEditor"
+    executable_in_bundle_name = "VectarineEditor"  # The name of the executable inside the .app bundle
     console.print("[blue]Trying to package the engine for macOS...")
     release_path = get_clean_engine_release_folder(root_path)
     executable_path = os.path.join(root_path, "target/aarch64-apple-darwin/release/vecta")
@@ -188,7 +188,12 @@ def make_macos_release(
     copy_from_root(root_path, "assets/logo.png", f"engine-release/{friendly_name}.app/vectaIcon.png")
     copy_from_root(root_path, "assets/logo.png", f"engine-release/{friendly_name}.app/Default.png")
 
-    copy_from_root(root_path, "target/aarch64-apple-darwin/release/vecta", f"engine-release/{friendly_name}.app/vecta", chmodx=True)
+    copy_from_root(
+        root_path,
+        "target/aarch64-apple-darwin/release/vecta",
+        f"engine-release/{friendly_name}.app/{executable_in_bundle_name}",
+        chmodx=True,
+    )
 
     # Write Info.plist
     infoplist_path = f"{friendly_name}.app/Info.plist"
@@ -204,7 +209,7 @@ def make_macos_release(
 <plist version="1.0">
 <dict>
   <key>CFBundleExecutable</key>
-  <string>{friendly_name}</string>
+  <string>{executable_in_bundle_name}</string>
   <key>CFBundleIdentifier</key>
   <string>com.vectarine.{friendly_name}</string>
   <key>CFBundleDisplayName</key>

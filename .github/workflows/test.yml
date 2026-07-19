@@ -37,11 +37,14 @@ jobs:
             - name: ⬇️ Install dependencies
               run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
 
+            - name: 🖼️ Integration tests
+              run: cargo run -p vectarine-cli -- test --path ./testdata/
+
             - name: 🏗️ Build
               run: cargo build --target=x86_64-unknown-linux-gnu
 
-            - name: 🧪 Test
-              run: cargo test --target=x86_64-unknown-linux-gnu
-
             - name: 📎 Clippy
               run: cargo clippy --all-targets --all-features --target=x86_64-unknown-linux-gnu
+
+            - name: 🧪 Test
+              run: cargo test --target=x86_64-unknown-linux-gnu

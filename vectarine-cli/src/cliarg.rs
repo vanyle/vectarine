@@ -46,6 +46,13 @@ pub struct ExportArgs {
 
 #[derive(Parser, Debug)]
 pub struct TestArgs {
+    /// Path to a test file to run or a directory containing test files (which must end with vecta-test.toml)
+    /// A test file is a toml file with a project and a list of tests to run on that project.
     #[arg(long, short)]
-    pub testfile: PathBuf,
+    pub path: PathBuf,
+
+    /// Whether to overwrite the reference images and text files for the tests instead of comparing them to the existing ones.
+    /// This is useful when you want to update the references locally.
+    #[arg(long, short = 'r', default_value_t = false)]
+    pub overwrite_references: bool,
 }
