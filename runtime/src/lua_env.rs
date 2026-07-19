@@ -81,7 +81,7 @@ impl LuaEnvironment {
         let lua = vectarine_plugin_sdk::mlua::Lua::new_with(lua_libs, lua_options)
             .expect("Failed to create Lua");
         lua.set_compiler(
-            vectarine_plugin_sdk::mlua::Compiler::new()
+            vectarine_plugin_sdk::mlua::chunk::Compiler::new()
                 .set_optimization_level(2)
                 .set_type_info_level(1),
         );

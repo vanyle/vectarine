@@ -147,8 +147,9 @@ pub fn export_project(
             if file_path.extension() == Some(std::ffi::OsStr::new("luau")) {
                 // Compile into bytecode
                 let script_content = fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
-                let compiler = mlua::Compiler::new()
+                let compiler = mlua::chunk::Compiler::new()
                     .set_optimization_level(2)
+                    .set_debug_level(0)
                     .set_type_info_level(1);
                 let result = compiler.compile(script_content);
                 match result {
