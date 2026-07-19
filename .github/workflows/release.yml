@@ -18,13 +18,15 @@ jobs:
         name: 🏗️ Build for Windows x86_64
         runs-on: windows-latest
         steps:
-            - uses: actions/checkout@v6
+            # Version 7 
+            - uses: actions/checkout@v7.0.0
               name: 📂 Checkout
               with:
                 # Need png for icon in exe
                 lfs: true
+                fetch-depth: 1
 
-            - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+            - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659
               name: ⚙️ Setup Rust
               with:
                   target: x86_64-pc-windows-msvc
@@ -33,7 +35,7 @@ jobs:
 
             - name: 💾 Cache vcpkg folder
               id: cache-target-folder
-              uses: actions/cache@v4
+              uses: actions/cache@v6.1.0
               with:
                 path: |
                   target/vcpkg
@@ -57,7 +59,7 @@ jobs:
               run: cargo build -p vectarine-cli --target=x86_64-pc-windows-msvc --release
             
             - name: 📦 Store windows executables
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v7.0.1
               with:
                 name: vecta-windows
                 retention-days: 1
@@ -70,12 +72,12 @@ jobs:
         name: 🏗️ Build for Linux x86_64
         runs-on: ubuntu-latest
         steps:
-          - uses: actions/checkout@v6
+          - uses: actions/checkout@v7.0.0
             name: 📂 Checkout
             with:
               lfs: true
 
-          - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+          - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659
             name: ⚙️ Setup Rust
             with:
                 target: x86_64-unknown-linux-gnu
@@ -95,7 +97,7 @@ jobs:
             run: cargo build -p vectarine-cli --target=x86_64-unknown-linux-gnu --release
 
           - name: 📦 Store linux executables
-            uses: actions/upload-artifact@v5
+            uses: actions/upload-artifact@v7.0.1
             with:
               name: vecta-linux
               retention-days: 1
@@ -108,31 +110,31 @@ jobs:
         name: 🏗️ Build for Emscripten
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7.0.0
               name: 📂 Checkout
               with:
                 # need png for manual
                 lfs: true
 
             - name: ⚙️ Install Mise and mise.toml dependencies
-              uses: jdx/mise-action@v3
+              uses: jdx/mise-action@v4.2.1
               with:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   cache: true
                   version: 2026.3.10
             
-            - uses: mymindstorm/setup-emsdk@v14
+            - uses: mymindstorm/setup-emsdk@v16
               name: 🔋 Set up Emscripten
               with:
                   actions-cache-folder: 'emsdk-cache'
                   version: '5.0.3'
 
             - name: 🐳 Set up Docker
-              uses: docker/setup-docker-action@v4
+              uses: docker/setup-docker-action@v5.3.0
 
             - name: 💾 Cache target folder
               id: cache-target-folder
-              uses: actions/cache@v4
+              uses: actions/cache@v6.1.0
               with:
                 path: |
                   target/wasm32-unknown-emscripten/release-emscripten/build
@@ -140,7 +142,7 @@ jobs:
                   target/wasm32-unknown-emscripten/release-emscripten/incremental
                 key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('**/Cargo.toml') }}
 
-            - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+            - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659
               name: ⚙️ Setup Rust
               with:
                   target: wasm32-unknown-emscripten
@@ -154,7 +156,7 @@ jobs:
               run: mise run pdfify-manual
 
             - name: 📦 Store web and PDF
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v7.0.1
               with:
                 name: vecta-web-and-manual
                 retention-days: 1
@@ -166,12 +168,12 @@ jobs:
         name: 🏗️ Build for macOS aarch64
         runs-on: macos-latest
         steps:
-          - uses: actions/checkout@v6
+          - uses: actions/checkout@v7.0.0
             name: 📂 Checkout
             with:
               lfs: true
 
-          - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+          - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659
             name: ⚙️ Setup Rust
             with:
                 target: aarch64-apple-darwin
@@ -180,7 +182,7 @@ jobs:
 
           - name: 💾 Cache vcpkg folder
             id: cache-target-folder
-            uses: actions/cache@v4
+            uses: actions/cache@v6.1.0
             with:
               path: |
                 target/vcpkg
@@ -204,7 +206,7 @@ jobs:
             run: cargo build -p vectarine-cli --target=aarch64-apple-darwin --release
 
           - name: 📦 Store macos executables
-            uses: actions/upload-artifact@v5
+            uses: actions/upload-artifact@v7.0.1
             with:
               name: vecta-macos
               retention-days: 1
@@ -220,38 +222,38 @@ jobs:
       permissions:
         contents: write
       steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.0
         name: 📂 Checkout
         with:
           # Need to bundle the gallery which has LFS files
           lfs: true
 
       - name: ⚙️ Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.3.2
 
       - name: ⬇️ Download Linux artefacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8.0.0
         with:
           path: ./linux
           pattern: vecta-linux
         continue-on-error: true
 
       - name: ⬇️ Download Windows artefacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8.0.0
         with:
           path: ./windows
           pattern: vecta-windows
         continue-on-error: true
 
       - name: ⬇️ Download Web artefacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8.0.0
         with:
           path: ./web
           pattern: vecta-web-and-manual
         continue-on-error: true
 
       - name: ⬇️ Download macOS artefacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8.0.0
         with:
           path: ./macos
           pattern: vecta-macos
@@ -280,7 +282,7 @@ jobs:
         run: uv run scripts/release-engine.py
 
       - name: ✨ Create a GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v3.0.2
         # This can fail if the release already exists. Let's ignore that.
         continue-on-error: true
         env:
@@ -292,6 +294,12 @@ jobs:
             tag_name: "${{ inputs.tag || github.ref_name }}"
             generate_release_notes: false
             draft: true
+            body: |
+              ## New features
+
+              ## Fixes
+
+              ## Miscellaneous
             files: |
-              "vectarine.*.zip"
+              vectarine.*.zip
               ./target/x86_64-unknown-linux-gnu/release/vectarine-cli

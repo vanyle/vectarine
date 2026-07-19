@@ -77,11 +77,6 @@ def copy_lua_and_docs(root_path: str):
         os.path.join(root_path, "gallery"),
         os.path.join(root_path, "engine-release/gallery"),
     )
-    # We don't copy gamedata. The user should open the editor, not the runtime.
-    # shutil.copytree(
-    #     os.path.join(root_path, "gamedata"),
-    #     os.path.join(root_path, "engine-release/gamedata"),
-    # )
 
 
 def get_clean_engine_release_folder(root_path: str) -> str:
@@ -113,7 +108,7 @@ def make_windows_release(root_path: str) -> bool:
         root_dir=release_path,
     )
 
-    console.print(f"[green]Successfully packaged the engine for Windows at {output_zip_name}!")
+    console.print(f"[green]Successfully packaged the engine for Windows at {output_zip_name}.zip!")
     return True
 
 
@@ -139,7 +134,7 @@ def make_linux_release(root_path: str) -> bool:
         root_dir=release_path,
     )
 
-    console.print("[green]Successfully packaged the engine for Linux!")
+    console.print(f"[green]Successfully packaged the engine for Linux at {output_zip_name}.zip!")
     return True
 
 
@@ -177,8 +172,9 @@ def make_macos_release(
     # Note: We need to put the runtime files inside the folder of the cli too!! otherwise exports won't work.
     copy_from_root(root_path, "target/aarch64-apple-darwin/release/vectarine-cli", "engine-release/vecta", chmodx=True)
 
-    # The docs (including the gallery) needs to be outside for user discoverability and for the cli to work.
+    # The docs (and the runtime) (including the gallery) needs to be outside for user discoverability and for the cli to work.
     copy_lua_and_docs(root_path)
+    copy_runtime_files(root_path)
 
     # For macOS, we put the runtime also in the bundle. Only the docs are outside
     copy_runtime_files(root_path, os.path.join(root_path, f"engine-release/{friendly_name}.app"))
@@ -230,7 +226,7 @@ def make_macos_release(
         root_dir=release_path,
     )
 
-    console.print("[green]Successfully packaged the engine for macOS!")
+    console.print(f"[green]Successfully packaged the engine for macOS at {output_zip_name}.zip!")
     return True
 
 

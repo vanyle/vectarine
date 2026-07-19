@@ -1,4 +1,4 @@
-name: ✨ Lint, Build & Test
+name: 📝 Generate & Deploy Documentation
 
 on:
   push:
