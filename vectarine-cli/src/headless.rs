@@ -35,7 +35,7 @@ where
         .window("Vectarine", 800, 600)
         .opengl()
         .hidden()
-        .allow_highdpi() // For Retina displays on macOS
+        //    .allow_highdpi() // Disallow high DPI for consistency in screenshots and testing regardless of the platform.
         .build()
         .expect("Failed to create window");
 

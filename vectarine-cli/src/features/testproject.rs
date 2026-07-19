@@ -231,10 +231,6 @@ pub fn run_test_file(test_file: &Path, overwrite: bool) -> Result<()> {
                             return Err(anyhow!("Log comparison failed."));
                         }
                     }
-                    print!(
-                        "The logs seem to match the expected logs in {}.",
-                        log_path.display()
-                    );
                 }
             }
             TestStep::ClearLogs => {

@@ -1,5 +1,5 @@
 [project]
-path = "../../gallery/snake/game.vecta"
+path = "../../gallery/Snake/game.vecta"
 description = "The test system clears logs."
 
 [[step]]

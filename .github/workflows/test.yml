@@ -13,6 +13,7 @@ on:
       - 'editor/**'
       - 'vectarine-plugin-sdk/**'
       - 'vectarine-plugin-template/**'
+      - 'vectarine-cli/**'
   pull_request:
 
 env:
@@ -23,10 +24,15 @@ jobs:
         name: ✨ Quality Check
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            # Version 7 
+            - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
               name: 📂 Checkout
-            # version 1.15.2 In this crazy system, hashes are the only way to pin dependencies
-            - uses: actions-rust-lang/setup-rust-toolchain@ca4a6432af353637602348dec3df861ef02ed8a6
+              with:
+                  fetch-depth: 1
+                  lfs: true # needed for reference screenshots
+
+            # version 1.17.0 In this crazy system, hashes are the only way to pin dependencies
+            - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659
               name: ⚙️ Setup Rust
               with:
                   components: clippy, rustfmt
@@ -37,8 +43,8 @@ jobs:
             - name: ⬇️ Install dependencies
               run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
 
-            - name: 🖼️ Integration tests
-              run: cargo run -p vectarine-cli -- test --path ./testdata/
+            - name: 🖼️ Integration test
+              run: cargo run -p vectarine-cli -- test --path testdata
 
             - name: 🏗️ Build
               run: cargo build --target=x86_64-unknown-linux-gnu
@@ -46,5 +52,5 @@ jobs:
             - name: 📎 Clippy
               run: cargo clippy --all-targets --all-features --target=x86_64-unknown-linux-gnu
 
-            - name: 🧪 Test
+            - name: 🧪 Unit test
               run: cargo test --target=x86_64-unknown-linux-gnu
