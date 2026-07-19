@@ -47,5 +47,5 @@ pub struct ExportArgs {
 #[derive(Parser, Debug)]
 pub struct TestArgs {
     #[arg(long, short)]
-    pub test_file_path: PathBuf,
+    pub testfile: PathBuf,
 }

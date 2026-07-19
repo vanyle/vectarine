@@ -52,9 +52,15 @@ pub fn lib_main() {
                 }
             }
         }
-        cliarg::VectarineCliFeatures::Test(_test_args) => {
-            // Run tests from a test.toml file
-            todo!()
+        cliarg::VectarineCliFeatures::Test(test_args) => {
+            match features::testproject::test_project(&test_args.testfile) {
+                Ok(_) => {
+                    println!("Test project executed successfully.");
+                }
+                Err(e) => {
+                    eprintln!("Error executing test project: {:?}", e);
+                }
+            }
         }
     }
 }

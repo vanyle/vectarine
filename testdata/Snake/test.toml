@@ -1,0 +1,44 @@
+[project]
+path = "../../gallery/snake/game.vecta"
+description = "The game responds to arrow keys"
+
+[[step]]
+wait_for_frames = 5
+
+# Two frame input to the right
+[[step]]
+press_keys = ["up"]
+
+[[step]]
+wait_for_frames = 2
+
+[[step]]
+release_keys = ["up"]
+
+# [[step]]
+# press_mouse_at = [100, 200]
+
+# [[step]]
+# release_mouse_at = [100, 200]
+
+[[step]]
+wait_for_frames = 2
+
+# You can run lua code to set game variable and test specific state (for example how the world looks when the camera is at a given location)
+[[step]]
+run_lua_code = "state.paused = true"
+
+[[step]]
+run_lua_code = "print('Hello from the test')"
+
+[[step]]
+wait_for_frames = 2
+
+[[step]]
+save_screenshot_to = "./screenshot1.png"
+
+[[step]]
+save_logs_to = "./logs1.txt"
+
+[[step]]
+expect_no_errors = {}
