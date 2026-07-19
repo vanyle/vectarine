@@ -20,10 +20,8 @@ pub fn take_screenshot(
 
     // We run a few frames to let the game initialize.
     for _ in 0..initialization_frames {
-        game_runner.step(frame_60th, no_events.clone());
+        game_runner.step(frame_60th, &no_events);
     }
-
-    let (screenshot_data, width, height) = game_runner.screenshot()?;
 
     let output_path: Cow<Path> = match output_path {
         Some(path) => Cow::Borrowed(path),
@@ -35,6 +33,15 @@ pub fn take_screenshot(
         ),
     };
 
+    take_png_screenshot_from_runner(&mut game_runner, &output_path)
+}
+
+pub fn take_png_screenshot_from_runner(
+    game_runner: &mut GameHeadlessRunner,
+    output_path: &Path,
+) -> vectarine_plugin_sdk::anyhow::Result<PathBuf> {
+    let (screenshot_data, width, height) = game_runner.screenshot()?;
+
     let color_type = runtime::image::ColorType::Rgba8;
     let format = runtime::image::ImageFormat::Png;
 
@@ -45,7 +52,7 @@ pub fn take_screenshot(
         .collect::<Vec<u8>>();
 
     runtime::image::save_buffer_with_format(
-        &output_path,
+        output_path,
         &flipped_data,
         width,
         height,
@@ -53,5 +60,5 @@ pub fn take_screenshot(
         format,
     )?;
 
-    Ok(output_path.into_owned())
+    Ok(output_path.to_path_buf())
 }

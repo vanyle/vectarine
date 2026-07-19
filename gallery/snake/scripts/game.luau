@@ -1,5 +1,6 @@
 local Debug = require("@vectarine/debug")
 local print, fprint = Debug.print, Debug.fprint
+_G.print = print
 
 local Canvas = require("@vectarine/canvas")
 local Event = require("@vectarine/event")

@@ -162,12 +162,27 @@ impl GameHeadlessRunner {
         Ok(GameHeadlessRunner { game, window })
     }
 
+    pub fn window_id(&self) -> u32 {
+        self.window.borrow().id()
+    }
+
+    pub fn run_lua_code(
+        &mut self,
+        code: &str,
+    ) -> vectarine_plugin_sdk::anyhow::Result<vectarine_plugin_sdk::mlua::Value> {
+        let lua_chunk = self.game.lua_env.lua_handle.lua.load(code);
+        lua_chunk
+            .set_name("test_code")
+            .eval::<vectarine_plugin_sdk::mlua::Value>()
+            .map_err(|e| anyhow::anyhow!("Failed to run Lua code: {}", e))
+    }
+
     /// Steps the game forward by the given duration. You can pass a fake duration to see how the game behaves on slow hardware.
     /// You need to pass the events that occurred since last step to simulate user input (you can pass an empty vector.)
     pub fn step(
         &mut self,
         delta_duration: std::time::Duration,
-        latest_events: Vec<sdl2::event::Event>,
+        latest_events: &[sdl2::event::Event],
     ) -> FrameResult {
         self.game.load_resource_as_needed();
 
