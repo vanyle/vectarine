@@ -279,6 +279,20 @@ function module.getMouseWheel(): Vec.Vec2
 	error("Implemented in native code")
 end
 
+export type Touch = {
+	--- A stable identifier for this finger while it remains on the screen.
+	id: number,
+	--- The current position in OpenGL coordinates.
+	position: Vec.Vec2,
+	--- The normalized pressure reported by the device.
+	pressure: number,
+}
+
+--- Get all fingers that are currently touching the screen.
+function module.getCurrentTouches(): { Touch }
+	error("Implemented in native code")
+end
+
 --- Get the current window size (in px)
 function module.getWindowSize(): Vec.Vec2
 	error("Implemented in native code")

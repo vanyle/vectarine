@@ -21,6 +21,14 @@ pub struct MouseState {
     pub is_right_just_pressed: bool,
 }
 
+#[derive(Clone, Debug)]
+pub struct TouchState {
+    pub id: i64,
+    pub x: f32,
+    pub y: f32,
+    pub pressure: f32,
+}
+
 #[derive(Debug)]
 pub struct IoEnvState {
     // Inputs
@@ -32,6 +40,7 @@ pub struct IoEnvState {
     pub px_ratio_x: f32,
     pub px_ratio_y: f32,
     pub mouse_state: MouseState,
+    pub current_touches: HashMap<(i64, i64), TouchState>,
     pub keyboard_state: HashMap<Scancode, bool>,
     pub keyboard_just_pressed_state: HashMap<Scancode, bool>,
     // The text typed since the last frame.
@@ -58,6 +67,7 @@ impl Default for IoEnvState {
             px_ratio_x: 1.0,
             px_ratio_y: 1.0,
             mouse_state: MouseState::default(),
+            current_touches: HashMap::new(),
             keyboard_state: HashMap::new(),
             keyboard_just_pressed_state: HashMap::new(),
             text_input: String::new(),
@@ -229,9 +239,62 @@ pub fn process_events<'a>(
                 mouse_state.is_left_down = mousestate.left();
                 mouse_state.is_right_down = mousestate.right();
             }
+            Event::FingerDown {
+                touch_id,
+                finger_id,
+                x,
+                y,
+                pressure,
+                ..
+            }
+            | Event::FingerMotion {
+                touch_id,
+                finger_id,
+                x,
+                y,
+                pressure,
+                ..
+            } => {
+                let mut env_state = game.lua_env.env_state.borrow_mut();
+                update_touch(&mut env_state, *touch_id, *finger_id, *x, *y, *pressure);
+            }
+            Event::FingerUp {
+                touch_id,
+                finger_id,
+                ..
+            } => {
+                remove_touch(
+                    &mut game.lua_env.env_state.borrow_mut(),
+                    *touch_id,
+                    *finger_id,
+                );
+            }
             _ => {}
         }
     }
+}
+
+fn update_touch(
+    env_state: &mut IoEnvState,
+    touch_id: i64,
+    finger_id: i64,
+    x: f32,
+    y: f32,
+    pressure: f32,
+) {
+    env_state.current_touches.insert(
+        (touch_id, finger_id),
+        TouchState {
+            id: finger_id,
+            x: x * 2.0 - 1.0,
+            y: 1.0 - y * 2.0,
+            pressure,
+        },
+    );
+}
+
+fn remove_touch(env_state: &mut IoEnvState, touch_id: i64, finger_id: i64) {
+    env_state.current_touches.remove(&(touch_id, finger_id));
 }
 
 fn mouse_button_to_str(mouse_btn: sdl2::mouse::MouseButton) -> &'static str {
@@ -243,5 +306,58 @@ fn mouse_button_to_str(mouse_btn: sdl2::mouse::MouseButton) -> &'static str {
         "middle"
     } else {
         "???"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{IoEnvState, remove_touch, update_touch};
+
+    #[test]
+    fn touch_positions_use_opengl_coordinates() {
+        let mut state = IoEnvState::default();
+
+        update_touch(&mut state, 1, 10, 0.25, 0.75, 0.5);
+
+        let touch = state
+            .current_touches
+            .get(&(1, 10))
+            .expect("touch should be registered");
+        assert_eq!(touch.id, 10);
+        assert_eq!(touch.x, -0.5);
+        assert_eq!(touch.y, -0.5);
+        assert_eq!(touch.pressure, 0.5);
+    }
+
+    #[test]
+    fn touch_updates_keep_fingers_independent() {
+        let mut state = IoEnvState::default();
+
+        update_touch(&mut state, 1, 10, 0.0, 0.0, 0.25);
+        update_touch(&mut state, 1, 20, 1.0, 1.0, 0.75);
+        update_touch(&mut state, 1, 10, 0.5, 0.5, 1.0);
+
+        assert_eq!(state.current_touches.len(), 2);
+        let first_touch = state
+            .current_touches
+            .get(&(1, 10))
+            .expect("first touch should be registered");
+        assert_eq!(first_touch.x, 0.0);
+        assert_eq!(first_touch.y, 0.0);
+        assert_eq!(first_touch.pressure, 1.0);
+        assert_eq!(
+            state
+                .current_touches
+                .get(&(1, 20))
+                .expect("second touch should be registered")
+                .id,
+            20
+        );
+
+        remove_touch(&mut state, 1, 10);
+
+        assert_eq!(state.current_touches.len(), 1);
+        assert!(!state.current_touches.contains_key(&(1, 10)));
+        assert!(state.current_touches.contains_key(&(1, 20)));
     }
 }

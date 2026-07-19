@@ -1,5 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
+use vectarine_plugin_sdk::mlua::{Result, Table};
 use vectarine_plugin_sdk::sdl2;
 use vectarine_plugin_sdk::sdl2::keyboard::Scancode;
 
@@ -114,6 +115,24 @@ pub fn setup_io_api(
             table.raw_set("isLeftJustPressed", mouse_state.is_left_just_pressed)?;
             table.raw_set("isRightJustPressed", mouse_state.is_right_just_pressed)?;
             Ok(table)
+        }
+    });
+
+    add_fn_to_table(lua, &io_module, "getCurrentTouches", {
+        let env_state = env_state.clone();
+        move |lua, ()| -> Result<Vec<Table>> {
+            env_state
+                .borrow()
+                .current_touches
+                .values()
+                .map(|touch| {
+                    let touch_table = lua.create_table()?;
+                    touch_table.raw_set("id", touch.id)?;
+                    touch_table.raw_set("position", Vec2::new(touch.x, touch.y))?;
+                    touch_table.raw_set("pressure", touch.pressure)?;
+                    Ok(touch_table)
+                })
+                .collect()
         }
     });
 
