@@ -11,6 +11,11 @@ zip = "6.0.0"
 regex = "1.12.2"
 directories = "6.0.0"
 
+[package.metadata.vcpkg]
+dependencies = ["sdl2"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "50c0cb4"
+
 [lints.clippy]
 enum_glob_use = "warn"
 elidable_lifetime_names = "warn"

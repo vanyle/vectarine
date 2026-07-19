@@ -29,6 +29,11 @@ path = "src/main.rs"
 chrono = "0.4.42"
 winresource = "0.1.23"
 
+[package.metadata.vcpkg]
+dependencies = ["sdl2"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "50c0cb4"
+
 # https://rust-lang.github.io/rust-clippy/master/index.html
 [lints.clippy]
 enum_glob_use = "warn"

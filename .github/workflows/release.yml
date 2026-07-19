@@ -52,6 +52,9 @@ jobs:
 
             - name: 🏗️ Build editor (windows)
               run: cargo build -p editor --target=x86_64-pc-windows-msvc --release
+
+            - name: 🏗️ Build cli (windows)
+              run: cargo build -p vectarine-cli --target=x86_64-pc-windows-msvc --release
             
             - name: 📦 Store windows executables
               uses: actions/upload-artifact@v5
@@ -61,6 +64,7 @@ jobs:
                 path: |
                   target/x86_64-pc-windows-msvc/release/vecta.exe
                   target/x86_64-pc-windows-msvc/release/runtime.exe
+                  target/x86_64-pc-windows-msvc/release/vectarine-cli.exe
 
     release_linux:
         name: 🏗️ Build for Linux x86_64
@@ -87,6 +91,9 @@ jobs:
           - name: 🏗️ Build editor (linux)
             run: cargo build -p editor --target=x86_64-unknown-linux-gnu --release
 
+          - name: 🏗️ Build cli (linux)
+            run: cargo build -p vectarine-cli --target=x86_64-unknown-linux-gnu --release
+
           - name: 📦 Store linux executables
             uses: actions/upload-artifact@v5
             with:
@@ -95,6 +102,7 @@ jobs:
               path: |
                 target/x86_64-unknown-linux-gnu/release/vecta
                 target/x86_64-unknown-linux-gnu/release/runtime
+                target/x86_64-unknown-linux-gnu/release/vectarine-cli
 
     release_web:
         name: 🏗️ Build for Emscripten
@@ -192,6 +200,9 @@ jobs:
           - name: 🏗️ Build editor (macos)
             run: cargo build -p editor --target=aarch64-apple-darwin --release
 
+          - name: 🏗️ Build cli (macos)
+            run: cargo build -p vectarine-cli --target=aarch64-apple-darwin --release
+
           - name: 📦 Store macos executables
             uses: actions/upload-artifact@v5
             with:
@@ -200,6 +211,7 @@ jobs:
               path: |
                 target/aarch64-apple-darwin/release/vecta
                 target/aarch64-apple-darwin/release/runtime
+                target/aarch64-apple-darwin/release/vectarine-cli
 
     bundle:
       name: 📦 Bundle and release

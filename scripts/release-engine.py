@@ -10,6 +10,10 @@
 
 """
 Tool to generate an engine-release aka a distributable zips with the engine and resources compiled.
+
+There are 3 distributable zips for each editor platform: Windows, Linux, MacOS.
+Each zip contains the editor executable, the CLI executable, the runtime for all platforms, the docs and the gallery.
+
 """
 
 import os
@@ -32,7 +36,7 @@ def copy_from_root(root_path: str, src: str, dst: str, chmodx=False) -> None:
             os.chmod(os.path.join(root_path, dst), st.st_mode | 0o111)
     else:
         console.print(f"[yellow]Could not find {src_file} to copy")
-        console.print("[yellow]Your release will usable, but incomplete as runtimes will be missing")
+        console.print("[yellow]Your release will be usable, but incomplete as some files will be missing")
 
 
 def copy_runtime_files(root_path: str, dest: str = ""):
@@ -98,7 +102,8 @@ def make_windows_release(root_path: str) -> bool:
         console.print("[red]Could not find the editor executable to package the engine for Windows!")
         return False
 
-    copy_from_root(root_path, "target/x86_64-pc-windows-msvc/release/vecta.exe", "engine-release/vecta.exe")
+    copy_from_root(root_path, "target/x86_64-pc-windows-msvc/release/vecta.exe", "engine-release/VectarineEditor.exe")
+    copy_from_root(root_path, "target/x86_64-pc-windows-msvc/release/vectarine-cli.exe", "engine-release/vecta.exe")
     copy_runtime_files(root_path)
     copy_lua_and_docs(root_path)
 
@@ -123,7 +128,8 @@ def make_linux_release(root_path: str) -> bool:
         console.print("[red]Could not find the editor executable to package the engine for Linux!")
         return False
 
-    copy_from_root(root_path, "target/x86_64-unknown-linux-gnu/release/vecta", "engine-release/vecta", chmodx=True)
+    copy_from_root(root_path, "target/x86_64-unknown-linux-gnu/release/vecta", "engine-release/VectarineEditor", chmodx=True)
+    copy_from_root(root_path, "target/x86_64-unknown-linux-gnu/release/vectarine-cli", "engine-release/vecta", chmodx=True)
     copy_runtime_files(root_path)
     copy_lua_and_docs(root_path)
 
@@ -146,17 +152,15 @@ def make_macos_release(
     # https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW1
     # https://developer.apple.com/documentation/bundleresources/information-property-list?language=objc
     output_zip_name = "vectarine.macos.arm64"  # no need to add .zip
-    friendly_name = "vecta"
+    friendly_name = "VectarineEditor"
     console.print("[blue]Trying to package the engine for macOS...")
     release_path = get_clean_engine_release_folder(root_path)
     executable_path = os.path.join(root_path, "target/aarch64-apple-darwin/release/vecta")
+
     if not os.path.exists(executable_path):
         console.print("[red]Could not find the editor executable to package the engine for macOS!")
         return False
     executable_dest_folder = os.path.join(root_path, "engine-release")
-
-    # The docs (including the gallery) needs to be outside for user discoverability.
-    copy_lua_and_docs(root_path)
 
     # Put the gallery inside the bundle so that the start screen works
     shutil.copytree(
@@ -168,6 +172,13 @@ def make_macos_release(
         os.path.join(root_path, "luau-api"),
         os.path.join(root_path, f"engine-release/{friendly_name}.app/luau-api"),
     )
+
+    # Put the CLI outside of the .app bundle as that is the convention for cli tools on macOS.
+    # Note: We need to put the runtime files inside the folder of the cli too!! otherwise exports won't work.
+    copy_from_root(root_path, "target/aarch64-apple-darwin/release/vectarine-cli", "engine-release/vecta", chmodx=True)
+
+    # The docs (including the gallery) needs to be outside for user discoverability and for the cli to work.
+    copy_lua_and_docs(root_path)
 
     # For macOS, we put the runtime also in the bundle. Only the docs are outside
     copy_runtime_files(root_path, os.path.join(root_path, f"engine-release/{friendly_name}.app"))

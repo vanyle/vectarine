@@ -32,6 +32,11 @@ winresource = "0.1.23"
 x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
 aarch64-apple-darwin = { triplet = "arm64-osx" }
 
+[package.metadata.vcpkg]
+dependencies = ["sdl2"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "50c0cb4"
+
 [features]
 editor = [] # Enabled when in editor mode.
 
