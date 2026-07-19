@@ -55,4 +55,11 @@ pub struct TestArgs {
     /// This is useful when you want to update the references locally.
     #[arg(long, short = 'r', default_value_t = false)]
     pub overwrite_references: bool,
+
+    /// The acceptable pixel difference for image comparison.
+    /// If a pixel's value is [255, 0, 0, 255] and the reference is [250, 3, 2, 255], the difference is 5 (the max of the components).
+    /// As long as the maximal difference between the pixels is less than this value, the images are considered equal.
+    /// This is useful as some platforms may have different rendering results due to different graphics drivers or hardware.
+    #[arg(long, short = 'd', default_value_t = 10)]
+    pub acceptable_pixel_difference: u32,
 }

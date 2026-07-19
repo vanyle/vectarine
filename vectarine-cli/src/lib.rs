@@ -56,6 +56,7 @@ pub fn lib_main() {
             match features::testproject::test_project(
                 &test_args.path,
                 test_args.overwrite_references,
+                test_args.acceptable_pixel_difference,
             ) {
                 Ok(_) => {
                     println!("✅ Test passed.");

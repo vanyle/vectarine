@@ -35,7 +35,7 @@ Io.setResizeable(true)
 -- Io.centerWindow()
 
 --- Game state
-local screenSize = Io.getScreenSize()
+local screenSize = Io.getWindowSize()
 local aspectRatio = screenSize.x / screenSize.y
 
 -- Make this persistent across script reloads
@@ -58,7 +58,7 @@ end
 local applyShaderEffectForFrames = 0
 
 function Load()
-	screenSize = Io.getScreenSize()
+	screenSize = Io.getWindowSize()
 	aspectRatio = screenSize.x / screenSize.y
 end
 
