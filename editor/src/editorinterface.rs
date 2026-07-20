@@ -367,6 +367,9 @@ pub fn filter_events(
                 Event::MouseButtonUp { .. }
                     | Event::MouseButtonDown { .. }
                     | Event::MouseMotion { .. }
+                    | Event::FingerDown { .. }
+                    | Event::FingerUp { .. }
+                    | Event::FingerMotion { .. }
             );
 
         !needs_filtering_because_keyboard && !needs_filtering_because_mouse
