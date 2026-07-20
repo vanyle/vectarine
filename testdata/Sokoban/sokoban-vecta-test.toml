@@ -1,0 +1,27 @@
+[project]
+path = "../../gallery/Sokoban/game.vecta"
+description = "Sokoban runs without errors"
+
+[[step]]
+wait_for_frames = 5
+
+[[step]]
+compare_screenshot_to = "./sokoban-screenshot.png"
+
+[[step]]
+press_keys = ["B"]
+
+[[step]]
+wait_for_frames = 3
+
+[[step]]
+release_keys = ["B"]
+
+[[step]]
+wait_for_frames = 200
+
+[[step]]
+compare_screenshot_to = "./sokoban-dialog-screenshot.png"
+
+[[step]]
+expect_no_errors = {}

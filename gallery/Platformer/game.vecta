@@ -4,5 +4,5 @@ logo_path = ""
 description = "A platformer with physics and tilemaps"
 tags = []
 loading_animation = "pixel"
-default_screen_width = 800
-default_screen_height = 600
+screen_width = 800
+screen_height = 600

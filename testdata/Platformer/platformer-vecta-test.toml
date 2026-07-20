@@ -1,0 +1,12 @@
+[project]
+path = "../../gallery/Platformer/game.vecta"
+description = "Platformer runs without errors"
+
+[[step]]
+wait_for_frames = 30
+
+[[step]]
+compare_screenshot_to = "./platformer-screenshot.png"
+
+[[step]]
+expect_no_errors = {}

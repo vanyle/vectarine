@@ -56,10 +56,9 @@ pub struct TestArgs {
     #[arg(long, short = 'r', default_value_t = false)]
     pub overwrite_references: bool,
 
-    /// The acceptable pixel difference for image comparison.
-    /// If a pixel's value is [255, 0, 0, 255] and the reference is [250, 3, 2, 255], the difference is 5 (the max of the components).
-    /// As long as the maximal difference between the pixels is less than this value, the images are considered equal.
-    /// This is useful as some platforms may have different rendering results due to different graphics drivers or hardware.
-    #[arg(long, short = 'd', default_value_t = 10)]
+    /// The acceptable percentage of pixels that are different for image comparison.
+    /// 0 means that the images must be identical, while 100 means that all pixels can be different.
+    /// This is set to 5 by default as on some platforms, some effects can be rendered slightly differently.
+    #[arg(long, short = 'd', default_value_t = 5)]
     pub acceptable_pixel_difference: u32,
 }

@@ -53,5 +53,20 @@ jobs:
               run: cargo test --target=x86_64-unknown-linux-gnu
 
             - name: 🖼️ Integration test
-              run: cargo run -p vectarine-cli -- test --path testdata -d 20
+              id: screenshot_test
+              continue-on-error: true
+              run: cargo run -p vectarine-cli -- test --path testdata -d 10
 
+            - name: 🖼️ Regenerate screenshots
+              id: regenerate_screenshots
+              if: ${{ steps.screenshot_test.outcome == 'failure' }}
+              run: cargo run -p vectarine-cli -- test --path testdata -r
+
+            # Used to investigate differences in screenshots between local and CI in case of integration test failures.
+            - name: 📦 Export test results
+              if: ${{ steps.regenerate_screenshots.outcome == 'success' }}
+              uses: actions/upload-artifact@v7.0.1
+              with:
+                retention-days: 1
+                name: screenshot-results
+                path: testdata

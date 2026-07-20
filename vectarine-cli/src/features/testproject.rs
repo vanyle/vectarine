@@ -162,44 +162,41 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
                     }
 
                     // We blur slightly due to differences in multisampling between platforms. This is a tradeoff between accuracy and robustness.
-                    let expected_bytes = expected_image.fast_blur(1.0).to_rgba8();
+                    let expected_bytes = expected_image.to_rgba8();
                     let actual_bytes = DynamicImage::ImageRgba8(
                         RgbaImage::from_raw(width, height, screenshot_data.clone()).ok_or_else(
                             || anyhow!("Failed to create image buffer from screenshot data"),
                         )?,
                     )
                     .flipv()
-                    .fast_blur(1.0)
                     .to_rgba8();
 
+                    let total_pixels = width * height;
+                    let mut differing_pixels = 0;
                     for x in 0..width {
                         for y in 0..height {
                             let expected_pixel = expected_bytes.get_pixel(x, y);
                             let actual_pixel = actual_bytes.get_pixel(x, y);
 
                             if expected_pixel != actual_pixel {
-                                let diff = expected_pixel
-                                    .0
-                                    .iter()
-                                    .zip(actual_pixel.0.iter())
-                                    .map(|(a, b)| (a.abs_diff(*b)) as u32)
-                                    .max()
-                                    .unwrap_or(0);
-                                if diff > acceptable_pixel_diff {
-                                    return Err(anyhow!(
-                                        "There was a difference between the screenshot taken and the saved one at {}: expected {:?}, got {:?} at position ({}, {})\n
-The acceptable pixel difference is {}, but the actual difference is {}.",
-                                        screenshot_output_path.display(),
-                                        expected_pixel.0,
-                                        actual_pixel,
-                                        x,
-                                        y,
-                                        acceptable_pixel_diff,
-                                        diff
-                                    ));
-                                }
+                                differing_pixels += 1;
                             }
                         }
+                    }
+                    let pixel_difference_percentage =
+                        (differing_pixels as f32 / total_pixels as f32) * 100.0;
+                    if pixel_difference_percentage > acceptable_pixel_diff as f32 {
+                        return Err(anyhow!(
+                            "There was a difference between the screenshot taken and the saved one at {}: {}% of pixels differ, which is above the acceptable threshold of {}%",
+                            screenshot_output_path.display(),
+                            pixel_difference_percentage,
+                            acceptable_pixel_diff
+                        ));
+                    } else {
+                        println!(
+                            "Screenshot comparison passed: {}% of pixels differ, which is within the acceptable threshold of {}%",
+                            pixel_difference_percentage, acceptable_pixel_diff
+                        );
                     }
                 }
             }
