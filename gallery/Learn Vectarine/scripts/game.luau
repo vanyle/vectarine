@@ -39,14 +39,28 @@ local circle = Persist.onReload(Vec4.createColor(0, 0, 0, 1), "circle_color")
 
 Io.setResizeable(true) -- The base window size can be small for some people
 
+
+local time = 0.0
 function drawTextCentered(
 	text: string,
 	position: Coord.ScreenPosition,
 	textSize: number | Coord.ScreenVec,
-	color: Vec4.Vec4
+	color: Vec4.Vec4,
+	dance: boolean?
 )
 	local textMeasure = fontResource:measureText(text, textSize)
-	fontResource:drawText(text, position - Coord.glVec(V2(textMeasure.width / 2, 0)), textSize, color)
+	if dance then
+		local offset = 0
+		time += 1.0 / 60.0
+		for i=1, text:len() do
+			const char = text:sub(i, i)
+			const offsetPos = Coord.glVec(Vec.V2(offset, math.sin(time * 1.5 + i / 3.0) * 0.04))
+			offset += fontResource:measureText(char, textSize).width * 1.1
+			fontResource:drawText(char, position + offsetPos - Coord.glVec(V2(textMeasure.width / 2, 0)), textSize, color)
+		end
+	else
+		fontResource:drawText(text, position - Coord.glVec(V2(textMeasure.width / 2, 0)), textSize, color)
+	end
 end
 
 local timer = 0.0
@@ -77,7 +91,7 @@ local screen1: Ui.Widget<any> = Ui.widget(V2(2, 2), function()
 	if logoResource:isReady() then
 		logoResource:draw(Coord.gl(V2(0, 0.5)) - Coord.pxVec(V2(100, 100)), Coord.pxVec(V2(200, 200)))
 	end
-	drawTextCentered("Welcome to Vectarine", Coord.CENTER, textSize, Vec4.WHITE)
+	drawTextCentered("Welcome to Vectarine", Coord.CENTER, textSize, Vec4.WHITE, true)
 	fontResource:drawText(
 		"Press SPACE to continue",
 		Coord.gl(V2(-1, -1)) + Coord.pxVec(V2(20, -20)),

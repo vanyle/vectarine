@@ -1,8 +1,9 @@
-title = "Platformer"
+title = "Pong"
 main_script_path = "scripts/game.luau"
 logo_path = ""
-description = "A platformer with physics and tilemaps"
+description = ""
 tags = []
 loading_animation = "pixel"
 default_screen_width = 800
 default_screen_height = 600
+plugins = []

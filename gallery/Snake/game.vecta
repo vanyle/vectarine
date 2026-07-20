@@ -1,9 +1,9 @@
 #!/usr/bin/env vecta
 title = "Snake"
-entry = "scripts/main.luau"
+main_script_path = "scripts/main.luau"
 logo = "textures/logo.png"
 tags = ["2d", "arcade", "tutorial", "pixelart"]
 description = """A simple snake game made with Vectarine."""
 loading_animation = "pixel"
-screen_width = 800
-screen_height = 600
+default_screen_width = 800
+default_screen_height = 600

@@ -5,5 +5,5 @@ logo = "textures/logo.png"
 tags = ["tutorial", "prototype"]
 description = """A complete horror exploration game."""
 loading_animation = "pixel"
-screen_width = 800
-screen_height = 600
+default_screen_width = 800
+default_screen_height = 600
