@@ -1,7 +1,7 @@
-title = "Pong"
+title = "AlienShooter"
 main_script_path = "scripts/game.luau"
 logo_path = ""
-description = "A Pong game with a score and a simple AI opponent."
+description = "A game about shooting down waves of aliens."
 tags = []
 loading_animation = "pixel"
 default_screen_width = 800

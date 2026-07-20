@@ -1,0 +1,18 @@
+[project]
+path = "../../gallery/AlienShooter/game.vecta"
+description = "Alien shooter runs without errors"
+
+[[step]]
+wait_for_frames = 200
+
+[[step]]
+press_keys = ["Space"]
+
+[[step]]
+wait_for_frames = 40
+
+[[step]]
+compare_screenshot_to = "./alienshooter-screenshot.png"
+
+[[step]]
+expect_no_errors = {}
