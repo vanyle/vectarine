@@ -10,11 +10,9 @@
 <a href="https://discord.gg/zPwg3VDydz"><img src="https://dcbadge.limes.pink/api/server/zPwg3VDydz?style=flat" alt="Discord invite badge" /></a>
 </p>
 
-<p align="center">
-<video width="448" height="252" controls src="https://github.com/user-attachments/assets/82ec22b2-563d-404e-8e61-125e1a69f7f3"/>
-</p>
-
 *[Vectarine](https://vectarine.surge.sh) is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
+
+<video alt="A presentation of vectarine features" width="448" height="252" controls src="https://github.com/user-attachments/assets/2d90fe6b-1d22-46da-a9a8-2ef5cfe31a27"></video>
 
 ## Goals
 
