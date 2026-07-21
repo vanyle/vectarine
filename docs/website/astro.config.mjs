@@ -91,7 +91,11 @@ export default defineConfig({
                             label: "Making user interfaces",
                             link: "/guides/making-uis/",
                         },
-                                                {
+                        {
+                            label: "Testing games automatically",
+                            link: "/guides/testing-games-automatically/",
+                        },
+                        {
                             label: "Create a native plugin",
                             link: "/guides/create-a-plugin/",
                         },
