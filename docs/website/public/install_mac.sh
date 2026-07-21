@@ -50,20 +50,21 @@ echo "Extracting..."
 unzip -o "$TEMP_ZIP" -d "$TEMP_DIR"
 
 # Remove existing installation if present
-if [ -d "/Applications/vecta.app" ]; then
+if [ -d "/Applications/VectarineEditor.app" ]; then
     echo "Updating existing installation..."
-    rm -rf "/Applications/vecta.app"
+    rm -rf "/Applications/VectarineEditor.app"
 fi
 
 # Move to /Applications
-mv "$TEMP_DIR/vecta.app" "/Applications/vecta.app"
+mv "$TEMP_DIR/VectarineEditor.app" "/Applications/VectarineEditor.app"
 
 # Remove the quarantine attribute so macOS doesn't block the app
-xattr -d com.apple.quarantine "/Applications/vecta.app" 2>/dev/null || true
+xattr -d com.apple.quarantine "/Applications/VectarineEditor.app" 2>/dev/null || true
 
 # Clean up temp files
 rm -f "$TEMP_ZIP"
 rm -rf "$TEMP_DIR"
 
-echo "You're all set! Vectarine has been installed to /Applications/vecta.app"
+echo "You're all set! Vectarine has been installed to /Applications/VectarineEditor.app"
+echo "The CLI tool was not installed. You can install it manually by putting it in your PATH."
 echo "You can launch it from your Applications folder or Spotlight."

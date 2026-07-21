@@ -90,6 +90,16 @@ else
     echo "Warning: Binary vecta not found in the extracted files."
 fi
 
+if [ -f "$INSTALL_DIR/VectarineEditor" ]; then
+    chmod +x "$INSTALL_DIR/VectarineEditor"
+    
+    # Update the symlink to ~/.local/bin
+    mkdir -p "$BIN_DIR"
+    ln -sf "$INSTALL_DIR/VectarineEditor" "$BIN_DIR/VectarineEditor"
+else
+    echo "Warning: Binary VectarineEditor not found in the extracted files."
+fi
+
 # Clean up the download
 rm -f "$TEMP_ZIP"
 
@@ -98,7 +108,8 @@ echo ""
 echo "You're all set!"
 echo "Vectarine has been installed to $INSTALL_DIR"
 echo ""
-echo "It can be ran using $BIN_DIR/vecta or simply 'vecta' if $BIN_DIR is in your PATH."
+echo "It can be ran using $BIN_DIR/VectarineEditor or simply 'VectarineEditor' if $BIN_DIR is in your PATH."
+echo "The CLI tool can be ran using $BIN_DIR/vecta or simply 'vecta' if $BIN_DIR is in your PATH."
 echo ""
 echo "If you want to add Vectarine to your path, add the following to your .bashrc / .zshrc"
 echo "export PATH=\"$BIN_DIR:\$PATH\""

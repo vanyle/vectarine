@@ -46,9 +46,9 @@ Expand-Archive -Path $temp_zip -DestinationPath $install_dir -Force
 Remove-Item -Force $temp_zip
 
 # Verify the binary exists
-$exe_path = "$install_dir\vecta.exe"
+$exe_path = "$install_dir\VectarineEditor.exe"
 if (-not (Test-Path $exe_path)) {
-    Write-Output "Warning: vecta.exe not found in the extracted files."
+    Write-Output "Warning: VectarineEditor.exe not found in the extracted files."
     cd $start_path
     exit 1
 }
@@ -74,7 +74,7 @@ if (-not (Test-Path $shortcut_path)) {
 Write-Output ""
 Write-Output "You're all set!"
 Write-Output "Vectarine is installed at: $install_dir"
-Write-Output "If you want to run 'vecta' from the command line, add the following to your PATH:"
+Write-Output "If you want to run 'VectarineEditor' or 'vecta' from the command line, add the following to your PATH:"
 Write-Output "  $install_dir"
 Write-Output ""
 Write-Output "Note: To uninstall Vectarine, simply delete this folder."

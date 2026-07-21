@@ -276,6 +276,7 @@ jobs:
           mv -f ./macos/* ./target/aarch64-apple-darwin/release/
           mv -f ./web/docs/* ./docs/
           mv -f ./web/target/wasm32-unknown-emscripten/release-emscripten/* ./target/wasm32-unknown-emscripten/release-emscripten/
+          mv -f ./target/x86_64-unknown-linux-gnu/release/vectarine-cli ./target/x86_64-unknown-linux-gnu/release/vecta-ci
         continue-on-error: true
 
       - name: 📦 Generate release files
@@ -302,4 +303,4 @@ jobs:
               ## Miscellaneous
             files: |
               vectarine.*.zip
-              ./target/x86_64-unknown-linux-gnu/release/vectarine-cli
+              ./target/x86_64-unknown-linux-gnu/release/vecta-ci
