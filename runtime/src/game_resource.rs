@@ -312,7 +312,7 @@ impl ResourceManager {
         if let Some(id) = self.get_id_by_path(path) {
             let script_resource = self.get_by_id::<ScriptResource>(id);
             let Ok(script_resource) = script_resource else {
-                // The resource type changes. This is rare, but it can happen.
+                // The resource type changed. This is rare, but it can happen.
                 return (id, target_table);
             };
             let exports = script_resource.get_exports();
@@ -409,6 +409,15 @@ impl ResourceManager {
         if !resource.is_loaded() {
             return Err("Resource not available yet".into());
         }
+        resource.get_underlying_resource::<T>()
+    }
+
+    /// Get a resource, even if it is not ready yet.
+    pub fn get_loading_resource_by_id<T: Resource + 'static>(
+        &self,
+        id: ResourceId,
+    ) -> Result<Rc<T>, String> {
+        let resource = self.get_holder_by_id(id);
         resource.get_underlying_resource::<T>()
     }
 

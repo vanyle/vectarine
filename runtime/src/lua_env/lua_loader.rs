@@ -3,6 +3,7 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 use vectarine_plugin_sdk::mlua::UserDataMethods;
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 
+use crate::game_resource::script_resource::ScriptResource;
 use crate::game_resource::tile_resource::TilemapResource;
 use crate::lua_env::lua_tile::TilemapResourceId;
 use crate::{
@@ -130,22 +131,53 @@ pub fn setup_loader_api(
 
     add_fn_to_table(lua, &loader_module, "loadScript", {
         let resources = resources.clone();
-        move |lua, (path, results): (String, Option<vectarine_plugin_sdk::mlua::Table>)| {
-            if let Some(target_table) = results {
-                let (id, table) =
-                    resources.schedule_load_script_resource(Path::new(&path), target_table);
-                return Ok((
-                    ScriptResourceId::from_id(id),
-                    vectarine_plugin_sdk::mlua::Value::Table(table),
-                ));
-            }
+        move |lua, (path, _type_hint): (String, Option<vectarine_plugin_sdk::mlua::Table>)| {
             let dummy_table = lua.create_table()?;
             let (id, table) =
                 resources.schedule_load_script_resource(Path::new(&path), dummy_table);
+
             Ok((
                 ScriptResourceId::from_id(id),
                 vectarine_plugin_sdk::mlua::Value::Table(table),
             ))
+        }
+    });
+
+    // This function never actually returns 'nil' like the doc claims, it is a type-checking trick
+    // to make `local module = loader.ini() or {}` properly typed as a function cannot normally return an unsealed table.
+    add_fn_to_table(lua, &loader_module, "init", {
+        let resources = resources.clone();
+        move |lua, (): ()| {
+            // Level 0 is the rust code, level 1 is the caller.
+            // The chunk name has the format @scripts/file.luau in general
+            let maybe_chunk_name = lua
+                .inspect_stack(1, |dbg| {
+                    let source = dbg.source().source;
+                    source.map(|s| s.to_string())
+                })
+                .flatten();
+            let Some(chunk_name) = maybe_chunk_name else {
+                return lua.create_table();
+            };
+            let Some(path_name) = chunk_name.strip_prefix("@") else {
+                return lua.create_table();
+            };
+            let path = Path::new(path_name);
+            let resource_id = resources.get_id_by_path(path);
+            let Some(resource_id) = resource_id else {
+                return lua.create_table();
+            };
+
+            let script_resource =
+                resources.get_loading_resource_by_id::<ScriptResource>(resource_id);
+            let Ok(script_resource) = script_resource else {
+                return lua.create_table();
+            };
+            let exports = script_resource.get_exports();
+            let Some(exports) = exports else {
+                return lua.create_table();
+            };
+            Ok(exports.clone())
         }
     });
 
