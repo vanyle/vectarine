@@ -11,7 +11,7 @@ export default defineConfig({
         format: "file",
     },
     base: "/",
-    site: 'https://vectarine.surge.sh',
+    site: 'https://vectarineengine.com',
     integrations: [
         expressiveCode(),
         starlight({
