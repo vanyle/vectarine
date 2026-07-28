@@ -48,7 +48,7 @@ Additionally, you'll need:
 >
 > On Mac: `curl -fsSL https://vectarineengine.com/install_mac.sh | sh`
 >
-> On Windows with Powershell: `irm https://vectarineengine.com/install_nt.sh | iex`
+> On Windows with Powershell: `irm https://vectarineengine.com/install_win.ps1 | iex`
 >
 
 <br>

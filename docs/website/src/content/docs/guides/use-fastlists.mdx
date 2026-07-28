@@ -3,7 +3,7 @@ title: Optimizing your game
 description: Understand how Vectarine's fastlist work and how they can be used to optimize game performance
 ---
 
-import { Aside } from "@astrojs/starlight/components";
+import { Aside, Code } from "@astrojs/starlight/components";
 
 Is your game slow? This guide will show you how to find and fix performance issues.
 
@@ -35,8 +35,7 @@ Vectarine has a built in profiler that shows you how long it takes to render a f
 - `Draw` and `Update` are custom timers added to measure how long a part of the code takes.
 
 
-```luau
-local Debug = require("@vectarine/debug")
+export const fastlistExample1 = `local Debug = require("@vectarine/debug")
 
 function Update(deltaTime: number)
     Debug.timed("Update", function()
@@ -46,13 +45,13 @@ function Update(deltaTime: number)
     Debug.timed("Draw", function()
         drawWorld()
     end)
-end
-```
+end`;
+
+<Code lang="luau" title="scripts/main.luau" code={fastlistExample1} />
 
 You can put `timed` blocks inside one another and inside loops to understand what parts of the code take for most time:
 
-```luau
-local Debug = require("@vectarine/debug")
+export const fastlistTimedNested = `local Debug = require("@vectarine/debug")
 
 function Update(deltaTime: number)
     Debug.timed("Total", function()
@@ -65,8 +64,9 @@ function Update(deltaTime: number)
             end)
         end
     end)
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistTimedNested} />
 
 ## Avoiding excessive work
 
@@ -75,8 +75,7 @@ you don't need to draw objects outside of the screen or do physics computation f
 
 You can also use better algorithms to do the same work. For example, if you want to remove duplicates from a list, instead of doing:
 
-```luau
---- Slow version, notice that we have a nested loop, which makes the algorithm O(n^2)
+export const fastlistRemoveDuplicatesSlow = `--- Slow version, notice that we have a nested loop, which makes the algorithm O(n^2)
 function removeDuplicates(list)
     local result = {}
     for i, v in ipairs(list) do
@@ -92,13 +91,13 @@ function removeDuplicates(list)
         end
     end
     return result
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistRemoveDuplicatesSlow} />
 
 Do the following instead:
 
-```luau
---- Fast version, we use a set to keep track of seen values, which makes the algorithm O(n)
+export const fastlistRemoveDuplicatesFast = `--- Fast version, we use a set to keep track of seen values, which makes the algorithm O(n)
 function removeDuplicates(list)
     local result = {}
     local seen = {}
@@ -109,8 +108,9 @@ function removeDuplicates(list)
         end
     end
     return result
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistRemoveDuplicatesFast} />
 
 ## Fastlists
 
@@ -148,8 +148,7 @@ the modified values back into the original list.
 
 Let's consider the following code that updates the position of a list of objects:
 
-```luau
--- Let's imagine that something fills this list with objects that have a position and a velocity
+export const fastlistObjectsSlow = `-- Let's imagine that something fills this list with objects that have a position and a velocity
 local objects = {
     {
         position = Vec.V2(0, 0),
@@ -170,13 +169,13 @@ function ProcessObjects(deltaTime: number)
     for i, object in ipairs(objects) do
         UpdateObject(object, deltaTime)
     end
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistObjectsSlow} />
 
 Let's convert this code to use fastlists:
 
-```luau
-local FastList = require("@vectarine/fastlist")
+export const fastlistObjectsFast = `local FastList = require("@vectarine/fastlist")
 
 local objects = {
     position = FastList.fromTable({Vec.V2(0, 0)}),
@@ -196,12 +195,15 @@ function ProcessObjects(deltaTime: number)
 
     -- We set the position to 0 on the X axis by multiplying by (0, 1), when we merge the result with the original position.
     -- The gaps in negativePosition, which are the element where the position is not negative are filled with the original values
-    objects.position = (negativePosition * Vec.V2(0, 1)):otherwise(objects.position)
-    
-    -- We do something similar for the velocity, but we multiply by (-1, 1) to flip the velocity on the X axis.
+    objects.position = (negativePosition * Vec.V2(0, 1)):otherwise(objects.position)`;
+
+<Code lang="luau" code={fastlistObjectsFast} />
+
+export const fastlistVelocityFlipping = `    -- We do something similar for the velocity, but we multiply by (-1, 1) to flip the velocity on the X axis.
     objects.velocity = (velocityWherePositionNegative * Vec.V2(-1, 1)):otherwise(objects.velocity)
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistVelocityFlipping} />
 
 You can expect code using fastlists to run 10 to 100 times faster.
 
@@ -222,50 +224,51 @@ Because `if` are "branches" and are bad for performance, `filterBetweenX` filter
 
 So:
 
-```luau
-for i = ... do
+export const fastlistForLoopSlow = `for i = ... do
     if a.x[i] < b and c.y[i] < d then
         e[i] = modify(e[i])
     end
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistForLoopSlow} />
 
 becomes:
 
 
-```luau
-    local filtered = a:filterBetweenX(a, -math.huge, b):filterBetweenY(c, -math.huge, d)
-    -- We chain the 2 filters to get an AND. We could also use `also`:
-    local filtered = a:filterBetweenX(a, -math.huge, b):also(c:filterBetweenY(c, -math.huge, d))
+export const fastlistForLoopFast = `    local filtered = a:filterBetweenX(a, -math.huge, b):filterBetweenY(c, -math.huge, d)
+    -- We chain the 2 filters to get an AND. We could also use \\\`also\\\`:
+    local filtered = a:filterBetweenX(a, -math.huge, b):also(c:filterBetweenY(c, -math.huge, d))`;
+
+<Code lang="luau" code={fastlistForLoopFast} />
     -- To merge the original e with the modified values, we use `otherwise`
     e = modify(filtered):otherwise(e)
-```
 
 
-You can use fastlists to draw objects efficiently too using `drawImages`:
+You can use fastlists to draw objects efficiently too using \`drawImages\`:
 
-```luau
--- Let's assume we have a fastlist of positions named 'positions'.
+export const fastlistDrawImages = `-- Let's assume we have a fastlist of positions named 'positions'.
 local screenSize = Io.getWindowSize()
 local positionsScaled = positions * Vec.V2(1 / screenSize.x, 1 / screenSize.y) + Vec.V2(-1, -1)
 -- We create a fastlist of sizes with the same length as positions, where all values are the same (size).
 local sizes = FastList.fromValue(size:gl(), #positions)
 -- We can weave the 2 fastlists together to get a fastlist of position and size, which is what drawImages needs.
 local positionWithSizes = positionsScaled:weave({ sizes })
-positionWithSizes:drawImages(myImage, Vec4.WHITE)
-```
+positionWithSizes:drawImages(myImage, Vec4.WHITE)`;
+
+<Code lang="luau" code={fastlistDrawImages} />
 
 ## Cases where fastlists are trickier to use
 
 Some code cannot easily converted to use fastlists. This happens in general when indices need to interact with one another:
 
-```luau
-for i in ... do
+export const fastlistInteractingIndices = `for i in ... do
     if a[i] < b[i + 1] then
         c[i / 2] = c[i] - c[i - 1]
     end
-end
-```
+end`;
+
+<Code lang="luau" code={fastlistInteractingIndices} />
+
 In this example, in one iteration of the loop, we access values at different indices, which is impossible with fastlists.
 
 However, you can still perform some optimizations.

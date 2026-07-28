@@ -3,6 +3,7 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import expressiveCode from "astro-expressive-code";
 import { defineConfig } from "astro/config";
+import starlightKbd from "starlight-kbd";
 
 // https://astro.build/config
 export default defineConfig({
@@ -11,9 +12,10 @@ export default defineConfig({
         format: "file",
     },
     base: "/",
-    site: 'https://vectarineengine.com',
+    site: "https://vectarineengine.com",
     integrations: [
         expressiveCode(),
+
         starlight({
             title: "Vectarine",
             favicon: "vectarine.png",
@@ -21,6 +23,14 @@ export default defineConfig({
             components: {
                 SocialIcons: "./src/components/SocialIcons.astro",
             },
+            plugins: [
+                starlightKbd({
+                    types: [
+                        { id: "mac", label: "macOS", default: true },
+                        { id: "windows", label: "Windows" },
+                    ],
+                }),
+            ],
             social: [
                 {
                     icon: "github",
@@ -28,9 +38,9 @@ export default defineConfig({
                     href: "https://github.com/vanyle/vectarine",
                 },
                 {
-                    icon: 'discord',
-                    label: 'Discord',
-                    href: 'https://discord.gg/zPwg3VDydz'
+                    icon: "discord",
+                    label: "Discord",
+                    href: "https://discord.gg/zPwg3VDydz",
                 },
             ],
             sidebar: [
@@ -56,8 +66,8 @@ export default defineConfig({
                         {
                             label: "Xmas AAA",
                             link: "/gallery/xmas-3a/",
-                        }
-                    ]
+                        },
+                    ],
                 },
                 {
                     label: "Introductions",
@@ -100,7 +110,7 @@ export default defineConfig({
                             link: "/guides/create-a-plugin/",
                         },
                     ],
-                }
+                },
             ],
         }),
         react(),

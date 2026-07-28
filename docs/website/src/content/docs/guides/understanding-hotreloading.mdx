@@ -3,23 +3,25 @@ title: Understanding hot-reloading
 description: Learn how hot reloading works and build projects that take advantage of it.
 ---
 
+import { Code } from "@astrojs/starlight/components";
+import { Kbd } from 'starlight-kbd/components';
+
 Vectarine thinks in terms of resources. A resource is basically a file, it can be code, an image, sound, etc.
 Each resource is hot-reloaded individually.
 
-There is a shortcut <kdb>Ctrl</kdb> + <kdb>R</kdb> to reload the entire project which is the same as closing and reopening the project.
+<Kbd mac="Control+R" windows="Control+R" /> reloads the entire project which is the same as closing and reopening the project.
 This is different from hot-reloading.
 
 When you edit a file, Vectarine hot-reloads it, meaning it rereads its content and updates the corresponding resource.
 
-Each resource can depend on other resource, for example a Luau script can draw an image. Because the script holds a pointer
+Each resource can depend on other resources, for example a Luau script can draw an image. Because the script holds a pointer
 to the image resource, when the image is hot-reloaded, the script will use the new version of the image without needing to be reloaded itself.
 
-You need to keep this in mind, when dealing will scripts requiring other scripts.
+You need to keep this in mind, when dealing with scripts requiring other scripts.
 
 Let's consider the following example:
 
-```lua main.luau
-local Loader = require("@vectarine/loader")
+export const mainLuau1 = `local Loader = require("@vectarine/loader")
 local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local value = nil
@@ -29,15 +31,17 @@ end
 
 function Update()
     Debug.fprint("Value is ", value)
-end
-```
+end`;
 
-```lua other.luau
-local module = {}
+<Code lang="luau" title="main.luau" code={mainLuau1} />
+
+export const otherLuau1 = `local module = {}
 function module.getPopulation()
     return 3
 end
-```
+return module`;
+
+<Code lang="luau" title="other.luau" code={otherLuau1} />
 
 In this example:
 
@@ -48,8 +52,7 @@ In this example:
 
 Now let's say we update `other.luau` to the following and reload the whole project.
 
-```lua other.luau
-local module = {}
+export const otherLuau2 = `local module = {}
 
 local Population = {}
 Population.count = function(self)
@@ -64,7 +67,9 @@ function module.getPopulation()
     setmetatable(data, { __index = Population })
     return data
 end
-```
+return module`;
+
+<Code lang="luau" title="other.luau" code={otherLuau2} />
 
 After hot-reloading `main.luau`, it will display `{human = 3, aliens = 5}`.
 
@@ -75,8 +80,7 @@ This design where we initialize an object with functions in its properties in `o
 
 Now, let's say we change `main.luau` to the following:
 
-```lua main.luau
-local Loader = require("@vectarine/loader")
+export const mainLuau2 = `local Loader = require("@vectarine/loader")
 local Event = require("@vectarine/event")
 local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
 
@@ -94,34 +98,37 @@ function Update()
     else
         Debug.fprint("Other script is not loaded yet")
     end
-end
-```
+end`;
 
-This will work, but it is a lot more verbose, especially if you have multuple modules and you want to keep track what needs to be reloaded when.
+<Code lang="luau" title="main.luau" code={mainLuau2} />
+
+This will work, but it is a lot more verbose, especially if you have multiple modules and you want to keep track what needs to be reloaded when.
 
 The best solution is to rethink the structure of the code:
 
-```lua other.luau
-local module = {}
+export const otherLuau3 = `local module = {}
 
-local Population = {}
+export type Population = {
+    humans: number,
+    aliens: number,
+}
 -- The count function is now attached to the module.
 function module.count(self: Population): number
     return self.humans + self.aliens
 end
 
-function module.getPopulation()
-    local data = {
+function module.getPopulation(): Population
+    return {
         humans = 3,
         aliens = 5,
     }
-    setmetatable(data, { __index = Population })
-    return data
 end
-```
 
-```lua main.luau
-local Loader = require("@vectarine/loader")
+return module`;
+
+<Code lang="luau" title="other.luau" code={otherLuau3} />
+
+export const mainLuau3 = `local Loader = require("@vectarine/loader")
 local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local population
@@ -130,9 +137,12 @@ if res:isReady() then
 end
 
 function Update()
-    Debug.fprint("Population is ", other.count(population))
-end
-```
+    if population ~= nil then 
+        Debug.fprint("Population is ", other.count(population))
+    end
+end`;
+
+<Code lang="luau" title="main.luau" code={mainLuau3} />
 
 What is happening here is that when you hot-reload `other.luau`, module is not recreated. The same table is kept and its old content is merged with the new one.
 This means that `main.luau` has a reference to the newest version of the `count` function and hot-reloading works as expected!
@@ -144,7 +154,49 @@ We can thus learn the following principles for organizing code in a hot-reloadin
 - Except for `main.luau`, avoid putting code in the global scope. Instead, put it inside functions. You don't know when code in the global scope will be executed which can lead to issues with loading order.
 - Use function in modules and avoid storing functions in objects
 
+Some more tips:
 
+**Put all your types in a `types.luau` file** that you can import using `require` without a `loadScript`.
+As types don't exist at runtime, you don't need to load them and they don't need any hot-reloading, they are there for auto-completion and type checking only.
+
+**loadScript always returns the same underlying script instance**, so you can load the same script in multiple other scripts without fear! To make sure the script
+is loaded, you just need to wait for it one, inside the entry point of your game using the following pattern:
+
+
+export const mainLuau4 = `local Loader = require("@vectarine/loader")
+
+-- load your scripts
+local otherResource, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
+local other2Resource, other2 = Loader.loadScript("scripts/other2.luau", require("other2.luau"))
+
+
+function Once()
+	_G.isOnceCalled = true
+    -- Your init code here
+end
+
+function Update(deltaTime: number)
+	if
+		graphics.drawSplashScreenIfNeeded({
+            otherResource,
+            other2Resource,
+        })
+    then
+        return
+    end
+    if not _G.isOnceCalled then
+	    Once()
+    end
+
+    -- Your game loop here
+end`;
+
+<Code lang="luau" title="main.luau" code={mainLuau4} />
+
+Because `Update` is the entry point of your game, all code that gets called from it will access resources that are already loaded.
+Inside `drawSplashScreenIfNeeded`, you can put scripts, but also images, sounds, etc.
+
+`
 
 
 

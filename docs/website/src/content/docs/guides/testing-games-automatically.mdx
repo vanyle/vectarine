@@ -53,44 +53,42 @@ expect_no_errors = {}
 
 <Code lang="toml" title="test/basic-vecta-test.toml" code={testExample1}/>
 
-You can run the tests with the following command:
+export const testCommand1 = `vecta test --path ./test/basic-vecta-test.toml`;
 
-```bash
-vecta test --path ./test/basic-vecta-test.toml
-```
+<Code lang="bash" code={testCommand1} />
 
 You should see (except if there are errors in your game):
 
-```
-➡️ The game runs without error
-✅ Test passed.
-```
+export const testOutput1 = `➡️ The game runs without error
+✅ Test passed.`;
+
+<Code lang="plaintext" code={testOutput1} />
 
 And the screenshot of your game should have been taken.
 
 If you run the test again, you will see:
 
-```
-➡️ The game runs without error
+export const testOutput2 = `➡️ The game runs without error
 Screenshot comparison passed: 0% of pixels differ, which is within the acceptable threshold of 5%
-✅ Test passed.
-```
+✅ Test passed.`;
+
+<Code lang="plaintext" code={testOutput2} />
 
 This means that the screenshot taken matches the reference screenshot, and the test passed.
 
 If you change your game (by changing a background color for example) and run the test again, it will fail, and you will see something like this:
 
-```
-➡️ The game runs without error
+export const testOutput3 = `➡️ The game runs without error
 Screenshot comparison failed: xx% of pixels differ, which is above the acceptable threshold of 5%
-❌ Test failed.
-```
+❌ Test failed.`;
+
+<Code lang="plaintext" code={testOutput3} />
 
 You can run:
 
-```bash
-vecta test --path ./test/basic-vecta-test.toml -r
-```
+export const testCommand2 = `vecta test --path ./test/basic-vecta-test.toml -r`;
+
+<Code lang="bash" code={testCommand2} />
 
 To regenerate the reference screenshots.
 
@@ -153,8 +151,7 @@ expect_no_errors = {}
 
 You can also simulate mouse inputs, and check that the console output of your game matches a reference log file.
 
-```toml
-# Click at a specific location on screen
+export const testExample3 = `# Click at a specific location on screen
 [[step]]
 press_mouse_at = [100, 200]
 
@@ -166,8 +163,9 @@ release_mouse_at = [100, 200]
 
 # Compare the console output to a reference
 [[step]]
-compare_logs_to = "./my-test-logs.txt"
-```
+compare_logs_to = "./my-test-logs.txt"`;
+
+<Code lang="toml" code={testExample3} />
 
 Now that you know how to write tests, you can start writing them for your game!
 
@@ -178,10 +176,10 @@ If you are working on a jam project or on a solo project, a CI system is overkil
 
 Remember that you can run all your tests using:
 
-```bash
-# Run all the test files in the test folder
-vecta test --path ./test
-```
+export const testCommand3 = `# Run all the test files in the test folder
+vecta test --path ./test`;
+
+<Code lang="bash" code={testCommand3} />
 
 All in all, automated tests are a handy tool to keep in your toolbox. Also, the benefit of seeing your game evolve over time in your version control system through the screenshots is a nice bonus!
 
@@ -190,9 +188,9 @@ All in all, automated tests are a handy tool to keep in your toolbox. Also, the 
 Sometimes, screenshots taken on different platforms (Windows, Linux, Mac) can differ too much for the test to pass. This is usually due to differences in the graphics drivers or the way the operating system renders text.
 In that case, you can increase the threshold for the screenshot comparison:
 
-```bash
-# Allow 20 percent of pixels to differ
-vecta test --path ./test --acceptable_pixel_difference 20
-```
+export const testCommand4 = `# Allow 20 percent of pixels to differ
+vecta test --path ./test --acceptable_pixel_difference 20`;
+
+<Code lang="bash" code={testCommand4} />
 
 Usually, 10% is a good threshold as test become meaningless if the threshold is too high, but you can adjust it to your needs (or be stricter!).
