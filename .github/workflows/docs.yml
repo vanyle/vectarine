@@ -53,12 +53,11 @@ jobs:
               with:
                 path: docs/website/dist/
 
-            - name: 🚀 Deploy to Surge
+            - name: 🚀 Deploy to vectarineengine.com
               id: deployment
               env:
-                SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
-                SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+                CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+                CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
               run: |
-                pnpm install -g surge
-                surge --project docs/website/dist/ --domain vectarine.surge.sh
+                pnpx wrangler pages deploy docs/website/dist/ --project-name=vectarine
 

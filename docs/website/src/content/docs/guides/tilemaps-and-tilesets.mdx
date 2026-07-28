@@ -3,6 +3,8 @@ title: Drawing images and levels with tilesets
 description: Use tilesets and tilemaps to draw images, sprite sheets and levels simply and efficiently.
 ---
 
+import { Code } from "@astrojs/starlight/components";
+
 Games use images to display their graphics. However, when you want to draw a lot of different images,
 it can be annoying and inefficient to load each image as a separate resource as you need to wait for every resource to load.
 
@@ -28,14 +30,14 @@ I recommend using Tiled, but you can also create your own `.tsx` files in a text
 
 A `.tsx` file is an XML file and looks like this:
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
+export const tilesetXmlExample = `<?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.10" tiledversion="1.10.2" name="enemies" tilewidth="64" tileheight="64" tilecount="64" columns="8" spacing="1">
  <image source="enemies_tileset.png" width="519" height="519"/>
  <tile id="0" type="purple_monster"/>
  <tile id="3" type="bee_monster"/>
-</tileset>
-```
+</tileset>`;
+
+<Code lang="xml" code={tilesetXmlExample} title="tileset.tsx" />
 
 It defines how to split the tileset image into tiles and can give names or probabilities to tiles.
 
@@ -43,8 +45,7 @@ It defines how to split the tileset image into tiles and can give names or proba
 
 Once you have a tileset and an image, you can combine them to make an `ImageWithTileset` resource that you can use to draw tiles by name easily.
 
-```lua
-local Graphics = require("@vectarine/graphics")
+export const tilemapExample1 = `local Graphics = require("@vectarine/graphics")
 local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 local V2 = Vec.V2
@@ -56,8 +57,9 @@ local tileset_data = Loader.loadTileset("./textures/enemies_tileset.tsx")
 local tileset = tileset_image:withTileset(tileset_data)
 
 -- Draw the "bee_monster" tile.
-tileset:drawTile("bee_monster", V2(-0.1, 0.1), V2(0.2, 0.2))
-```
+tileset:drawTile("bee_monster", V2(-0.1, 0.1), V2(0.2, 0.2))`;
+
+<Code lang="luau" title="scripts/main.luau" code={tilemapExample1} />
 
 Like `drawImage`, `drawTile` has a variant `drawTileQuad` to draw a quad instead of a rectangle. Moreover, these functions can be used with Fastlists to draw a lot of tiles efficiently.
 
@@ -72,8 +74,7 @@ It can be created with [Tiled](https://www.mapeditor.org/), [LDtk](https://ldtk.
 
 Once you have made your level in your level editor of choice, you can export it to a `tmx` file and load it in your game.
 
-```lua
-local Graphics = require("@vectarine/graphics")
+export const tilemapExample2 = `local Graphics = require("@vectarine/graphics")
 local Loader = require("@vectarine/loader")
 local Vec = require("@vectarine/vec")
 
@@ -89,14 +90,15 @@ local tileId = tilemap:getTile(0, 1, 2) -- Get the tile on layer 0 at position (
 level_tileset:drawTile(tileId, Vec.V2(0, 0), Vec.V2(0.1, 0.1))
 
 -- You can draw a whole layer with a loop.
--- You can use `withTransform` to apply transformation to handle translation, rotation and scale of the level.
+-- You can use \`withTransform\` to apply transformation to handle translation, rotation and scale of the level.
 for x = 0, 10 do
     for y = 0, 10 do
         local tileId = tilemap:getTile(0, x, y)
         level_tileset:drawTile(tileId, Vec.V2(x * 0.1, y * 0.1), Vec.V2(0.1, 0.1))
     end
-end
-```
+end`;
+
+<Code lang="luau" title="scripts/level.luau" code={tilemapExample2} />
 
 Because by default the coordinate system increases to the right and up, when creating your level in Tiled, try setting the tile render order to "right-up".
 You can also just draw the tiles with a negative scale on the y axis to flip them vertically.

@@ -17,8 +17,7 @@ All widgets have 2 properties: a *size* and a *draw function*.
 The most basic and powerful widget is the **Generic Widget** also known as "widget". You give it the draw function and a size and then you 
 call the draw function to draw it.
 
-```luau
-local Ui = require("@vectarine/ui")
+export const makingUiGenericWidget = `local Ui = require("@vectarine/ui")
 local Graphics = require("@vectarine/graphics")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
@@ -35,8 +34,9 @@ function Update(deltaTime: number)
     Graphics.clear(Vec4.BLACK)
     -- Draw the widget
     redSquareWidget:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiGenericWidget} />
 
 With such a simple example, you might not see the point of using a widget, you could just call the drawing function directly.
 
@@ -46,13 +46,13 @@ However, widgets start to make sense when you compose them together.
 
 For the rest of this guide, we'll assume that we have the following function to easily create colored boxes.
 
-```luau
-function coloredSquareWidget(size: Vec.Vec2, color: Vec4.Vec4): Ui.Widget
+export const makingUiColoredSquareWidget = `function coloredSquareWidget(size: Vec.Vec2, color: Vec4.Vec4): Ui.Widget
     return Ui.widget(size, function()
         Graphics.drawRect(V2(-1, -1), size, color)
     end)
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiColoredSquareWidget} />
 
 It will be used to demonstrate how other widgets work.
 
@@ -62,8 +62,7 @@ It will be used to demonstrate how other widgets work.
 
 The row widget displays a list of widgets horizontally, while the column widget displays them vertically.
 
-```luau
-local Ui = require("@vectarine/ui")
+export const makingUiRowColumn = `local Ui = require("@vectarine/ui")
 local Graphics = require("@vectarine/graphics")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
@@ -84,8 +83,9 @@ local column = Ui.column({}, {row1, row2})
 function Update(deltaTime: number)
     Graphics.clear(Vec4.BLACK)
     column:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiRowColumn} />
 
 ![Using rows and columns to make interfaces in Vectarine](../../../assets/widget_rows.png)
 
@@ -95,8 +95,7 @@ The first argument of the row and column widget are options that allow you to ce
 
 For example, if we want to center the second row and add some spacing between the widgets in the first row, we can do this:
 
-```luau
---- Omitted imports and coloredSquareWidget function for brevity
+export const makingUiPaddingGap = `--- Omitted imports and coloredSquareWidget function for brevity
 
 --- Create 3 widgets
 local redBox = coloredSquareWidget(V2(0.5, 0.5), Vec4.RED)
@@ -114,8 +113,9 @@ local column = Ui.column({ align = "center" }, { row1, row2 })
 function Update(deltaTime: number)
 	Graphics.clear(Vec4.BLACK)
 	column:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiPaddingGap} />
 
 ![Using padding and gaps to make interfaces in Vectarine](../../../assets/widget_row_padding.png)
 
@@ -125,8 +125,7 @@ By composing rows and columns, you can make any interface you want.
 
 To display text, you can use the text widget. It takes a table with text and a color property and displays it on the screen.
 
-```luau
---- Omitted imports
+export const makingUiTextWidget = `--- Omitted imports
 
 -- Create a text widget
 local firstLine = Ui.text(V2(0.4, 0.1), {}, { text = "Hello, Vectarine!", color = Vec4.WHITE })
@@ -142,16 +141,16 @@ function Update(deltaTime: number)
     Graphics.clear(Vec4.BLACK)
     -- Displays Hello, Vectarine! Another line of text (split on two lines)
     column:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiTextWidget} />
 
 The text inside the `text` widget will try to be as big as possible while fitting inside the widget.
 You can use it for titles, buttons, or any other text you want to display.
 
 The image widget is similar to the text widget, but it displays an image instead of text.
 
-```luau
---- Omitted imports
+export const makingUiImageWidget = `--- Omitted imports
 
 local imageButtonResource = Loader.loadImage("textures/button.png")
 
@@ -159,8 +158,9 @@ local imageWidget = Ui.image(V2(0.5, 0.5), imageButtonResource, {
     -- This will make the image use 9-slice-scaling with a border of 20% of the size of the image.
     -- This can be use to display buttons at any size without distorting the corners of the image by stretching the middle parts.
     nineSlicing = 0.2
-})
-```
+})`;
+
+<Code lang="luau" code={makingUiImageWidget} />
 
 You can pass options to the image widget to preserve the aspect ratio, set a color tint, or use [9-slice-scaling](https://en.wikipedia.org/wiki/9-slice_scaling).
 
@@ -169,8 +169,7 @@ You can pass options to the image widget to preserve the aspect ratio, set a col
 Often you want to display some text above an image, for example a button with a background and some text.
 More generally, you might want to display two widgets stacked on top of each other. For this, you can use the stack widget.
 
-```luau
---- We assume that the imageButtonResource exists and the required modules are imported
+export const makingUiStackWidget = `--- We assume that the imageButtonResource exists and the required modules are imported
 
 local buttonBackground = Ui.image(V2(0.5, 0.5), imageButtonResource, { nineSlicing = 0.2 })
 local buttonText = Ui.text(V2(0.5, 0.1), {}, {text = "Click me!", color = Vec4.WHITE})
@@ -182,8 +181,9 @@ local button = Ui.stack({}, { buttonBackground, buttonText })
 function Update(deltaTime: number)
     Graphics.clear(Vec4.BLACK)
     button:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiStackWidget} />
 
 If all of the element of the stack do not have the same size, you can use the "alignX" and "alignY" options to choose the relative alignment of the widgets in the stack.
 
@@ -198,15 +198,14 @@ Creating functions that return widgets can be very useful to create reusable wid
 of recreating a button from scratch, you can
 create a `createButton` function.
 
-```luau
-function createButton(text: string, size: Vec2): Ui.Widget
+export const makingUiButtonFn = `function createButton(text: string, size: Vec2): Ui.Widget
     -- All our buttons are text with an image and 0.1 units of padding around the text
     local buttonBackground = Ui.image(size + V2(0.1, 0.2), imageButtonResource, { nineSlicing = 0.2 })
     local buttonText = Ui.text(size, {}, {text = text, color = Vec4.WHITE})
     return Ui.stack({ alignX = "center", alignY = "center" }, { buttonBackground, buttonText })
-end
+end`;
 
-```
+<Code lang="luau" code={makingUiButtonFn} />
 
 </Aside>
 
@@ -214,8 +213,7 @@ end
 
 User interfaces are not very useful if you can't interact with them. To allow interaction, you can use a generic widget:
 
-```luau "eventState: Ui.EventState"
---- Omitted imports
+export const makingUiHoverableWidget = `--- Omitted imports
 
 local hoverableWidget = Ui.widget(V2(0.5, 0.5), function(eventState: Ui.EventState)
     -- The event state contains information about user interaction with the widget:
@@ -224,13 +222,13 @@ local hoverableWidget = Ui.widget(V2(0.5, 0.5), function(eventState: Ui.EventSta
     -- In this example, we change the color of the widget to red when the mouse is hovering it.
     local color = if eventState.isMouseInside then Vec4.RED else Vec4.GRAY
     Graphics.drawRect(V2(-1, -1), V2(0.5, 0.5), color)
-end)
-```
+end)`;
+
+<Code lang="luau" code={makingUiHoverableWidget} />
 
 Because widgets can be composed, you can add interactions to existing widgets:
 
-```luau
--- Let's assume that you have an existing widget defined somewhere.
+export const makingUiInteractiveWidget = `-- Let's assume that you have an existing widget defined somewhere.
 local existingWidget = ...
 
 local interactiveWidget = Ui.widget(existingWidget.size(), function(eventState: Ui.EventState)
@@ -240,20 +238,20 @@ local interactiveWidget = Ui.widget(existingWidget.size(), function(eventState: 
     end
     -- Draw the existing widget
     existingWidget:draw()
-end)
-```
+end)`;
+
+<Code lang="luau" code={makingUiInteractiveWidget} />
 
 As changing the text of a text widget is very common, the text widget has a built-in way to react to user input:
 
-```luau
-local textWidget = Ui.text(V2(0.5, 0.1), {}, function(eventState: Ui.EventState)
+export const makingUiTextHover = `local textWidget = Ui.text(V2(0.5, 0.1), {}, function(eventState: Ui.EventState)
     -- The text of this widget changes when the mouse is hovering it.
     -- You could also change the color for getting various effects.
     local text = if eventState.isMouseInside then "Hovering!" else "Not hovering"
     return { text = text, color = Vec4.WHITE }
-end)
+end)`;
 
-```
+<Code lang="luau" code={makingUiTextHover} />
 
 ## Conditional rendering and dynamic UIs
 
@@ -267,8 +265,7 @@ You can think of a UI as a function that takes some data (your game state) and r
 If you need conditional rendering, you can use an if statement inside a generic widget. However, you need to pass information
 to the drawing function of the widget to be able to create this condition:
 
-```luau "gameState.insideShop"
-local Ui = require("@vectarine/ui")
+export const makingUiConditionalSlow = `local Ui = require("@vectarine/ui")
 
 local shopWidget = createShopWidget()
 local inventoryWidget = createInventoryWidget()
@@ -284,13 +281,13 @@ end)
 
 function drawUi(gameState)
     myWidget:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiConditionalSlow} />
 
 To solve this issue, the draw function takes an extra argument that can be anything:
 
-```luau "gameState: GameState"
-local Ui = require("@vectarine/ui")
+export const makingUiConditionalFast = `local Ui = require("@vectarine/ui")
 
 local shopWidget = createShopWidget()
 local inventoryWidget = createInventoryWidget()
@@ -315,8 +312,9 @@ end)
 
 function drawUi(gameState: GameState)
     myWidget:draw(gameState)
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiConditionalFast} />
 
 The `extra` argument is propagated to all the children of row, column and stack widgets, so you can access it anywhere.
 
@@ -336,8 +334,7 @@ end)
 Let's say that we want to increase the size of a widget when the mouse is hovering it.
 Let's see how to do so.
 
-```luau
-local Persist = require("@vectarine/persist")
+export const makingUiAnimatedWidget = `local Persist = require("@vectarine/persist")
 local Ui = require("@vectarine/ui")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
@@ -383,8 +380,9 @@ function Update(deltaTime: number)
 	Graphics.clear(Vec4.BLACK)
     -- Remember to draw the animated widget instead of the base widget.
 	animatedWidget:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiAnimatedWidget} />
 
 ## Wrapping up
 
@@ -393,8 +391,7 @@ you draw them.
 
 For example, here is how to create a slider widget and display its value:
 
-```luau
-local Graphics = require("@vectarine/graphics")
+export const makingUiSliderWidget = `local Graphics = require("@vectarine/graphics")
 local Ui = require("@vectarine/ui")
 local Vec = require("@vectarine/vec")
 local Vec4 = require("@vectarine/vec4")
@@ -427,8 +424,9 @@ local column = Ui.column({ padding = 0.1 }, { firstLine, secondLine, slider })
 function Update(deltaTime: number)
 	Graphics.clear(Vec4.BLACK)
 	column:draw()
-end
-```
+end`;
+
+<Code lang="luau" code={makingUiSliderWidget} />
 
 ![The slider widget of vectarine](../../../assets/widget_slider.png)
 

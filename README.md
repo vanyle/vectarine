@@ -10,7 +10,7 @@
 <a href="https://discord.gg/zPwg3VDydz"><img src="https://dcbadge.limes.pink/api/server/zPwg3VDydz?style=flat" alt="Discord invite badge" /></a>
 </p>
 
-*[Vectarine](https://vectarine.surge.sh) is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
+*[Vectarine](https://vectarineengine.com) is a game engine with a focus on ultra fast prototyping, ease of use and having fun.*
 
 <video alt="A presentation of vectarine features" width="448" height="252" controls src="https://github.com/user-attachments/assets/2d90fe6b-1d22-46da-a9a8-2ef5cfe31a27"></video>
 
@@ -44,18 +44,18 @@ Additionally, you'll need:
 > You can also install and update Vectarine to the latest version using these one-liners:
 >
 >
-> On Linux: `curl -fsSL https://vectarine.surge.sh/install_linux.sh | sh`
+> On Linux: `curl -fsSL https://vectarineengine.com/install_linux.sh | sh`
 >
-> On Mac: `curl -fsSL https://vectarine.surge.sh/install_mac.sh | sh`
+> On Mac: `curl -fsSL https://vectarineengine.com/install_mac.sh | sh`
 >
-> On Windows with Powershell: `irm https://vectarine.surge.sh/install_nt.sh | iex`
+> On Windows with Powershell: `irm https://vectarineengine.com/install_win.ps1 | iex`
 >
 
 <br>
 
-See **[The guided tour](https://vectarine.surge.sh/guides/a-guided-tour.html)** for detailed information on how to make games with vectarine.
+See **[The guided tour](https://vectarineengine.com/guides/a-guided-tour.html)** for detailed information on how to make games with vectarine.
 
-If this is your first time making games, read the guide to [create your first game](https://vectarine.surge.sh/guides/getting-started.html)
+If this is your first time making games, read the guide to [create your first game](https://vectarineengine.com/guides/getting-started.html)
 
 If you prefer watching rather than reading, there is a **[video presentation](https://www.youtube.com/watch?v=KwckT9mbj10)** to get started.
 
