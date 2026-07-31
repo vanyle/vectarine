@@ -17,12 +17,16 @@ When you edit a file, Vectarine hot-reloads it, meaning it rereads its content a
 Each resource can depend on other resources, for example a Luau script can draw an image. Because the script holds a pointer
 to the image resource, when the image is hot-reloaded, the script will use the new version of the image without needing to be reloaded itself.
 
+For scripts, a script resource is a Luau table that is returned by the script.
+Inside a module, you can use `loader.init()` to get the content of the module itself, and `loader.loadScript(path, require(path))` to get the content from other scripts.
+
 You need to keep this in mind, when dealing with scripts requiring other scripts.
 
 Let's consider the following example:
 
-export const mainLuau1 = `local Loader = require("@vectarine/loader")
-local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
+export const mainLuau1 = `const loader = require("@vectarine/loader")
+const debug = require("@vectarine/debug")
+const res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local value = nil
 if res:isReady() then
@@ -30,12 +34,13 @@ if res:isReady() then
 end
 
 function Update()
-    Debug.fprint("Value is ", value)
+    debug.fprint("Value is ", value)
 end`;
 
 <Code lang="luau" title="main.luau" code={mainLuau1} />
 
-export const otherLuau1 = `local module = {}
+export const otherLuau1 = `const loader = require("@vectarine/loader")
+const module = loader.init() or {}
 function module.getPopulation()
     return 3
 end
@@ -52,10 +57,11 @@ In this example:
 
 Now let's say we update `other.luau` to the following and reload the whole project.
 
-export const otherLuau2 = `local module = {}
+export const otherLuau2 = `const loader = require("@vectarine/loader")
+const module = loader.init() or {}
 
-local Population = {}
-Population.count = function(self)
+const population = {}
+population.count = function(self)
     return self.humans + self.aliens
 end
 
@@ -64,7 +70,7 @@ function module.getPopulation()
         humans = 3,
         aliens = 5,
     }
-    setmetatable(data, { __index = Population })
+    setmetatable(data, { __index = population })
     return data
 end
 return module`;
@@ -80,12 +86,13 @@ This design where we initialize an object with functions in its properties in `o
 
 Now, let's say we change `main.luau` to the following:
 
-export const mainLuau2 = `local Loader = require("@vectarine/loader")
-local Event = require("@vectarine/event")
-local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
+export const mainLuau2 = `const loader = require("@vectarine/loader")
+const debug = require("@vectarine/debug")
+const event = require("@vectarine/event")
+const res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local value = nil
-Event.getResourceLoadedEvent():on(function(r)
+event.getResourceLoadedEvent():on(function(r)
     if res:isReady() then
         value = other.getPopulation()
     end
@@ -94,9 +101,9 @@ end)
 function Update()
     if res:isReady() then
         local population = other.getPopulation()
-        Debug.fprint("Population is " .. population:count())
+        debug.fprint("Population is " .. population:count())
     else
-        Debug.fprint("Other script is not loaded yet")
+        debug.fprint("Other script is not loaded yet")
     end
 end`;
 
@@ -106,30 +113,40 @@ This will work, but it is a lot more verbose, especially if you have multiple mo
 
 The best solution is to rethink the structure of the code:
 
-export const otherLuau3 = `local module = {}
+export const otherLuau3 = `const loader = require("@vectarine/loader")
+-- The init function returns the content of the module from the past reload. This allows to keep the same table and merge the new content with the old one.
+-- It's return type is marked as nil for auto-completion reasons.
+const module = loader.init() or {}
 
-export type Population = {
-    humans: number,
-    aliens: number,
-}
--- The count function is now attached to the module.
-function module.count(self: Population): number
+module.reloadCounter = module.reloadCounter or 0
+module.reloadCounter += 1 -- This counter is incremented every reload.
+
+module.population = module.population or {}
+module.population.count = function(self: populationType)
     return self.humans + self.aliens
 end
 
-function module.getPopulation(): Population
-    return {
+export type populationType = {
+    humans: number,
+    aliens: number,
+} & typeof module.population
+
+function module.getPopulation(): population
+    const data = {
         humans = 3,
         aliens = 5,
     }
+    setmetatable(data, { __index = module.population })
+    return data
 end
 
 return module`;
 
 <Code lang="luau" title="other.luau" code={otherLuau3} />
 
-export const mainLuau3 = `local Loader = require("@vectarine/loader")
-local res, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
+export const mainLuau3 = `const loader = require("@vectarine/loader")
+const debug = require("@vectarine/debug")
+const res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
 
 local population
 if res:isReady() then
@@ -138,13 +155,14 @@ end
 
 function Update()
     if population ~= nil then 
-        Debug.fprint("Population is ", other.count(population))
+        debug.fprint("Population is ", other.count(population))
     end
 end`;
 
 <Code lang="luau" title="main.luau" code={mainLuau3} />
 
 What is happening here is that when you hot-reload `other.luau`, module is not recreated. The same table is kept and its old content is merged with the new one.
+This content is what gets returned by `module.init()`
 This means that `main.luau` has a reference to the newest version of the `count` function and hot-reloading works as expected!
 
 # Lessons for organizing code
@@ -163,11 +181,12 @@ As types don't exist at runtime, you don't need to load them and they don't need
 is loaded, you just need to wait for it one, inside the entry point of your game using the following pattern:
 
 
-export const mainLuau4 = `local Loader = require("@vectarine/loader")
+export const mainLuau4 = `const loader = require("@vectarine/loader")
+const graphics = require("@vectarine/graphics")
 
 -- load your scripts
-local otherResource, other = Loader.loadScript("scripts/other.luau", require("other.luau"))
-local other2Resource, other2 = Loader.loadScript("scripts/other2.luau", require("other2.luau"))
+local otherResource, other = loader.loadScript("scripts/other.luau", require("other.luau"))
+local other2Resource, other2 = loader.loadScript("scripts/other2.luau", require("other2.luau"))
 
 
 function Once()

@@ -1,45 +1,43 @@
-local Debug = require("@vectarine/debug")
-local print, fprint = Debug.print, Debug.fprint
-_G.print = print
+const debug = require("@vectarine/debug")
+_G.print = debug.print
 
-local Canvas = require("@vectarine/canvas")
-local Event = require("@vectarine/event")
-local Graphics = require("@vectarine/graphics")
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Persist = require("@vectarine/persist")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
-local V2 = Vec.V2
+const canvas = require("@vectarine/canvas")
+const event = require("@vectarine/event")
+const graphics = require("@vectarine/graphics")
+const io = require("@vectarine/io")
+const loader = require("@vectarine/loader")
+const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
+const V2 = vec.V2
 
---- Constants
-_G.BG_COLOR = Vec4.createColor(132 / 255, 160 / 255, 189 / 255, 1)
-local _SNAKE_COLOR = Vec4.createColor(0.2, 0.8, 0, 1)
-local HEAD_SNAKE_SEGMENT = { 1, 2, 3, 4 }
-local STRAIGHT_SNAKE_SEGMENT = { 9, 10 }
-local CORNER_SNAKE_SEGMENT = { 5, 6, 7, 8 }
-local TAIL_SNAKE_SEGMENT = { 11, 12, 13, 14 }
+_G.BG_COLOR = vec4.createColor(132 / 255, 160 / 255, 189 / 255, 1)
+const _SNAKE_COLOR = vec4.createColor(0.2, 0.8, 0, 1)
+const HEAD_SNAKE_SEGMENT = { 1, 2, 3, 4 }
+const STRAIGHT_SNAKE_SEGMENT = { 9, 10 }
+const CORNER_SNAKE_SEGMENT = { 5, 6, 7, 8 }
+const TAIL_SNAKE_SEGMENT = { 11, 12, 13, 14 }
 
 --- Resources
 
-local snakeImage = Loader.loadImage("textures/snake-tilemap.png", false)
-local environmentImage = Loader.loadImage("textures/env.png", false)
-local fontResource = Loader.loadFont("fonts/m6x11.ttf")
-local shaderResource = Loader.loadShader("shaders/base.glsl")
+const snakeImage = loader.loadImage("textures/snake-tilemap.png", false)
+const environmentImage = loader.loadImage("textures/env.png", false)
+const fontResource = loader.loadFont("fonts/m6x11.ttf")
+const shaderResource = loader.loadShader("shaders/base.glsl")
 
-local canvas = Canvas.createCanvas(1200, 800)
-canvas:setShader(shaderResource)
+const gameCanvas = canvas.createCanvas(1200, 800)
+gameCanvas:setShader(shaderResource)
 
-Io.setResizeable(true)
+io.setResizeable(true)
 -- Io.setWindowSize(800, 600)
 -- Io.centerWindow()
 
 --- Game state
-local screenSize = Io.getWindowSize()
+local screenSize = io.getWindowSize()
 local aspectRatio = screenSize.x / screenSize.y
 
 -- Make this persistent across script reloads
-local state = Persist.onReload({
+local state = persist.onReload({
 	paused = false,
 	gameover = false,
 }, "state")
@@ -51,14 +49,14 @@ local shouldGrow = false
 local scalingFactor = 0.2
 local timer = 0 -- 1 second timer
 
-local function isclose(v1: Vec.Vec2, v2: Vec.Vec2, threshold: number)
+local function isclose(v1: vec.Vec2, v2: vec.Vec2, threshold: number)
 	return (v1 - v2):length() < threshold
 end
 
 local applyShaderEffectForFrames = 0
 
 function Load()
-	screenSize = Io.getWindowSize()
+	screenSize = io.getWindowSize()
 	aspectRatio = screenSize.x / screenSize.y
 end
 
@@ -71,7 +69,7 @@ local function resetSnake()
 	}
 end
 
-local function isPositionValid(pos: Vec.Vec2)
+local function isPositionValid(pos: vec.Vec2)
 	for _, segment in ipairs(_G.Snake) do
 		if isclose(pos, segment, 0.001) then
 			return false
@@ -94,21 +92,21 @@ local function placeCherry()
 end
 
 if not _G.Snake then
-	print("Initializing snake")
+	debug.print("Initializing snake")
 	resetSnake()
 end
 
 if not _G.Cherry then
-	print("Initializing cherry")
+	debug.print("Initializing cherry")
 	placeCherry()
 end
 
-local function gamePosToScreen(pos: Vec.Vec2)
+local function gamePosToScreen(pos: vec.Vec2)
 	-- (0-10) -> (-1 - 1)
-	return Vec.V2((pos.x - 3) * scalingFactor / aspectRatio, (pos.y - 3) * scalingFactor)
+	return vec.V2((pos.x - 3) * scalingFactor / aspectRatio, (pos.y - 3) * scalingFactor)
 end
 
-local function drawSnake(pos: Vec.Vec2, tileId: number)
+local function drawSnake(pos: vec.Vec2, tileId: number)
 	local tileSize = 1 / 16
 	local size = V2(scalingFactor / aspectRatio, scalingFactor)
 
@@ -122,7 +120,7 @@ end
 
 local function drawEnvironment()
 	local p1 = gamePosToScreen(V2(-1, -1))
-	local size = Vec.V2(scalingFactor / aspectRatio, scalingFactor):scale(8)
+	local size = vec.V2(scalingFactor / aspectRatio, scalingFactor):scale(8)
 	environmentImage:draw(p1, size)
 end
 
@@ -130,14 +128,14 @@ local function mod4(x: number)
 	return ((x - 1 + 4) % 4) + 1
 end
 
-local keyEvent = Event.getKeyDownEvent()
+local keyEvent = event.getKeyDownEvent()
 keyEvent:on(function(key: string)
-	print("Key pressed: ", key)
+	debug.print("Key pressed: ", key)
 	if key == "Space" then
 		if state.gameover and state.paused then
 			state.gameover = false
 			score = 0
-			Direction = Vec.V2(0, -1)
+			Direction = vec.V2(0, -1)
 			resetSnake()
 			placeCherry()
 		end
@@ -149,14 +147,14 @@ function Update(timeDelta: number)
 	timer = timer + timeDelta
 
 	if applyShaderEffectForFrames > 0 then
-		canvas:setShader(shaderResource)
+		gameCanvas:setShader(shaderResource)
 		applyShaderEffectForFrames = applyShaderEffectForFrames - 1
 	else
-		canvas:setShader(nil)
+		gameCanvas:setShader(nil)
 	end
 
-	canvas:paint(function()
-		Graphics.clear(_G.BG_COLOR)
+	gameCanvas:paint(function()
+		graphics.clear(_G.BG_COLOR)
 
 		drawEnvironment()
 
@@ -175,7 +173,7 @@ function Update(timeDelta: number)
 				elseif diff.y == -1 then
 					segmentType = HEAD_SNAKE_SEGMENT[3]
 				end
-				drawSnake(Vec.V2(segment.x, segment.y), segmentType)
+				drawSnake(vec.V2(segment.x, segment.y), segmentType)
 				continue
 			end
 
@@ -191,7 +189,7 @@ function Update(timeDelta: number)
 				elseif diff.y == -1 then
 					segmentType = TAIL_SNAKE_SEGMENT[1]
 				end
-				drawSnake(Vec.V2(segment.x, segment.y), segmentType)
+				drawSnake(vec.V2(segment.x, segment.y), segmentType)
 				continue
 			end
 
@@ -222,7 +220,7 @@ function Update(timeDelta: number)
 				end
 			end
 
-			drawSnake(Vec.V2(segment.x, segment.y), segmentType)
+			drawSnake(vec.V2(segment.x, segment.y), segmentType)
 		end
 
 		-- Draw the next direction
@@ -238,14 +236,14 @@ function Update(timeDelta: number)
 		-- Start of logic --
 
 		local newDirection = Direction
-		if Io.isKeyDown("Z") or Io.isKeyDown("Up") then
-			newDirection = Vec.V2(0, 1)
-		elseif Io.isKeyDown("S") or Io.isKeyDown("Down") then
-			newDirection = Vec.V2(0, -1)
-		elseif Io.isKeyDown("Q") or Io.isKeyDown("Left") then
-			newDirection = Vec.V2(-1, 0)
-		elseif Io.isKeyDown("D") or Io.isKeyDown("Right") then
-			newDirection = Vec.V2(1, 0)
+		if io.isKeyDown("Z") or io.isKeyDown("Up") then
+			newDirection = vec.V2(0, 1)
+		elseif io.isKeyDown("S") or io.isKeyDown("Down") then
+			newDirection = vec.V2(0, -1)
+		elseif io.isKeyDown("Q") or io.isKeyDown("Left") then
+			newDirection = vec.V2(-1, 0)
+		elseif io.isKeyDown("D") or io.isKeyDown("Right") then
+			newDirection = vec.V2(1, 0)
 		end
 
 		if not isclose(head + newDirection, Snake[2], 0.001) then
@@ -291,13 +289,13 @@ function Update(timeDelta: number)
 		if state.paused then
 			if state.gameover then
 				if fontResource:isReady() then
-					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, Vec4.WHITE)
-					fontResource:drawText("Score: " .. tostring(score), V2(-0.2, 0.25), 0.15, Vec4.WHITE)
-					fontResource:drawText("Press SPACE to restart", V2(-0.35, -0.1), 0.1, Vec4.WHITE)
+					fontResource:drawText("GAME OVER", V2(-0.3, 0.4), 0.2, vec4.WHITE)
+					fontResource:drawText("Score: " .. tostring(score), V2(-0.2, 0.25), 0.15, vec4.WHITE)
+					fontResource:drawText("Press SPACE to restart", V2(-0.35, -0.1), 0.1, vec4.WHITE)
 				end
 			else
 				if fontResource:isReady() then
-					fontResource:drawText("PAUSED", V2(-0.3, 0.3), 0.3, Vec4.WHITE)
+					fontResource:drawText("PAUSED", V2(-0.3, 0.3), 0.3, vec4.WHITE)
 				end
 			end
 		end
@@ -305,7 +303,7 @@ function Update(timeDelta: number)
 		-- Eat cherry
 		if isclose(head, cherry, 0.001) then
 			-- Grow snake
-			print("Eating cherry at ", cherry)
+			debug.print("Eating cherry at ", cherry)
 			applyShaderEffectForFrames = 30
 			shouldGrow = true
 			-- Move cherry
@@ -313,5 +311,5 @@ function Update(timeDelta: number)
 		end
 	end) -- end of canvas paint
 
-	canvas:draw(V2(-1, -1), V2(2, 2))
+	gameCanvas:draw(V2(-1, -1), V2(2, 2))
 end

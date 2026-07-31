@@ -1,57 +1,56 @@
-local Graphics = require('@vectarine/graphics')
-local Io = require('@vectarine/io')
-local Loader = require('@vectarine/loader')
-local Persist = require('@vectarine/persist')
-local Vec = require('@vectarine/vec')
-local Vec4 = require('@vectarine/vec4')
+const graphics = require("@vectarine/graphics")
+const io = require("@vectarine/io")
+const loader = require("@vectarine/loader")
+const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
 
-local fontResource = Loader.loadFont("fonts/m6x11.ttf")
+const fontResource = loader.loadFont("fonts/m6x11.ttf")
 
-local Ball = Persist.onReload({
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, -1.3),
+const Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, -1.3),
 }, "ball")
 
-local Player = Persist.onReload({
+const Player = persist.onReload({
 	position = 0,
 	score = 0,
 }, "player")
 
-local Opponent = Persist.onReload({
+const Opponent = persist.onReload({
 	position = 0,
 	score = 0,
 }, "opponent")
 
 const racketSize = 0.4
 const ballSize = 0.1
-local windowRatio = Io.getWindowSize().x / Io.getWindowSize().y 
-
+local windowRatio = io.getWindowSize().x / io.getWindowSize().y
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.BLACK)
-	if Graphics.drawSplashScreenIfNeeded({fontResource}, "PONG!") then
+	graphics.clear(vec4.BLACK)
+	if graphics.drawSplashScreenIfNeeded({ fontResource }, "PONG!") then
 		return
 	end
-    windowRatio = Io.getWindowSize().x / Io.getWindowSize().y 
+	windowRatio = io.getWindowSize().x / io.getWindowSize().y
 
 	-- Drawing
-	Graphics.drawRect(Ball.position, Vec.V2(ballSize, ballSize*windowRatio), Vec4.RED)
+	graphics.drawRect(Ball.position, vec.V2(ballSize, ballSize * windowRatio), vec4.RED)
 
-	drawRectWithBorder(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize), Vec4.BLACK, Vec4.WHITE, 0.02)
-	drawRectWithBorder(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize), Vec4.BLACK, Vec4.WHITE, 0.02)
+	drawRectWithBorder(vec.V2(-0.9, Player.position), vec.V2(0.1, racketSize), vec4.BLACK, vec4.WHITE, 0.02)
+	drawRectWithBorder(vec.V2(0.8, Opponent.position), vec.V2(0.1, racketSize), vec4.BLACK, vec4.WHITE, 0.02)
 
 	local scoreText = Player.score .. " - " .. Opponent.score
 	local measurements = fontResource:measureText(scoreText, 0.2)
-	fontResource:drawText(scoreText, Vec.V2(-measurements.width / 2, 0), 0.2, Vec4.WHITE)
+	fontResource:drawText(scoreText, vec.V2(-measurements.width / 2, 0), 0.2, vec4.WHITE)
 
 	-- Player input
-	if Io.isKeyDown("Up") then
+	if io.isKeyDown("Up") then
 		Player.position += deltaTime
 	end
-	if Io.isKeyDown("Down") then
+	if io.isKeyDown("Down") then
 		Player.position -= deltaTime
 	end
-    Player.position = math.clamp(Player.position, -1, 1 - racketSize)
+	Player.position = math.clamp(Player.position, -1, 1 - racketSize)
 
 	-- Opponent movement
 	if Ball.position.y < Opponent.position + racketSize / 2 then
@@ -60,7 +59,7 @@ function Update(deltaTime: number)
 	if Ball.position.y > Opponent.position + racketSize / 2 then
 		Opponent.position += deltaTime / 1.1
 	end
-    Opponent.position = math.clamp(Opponent.position, -1, 1 - racketSize)
+	Opponent.position = math.clamp(Opponent.position, -1, 1 - racketSize)
 
 	-- Physics
 	Ball.position += Ball.velocity:scale(deltaTime)
@@ -75,7 +74,10 @@ function Update(deltaTime: number)
 		Opponent.score += 1
 		resetBall()
 	elseif Ball.position.x < -0.8 then
-		if Ball.position.y > Player.position - ballSize*windowRatio and Ball.position.y < Player.position + racketSize then
+		if
+			Ball.position.y > Player.position - ballSize * windowRatio
+			and Ball.position.y < Player.position + racketSize
+		then
 			Ball.velocity.x = math.abs(Ball.velocity.x)
 			Ball.velocity.y = 2 * math.random()
 		end
@@ -85,7 +87,10 @@ function Update(deltaTime: number)
 		Player.score += 1
 		resetBall()
 	elseif Ball.position.x > 0.7 then
-		if Ball.position.y > Opponent.position - ballSize*windowRatio and Ball.position.y < Opponent.position + racketSize then
+		if
+			Ball.position.y > Opponent.position - ballSize * windowRatio
+			and Ball.position.y < Opponent.position + racketSize
+		then
 			Ball.velocity.x = -math.abs(Ball.velocity.x)
 			Ball.velocity.y = 2 * math.random()
 		end
@@ -93,21 +98,21 @@ function Update(deltaTime: number)
 end
 
 function resetBall()
-	Ball.position = Vec.V2(0, 0)
+	Ball.position = vec.V2(0, 0)
 	Ball.velocity.y = math.random() * 2
 end
 
 function drawRectWithBorder(
-	position: Vec.Vec2,
-	size: Vec.Vec2,
-	color: Vec4.Vec4,
-	borderColor: Vec4.Vec4,
+	position: vec.Vec2,
+	size: vec.Vec2,
+	color: vec4.Vec4,
+	borderColor: vec4.Vec4,
 	borderWidth: number
 )
-	Graphics.drawRect(
-		position - Vec.V2(borderWidth, borderWidth*windowRatio),
-		size + Vec.V2(borderWidth, borderWidth*windowRatio):scale(2),
+	graphics.drawRect(
+		position - vec.V2(borderWidth, borderWidth * windowRatio),
+		size + vec.V2(borderWidth, borderWidth * windowRatio):scale(2),
 		borderColor
 	)
-	Graphics.drawRect(position, size, color)
+	graphics.drawRect(position, size, color)
 end

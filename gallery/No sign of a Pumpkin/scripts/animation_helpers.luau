@@ -1,11 +1,11 @@
-local Debug = require("@vectarine/debug")
-local Vec = require("@vectarine/vec")
+const debug = require("@vectarine/debug")
+const vec = require("@vectarine/vec")
 
 local LevelDesign = require("level_design.luau")
 
-local V2 = Vec.V2
+local V2 = vec.V2
 
-function getDeformedPlayerSize(player: LevelDesign.Player, timer: number, correctForTimerOffset: boolean): Vec.Vec2
+function getDeformedPlayerSize(player: LevelDesign.Player, timer: number, correctForTimerOffset: boolean): vec.Vec2
 	local sizeDeform = correctForTimerOffset and 0.05 * math.sin(5 * timer) or 0.0
 	return V2(player.size + sizeDeform, player.size - sizeDeform)
 end
@@ -17,7 +17,7 @@ function animate(animatable, dt, opt_frame_delay)
 	-- prefer explicit override, then per-animatable frame_delay; if missing, warn and default to 0.1s
 	local delay = opt_frame_delay or animatable.frame_delay
 	if delay == nil then
-		Debug.fprint("animate: animatable.frame_delay missing; defaulting to 0.1s. Set frame_delay for exact control.")
+		debug.fprint("animate: animatable.frame_delay missing; defaulting to 0.1s. Set frame_delay for exact control.")
 		delay = 0.1
 		animatable.frame_delay = delay
 	end

@@ -1,15 +1,16 @@
-local Debug = require("@vectarine/debug")
-local Event = require("@vectarine/event")
-local Fastlist = require("@vectarine/fastlist")
-local Graphics = require("@vectarine/graphics")
-local Image = require("@vectarine/image")
-local Io = require("@vectarine/io")
-local Physics = require("@vectarine/physics")
-local Tile = require("@vectarine/tile")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+const Debug = require("@vectarine/debug")
+const Event = require("@vectarine/event")
+const Fastlist = require("@vectarine/fastlist")
+const Graphics = require("@vectarine/graphics")
+const Image = require("@vectarine/image")
+const Io = require("@vectarine/io")
+const Physics = require("@vectarine/physics")
+const Tile = require("@vectarine/tile")
+const Vec = require("@vectarine/vec")
+const Vec4 = require("@vectarine/vec4")
+const loader = require("@vectarine/loader")
 
-local module = {}
+const module = loader.init() or {}
 
 -- local FOREGROUND_LAYER = 2
 local ENTITY_LAYER = 2

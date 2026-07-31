@@ -1,22 +1,22 @@
-local Loader = require("@vectarine/loader")
-local Persist = require("@vectarine/persist")
-local Vec = require("@vectarine/vec")
-local V2 = Vec.V2
+const loader = require("@vectarine/loader")
+const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
+const V2 = vec.V2
 
 local pumpkin_animation = {}
 for i = 1, 6 do
-	local img = Loader.loadImage("textures/PumpkinMan/PumpkinMan" .. tostring(i) .. ".png", false)
+	local img = loader.loadImage("textures/PumpkinMan/PumpkinMan" .. tostring(i) .. ".png", false)
 	table.insert(pumpkin_animation, img)
 end
 
 -- Entity type definitions
 export type Entity = {
-	position: Vec.Vec2,
+	position: vec.Vec2,
 	size: number,
 	ratio: number,
 
-	hitbox_size: Vec.Vec2,
-	hitbox_offset: Vec.Vec2?,
+	hitbox_size: vec.Vec2,
+	hitbox_offset: vec.Vec2?,
 
 	text: string?,
 }
@@ -45,7 +45,7 @@ export type DestructibleEntity = Entity & {
 }
 
 export type PathMarker = {
-	position: Vec.Vec2,
+	position: vec.Vec2,
 	next_marker: PathMarker?,
 }
 
@@ -106,7 +106,7 @@ for i = 1, #path_marker - 1 do
 end
 path_marker[#path_marker].next_marker = path_marker[1]
 
-function create_pumpkin(pumpkin_position: Vec.Vec2, pumpkin_list: { AnimatedEntity & MovingEntity })
+function create_pumpkin(pumpkin_position: vec.Vec2, pumpkin_list: { AnimatedEntity & MovingEntity })
 	-- Use provided route or default to shared route
 	local patrol_route = path_marker
 
@@ -132,7 +132,7 @@ function create_pumpkin(pumpkin_position: Vec.Vec2, pumpkin_list: { AnimatedEnti
 	table.insert(pumpkin_list, new_pumpkin)
 end
 
-function create_sign(sign_position: Vec.Vec2, sign_text: string, sign_list: { DestructibleEntity })
+function create_sign(sign_position: vec.Vec2, sign_text: string, sign_list: { DestructibleEntity })
 	table.insert(sign_list, {
 		position = sign_position,
 		size = 1.0,
@@ -145,8 +145,8 @@ function create_sign(sign_position: Vec.Vec2, sign_text: string, sign_list: { De
 end
 
 -- Entity lists
-local pumpkin_list: { Monster } = Persist.onReload({}, "pumpkin_list")
-local sign_list: { DestructibleEntity } = Persist.onReload({}, "sign_list")
+local pumpkin_list: { Monster } = persist.onReload({}, "pumpkin_list")
+local sign_list: { DestructibleEntity } = persist.onReload({}, "sign_list")
 
 function remove_entities()
 	for i = #pumpkin_list, 1, -1 do

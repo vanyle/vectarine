@@ -1,14 +1,14 @@
-local Vec = require("@vectarine/vec")
+const vec = require("@vectarine/vec")
 
-local V2 = Vec.V2
+const V2 = vec.V2
 
 export type Hitbox = {
-	position: Vec.Vec2,
-	size: Vec.Vec2,
+	position: vec.Vec2,
+	size: vec.Vec2,
 }
 
 -- Hitbox helper functions
-function createHitbox(entity: {position: Vec.Vec2, hitbox_size: Vec.Vec2, hitbox_offset: Vec.Vec2}): Hitbox
+function createHitbox(entity: { position: vec.Vec2, hitbox_size: vec.Vec2, hitbox_offset: vec.Vec2 }): Hitbox
 	local actualOffset = entity.hitbox_offset or V2(0, 0)
 	return {
 		position = entity.position + actualOffset,
@@ -22,7 +22,7 @@ function checkHitboxCollision(hitbox1: Hitbox, hitbox2: Hitbox): boolean
 end
 
 -- AABB (Axis-Aligned Bounding Box) collision detection
-function checkCollision(pos1: Vec.Vec2, size1: Vec.Vec2, pos2: Vec.Vec2, size2: Vec.Vec2): boolean
+function checkCollision(pos1: vec.Vec2, size1: vec.Vec2, pos2: vec.Vec2, size2: vec.Vec2): boolean
 	-- Calculate boundaries for both rectangles
 	local left1 = pos1.x
 	local right1 = pos1.x + size1.x

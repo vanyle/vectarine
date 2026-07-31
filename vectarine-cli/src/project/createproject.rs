@@ -7,21 +7,26 @@ use runtime::{projectinfo::ProjectInfo, toml};
 use crate::project::copydirall::copy_dir_all;
 use crate::project::geteditorpaths::get_luau_api_path;
 
-static DEFAULT_CODE: &str = "local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
-local Vec = require('@vectarine/vec')
+static DEFAULT_CODE: &str = "const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
+const vec = require('@vectarine/vec')
 
 -- Need help to get started?
 -- Read: https://github.com/vanyle/vectarine/blob/main/docs/user-manual.md
 -- The manual is available offline in the Help menu.
 
-Debug.print(\"Loaded.\")
+debug.print(\"Loaded.\")
 
 function Update(deltaTime: number)
-    Graphics.clear(Vec4.WHITE)
-    Graphics.drawSplashScreen(\"Empty game\", 0.0)
-    Debug.fprint(\"Rendered in \", deltaTime, \"sec\")
+    graphics.clear(vec4.WHITE)
+    if graphics.drawSplashScreenIfNeeded({
+        -- Put the resources that need to be loaded here.
+    }, \"Loading\") then
+        return
+    end
+    graphics.drawSplashScreen(\"Empty game\", 0.0)
+    debug.fprint(\"Rendered in \", deltaTime, \"sec\")
 end
 ";
 

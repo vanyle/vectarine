@@ -14,22 +14,32 @@
 
 <video alt="A presentation of vectarine features" width="448" height="252" controls src="https://github.com/user-attachments/assets/2d90fe6b-1d22-46da-a9a8-2ef5cfe31a27"></video>
 
-## Goals
+## Key features
 
-- Your time is valuable
-  - **Luau** scripting: Instant reload and strong typing
-  - Assets built into the engine for fast testing
-  - Gallery of example: start with working templates
-  - Powerful debugging tools and editor: waste less time on bugs, boilerplate and clicking around in menus
-- Don't limit creativity
-  - Access to low-level primitives
-  - 3d & 2d support
-  - Performance: Render millions of entities at 60 fps
-  - Extensible: Write and share **Rust plugins** that can add anything to the engine
-- Reach a wide audience
-  - Supports the Web, Windows, Linux, MacOS
-  - Distribute your game by sharing a zip with a small size footprint.
-  - Free and open-source
+- **Luau** scripting with types and integrated documentation
+- **Hot-reloading** for everything, change scripts, images, sounds while the game is running and see changes immediately
+- Batteries-included: graphics, physics, audio, input, shaders, etc.
+- Gallery of examples: start with working templates
+- Powerful debugging tools: watch variables, measure performance of sections, etc.
+- Pretty fast: we use rust and provide numpy like functions to speed up your game logic 
+- Fast exports to the **Web**, Windows, Linux, MacOS
+
+## How does a minimal game look like?
+
+A simple game is a `game.vecta` manifest file and a `scripts/main.luau` script file.
+
+```luau
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
+
+function Update(deltaTime: number)
+  --- Clear the screen
+  graphics.clear(vec4.WHITE)
+  -- Draw a red circle at the center of the screen
+  graphics.drawCircle(vec.V2(0, 0), 0.1, vec4.RED)
+end
+```
 
 ## Getting started making games
 
