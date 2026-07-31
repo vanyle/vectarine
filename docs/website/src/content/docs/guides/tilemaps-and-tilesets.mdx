@@ -45,13 +45,13 @@ It defines how to split the tileset image into tiles and can give names or proba
 
 Once you have a tileset and an image, you can combine them to make an `ImageWithTileset` resource that you can use to draw tiles by name easily.
 
-export const tilemapExample1 = `local Graphics = require("@vectarine/graphics")
-local Loader = require("@vectarine/loader")
-local Vec = require("@vectarine/vec")
-local V2 = Vec.V2
+export const tilemapExample1 = `const graphics = require("@vectarine/graphics")
+const loader = require("@vectarine/loader")
+const vec = require("@vectarine/vec")
+const V2 = vec.V2
 
-local tileset_image = Loader.loadImage("./textures/enemies_tileset.png", false)
-local tileset_data = Loader.loadTileset("./textures/enemies_tileset.tsx")
+local tileset_image = loader.loadImage("./textures/enemies_tileset.png", false)
+local tileset_data = loader.loadTileset("./textures/enemies_tileset.tsx")
 
 -- To use an ImageWithTileset, both the image and tileset resource must be ready.
 local tileset = tileset_image:withTileset(tileset_data)
@@ -74,27 +74,27 @@ It can be created with [Tiled](https://www.mapeditor.org/), [LDtk](https://ldtk.
 
 Once you have made your level in your level editor of choice, you can export it to a `tmx` file and load it in your game.
 
-export const tilemapExample2 = `local Graphics = require("@vectarine/graphics")
-local Loader = require("@vectarine/loader")
-local Vec = require("@vectarine/vec")
+export const tilemapExample2 = `const graphics = require("@vectarine/graphics")
+const loader = require("@vectarine/loader")
+const vec = require("@vectarine/vec")
 
-local level_tileset_image = Loader.loadImage("textures/level_tileset.png", false)
-local level_tileset_data = Loader.loadTileset("textures/level_tileset.tsx")
+local level_tileset_image = loader.loadImage("textures/level_tileset.png", false)
+local level_tileset_data = loader.loadTileset("textures/level_tileset.tsx")
 local level_tileset = level_tileset_image:withTileset(level_tileset_data)
 
-local tilemap = Loader.loadTilemap("levels/level.tmx")
+local tilemap = loader.loadTilemap("levels/level.tmx")
 
 -- Once a tilemap is loaded, you can get a tile at (x,y) on a specific layer with getTile.
 local tileId = tilemap:getTile(0, 1, 2) -- Get the tile on layer 0 at position (x=1, y=2)
 -- Draw the tile
-level_tileset:drawTile(tileId, Vec.V2(0, 0), Vec.V2(0.1, 0.1))
+level_tileset:drawTile(tileId, vec.V2(0, 0), vec.V2(0.1, 0.1))
 
 -- You can draw a whole layer with a loop.
 -- You can use \`withTransform\` to apply transformation to handle translation, rotation and scale of the level.
 for x = 0, 10 do
     for y = 0, 10 do
         local tileId = tilemap:getTile(0, x, y)
-        level_tileset:drawTile(tileId, Vec.V2(x * 0.1, y * 0.1), Vec.V2(0.1, 0.1))
+        level_tileset:drawTile(tileId, vec.V2(x * 0.1, y * 0.1), vec.V2(0.1, 0.1))
     end
 end`;
 

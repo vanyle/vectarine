@@ -10,68 +10,68 @@ You can edit the level inside textures/level.tmx using Tiled and see changes liv
 The assets come from https://kenney.nl/assets/tiny-dungeon with a few tweaks.
 ]]
 
-local Camera = require("@vectarine/camera")
-local Debug = require("@vectarine/debug")
-local Event = require("@vectarine/event")
-local Graphics = require("@vectarine/graphics")
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Persist = require("@vectarine/persist")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+local camera = require("@vectarine/camera")
+local debug = require("@vectarine/debug")
+local event = require("@vectarine/event")
+local graphics = require("@vectarine/graphics")
+local io = require("@vectarine/io")
+local loader = require("@vectarine/loader")
+local persist = require("@vectarine/persist")
+local vec = require("@vectarine/vec")
+local vec4 = require("@vectarine/vec4")
 
-local WorldRes, World = Loader.loadScript("scripts/world.luau", require("./world"))
-local WorldTypes = require("./world")
+local worldRes, worldManager = loader.loadScript("scripts/world.luau", require("./world"))
+local worldTypes = require("./world")
 
-local SignRes, Sign = Loader.loadScript("scripts/sign.luau", require("./sign"))
-local SignTypes = require("./sign")
+local signRes, sign = loader.loadScript("scripts/sign.luau", require("./sign"))
+local signTypes = require("./sign")
 
-local tiles_tiles = Loader.loadTileset("textures/tileset.tsx")
-local tiles_image = Loader.loadImage("textures/tileset.png", false)
-local level = Loader.loadTilemap("textures/level.tmx")
+local tiles_tiles = loader.loadTileset("textures/tileset.tsx")
+local tiles_image = loader.loadImage("textures/tileset.png", false)
+local level = loader.loadTilemap("textures/level.tmx")
 local tiles = tiles_image:withTileset(tiles_tiles)
 
 -- Controls how the camera moves. The world is divided into parts of size 20x15 and the camera moves between parts.
-local ROOM_SIZE = Vec.V2(15, 10)
+local ROOM_SIZE = vec.V2(15, 10)
 
-local areResourcesLoaded = Persist.onReload({ loaded = false }, "areResourcesLoaded")
+local areResourcesLoaded = persist.onReload({ loaded = false }, "areResourcesLoaded")
 
-local camera = Persist.onReload(Camera.new(), "camera")
+local gameCamera = persist.onReload(camera.new(), "camera")
 local ZOOM_LEVEL = 0.12 -- This factor is choosen so that you can see the current room + about 1.5 tile of the surrounding ones
 
-local world: WorldTypes.IWorld
-local signManager: SignTypes.SignManager
+local world: worldTypes.IWorld
+local signManager: signTypes.SignManager
 
 -- You can explore the level freely by setting noclip to true from the watcher.
-local debugging = Persist.onReload({
+local debugging = persist.onReload({
 	noclip = false,
 }, "debugging")
 
 function Init()
-	world = World.createInfiniteWorld(level, tiles, tiles_tiles)
-	signManager = Sign.create()
-	camera.position = -ROOM_SIZE:scale(0.5)
+	world = worldManager.createInfiniteWorld(level, tiles, tiles_tiles)
+	signManager = sign.create()
+	gameCamera.position = -ROOM_SIZE:scale(0.5)
 end
 
 if areResourcesLoaded.loaded then
 	Init()
 end
 
-Event.getConsoleCommandEvent():on(function(command: string)
+event.getConsoleCommandEvent():on(function(command: string)
 	if command == "entities" then
-		World.reloadEntities(world, level, tiles)
+		worldManager.reloadEntities(world, level, tiles)
 	else
-		Debug.print("Unknown command: " .. command)
-		Debug.print("Use entities to reset entity position from the resources")
+		debug.print("Unknown command: " .. command)
+		debug.print("Use entities to reset entity position from the resources")
 	end
 end)
 
 function Update(deltaTime: number)
-	if Graphics.drawSplashScreenIfNeeded({
+	if graphics.drawSplashScreenIfNeeded({
 		tiles_tiles,
 		tiles_image,
-		WorldRes,
-		SignRes,
+		worldRes,
+		signRes,
 	}) then
 		return
 	end
@@ -79,49 +79,49 @@ function Update(deltaTime: number)
 		areResourcesLoaded.loaded = true
 		Init()
 		-- We need to wait one frame for init to finish.
-		Graphics.drawSplashScreen("Initializing.")
+		graphics.drawSplashScreen("Initializing.")
 		return
 	end
 
-	local windowSize = Io.getWindowSize()
+	local windowSize = io.getWindowSize()
 	local yScale = windowSize.x / windowSize.y
-	local factor = Vec.V2(ZOOM_LEVEL, -ZOOM_LEVEL * yScale)
-	local offset = Vec.V2(-1, 1)
+	local factor = vec.V2(ZOOM_LEVEL, -ZOOM_LEVEL * yScale)
+	local offset = vec.V2(-1, 1)
 
-	local roomCenter = (world.player.position / ROOM_SIZE):floor() * ROOM_SIZE + ROOM_SIZE:scale(0.5) - Vec.V2(1, 0)
-	camera:moveTowards(-roomCenter, 0.05)
+	local roomCenter = (world.player.position / ROOM_SIZE):floor() * ROOM_SIZE + ROOM_SIZE:scale(0.5) - vec.V2(1, 0)
+	gameCamera:moveTowards(-roomCenter, 0.05)
 
 	-- We don't allow diagonal movement.
 	-- It could be a cool gameplay concept, but it is slightly hard to press the 2 keys at the same time.
-	local upMotion = Io.isKeyJustPressed("Up") and -1 or Io.isKeyJustPressed("Down") and 1 or 0
-	local rightMotion = Io.isKeyJustPressed("Right") and 1 or Io.isKeyJustPressed("Left") and -1 or 0
+	local upMotion = io.isKeyJustPressed("Up") and -1 or io.isKeyJustPressed("Down") and 1 or 0
+	local rightMotion = io.isKeyJustPressed("Right") and 1 or io.isKeyJustPressed("Left") and -1 or 0
 	if not debugging.noclip then
 		-- You cannot move while reading a sign, it is rude.
 		if not world.readingSign then
 			if upMotion ~= 0 then
-				World.tryMovePlayer(world, 0, upMotion * world.player.moveAmount, ROOM_SIZE)
+				worldManager.tryMovePlayer(world, 0, upMotion * world.player.moveAmount, ROOM_SIZE)
 			end
 			if rightMotion ~= 0 then
-				World.tryMovePlayer(world, rightMotion * world.player.moveAmount, 0, ROOM_SIZE)
+				worldManager.tryMovePlayer(world, rightMotion * world.player.moveAmount, 0, ROOM_SIZE)
 			end
 
-			if Io.isKeyJustPressed("Z") then
-				World.undoLastMove(world, ROOM_SIZE)
+			if io.isKeyJustPressed("Z") then
+				worldManager.undoLastMove(world, ROOM_SIZE)
 			end
 		end
 	else
-		local newPos = world.player.position + Vec.V2(rightMotion, upMotion)
-		World.moveEntity(world, world.player, newPos)
+		local newPos = world.player.position + vec.V2(rightMotion, upMotion)
+		worldManager.moveEntity(world, world.player, newPos)
 	end
 
-	Graphics.clear(Vec4.BLACK)
-	Graphics.withTransformation({ translation = camera.position, scale = factor:scale(camera.zoom) }, function()
-		Graphics.withTransformation({ translation = offset }, function()
-			World.draw(world, deltaTime)
+	graphics.clear(vec4.BLACK)
+	graphics.withTransformation({ translation = gameCamera.position, scale = factor:scale(gameCamera.zoom) }, function()
+		graphics.withTransformation({ translation = offset }, function()
+			worldManager.draw(world, deltaTime)
 		end)
 	end)
 
 	if world.readingSign then
-		Sign.drawDialog(world, signManager)
+		sign.drawDialog(world, signManager)
 	end
 end

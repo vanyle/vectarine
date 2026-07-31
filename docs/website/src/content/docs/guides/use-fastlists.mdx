@@ -35,14 +35,14 @@ Vectarine has a built in profiler that shows you how long it takes to render a f
 - `Draw` and `Update` are custom timers added to measure how long a part of the code takes.
 
 
-export const fastlistExample1 = `local Debug = require("@vectarine/debug")
+export const fastlistExample1 = `const debug = require("@vectarine/debug")
 
 function Update(deltaTime: number)
-    Debug.timed("Update", function()
+    debug.timed("Update", function()
         updateWorld()
     end)
 
-    Debug.timed("Draw", function()
+    debug.timed("Draw", function()
         drawWorld()
     end)
 end`;
@@ -51,15 +51,15 @@ end`;
 
 You can put `timed` blocks inside one another and inside loops to understand what parts of the code take for most time:
 
-export const fastlistTimedNested = `local Debug = require("@vectarine/debug")
+export const fastlistTimedNested = `const debug = require("@vectarine/debug")
 
 function Update(deltaTime: number)
-    Debug.timed("Total", function()
+    debug.timed("Total", function()
         for i, obj in ipairs(game_objects) do
-            Debug.timed("Update", function()
+            debug.timed("Update", function()
                 updateObject(obj)
             end)
-            Debug.timed("Draw", function()
+            debug.timed("Draw", function()
                 drawObject(obj)
             end)
         end
@@ -149,10 +149,11 @@ the modified values back into the original list.
 Let's consider the following code that updates the position of a list of objects:
 
 export const fastlistObjectsSlow = `-- Let's imagine that something fills this list with objects that have a position and a velocity
+const vec = require("@vectarine/vec")
 local objects = {
     {
-        position = Vec.V2(0, 0),
-        velocity = Vec.V2(1, 1),
+        position = vec.V2(0, 0),
+        velocity = vec.V2(1, 1),
     }
 }
 
@@ -175,11 +176,12 @@ end`;
 
 Let's convert this code to use fastlists:
 
-export const fastlistObjectsFast = `local FastList = require("@vectarine/fastlist")
+export const fastlistObjectsFast = `const fastlist = require("@vectarine/fastlist")
+const vec = require("@vectarine/vec")
 
 local objects = {
-    position = FastList.fromTable({Vec.V2(0, 0)}),
-    velocity = FastList.fromTable({Vec.V2(1, 1)}),
+    position = fastlist.fromTable({vec.V2(0, 0)}),
+    velocity = fastlist.fromTable({vec.V2(1, 1)}),
 }
 
 function ProcessObjects(deltaTime: number)
@@ -195,12 +197,13 @@ function ProcessObjects(deltaTime: number)
 
     -- We set the position to 0 on the X axis by multiplying by (0, 1), when we merge the result with the original position.
     -- The gaps in negativePosition, which are the element where the position is not negative are filled with the original values
-    objects.position = (negativePosition * Vec.V2(0, 1)):otherwise(objects.position)`;
+    objects.position = (negativePosition * vec.V2(0, 1)):otherwise(objects.position)`;
 
 <Code lang="luau" code={fastlistObjectsFast} />
 
-export const fastlistVelocityFlipping = `    -- We do something similar for the velocity, but we multiply by (-1, 1) to flip the velocity on the X axis.
-    objects.velocity = (velocityWherePositionNegative * Vec.V2(-1, 1)):otherwise(objects.velocity)
+export const fastlistVelocityFlipping = `    const vec = require("@vectarine/vec")
+    -- We do something similar for the velocity, but we multiply by (-1, 1) to flip the velocity on the X axis.
+    objects.velocity = (velocityWherePositionNegative * vec.V2(-1, 1)):otherwise(objects.velocity)
 end`;
 
 <Code lang="luau" code={fastlistVelocityFlipping} />
@@ -247,13 +250,17 @@ export const fastlistForLoopFast = `    local filtered = a:filterBetweenX(a, -ma
 You can use fastlists to draw objects efficiently too using \`drawImages\`:
 
 export const fastlistDrawImages = `-- Let's assume we have a fastlist of positions named 'positions'.
-local screenSize = Io.getWindowSize()
-local positionsScaled = positions * Vec.V2(1 / screenSize.x, 1 / screenSize.y) + Vec.V2(-1, -1)
+const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
+const fastlist = require("@vectarine/fastlist")
+const vec4 = require("@vectarine/vec4")
+local screenSize = io.getWindowSize()
+local positionsScaled = positions * vec.V2(1 / screenSize.x, 1 / screenSize.y) + vec.V2(-1, -1)
 -- We create a fastlist of sizes with the same length as positions, where all values are the same (size).
-local sizes = FastList.fromValue(size:gl(), #positions)
+local sizes = fastlist.fromValue(size:gl(), #positions)
 -- We can weave the 2 fastlists together to get a fastlist of position and size, which is what drawImages needs.
 local positionWithSizes = positionsScaled:weave({ sizes })
-positionWithSizes:drawImages(myImage, Vec4.WHITE)`;
+positionWithSizes:drawImages(myImage, vec4.WHITE)`;
 
 <Code lang="luau" code={fastlistDrawImages} />
 
@@ -278,7 +285,7 @@ You can still access the `i`th element of a fastlist using `list:get(i)`, but it
 
 Don't forget that you can convert a table to a fastlist using `FastList.fromTable` and convert it back using `FastList.toTable`, so you are never forced to do things one way. Tables are slower, but more flexible.
 
-Second, if you need to compare `a[i]` and `a[i + 1]`, you can create `b = FastList.fromTable({Vec.V2(0, 0)}):concat(a)` to shift a by 1 and then compare `a` and `b`.
+Second, if you need to compare `a[i]` and `a[i + 1]`, you can create `b = fastlist.fromTable({vec.V2(0, 0)}):concat(a)` to shift a by 1 and then compare `a` and `b`.
 
 Finally, don't forget about functions like `weave` and `unweave` that can transform fastlists and mix indices.
 

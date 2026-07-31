@@ -1,21 +1,21 @@
-local Debug = require("@vectarine/debug")
-local Event = require("@vectarine/event")
-local Loader = require("@vectarine/loader")
+local debug = require("@vectarine/debug")
+local event = require("@vectarine/event")
+local loader = require("@vectarine/loader")
 
-local _, eventHelpers = Loader.loadScript("scripts/event_helpers.luau", require("event_helpers.luau"))
+local _, eventHelpers = loader.loadScript("scripts/event_helpers.luau", require("event_helpers.luau"))
 
-local ambiantMusic = Loader.loadAudio("audio/game_music.wav")
-local popSound = Loader.loadAudio("audio/short_fire_whoosh.wav")
-local fireOnsetSound = Loader.loadAudio("audio/fire_onset.wav")
-local candleBlowSound = Loader.loadAudio("audio/candle_blow.wav")
-local deathMusic = Loader.loadAudio("audio/death_music.wav")
-local creepySound = Loader.loadAudio("audio/creepy_sound.wav")
-local battleMusic = Loader.loadAudio("audio/battle_music.wav")
+local ambiantMusic = loader.loadAudio("audio/game_music.wav")
+local popSound = loader.loadAudio("audio/short_fire_whoosh.wav")
+local fireOnsetSound = loader.loadAudio("audio/fire_onset.wav")
+local candleBlowSound = loader.loadAudio("audio/candle_blow.wav")
+local deathMusic = loader.loadAudio("audio/death_music.wav")
+local creepySound = loader.loadAudio("audio/creepy_sound.wav")
+local battleMusic = loader.loadAudio("audio/battle_music.wav")
 
 local ambiantIsNotPlaying = true
 
 -- Set up background music to play when resource loads (must be immediate, not delayed)
-Event.getResourceLoadedEvent():on(function(r)
+event.getResourceLoadedEvent():on(function(r)
 	if ambiantMusic:isReady() and ambiantIsNotPlaying then
 		ambiantMusic:play(true)
 		ambiantMusic:setVolume(0.2)
@@ -27,7 +27,7 @@ function play_pop_sound()
 	if popSound:isReady() then
 		popSound:play(false)
 	else
-		Debug.print("Pop sound not ready!")
+		debug.print("Pop sound not ready!")
 	end
 end
 
@@ -35,7 +35,7 @@ function play_fire_onset_sound()
 	if fireOnsetSound:isReady() then
 		fireOnsetSound:play(false)
 	else
-		Debug.print("Fire onset sound not ready!")
+		debug.print("Fire onset sound not ready!")
 	end
 end
 
@@ -43,7 +43,7 @@ function play_candle_blow_sound()
 	if candleBlowSound:isReady() then
 		candleBlowSound:play(false)
 	else
-		Debug.print("Candle blow sound not ready!")
+		debug.print("Candle blow sound not ready!")
 	end
 end
 
@@ -56,7 +56,7 @@ function play_death_music()
 			ambiantMusic:setVolume(0.5)
 		end, "Restore ambiant music volume after death music")
 	else
-		Debug.print("Death music not ready!")
+		debug.print("Death music not ready!")
 	end
 end
 
@@ -64,7 +64,7 @@ function play_creepy_sound()
 	if creepySound:isReady() then
 		creepySound:play(false)
 	else
-		Debug.print("Creepy sound not ready!")
+		debug.print("Creepy sound not ready!")
 	end
 end
 
@@ -74,7 +74,7 @@ function play_battle_music()
 		battleMusic:play(true)
 		battleMusic:setVolume(0.5)
 	else
-		Debug.print("Battle music not ready!")
+		debug.print("Battle music not ready!")
 	end
 end
 

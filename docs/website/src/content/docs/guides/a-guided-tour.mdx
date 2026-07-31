@@ -52,14 +52,14 @@ You can click the blue text `scripts/game.luau` to open it in your default text 
 
 Try to change the content of this file to:
 
-export const tourEmptyScript = `local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
-Debug.print("Loaded.")
+export const tourEmptyScript = `const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
+debug.print("Loaded.")
 function Update(deltaTime: number)
     -- Change the background color to red
-    Graphics.clear(Vec4.RED)
-    Debug.fprint("Rendered in ", deltaTime, "sec")
+    graphics.clear(vec4.RED)
+    debug.fprint("Rendered in ", deltaTime, "sec")
 end`;
 
 <Code lang="luau" code={tourEmptyScript} />
@@ -77,13 +77,13 @@ Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` second
 
 You can print things to the console using the `debug` module. You can open the console by pressing <Kbd windows="Ctrl+1" mac="Ctrl+1"/>.
 
-export const tourPrintConsole = `local Debug = require('@vectarine/debug')
+export const tourPrintConsole = `const debug = require('@vectarine/debug')
 
-Debug.print("Game loaded")
+debug.print("Game loaded")
 
 function Update(timeDelta: number)
-    -- Use Debug.fprint when printing every frame to avoid flooding the console
-    Debug.fprint("Frame update, time since last frame: ", timeDelta, " seconds")
+    -- Use debug.fprint when printing every frame to avoid flooding the console
+    debug.fprint("Frame update, time since last frame: ", timeDelta, " seconds")
 end`;
 
 <Code lang="luau" code={tourPrintConsole} />
@@ -112,26 +112,26 @@ The screen is always 2 units wide and 2 units tall, regardless of the window siz
 
 ![The screen coordinate in vectarine](../../../assets/vecta-screen.png)
 
-export const tourDrawVec = `--- Import the Vec module to create 2D vectors
-local Vec = require('@vectarine/vec')
--- Colors are represented as 4D vectors (red, green, blue, alpha). You need the Vec4 module to create them.
-local Vec4 = require('@vectarine/vec4')
-local V2 = Vec.V2 -- alias the V2 function as it is used very often
-local Graphics = require('@vectarine/graphics')
+export const tourDrawVec = `--- Import the vec module to create 2D vectors
+const vec = require('@vectarine/vec')
+-- Colors are represented as 4D vectors (red, green, blue, alpha). You need the vec4 module to create them.
+const vec4 = require('@vectarine/vec4')
+const V2 = vec.V2 -- alias the V2 function as it is used very often
+const graphics = require('@vectarine/graphics')
 
 function Update(time_delta: number)
     -- Draw a white background.
-    local bgColor: Vec4.Vec4 = Vec4.WHITE
-    Graphics.clear(bgColor)
+    local bgColor: vec4.vec4 = vec4.WHITE
+    graphics.clear(bgColor)
 
     -- Draw a blue rectangle at the bottom right of the screen
-    local rectColor = Vec4.createColor(0, 0, 1, 1)
-    Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
+    local rectColor = vec4.createColor(0, 0, 1, 1)
+    graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
 
     -- Draw a red circle at the center of the screen with radius 0.1 (2 is the width of the screen)
-    -- Vec.ZERO2 is a constant for Vec.V2(0,0)
-    local circleColor = Vec4.V4(1, 0, 0, 1)
-    Graphics.drawCircle(Vec.ZERO2, 0.1, circleColor)
+    -- vec.ZERO2 is a constant for vec.V2(0,0)
+    local circleColor = vec4.V4(1, 0, 0, 1)
+    graphics.drawCircle(vec.ZERO2, 0.1, circleColor)
 end`;
 
 <Code lang="luau" code={tourDrawVec} />
@@ -167,31 +167,31 @@ You can add or remove a screen vector to a screen position to get another positi
 
 In general, you can perform the usual operations you'd expect with them:
 
-export const tourDrawCoord = `local Coord = require('@vectarine/coord')
-local Vec = require('@vectarine/vec')
-local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
+export const tourDrawCoord = `const coord = require('@vectarine/coord')
+const vec = require('@vectarine/vec')
+const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
 
-local V2 = Vec.V2
+const V2 = vec.V2
 
 function Update(time_delta)
-    Graphics.clear(Vec4.WHITE)
-    local rectColor = Vec4.RED
+    graphics.clear(vec4.WHITE)
+    local rectColor = vec4.RED
 
     -- There are multiple ways to create a 'ScreenPosition' using the coordinate system you prefer
-    local pos = Coord.gl(V2(0, 0)) -- refer to the center of the screen
-    local other_pos = Coord.px(V2(200, 200)) -- refers to position (200,200), in pixels, from the top-left
-    Debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
+    local pos = coord.gl(V2(0, 0)) -- refer to the center of the screen
+    local other_pos = coord.px(V2(200, 200)) -- refers to position (200,200), in pixels, from the top-left
+    debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
 
     -- Draw a square at the center of the screen, with side length 200px
-    -- Coord.CENTER is a constant for Coord.gl(Vec.V2(0,0))
-    local squareSize = Coord.pxVec(V2(200, 200))
-    Graphics.drawRect(Coord.CENTER - squareSize:scale(0.5), squareSize, rectColor)
+    -- coord.CENTER is a constant for coord.gl(vec.V2(0,0))
+    local squareSize = coord.pxVec(V2(200, 200))
+    graphics.drawRect(coord.CENTER - squareSize:scale(0.5), squareSize, rectColor)
 
-    local pos2 = Coord.px(V2(100, 100)) -- refer to a position in pixels
-    local size2 = Coord.glVec(V2(1, 1)) -- a quarter of the screen
-    Graphics.drawRect(pos2, size2, rectColor)
+    local pos2 = coord.px(V2(100, 100)) -- refer to a position in pixels
+    local size2 = coord.glVec(V2(1, 1)) -- a quarter of the screen
+    graphics.drawRect(pos2, size2, rectColor)
 end`;
 
 <Code lang="luau" code={tourDrawCoord} />
@@ -210,43 +210,45 @@ ones and how to use them.
 
 ### Getting the position of the mouse
 
-export const tourMousePosition = `local Io = require("@vectarine/io")
-local Vec = require("@vectarine/vec")
-local Debug = require("@vectarine/debug")
-local Vec4 = require("@vectarine/vec4")
+export const tourMousePosition = `const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
+const debug = require("@vectarine/debug")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
 
 function Update()
-    local m: Vec.Vec2 = Io.getMouse()
-    Debug.fprint(m) -- Print the position of the mouse on every frame
+    local m: vec.vec2 = io.getMouse()
+    debug.fprint(m) -- Print the position of the mouse on every frame
     -- Draw a green circle at the position of the cursor.
-    Graphics.drawCircle(m, 0.1, Vec4.GREEN)
+    graphics.drawCircle(m, 0.1, vec4.GREEN)
 end`;
 
 <Code lang="luau" code={tourMousePosition} />
 
 ### Checking if a button is pressed
 
-export const tourButtonPress = `local Io = require("@vectarine/io")
-local Vec = require("@vectarine/vec")
-local Debug = require("@vectarine/debug")
-local Vec4 = require("@vectarine/vec4")
+export const tourButtonPress = `const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
+const debug = require("@vectarine/debug")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
 
 function Update()
-    local isSpacePressed = Io.isKeyDown("space")
+    local isSpacePressed = io.isKeyDown("space")
     -- Draw a rectangle when space is pressed
     if isSpacePressed then
-        Graphics.drawRect(Vec.V2(0, 0), Vec.V2(0.1, 0.2), Vec4.RED)
+        graphics.drawRect(vec.V2(0, 0), vec.V2(0.1, 0.2), vec4.RED)
     end
 
     -- If you need to perform something only once when a key is pressed, you can use \`isKeyJustPressed\`
-    if Io.isKeyJustPressed("r") then
-        Debug.print("R was just pressed!")
+    if io.isKeyJustPressed("r") then
+        debug.print("R was just pressed!")
     end
 
     -- Print pressed keys
-    Debug.fprint(Io.getKeysDown())
+    debug.fprint(io.getKeysDown())
     -- Print which mouse buttons are pressed
-    Debug.fprint(Io.getMouseState())
+    debug.fprint(io.getMouseState())
 end`;
 
 <Code lang="luau" code={tourButtonPress} />
@@ -256,19 +258,19 @@ end`;
 Sometimes, instead of checking every frame is a button is pressed, you want to perform something only once it
 is pressed. To do this, you can use _events_.
 
-export const tourEventsSub = `local Event = require("@vectarine/event")
-local Debug = require("@vectarine/debug")
+export const tourEventsSub = `const event = require("@vectarine/event")
+const debug = require("@vectarine/debug")
 
 -- Notice that we subscribe to the event only once, not on every frame!
 local counter = 0
-Event.getKeyDownEvent():on(function(key: string)
+event.getKeyDownEvent():on(function(key: string)
     -- This is called once per press.
-	Debug.print("Key down: ", key)
+	debug.print("Key down: ", key)
     counter = counter + 1
 end)
 
 function Update()
-    Debug.fprint("Count: ", counter)
+    debug.fprint("Count: ", counter)
 end`;
 
 <Code lang="luau" code={tourEventsSub} />
@@ -285,7 +287,7 @@ You can also create your own events using `Event.newEvent("name")` if you need t
 
 In Luau, variables and functions are global by default. You can make them local by adding the `local` keyword before defining them.
 
-export const tourGlobalLocal = `local Debug = require("@vectarine/debug")
+export const tourGlobalLocal = `const debug = require("@vectarine/debug")
 
 local someLocalNumber = 10
 myGlobalVar = 3
@@ -296,11 +298,11 @@ someLocalNumber = 11 -- Changing the value of an existing variable
 _G.otherGlobalValue = "abc" -- Setting a global value
 
 function thisIsGlobal()
-    Debug.print("a global function is called!")
+    debug.print("a global function is called!")
 end
 
 local function thisIsLocal()
-    Debug.print("a local function is called!")
+    debug.print("a local function is called!")
 end`;
 
 <Code lang="luau" code={tourGlobalLocal} />
@@ -316,18 +318,19 @@ want to reset when reloading and part that you want to keep.
 
 My recommendation is to **always use local**, but set them using `persist` API:
 
-export const tourPersistApi = `local Persist = require("@vectarine/persist")
+export const tourPersistApi = `const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
 
 -- playerPos is both a local and a global.
 -- Because it is local that you get proper typing and information if it is unused
 -- Because it is global, its value is preserved between reloads and you can edit it inside the watcher tool
--- The Vec.V2(0,0) is only used for the first initialization.
-local playerPos = Persist.onReload(Vec.V2(0, 0), "playerPos")
+-- The vec.V2(0,0) is only used for the first initialization.
+local playerPos = persist.onReload(vec.V2(0, 0), "playerPos")
 
--- 👷 Persist.onRestart is not available yet
+-- 👷 persist.onRestart is not available yet
 -- When you quit and restart the game, the player health is persisted.
 -- Note that functions cannot be persisted, only strings, numbers, booleans, nil and tables made of these types.
-local playerInfo = Persist.onRestart({ health = 100 }, "playerInfo")`;
+local playerInfo = persist.onRestart({ health = 100 }, "playerInfo")`;
 
 <Code lang="luau" code={tourPersistApi} />
 
@@ -349,17 +352,17 @@ Let's see how to works with Images.
 
 ### Images
 
-export const tourLoaderImages = `local Loader = require("@vectarine/loader")
-local Vec = require("@vectarine/vec")
-local Coord = require("@vectarine/coord")
+export const tourLoaderImages = `const loader = require("@vectarine/loader")
+const vec = require("@vectarine/vec")
+const coord = require("@vectarine/coord")
 
-local myImage = Loader.loadImage("textures/my_image.png")
+local myImage = loader.loadImage("textures/my_image.png")
 
 function Update()
     if myImage:isReady() then
         -- Draw the image at the center of the screen with size 200x200 pixels
-        local size = Coord.pxDelta(Vec.V2(200, 200))
-        myImage:draw(Coord.gl(Vec.ZERO2) - size:scale(0.5), size)
+        local size = coord.pxDelta(vec.V2(200, 200))
+        myImage:draw(coord.gl(vec.ZERO2) - size:scale(0.5), size)
     end
 end`;
 
@@ -377,21 +380,21 @@ All functions inside `Loader` behave this way. You can load scripts, shaders, fo
 
 To draw text, you can either load your own font or use the default font.
 
-export const tourTextCodeBlock = `local Loader = require("@vectarine/loader")
-local Text = require("@vectarine/text")
-local Vec = require("@vectarine/vec")
+export const tourTextCodeBlock = `const loader = require("@vectarine/loader")
+const text = require("@vectarine/text")
+const vec = require("@vectarine/vec")
 
-local fontResource = Loader.loadFont("fonts/my_font.ttf")
+local fontResource = loader.loadFont("fonts/my_font.ttf")
 
 function Update()
     if not fontResource:isReady() then
         return
     end
     -- Using your own font:
-    fontResource:drawText("Hello", Vec.V2(0, 0), 0.16)
+    fontResource:drawText("Hello", vec.V2(0, 0), 0.16)
 
     -- Or using the default font (Roboto)
-    Text.font:drawText("world", Vec.V2(0, -0.16), 0.16)
+    text.font:drawText("world", vec.V2(0, -0.16), 0.16)
 end`;
 
 <Code lang="luau" code={tourTextCodeBlock} />
@@ -421,11 +424,11 @@ show a loading screen or something else.
 
 Example:
 
-export const tourLoaderScript = `local Loader = require('@vectarine/loader')
-local Event = require('@vectarine/event')
+export const tourLoaderScript = `const loader = require('@vectarine/loader')
+const event = require('@vectarine/event')
 
-local otherScriptResource = Loader.loadScript("scripts/other_script.luau")
-local resourceReadyEvent = Event.getResourceLoadedEvent()
+local otherScriptResource = loader.loadScript("scripts/other_script.luau")
+local resourceReadyEvent = event.getResourceLoadedEvent()
 
 resourceReadyEvent:on(function(resource_handle)
     if otherScriptResource == resource_handle then
@@ -442,7 +445,7 @@ end`;
 
 ### Using modules
 
-Once a script is loaded, all future calls to `loadScript` with the same path will return a handle to the same resource and are instant.
+Once a script is loaded, all future calls to `loadScript` with the same path will return a handle to the same luau table and are instant.
 
 By default all global variables and functions are shared between files.
 This has pros and cons:
@@ -454,15 +457,16 @@ This has pros and cons:
 
 Because of that, we recommend doing the following (this is just a recommendation, you do you!):
 
+- Use `loader.init() or {}` to create a table to hold the exports of your module and return this table at the end of your script.
 - Keep functions local whenever possible using the `local function(...) function_content() end` syntax.
-- Put the functions and variables exported by a module in a table that gets returned.
 - When calling `loadScript`, pass the require call as the second argument to gather the exports of the script with proper types.
 - Never use globals.
 
 There is a simple example with 2 files: `helper.luau` and `main.luau`.
 
 export const tourHelperModule = `-- helper.luau
-local module = {} -- This is where all our exports will go
+const loader = require('@vectarine/loader')
+local module = loader.init() or {} -- This is where all our exports will go
 local my_value = 3
 
 -- add_things is inside module, it gets exported
@@ -476,31 +480,31 @@ return module -- return for the module to make it available`;
 <Code lang="luau" code={tourHelperModule} />
 
 export const tourMainModule = `-- main.luau
-local Debug = require('@vectarine/debug')
-local Loader = require('@vectarine/loader')
+const debug = require('@vectarine/debug')
+const loader = require('@vectarine/loader')
 
 --- We use the import 'technique'
-local helperResource, Helper = Loader.loadScript("scripts/helper.luau", require("helper.luau"))
+const helperResource, helper = loader.loadScript("scripts/helper.luau", require("helper.luau"))
 
---- Loader.loadScript is what actually executes \`helper.luau\`.
+--- loader.loadScript is what actually executes \`helper.luau\`.
 --- require() returns an empty table, but is properly typed.
 --- When a table is passed as the second argument to loadScript, it is filled with the exports of the script.
 --- This gives the impression that require() returns the exports of the script, but it does not.
 
---- Note that the Helper variable is still empty until the resource is ready.
+--- Note that the helper variable is still empty until the resource is ready.
 
 --- Also, note that \`helper.luau\` is only executed once. If you rerun loadScript, you'll get a handle to the same resource.
---- However, Helper will always be filled with the latest exports of the script, even if it is reloaded.
+--- However, helper will always be filled with the latest exports of the script, even if it is reloaded.
 --- This only works if the script returns a table, otherwise, this is ignored.
 
 function Update()
     if !helperResource.isReady() then
         -- Don't forget to add a loading state to indicate that the script is not ready yet!
-        Debug.fprint("Loading helper.luau...")
+        debug.fprint("Loading helper.luau...")
         return
     end
     -- The script is loaded and ready for use!
-    Debug.fprint("adding things: ", Helper.add_things(3+1))
+    debug.fprint("adding things: ", helper.add_things(3+1))
 end`;
 
 <Code lang="luau" code={tourMainModule} />
@@ -510,26 +514,26 @@ end`;
 You can use `Widgets` to organize your rendering code. A widget can be a menu, an inventory or the main game screen.
 Widgets also help keep reloading snappy as Vectarine only needs to reload the code for the current screen.
 
-export const tourWidgetTabs = `local Ui = require("@vectarine/ui")
-local Io = require("@vectarine/io")
-local Vec = require("@vectarine/vec")
+export const tourWidgetTabs = `const ui = require("@vectarine/ui")
+const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
 
-local size_of_the_widget = Vec.V2(2, 2)
-local widget: Ui.Widget<any> = Ui.widget(size_of_the_widget, function()
+local size_of_the_widget = vec.V2(2, 2)
+local widget: ui.Widget<any> = ui.widget(size_of_the_widget, function()
     -- Code for drawing the widget.
 end)
 
-local another_widget: Ui.Widget<any> = Ui.widget(size_of_the_widget, function()
+local another_widget: ui.Widget<any> = ui.widget(size_of_the_widget, function()
     -- Code for drawing the other widget.
 end)
 
 -- List all the widgets you want to draw here
-local tabs: Ui.TabWidget<any> = Ui.tabs({ "default_tab_name" = widget, "another_tab_name" = another_widget })
+local tabs: ui.TabWidget<any> = ui.tabs({ "default_tab_name" = widget, "another_tab_name" = another_widget })
 tabs:setActiveTab("default_tab_name")
 
 function Update(time_delta: number)
     
-    if Io.isKeyJustPressed("Space") then
+    if io.isKeyJustPressed("Space") then
         -- Depending on the player action, you can switch to another widget
         tabs:setActiveTab("another_tab_name", {
             -- You can add transition between screens if you want, or transition directly
@@ -577,28 +581,28 @@ You can put it inside `gamedata/shaders/wave.glsl`.
 
 Then you can use it like so:
 
-export const tourShaderPaint = `local Canvas = require("@vectarine/canvas")
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Vec4 = require("@vectarine/vec4")
-local Graphics = require("@vectarine/graphics")
-local Vec = require("@vectarine/vec")
-local V2 = Vec.V2
+export const tourShaderPaint = `const canvasModule = require("@vectarine/canvas")
+const io = require("@vectarine/io")
+const loader = require("@vectarine/loader")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const V2 = vec.V2
 
-local shaderResource = Loader.loadShader("shaders/wave.glsl")
+local shaderResource = loader.loadShader("shaders/wave.glsl")
 
 -- Create a canvas of size 1200x800 pixels and attach the shader to it.
-local canvas = Canvas.createCanvas(1200, 800)
+local canvas = canvasModule.createCanvas(1200, 800)
 canvas:setShader(shaderResource)
 -- You can call canvas:setShader(nil) to stop using a given shader and draw the content of the canvas as-is.
 
 function Update()
     -- Now, we can draw to the canvas
     canvas:paint(function()
-        -- Every call to Graphics.drawSomething inside paint will be not displayed on the game window
+        -- Every call to graphics.drawSomething inside paint will be not displayed on the game window
         -- It will be drawn to the canvas instead
         -- Note: you can draw the content of one canvas to another canvas to chain multiple shader effects.
-        Graphics.drawRect(Vec.ZERO2, V2(0.1, 0.1), Vec4.RED)
+        graphics.drawRect(vec.ZERO2, V2(0.1, 0.1), vec4.RED)
     end)
 
     -- The canvas can be drawn like an image.
@@ -613,10 +617,14 @@ You can find more information about shaders in [the great book of shaders](https
 > ⚠️ Inside the paint callback, `Coord:pxVec(V2(1, 1))` refers to 1px on the canvas, not on the window!
 > You can pass an optional argument to pxVec to specify the size of the drawing area if you want.
 
-export const tourShaderPxSpecial = `canvas:paint(function()
-  local v1 = Coord.pxVec(V2(1, 1)) -- 1px on the canvas
-  local v2 = Coord.pxVec(V2(1, 1), Io.getWindowSize()) -- 1px on the window
-  local v3 = Coord.pxVec(V2(1, 1), V2(1200, 800)) -- 1px of a 1200x800 area, same as v1
+export const tourShaderPxSpecial = `const coord = require("@vectarine/coord")
+const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
+const V2 = vec.V2
+canvas:paint(function()
+  local v1 = coord.pxVec(V2(1, 1)) -- 1px on the canvas
+  local v2 = coord.pxVec(V2(1, 1), io.getWindowSize()) -- 1px on the window
+  local v3 = coord.pxVec(V2(1, 1), V2(1200, 800)) -- 1px of a 1200x800 area, same as v1
 end)`;
 
 <Code lang="luau" code={tourShaderPxSpecial} />
@@ -628,43 +636,43 @@ Vectarine provides a simple physics system to handle collisions and object inter
 
 Let's looks at an example:
 
-export const tourPhysicsSetup = `local Graphics = require("@vectarine/graphics")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
-local Physics = require("@vectarine/physics")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+export const tourPhysicsSetup = `const graphics = require("@vectarine/graphics")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
+const physics = require("@vectarine/physics")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
 
 -- A world is a collection of objects that can interact with each other
 -- You can add gravity to the world by setting the gravity property.
-local world = Persist.onReload(Physics.newWorld2(Vec.V2(0, -0.3)), "world")
+local world = persist.onReload(physics.newWorld2(vec.V2(0, -0.3)), "world")
 
-local boxCollider = Physics.newRectangleCollider(Vec.V2(0.1, 0.1))
-local circleCollider = Physics.newCircleCollider(0.1)
+local boxCollider = physics.newRectangleCollider(vec.V2(0.1, 0.1))
+local circleCollider = physics.newCircleCollider(0.1)
 
 -- Objects are given shape using colliders.
-local groundCollider = Physics.newRectangleCollider(Vec.V2(10, 0.1))
+local groundCollider = physics.newRectangleCollider(vec.V2(10, 0.1))
 
 -- Objects have multiple properties: position, velocity, rotation, etc...
 -- We create a 'static' object which will not move by itself.
-local ground = Persist.onReload(world:createObject(Vec.V2(-5, -1), 1, groundCollider, { "ground" }, "static"), "ground")
+local ground = persist.onReload(world:createObject(vec.V2(-5, -1), 1, groundCollider, { "ground" }, "static"), "ground")
 -- You can store extra data in objects
-ground.extra = { color = Vec4.createColor(0.5, 0.2, 0.4, 1) }
+ground.extra = { color = vec4.createColor(0.5, 0.2, 0.4, 1) }
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.BLACK)
+	graphics.clear(vec4.BLACK)
 
-	if Io.isKeyJustPressed("space") then
+	if io.isKeyJustPressed("space") then
         -- Dynamic objects react to collisions and move
         -- Try replacing boxCollider with circleCollider, or using newPolygonCollider!
-		local object = world:createObject(Vec.V2(math.random(), 0), 1, boxCollider, { "box" }, "dynamic")
-		object.extra = { color = Vec4.createColor(math.random(), math.random(), math.random(), 1) }
+		local object = world:createObject(vec.V2(math.random(), 0), 1, boxCollider, { "box" }, "dynamic")
+		object.extra = { color = vec4.createColor(math.random(), math.random(), math.random(), 1) }
 	end
 
 	local objects = world:getObjects()
 	for _, obj in pairs(objects) do
         -- We can use getPoints() to get the collision shape of the object
-		Graphics.drawPolygon(obj:getPoints(), obj.extra.color)
+		graphics.drawPolygon(obj:getPoints(), obj.extra.color)
 	end
 
     -- Don't forget to call step to move the simulation forward in time
@@ -710,12 +718,13 @@ The profiler shows you how much time is spent on each of these steps and how thi
 You can also use the `Debug.timed` function to measure the time taken by a section of code and have it
 drawn in the profiler.
 
-export const tourProfilerTimed = `function Update()
-    Debug.timed("AI", function()
+export const tourProfilerTimed = `const debug = require("@vectarine/debug")
+function Update()
+    debug.timed("AI", function()
         -- Your code here
     end)
 
-    Debug.timed("Graphics", function()
+    debug.timed("Graphics", function()
         -- Your code here
     end)
 

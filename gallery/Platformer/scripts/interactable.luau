@@ -1,26 +1,27 @@
-local Debug = require("@vectarine/debug")
-local Graphics = require("@vectarine/graphics")
-local Image = require("@vectarine/image")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
-local Physics = require("@vectarine/physics")
-local Ui = require("@vectarine/ui")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+local debug = require('@vectarine/debug')
+local graphics = require('@vectarine/graphics')
+local image = require('@vectarine/image')
+local io = require('@vectarine/io')
+local loader = require('@vectarine/loader')
+local persist = require('@vectarine/persist')
+local physics = require('@vectarine/physics')
+local ui = require('@vectarine/ui')
+local vec = require('@vectarine/vec')
+local vec4 = require('@vectarine/vec4')
 
 --- This module handles interactive objects which are the object with the B button icon above them.
-local module = {}
+local module = loader.init() or {}
 
-local doors = Persist.onReload({
+local doors = persist.onReload({
 	enabled = false
 }, "doors")
 
 export type Interactable = {
 	tile: string,
-	position: Vec.Vec2,
+	position: vec.Vec2,
 	dialog: { string },
 	dialogIndex: number,
-	goto: Vec.Vec2?, 
+	goto: vec.Vec2?, 
 }
 
 -- TODO: Generalize this to "InteractibleManager".
@@ -28,13 +29,13 @@ export type Interactable = {
 -- We can still put a dialog manager inside of this.
 export type InteractableManager = {
 	interactibles: { Interactable },
-	tiles: Image.ImageWithTileset,
-	icons: Image.ImageWithTileset,
+	tiles: image.ImageWithTileset,
+	icons: image.ImageWithTileset,
 	animationTimer: number,
 	interactingObject: Interactable?,
 }
 
-function module.newInteractibleManager(tiles: Image.ImageWithTileset, icons: Image.ImageWithTileset): InteractableManager
+function module.newInteractibleManager(tiles: image.ImageWithTileset, icons: image.ImageWithTileset): InteractableManager
 	return {
 		interactibles = {} :: { Interactable },
 		tiles = tiles,
@@ -44,7 +45,7 @@ function module.newInteractibleManager(tiles: Image.ImageWithTileset, icons: Ima
 	}
 end
 
-function module.newInteractible(interactibleManager: InteractableManager, tile: string, position: Vec.Vec2, dialog: { string }, goto: Vec.Vec2?): Interactable
+function module.newInteractible(interactibleManager: InteractableManager, tile: string, position: vec.Vec2, dialog: { string }, goto: vec.Vec2?): Interactable
 	local interactible = {
 		tile = tile,
 		position = position,
@@ -56,14 +57,14 @@ function module.newInteractible(interactibleManager: InteractableManager, tile: 
 	return interactible
 end
 
-function module.drawInteractibles(interactibleManager: InteractableManager, deltaTime: number, playerPos: Vec.Vec2, player: { o: Physics.Object2 })
+function module.drawInteractibles(interactibleManager: InteractableManager, deltaTime: number, playerPos: vec.Vec2, player: { o: physics.Object2 })
 	interactibleManager.animationTimer += deltaTime
 
 	local startedInteracting = false
 	local interactableActivationRange = 2
 
 	for _, interactable in interactibleManager.interactibles do
-		interactibleManager.tiles:drawTile(interactable.tile, interactable.position + Vec.V2(0, 1), Vec.V2(1, -1))
+		interactibleManager.tiles:drawTile(interactable.tile, interactable.position + vec.V2(0, 1), vec.V2(1, -1))
 	end
 
 	for _, interactable in interactibleManager.interactibles do
@@ -73,14 +74,14 @@ function module.drawInteractibles(interactibleManager: InteractableManager, delt
 			end
 			if interactable ~= interactibleManager.interactingObject then
 				local p = math.sin(interactibleManager.animationTimer * 5) * 0.1
-				interactibleManager.icons:drawTile("b", interactable.position + Vec.V2(0, p), Vec.V2(1, -1))
-				if Io.isKeyJustPressed("B") then
+				interactibleManager.icons:drawTile("b", interactable.position + vec.V2(0, p), vec.V2(1, -1))
+				if io.isKeyJustPressed("B") then
 					startedInteracting = true
 					interactibleManager.interactingObject = interactable
 					interactable.dialogIndex = 1
 				end
 				if interactable.tile == "npc" then
-					interactibleManager.tiles:drawTile("npc2", interactable.position + Vec.V2(0, 1), Vec.V2(1, -1))
+					interactibleManager.tiles:drawTile("npc2", interactable.position + vec.V2(0, 1), vec.V2(1, -1))
 				end
 				break
 			end
@@ -92,10 +93,10 @@ function module.drawInteractibles(interactibleManager: InteractableManager, delt
 		-- Handle the interactions with the different npc types.
 		if interactable.tile == "npc" then
 			-- Interacting with an npc means speaking with it.
-			Graphics.withoutTransformation(function()
+			graphics.withoutTransformation(function()
 				drawDialog(interactable.dialog[interactable.dialogIndex])
 			end)
-			if Io.isKeyJustPressed("B") then
+			if io.isKeyJustPressed("B") then
 				interactable.dialogIndex += 1
 				if interactable.dialogIndex > #interactable.dialog then
 					interactibleManager.interactingObject = nil
@@ -103,7 +104,7 @@ function module.drawInteractibles(interactibleManager: InteractableManager, delt
 			end
 		elseif interactable.tile == "open_door" then
 			if interactable.goto then
-				Debug.print("Teleporting the player to: ", interactable.goto)
+				debug.print("Teleporting the player to: ", interactable.goto)
 				player.o.position = interactable.goto
 			end
 			interactibleManager.interactingObject = nil
@@ -112,19 +113,19 @@ function module.drawInteractibles(interactibleManager: InteractableManager, delt
 end
 
 function drawDialog(text: string)
-	Graphics.withoutTransformation(function()
-		local dialogUi = Ui.stack({ alignX = "center", alignY = "start" }, {
-			Ui.widget(Vec.V2(2, 2), function() end),
-			Ui.stack({ alignX = "center", alignY = "center" }, {
-				Ui.widget(Vec.V2(0.8, 0.5), function()
-					Graphics.drawRect(Vec.V2(-1, -1), Vec.V2(0.8, 0.5), Vec4.WHITE)
+	graphics.withoutTransformation(function()
+		local dialogUi = ui.stack({ alignX = "center", alignY = "start" }, {
+			ui.widget(vec.V2(2, 2), function() end),
+			ui.stack({ alignX = "center", alignY = "center" }, {
+				ui.widget(vec.V2(0.8, 0.5), function()
+					graphics.drawRect(vec.V2(-1, -1), vec.V2(0.8, 0.5), vec4.WHITE)
 				end),
-				Ui.stack({ alignX = "center", alignY = "center" }, {
-					Ui.widget(Vec.V2(0.75, 0.45), function()
-						Graphics.drawRect(Vec.V2(-1, -1), Vec.V2(0.75, 0.45), Vec4.BLACK)
+				ui.stack({ alignX = "center", alignY = "center" }, {
+					ui.widget(vec.V2(0.75, 0.45), function()
+						graphics.drawRect(vec.V2(-1, -1), vec.V2(0.75, 0.45), vec4.BLACK)
 					end),
-					Ui.text(Vec.V2(0.7, 0.4), { align = "left", fitting = { size = 0.1 } }, function()
-						return { text = text, color = Vec4.WHITE }
+					ui.text(vec.V2(0.7, 0.4), { align = "left", fitting = { size = 0.1 } }, function()
+						return { text = text, color = vec4.WHITE }
 					end),
 				}),
 			}),

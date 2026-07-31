@@ -1,17 +1,16 @@
-local Canvas = require("@vectarine/canvas")
 local Coord = require("@vectarine/coord")
 local Debug = require("@vectarine/debug")
-local Event = require("@vectarine/event")
-local Graphics = require("@vectarine/graphics")
-local Graphics = require("@vectarine/graphics")
-local Image = require("@vectarine/image")
 local Io = require("@vectarine/io")
 local Loader = require("@vectarine/loader")
 local Persist = require("@vectarine/persist")
-local Text = require("@vectarine/text")
-local Ui = require("@vectarine/ui")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+local canvas = require("@vectarine/canvas")
+local event = require("@vectarine/event")
+local graphics = require("@vectarine/graphics")
+local image = require("@vectarine/image")
+local text = require("@vectarine/text")
+local ui = require("@vectarine/ui")
+local vec = require("@vectarine/vec")
+local vec4 = require("@vectarine/vec4")
 
 local LevelDesignType = require("level_design.luau")
 local _, levelDesign = Loader.loadScript("scripts/level_design.luau", require("level_design.luau"))
@@ -126,9 +125,9 @@ local animations = {
 
 local shadowShader = Loader.loadShader("shaders/simple_shadow.glsl")
 
-local V2 = Vec.V2
+local V2 = vec.V2
 local timer = 0.0
-local canvas = Canvas.createCanvas(1200, 800)
+local gameCanvas = canvas.createCanvas(1200, 800)
 local camera = Persist.onReload({
 	position = V2(0, 0),
 	zoom = 60,
@@ -164,7 +163,7 @@ local GameState = Persist.onReload({
 	win_music_played = false,
 
 	-- Asset display
-	displayed_asset = nil :: Image.ImageResource?,
+	displayed_asset = nil :: image.ImageResource?,
 	displayed_asset_name = "",
 }, "GameState")
 
@@ -356,12 +355,12 @@ function render_sign_overlay()
 		current_asset:draw(display_pos, display_size)
 
 		if GameState.waiting_for_input and GameState.displayed_asset_name == "menu" then
-			local text = Ui.text(V2(1.5, 0.5), {}, function()
-				return { text = "Use WASD or the Arrow keys to move", color = Vec4.WHITE }
+			local text = ui.text(V2(1.5, 0.5), {}, function()
+				return { text = "Use WASD or the Arrow keys to move", color = vec4.WHITE }
 			end)
-			local stack = Ui.stack({ alignX = "center", alignY = "center" }, {
+			local stack = ui.stack({ alignX = "center", alignY = "center" }, {
 				text,
-				Ui.widget(Vec.V2(2, 2), function() end),
+				ui.widget(vec.V2(2, 2), function() end),
 			})
 			stack:draw({})
 		end
@@ -443,7 +442,7 @@ function Update(time_delta: number)
 	end
 
 	if shadowShader:isReady() then
-		canvas:setShader(shadowShader)
+		gameCanvas:setShader(shadowShader)
 
 		local pp = coordHelpers.convertToScreenPos(GameState, player.position + V2(1, 1):scale(0.5 * player.size), true)
 		local ppGl = pp:gl()
@@ -459,16 +458,16 @@ function Update(time_delta: number)
 			+ LIGHT_ZONE_TRANSFORM_OFFSET / LIGHT_ZONE_TRANSFORM_DENOMINATOR
 		local lightZoneSize = GameState.cheating and 2.0
 			or math.clamp(transformedFuel, 0, player.max_fuel) / 100 + fireCracklingEffect
-		canvas:setUniform("lightZone", lightZoneSize)
-		canvas:setUniform("lightPosX", ppGl.x / 2)
-		canvas:setUniform("lightPosY", ppGl.y / 2)
+		gameCanvas:setUniform("lightZone", lightZoneSize)
+		gameCanvas:setUniform("lightPosX", ppGl.x / 2)
+		gameCanvas:setUniform("lightPosY", ppGl.y / 2)
 
 		local windowSize = Io.getWindowSize()
-		canvas:setUniform("windowWidth", windowSize.x)
-		canvas:setUniform("windowHeight", windowSize.y)
+		gameCanvas:setUniform("windowWidth", windowSize.x)
+		gameCanvas:setUniform("windowHeight", windowSize.y)
 	end
 
-	Graphics.clear(Vec4.BLACK)
+	graphics.clear(vec4.BLACK)
 
 	-- Check if we're in blackscreen phase
 	if windup_timer.timer <= BLACKSCREEN_DURATION then
@@ -482,8 +481,8 @@ function Update(time_delta: number)
 		return -- Just show blackscreen, no menu
 	end
 
-	canvas:paint(function()
-		Graphics.clear(Vec4.WHITE)
+	gameCanvas:paint(function()
+		graphics.clear(vec4.WHITE)
 
 		-- Only update game entities when not paused
 		if not GameState.game_paused then
@@ -548,9 +547,9 @@ function Update(time_delta: number)
 			-- Draw pumpkin hitbox
 			local pumpkin_hitbox_pos = pumpkin.position + V2(0.2, 0.2)
 			local pumpkin_hitbox_size = V2(1.6, 1.6)
-			drawHelpers.drawHitbox(GameState, pumpkin_hitbox_pos, pumpkin_hitbox_size, { r = 1, g = 0, b = 0, a = 0.3 })
+			drawHelpers.drawHitbox(GameState, pumpkin_hitbox_pos, pumpkin_hitbox_size, vec4.createColor(1, 0, 0, 0.3))
 			-- Draw pumpkin position marker
-			drawHelpers.drawPosition(GameState, pumpkin.position, { r = 1, g = 0.5, b = 0.5, a = 1.0 })
+			drawHelpers.drawPosition(GameState, pumpkin.position, vec4.createColor(1, 0.5, 0.5, 1.0))
 		end
 
 		-- Draw signs
@@ -562,9 +561,9 @@ function Update(time_delta: number)
 			-- Draw sign hitbox
 			local sign_hitbox_pos = sign.position + V2(0, 0)
 			local sign_hitbox_size = V2(1, 1)
-			drawHelpers.drawHitbox(GameState, sign_hitbox_pos, sign_hitbox_size, { r = 0, g = 0, b = 1, a = 0.3 })
+			drawHelpers.drawHitbox(GameState, sign_hitbox_pos, sign_hitbox_size, vec4.createColor(0, 0, 1, 0.3))
 			-- Draw sign position marker
-			drawHelpers.drawPosition(GameState, sign.position, { r = 0.5, g = 0.5, b = 1, a = 1.0 })
+			drawHelpers.drawPosition(GameState, sign.position, vec4.createColor(0.5, 0.5, 1, 1))
 		end
 
 		-- Player animation (delta-time driven, pause-aware)
@@ -579,16 +578,16 @@ function Update(time_delta: number)
 		-- Draw player hitbox
 		local player_hitbox_pos = player.position + V2(0.1, 0.1)
 		local player_hitbox_size = V2(0.8, 0.8)
-		drawHelpers.drawHitbox(GameState, player_hitbox_pos, player_hitbox_size, { r = 0, g = 1, b = 0, a = 0.3 })
+		drawHelpers.drawHitbox(GameState, player_hitbox_pos, player_hitbox_size, vec4.createColor(0, 1, 0, 0.3))
 		-- Draw player position marker
-		drawHelpers.drawPosition(GameState, player.position, { r = 0.5, g = 1, b = 0.5, a = 1.0 })
+		drawHelpers.drawPosition(GameState, player.position, vec4.createColor(0.5, 1, 0.5, 1))
 
 		if GameState.cheating then
 			drawHelpers.drawPathMarkers(GameState, levelDesign.list_path_marker)
 		end
 	end)
 
-	canvas:draw(V2(-1, -1), V2(2, 2))
+	gameCanvas:draw(V2(-1, -1), V2(2, 2))
 
 	-- Display loaded asset during pause (outside canvas for overlay effect)
 	render_sign_overlay()
@@ -612,7 +611,7 @@ function manage_pumpkin(
 	pumpkin: {
 		stamina: number,
 		max_stamina: number,
-		position: Vec.Vec2,
+		position: vec.Vec2,
 		speed: number,
 		state: string,
 		target: any,
@@ -621,8 +620,8 @@ function manage_pumpkin(
 )
 	-- Pumpkin logic handled in manage_pumpkins
 	-- Get close to player
-	local p: Vec.Vec2 = player.position
-	local pp: Vec.Vec2 = pumpkin.position
+	local p: vec.Vec2 = player.position
+	local pp: vec.Vec2 = pumpkin.position
 	local direction = (pp - p):normalized()
 	local dist_to_player = pumpkin.position:distance(player.position)
 
@@ -771,7 +770,7 @@ function handle_sign_touch(asset_name: string)
 	end
 end
 
-function isHitboxInWater(pos: Vec.Vec2, size: Vec.Vec2): boolean
+function isHitboxInWater(pos: vec.Vec2, size: vec.Vec2): boolean
 	local p = pos:floor()
 	local ps = (pos + size):floor()
 	local tile1 = levelDesign.getTileTypeAtPosition(ps.x, ps.y)
@@ -852,7 +851,7 @@ function Load()
 	Debug.print("Game started")
 end
 
-Event.getConsoleCommandEvent():on(function(command)
+event.getConsoleCommandEvent():on(function(command)
 	if command == "spawn" then
 		local random_offset = V2(1, -1):scale(PUMPKIN_CREATE_OFFSET)
 		levelDesign.create_pumpkin(V2(player.position.x, player.position.y) + random_offset, levelDesign.list_pumpkin)

@@ -1,4 +1,4 @@
-local Io = require("@vectarine/io")
+const io = require("@vectarine/io")
 
 local INITIAL_ACTION_ID = 1
 
@@ -48,14 +48,14 @@ end
 
 -- Check if any movement input is pressed
 function is_any_movement_input_pressed(): boolean
-	return Io.isKeyDown("A")
-		or Io.isKeyDown("D")
-		or Io.isKeyDown("W")
-		or Io.isKeyDown("S")
-		or Io.isKeyDown("Left")
-		or Io.isKeyDown("Right")
-		or Io.isKeyDown("Up")
-		or Io.isKeyDown("Down")
+	return io.isKeyDown("A")
+		or io.isKeyDown("D")
+		or io.isKeyDown("W")
+		or io.isKeyDown("S")
+		or io.isKeyDown("Left")
+		or io.isKeyDown("Right")
+		or io.isKeyDown("Up")
+		or io.isKeyDown("Down")
 end
 
 -- Export the module functions

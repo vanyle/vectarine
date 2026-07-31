@@ -14,20 +14,20 @@ You can open the level.tmx file with Tiled to edit it while the game is running!
 ]]
 
 -- Modules
-local Camera = require("@vectarine/camera")
-local Graphics = require("@vectarine/graphics")
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Persist = require("@vectarine/persist")
-local Physics = require("@vectarine/physics")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+local camera = require("@vectarine/camera")
+local graphics = require("@vectarine/graphics")
+local io = require("@vectarine/io")
+local loader = require("@vectarine/loader")
+local persist = require("@vectarine/persist")
+local physics = require("@vectarine/physics")
+local vec = require("@vectarine/vec")
+local vec4 = require("@vectarine/vec4")
 
 -- Script resources
-local fRes, f = Loader.loadScript("scripts/f.luau", require("./f"))
-local InteractableRes, Interactable = Loader.loadScript("scripts/interactable.luau", require("./interactable"))
+local fRes, f = loader.loadScript("scripts/f.luau", require("./f"))
+local InteractableRes, Interactable = loader.loadScript("scripts/interactable.luau", require("./interactable"))
 local InteractableTypes = require("./interactable")
-local WorldRes, World = Loader.loadScript("scripts/world.luau", require("./world"))
+local WorldRes, World = loader.loadScript("scripts/world.luau", require("./world"))
 local WorldTypes = require("./world")
 
 -- Constants
@@ -43,50 +43,50 @@ local PLAYER_JUMP_SPEED = 25
 
 -- Resources
 
-local tiles_tiles = Loader.loadTileset("textures/1bit_platformer.tsx")
-local tiles_image = Loader.loadImage("textures/1bit_platformer.png", false)
-local level = Loader.loadTilemap("textures/level.tmx")
+local tiles_tiles = loader.loadTileset("textures/1bit_platformer.tsx")
+local tiles_image = loader.loadImage("textures/1bit_platformer.png", false)
+local level = loader.loadTilemap("textures/level.tmx")
 local tiles = tiles_image:withTileset(tiles_tiles)
 
-local icons_image = Loader.loadImage("textures/icons_sheet.png", true)
-local icons_tiles = Loader.loadTileset("textures/icons_sheet.tsx")
+local icons_image = loader.loadImage("textures/icons_sheet.png", true)
+local icons_tiles = loader.loadTileset("textures/icons_sheet.tsx")
 local icons = icons_image:withTileset(icons_tiles)
 
 -- Persisted state
-local camera = Persist.onReload(Camera.new(), "camera")
+local camera = persist.onReload(camera.new(), "camera")
 
-local player = Persist.onReload({
-	o = (nil :: any) :: Physics.Object2,
+local player = persist.onReload({
+	o = (nil :: any) :: physics.Object2,
 }, "player")
 
-local movement = Persist.onReload({
+local movement = persist.onReload({
 	jumpSpeed = PLAYER_JUMP_SPEED,
 	moveSpeed = PLAYER_MOVE_SPEED,
 }, "movement")
 
-local colliders = Persist.onReload({
+local colliders = persist.onReload({
 	show = false,
 	isSmallPlayer = false,
 }, "colliders")
 local isSmallPlayer = false
 
-local debugging = Persist.onReload({
+local debugging = persist.onReload({
 	noclip = false,
 	zoomLevel = 100,
 }, "debugging")
 
-local areResourcesLoaded = Persist.onReload({ loaded = false }, "areResourcesLoaded")
+local areResourcesLoaded = persist.onReload({ loaded = false }, "areResourcesLoaded")
 
 if _G.isFirstLaunch == nil then
 	_G.isFirstLaunch = true
-	Io.centerWindow() -- Center the window once.
+	io.centerWindow() -- Center the window once.
 end
 
 -- Non persisted state
 
-local world = Physics.newWorld2(Vec.ZERO2, camera)
-local factor = Vec.V2(0.1, -0.1)
-local offset = Vec.V2(-1, 1)
+local world = physics.newWorld2(vec.ZERO2, camera)
+local factor = vec.V2(0.1, -0.1)
+local offset = vec.V2(-1, 1)
 
 local infiniteWorld: WorldTypes.IWorld
 
@@ -94,10 +94,10 @@ local interactibleManager: InteractableTypes.InteractableManager
 
 function makePlayer()
 	-- By default, we make the player collider way too big.
-	local newSize = colliders.isSmallPlayer and Vec.V2(0.4, 0.4) or Vec.V2(0.4, 0.7)
-	local newCollider = Physics.newRectangleCollider(newSize)
-	local playerPosition = player.o and player.o.position or Vec.V2(5, 6)
-	if (player.o :: Physics.Object2?) ~= nil then
+	local newSize = colliders.isSmallPlayer and vec.V2(0.4, 0.4) or vec.V2(0.4, 0.7)
+	local newCollider = physics.newRectangleCollider(newSize)
+	local playerPosition = player.o and player.o.position or vec.V2(5, 6)
+	if (player.o :: physics.Object2?) ~= nil then
 		world:removeObject(player.o)
 	end
 	local o = world:createObject(playerPosition, 1.0, newCollider, { "player" }, "dynamic")
@@ -113,17 +113,17 @@ end
 function Init()
 	infiniteWorld =
 		World.createInfiniteWorld(world, level, COLLISION_LAYER, SOLID_BLOCKS, LEVEL_SIZE, tiles, tiles_tiles, {
-			{ index = FAR_BACKGROUND_LAYER, tint = Vec4.GRAY },
-			{ index = COLLISION_LAYER, tint = Vec4.WHITE },
-			{ index = FOREGROUND_LAYER, tint = Vec4.WHITE },
+			{ index = FAR_BACKGROUND_LAYER, tint = vec4.GRAY },
+			{ index = COLLISION_LAYER, tint = vec4.WHITE },
+			{ index = FOREGROUND_LAYER, tint = vec4.WHITE },
 		})
 
 	player.o = makePlayer()
-	camera.position = Vec.ZERO2 - player.o.position
+	camera.position = vec.ZERO2 - player.o.position
 	camera.zoom = debugging.zoomLevel
 
 	interactibleManager = Interactable.newInteractibleManager(tiles, icons)
-	Interactable.newInteractible(interactibleManager, "npc", Vec.V2(6, 6), {
+	Interactable.newInteractible(interactibleManager, "npc", vec.V2(6, 6), {
 		"Hello! (Press B to continue)",
 		"Welcome the Vectarine physics demo",
 		"This demo will show you how to use Vectarine's physics system",
@@ -133,11 +133,11 @@ function Init()
 	Interactable.newInteractible(
 		interactibleManager,
 		"npc",
-		Vec.V2(12, 6),
+		vec.V2(12, 6),
 		{ "Use the up arrow to jump", "You can restart this demo with Ctrl+R" }
 	)
 
-	Interactable.newInteractible(interactibleManager, "npc", Vec.V2(23, 6), {
+	Interactable.newInteractible(interactibleManager, "npc", vec.V2(23, 6), {
 		"You are too big to fit inside this gap.",
 		"Vectarine has a watcher tool that you can open using Ctrl+3",
 		"You can also open it from the Tools menu at the top.",
@@ -146,35 +146,35 @@ function Init()
 		"You will be able to change your collider size from there too.",
 	})
 
-	Interactable.newInteractible(interactibleManager, "npc", Vec.V2(33, 4), {
+	Interactable.newInteractible(interactibleManager, "npc", vec.V2(33, 4), {
 		"Doors are currently disabled",
 		"Using the watcher tool, search for doors to enable them",
 	})
 
-	Interactable.newInteractible(interactibleManager, "open_door", Vec.V2(30, 4), {}, Vec.V2(30, -1))
+	Interactable.newInteractible(interactibleManager, "open_door", vec.V2(30, 4), {}, vec.V2(30, -1))
 
-	Interactable.newInteractible(interactibleManager, "open_door", Vec.V2(30, -1), {}, Vec.V2(30, 4))
+	Interactable.newInteractible(interactibleManager, "open_door", vec.V2(30, -1), {}, vec.V2(30, 4))
 
-	Interactable.newInteractible(interactibleManager, "npc", Vec.V2(48, 8), {
+	Interactable.newInteractible(interactibleManager, "npc", vec.V2(48, 8), {
 		"Looks like you're stuck in a hole.",
 		"You can search for 'movement' in watcher to change your jump settings",
 	})
 
-	Interactable.newInteractible(interactibleManager, "npc", Vec.V2(54, -1), {
+	Interactable.newInteractible(interactibleManager, "npc", vec.V2(54, -1), {
 		"This is the end of the level",
 		"You can explore it in no-clip mode!",
 		"Enable it using the debugging object in watcher",
 		"Have fun testing and modifying the demo! :)",
 	})
 
-	Interactable.newInteractible(interactibleManager, "npc", Vec.V2(49, -3), {
+	Interactable.newInteractible(interactibleManager, "npc", vec.V2(49, -3), {
 		"Check the resources with Ctrl+2",
 		"You can open level.tmx with Tiled or another level editor",
 		"You can edit the level while playing the game!",
 		"These signs and other interactible objects are not part of the level!",
 	})
 
-	world.gravity = Vec.V2(0, 60)
+	world.gravity = vec.V2(0, 60)
 end
 -- If the resource are already loaded (hot reload), we can init right away.
 -- Otherwise, we need to wait for the resource to load.
@@ -184,7 +184,7 @@ end
 
 function Update(deltaTime: number)
 	if
-		Graphics.drawSplashScreenIfNeeded({
+		graphics.drawSplashScreenIfNeeded({
 			tiles_tiles,
 			tiles_image,
 			fRes,
@@ -200,7 +200,7 @@ function Update(deltaTime: number)
 		areResourcesLoaded.loaded = true
 		Init()
 		-- We need to want one frame for init to finish.
-		Graphics.drawSplashScreen("Initializing.")
+		graphics.drawSplashScreen("Initializing.")
 		return
 	end
 
@@ -217,31 +217,31 @@ function Update(deltaTime: number)
 	local groundDetectYOffset = colliders.isSmallPlayer and -0.3 or -0.55
 	local groundDetectHeight = 0.3
 	local onGroundZone = {
-		pos = player.o.position - Vec.V2(groundDetectWidth / 2, groundDetectYOffset),
-		size = Vec.V2(groundDetectWidth, groundDetectHeight),
+		pos = player.o.position - vec.V2(groundDetectWidth / 2, groundDetectYOffset),
+		size = vec.V2(groundDetectWidth, groundDetectHeight),
 	}
 
 	if debugging.noclip then
 		player.o.position = player.o.position
-			+ Vec.V2(
-				((Io.isKeyDown("Left") and -10 or 0) + (Io.isKeyDown("Right") and 10 or 0)),
-				((Io.isKeyDown("Up") and -10 or 0) + (Io.isKeyDown("Down") and 10 or 0))
+			+ vec.V2(
+				((io.isKeyDown("Left") and -10 or 0) + (io.isKeyDown("Right") and 10 or 0)),
+				((io.isKeyDown("Up") and -10 or 0) + (io.isKeyDown("Down") and 10 or 0))
 			):scale(deltaTime)
 	else
 		-- Cannot move while speaking (this is impolite)
 		if interactibleManager.interactingObject == nil then
 			player.o.speed = player.o.speed
-				+ Vec.V2(
+				+ vec.V2(
 					(
-						(Io.isKeyDown("Left") and -movement.moveSpeed or 0)
-						+ (Io.isKeyDown("Right") and movement.moveSpeed or 0)
+						(io.isKeyDown("Left") and -movement.moveSpeed or 0)
+						+ (io.isKeyDown("Right") and movement.moveSpeed or 0)
 					),
 					0
 				):scale(deltaTime)
 		end
-		if not Io.isKeyDown("Left") and not Io.isKeyDown("Right") then
+		if not io.isKeyDown("Left") and not io.isKeyDown("Right") then
 			-- Make the player faster to stop for nicer controls.
-			player.o.speed = player.o.speed * Vec.V2(0.95, 1)
+			player.o.speed = player.o.speed * vec.V2(0.95, 1)
 		end
 
 		local objectsBelowPlayer = world:getObjectsInArea(onGroundZone.pos, onGroundZone.size)
@@ -254,30 +254,30 @@ function Update(deltaTime: number)
 		end
 
 		-- You cannot jump if you are already going up fast (prevents tapping the button twice in a row super quickly)
-		if Io.isKeyJustPressed("Up") and isAboveSolidGround and player.o.speed.y > -0.1 then
-			player.o.speed = player.o.speed + Vec.V2(0, -movement.jumpSpeed)
+		if io.isKeyJustPressed("Up") and isAboveSolidGround and player.o.speed.y > -0.1 then
+			player.o.speed = player.o.speed + vec.V2(0, -movement.jumpSpeed)
 		end
 	end
 
 	-- We need to more clearly distinguish between world pos and screen pos and coordinate system and stuff.
-	camera:moveTowards(Vec.ZERO2 - player.o.position, 0.02)
+	camera:moveTowards(vec.ZERO2 - player.o.position, 0.02)
 
-	local windowSize = Io.getWindowSize()
+	local windowSize = io.getWindowSize()
 	local yScale = windowSize.x / windowSize.y
-	factor = Vec.V2(0.1, -0.1 * yScale)
-	offset = Vec.V2(-1, 1)
+	factor = vec.V2(0.1, -0.1 * yScale)
+	offset = vec.V2(-1, 1)
 
 	-- The player can be modeled as a square with 4 corners.
 	-- local integerPlayerPos = ((player.o.position - offset) / factor):floor() -- Check the bottom left corder of the player.
 	-- local t = level:getTile(COLLISION_LAYER, integerPlayerPos.x, integerPlayerPos.y + 1) -- +y = down
 
-	Graphics.clear(Vec4.BLACK)
-	Graphics.withTransformation({ translation = camera.position, scale = factor:scale(camera.zoom) }, function()
-		Graphics.withTransformation({ translation = offset }, function()
+	graphics.clear(vec4.BLACK)
+	graphics.withTransformation({ translation = camera.position, scale = factor:scale(camera.zoom) }, function()
+		graphics.withTransformation({ translation = offset }, function()
 			World.draw(infiniteWorld)
 			Interactable.drawInteractibles(interactibleManager, deltaTime, player.o.position, player)
 			local playerDrawOffset = colliders.isSmallPlayer and -0.41 or -0.7
-			tiles:drawTile("player", (player.o.position - Vec.V2(0.5, playerDrawOffset)), Vec.V2(1, -1))
+			tiles:drawTile("player", (player.o.position - vec.V2(0.5, playerDrawOffset)), vec.V2(1, -1))
 			drawColliders(onGroundZone)
 		end)
 	end)
@@ -287,19 +287,19 @@ function Update(deltaTime: number)
 	end
 end
 
-function drawColliders(onGroundZone: { pos: Vec.Vec2, size: Vec.Vec2 })
+function drawColliders(onGroundZone: { pos: vec.Vec2, size: vec.Vec2 })
 	if not colliders.show then
 		return
 	end
 
 	-- Marker for the origin
-	Graphics.drawCircle(Vec.V2(0, 0), 0.2, Vec4.GREEN)
+	graphics.drawCircle(vec.V2(0, 0), 0.2, vec4.GREEN)
 
 	-- Player collider
-	Graphics.drawPolygon(player.o:getPoints(), Vec4.V4(1, 0, 0, 0.5))
+	graphics.drawPolygon(player.o:getPoints(), vec4.V4(1, 0, 0, 0.5))
 
 	-- Draw ground colliders for debug
 	World.drawColliders(infiniteWorld)
 
-	Graphics.drawRect(onGroundZone.pos, onGroundZone.size, Vec4.BLUE)
+	graphics.drawRect(onGroundZone.pos, onGroundZone.size, vec4.BLUE)
 end

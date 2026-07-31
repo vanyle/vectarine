@@ -64,15 +64,15 @@ You can press on the blue link to open the script in your default `luau` editor.
 
 An empty game script looks like this:
 
-export const startedEmptyGame = `local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
-local Vec = require('@vectarine/vec')
-Debug.print("Loaded.")
+export const startedEmptyGame = `const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
+const vec = require('@vectarine/vec')
+debug.print("Loaded.")
 function Update(deltaTime: number)
-    Graphics.clear(Vec4.WHITE)
-    Graphics.drawSplashScreen("Empty game", 0.0)
-    Debug.fprint("Rendered in ", deltaTime, "sec")
+    graphics.clear(vec4.WHITE)
+    graphics.drawSplashScreen("Empty game", 0.0)
+    debug.fprint("Rendered in ", deltaTime, "sec")
 end`;
 
 <Code lang="luau" code={startedEmptyGame} />
@@ -171,7 +171,7 @@ end`;
 Modules are packages of related functions. To get access to a module, you need to import it using the `require` function, like so:
 
 export const importingModules = `
-local myModule = require("moduleName")
+const myModule = require("moduleName")
 -- To execute a function, you need to put parenthesis after its name.
 -- Inside these parenthesis, you can sometimes put arguments to give the function more information to do its job.
 myModule.functionInsideModule()
@@ -192,15 +192,16 @@ As the screen is 2D, a lot of Graphics function take `Vec2` as parameters to rep
 
 You can make a vector using the `Vec2.V2` function like so:
 
-export const startedVecCreate = `-- Import the Vec module to get access to the Vec2 type
-local vec = require("@vectarine/vec")
+export const startedVecCreate = `-- Import the vec module to get access to the vec2 type
+const vec = require("@vectarine/vec")
 
--- Use the Vec.V2 function to create a vector with x = 1 and y = 2, and put it in a variable named v
+-- Use the vec.V2 function to create a vector with x = 1 and y = 2, and put it in a variable named v
 local v = vec.V2(1, 2)`;
 
 <Code lang="luau" code={startedVecCreate} />
 
 There we use the `local` keyword to create a variable named `v` that contains the vector `(1, 2)`. Variables are like boxes that contain values.
+The `local` keyword and the `const` keywords are similar, but `const` variables cannot be changed after they are created, while `local` variables can be changed.
 
 export const localKeyword=`
 -- var contains the value 3
@@ -224,21 +225,21 @@ The `Vec4` module contains a few default colors like `Vec4.WHITE` and `Vec4.RED`
 
 You can import a module using `require`:
 
-export const startedDrawBasic = `-- Import the Graphics and Vec modules
-local Graphics = require("@vectarine/graphics")
-local Vec = require("@vectarine/vec")
-local Vec4 = require('@vectarine/vec4')
+export const startedDrawBasic = `-- Import the graphics and vec modules
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const vec4 = require('@vectarine/vec4')
 
 function Update(deltaTime: number)
 	-- Set the background color to white using the clear function
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 
 	-- Draw a red circle at the center of the screen (0,0) with a radius of 0.5 units (2 units is the width of the screen)
-	Graphics.drawCircle(Vec.V2(0, 0), 0.5, Vec4.RED)
+	graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.RED)
 
-	local rectColor = Vec4.createColor(0, 0, 1, 1) -- Create a blue color
+	local rectColor = vec4.createColor(0, 0, 1, 1) -- Create a blue color
 	-- Draw a blue rectangle at the bottom right of the screen
-	Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
+	graphics.drawRect(vec.V2(0.7, -1), vec.V2(0.3, 0.3), rectColor)
 end`;
 
 <Code lang="luau" code={startedDrawBasic} />
@@ -265,10 +266,10 @@ export const gettingStartedScoreDef = `local score = mysteryFunction()`;
 
 To understand your program, it is useful to know the content of your variable. To do so, you can use the `Debug` module to print the content of your variable to the console:
 
-export const startedDebugPrint = `local Debug = require("@vectarine/debug")
+export const startedDebugPrint = `const debug = require("@vectarine/debug")
 
 local score = mysteryFunction()
-Debug.print("The score is: ", score)`;
+debug.print("The score is: ", score)`;
 
 <Code lang="luau" code={startedDebugPrint} />
 
@@ -289,19 +290,19 @@ You can search the variable to watch-for by name in the search bar and its value
 
 We'd like to react to player input to make our game interactive. The `Io` module provides functions to read input from the player.
 
-export const startedIoInput = `local Io = require("@vectarine/io")
-local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
+export const startedIoInput = `const io = require("@vectarine/io")
+const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 
 	-- Depending on if space is pressed, we draw a red or blue circle at the center of the screen
-	if Io.isKeyDown("Space") then
-		Graphics.drawCircle(Vec.V2(0, 0), 0.5, Vec4.RED)
+	if io.isKeyDown("Space") then
+		graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.RED)
 	else
-		Graphics.drawCircle(Vec.V2(0, 0), 0.5, Vec4.BLUE)
+		graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.BLUE)
 	end
 end`;
 
@@ -320,20 +321,20 @@ We can access and update the position using `Ball.position` and the velocity usi
 
 For now, we only use the position to draw the ball, but we will use the velocity later to move the ball.
 
-export const startedDrawBall = `local Debug = require("@vectarine/debug")
-local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
+export const startedDrawBall = `const debug = require("@vectarine/debug")
+const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
 
 -- Initialize a ball variable with a position at the center of the screen and a velocity pointing to the top right.
 local Ball = {
-  position = Vec.V2(0, 0),
-  velocity = Vec.V2(1, 1.5),
+  position = vec.V2(0, 0),
+  velocity = vec.V2(1, 1.5),
 }
 
 function Update(deltaTime: number)
-  Graphics.clear(Vec4.WHITE)
-  Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+  graphics.clear(vec4.WHITE)
+  graphics.drawCircle(Ball.position, 0.1, vec4.RED)
 end`;
 
 <Code lang="luau" code={startedDrawBall} />
@@ -350,19 +351,19 @@ You might notice that we don't write `Ball.position += Ball.velocity`, but we sc
 With no scaling, it means that a game running at 60 fps would move the ball faster than a game running at 30 fps, so the gameplay would change a lot depending on the hardware. We
 don't want that! So we multiply by `deltaTime` so that the movement is proportional to the time elapsed since the last frame.
 
-export const startedMoveBall = `local Debug = require("@vectarine/debug")
-local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
+export const startedMoveBall = `const debug = require("@vectarine/debug")
+const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
 
 local Ball = {
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, 1.5),
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
 }
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
-	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
+	graphics.clear(vec4.WHITE)
+	graphics.drawCircle(Ball.position, 0.1, vec4.RED)
 
 	-- By adding the velocity to the position every frame, the ball will move in the direction of the velocity.
 	Ball.position += Ball.velocity:scale(deltaTime)
@@ -395,12 +396,13 @@ To preserve the ball between saves, we can use the `Persist` module to store the
 
 `Persist`ed values are made global and can be inspected with the watcher tool.
 
-export const startedPersistBall = `local Persist = require("@vectarine/persist")
+export const startedPersistBall = `const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
 
--- You can wrap any variable initialization with Persist.onReload to make it persist between reloads.
-local Ball = Persist.onReload({
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, 1.5),
+-- You can wrap any variable initialization with persist.onReload to make it persist between reloads.
+local Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
 }, "ball")
 
 --- The rest is unchanged`;
@@ -410,34 +412,34 @@ local Ball = Persist.onReload({
 
 <TabItem label="Adding player input">
 
-export const startedPlayerInput = `local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
+export const startedPlayerInput = `const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
 
-local Ball = Persist.onReload({
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, 1.5),
+local Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
 }, "ball")
 
-local Player = Persist.onReload({
+local Player = persist.onReload({
 	position = 0,
 }, "Player")
 
 local racketSize = 0.4
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 	-- Drawing
-	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
-	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
+	graphics.drawCircle(Ball.position, 0.1, vec4.RED)
+	graphics.drawRect(vec.V2(-0.9, Player.position), vec.V2(0.1, racketSize))
 
 	-- Player input
-	if Io.isKeyDown("Up") then
+	if io.isKeyDown("Up") then
 		Player.position += deltaTime
 	end
-	if Io.isKeyDown("Down") then
+	if io.isKeyDown("Down") then
 		Player.position -= deltaTime
 	end
 
@@ -449,33 +451,33 @@ end`;
 
 <TabItem label="Adding an opponent">
 
-export const startedOpponent = `local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
+export const startedOpponent = `const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
 
-local Ball = Persist.onReload({
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, 1.5),
+local Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
 }, "ball")
 
-local Player = Persist.onReload({
+local Player = persist.onReload({
 	position = 0,
 }, "player")
 
-local Opponent = Persist.onReload({
+local Opponent = persist.onReload({
 	position = 0,
 }, "opponent")
 
 local racketSize = 0.4
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 	-- Drawing
-	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
-	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
-	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+	graphics.drawCircle(Ball.position, 0.1, vec4.RED)
+	graphics.drawRect(vec.V2(-0.9, Player.position), vec.V2(0.1, racketSize))
+	graphics.drawRect(vec.V2(0.8, Opponent.position), vec.V2(0.1, racketSize))
 
 	-- Player input stays the same
 
@@ -495,35 +497,38 @@ end`;
 
 <TabItem label="Collision with rackets">
 
-export const startedCollision = `local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
+export const startedCollision = `const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
 
-local Player = Persist.onReload({
+local Player = persist.onReload({
 	position = 0,
 	score = 0,
 }, "player")
 
-local Opponent = Persist.onReload({
+local Opponent = persist.onReload({
 	position = 0,
 	score = 0,
 }, "opponent")
 
--- Ball initialization code stays the same
+local Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
+}, "ball")
 
 function resetBall()
-	Ball.position = Vec.V2(0, 0)
+	Ball.position = vec.V2(0, 0)
 	Ball.velocity.y = math.random() * 2
 end
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 	-- Drawing
-	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
-	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
-	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+	graphics.drawCircle(Ball.position, 0.1, vec4.RED)
+	graphics.drawRect(vec.V2(-0.9, Player.position), vec.V2(0.1, racketSize))
+	graphics.drawRect(vec.V2(0.8, Opponent.position), vec.V2(0.1, racketSize))
 
 	-- Player input stays the same
 
@@ -564,24 +569,24 @@ end`;
 
 We can use the `math.random()` function to obtain a random number between 0 and 1. We use it to make the game more interesting.
 
-export const startedRandomScore = `local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
-local Text = require("@vectarine/text")
+export const startedRandomScore = `const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
+const text = require("@vectarine/text")
 
-local Ball = Persist.onReload({
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, 1.5),
+local Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
 }, "ball")
 
-local Player = Persist.onReload({
+local Player = persist.onReload({
 	position = 0,
 	score = 0,
 }, "player")
 
-local Opponent = Persist.onReload({
+local Opponent = persist.onReload({
 	position = 0,
 	score = 0,
 }, "opponent")
@@ -589,20 +594,20 @@ local Opponent = Persist.onReload({
 local racketSize = 0.4
 
 function resetBall()
-	Ball.position = Vec.V2(0, 0)
+	Ball.position = vec.V2(0, 0)
 	Ball.velocity.y = math.random() * 2
 end
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 	-- Drawing
-	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
-	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
-	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+	graphics.drawCircle(Ball.position, 0.1, vec4.RED)
+	graphics.drawRect(vec.V2(-0.9, Player.position), vec.V2(0.1, racketSize))
+	graphics.drawRect(vec.V2(0.8, Opponent.position), vec.V2(0.1, racketSize))
 
 	local scoreText = Player.score .. " - " .. Opponent.score
-	local measurements = Text.font:measureText(scoreText, 0.2)
-	Text.font:drawText(scoreText, Vec.V2(-measurements.width / 2, 0), 0.2)
+	local measurements = text.font:measureText(scoreText, 0.2)
+	text.font:drawText(scoreText, vec.V2(-measurements.width / 2, 0), 0.2)
 
 	-- Player input stays the same
 
@@ -646,24 +651,24 @@ end`;
 
 In the end, the code looks like this:
 
-export const startedFinalVersion = `local Graphics = require("@vectarine/graphics")
-local Vec4 = require("@vectarine/vec4")
-local Vec = require("@vectarine/vec")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
-local Text = require("@vectarine/text")
+export const startedFinalVersion = `const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
+const text = require("@vectarine/text")
 
-local Ball = Persist.onReload({
-	position = Vec.V2(0, 0),
-	velocity = Vec.V2(1, 1.5),
+local Ball = persist.onReload({
+	position = vec.V2(0, 0),
+	velocity = vec.V2(1, 1.5),
 }, "ball")
 
-local Player = Persist.onReload({
+local Player = persist.onReload({
 	position = 0,
 	score = 0,
 }, "player")
 
-local Opponent = Persist.onReload({
+local Opponent = persist.onReload({
 	position = 0,
 	score = 0,
 }, "opponent")
@@ -671,26 +676,26 @@ local Opponent = Persist.onReload({
 local racketSize = 0.4
 
 function resetBall()
-	Ball.position = Vec.V2(0, 0)
+	Ball.position = vec.V2(0, 0)
 	Ball.velocity.y = math.random() * 2
 end
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.WHITE)
+	graphics.clear(vec4.WHITE)
 	-- Drawing
-	Graphics.drawCircle(Ball.position, 0.1, Vec4.RED)
-	Graphics.drawRect(Vec.V2(-0.9, Player.position), Vec.V2(0.1, racketSize))
-	Graphics.drawRect(Vec.V2(0.8, Opponent.position), Vec.V2(0.1, racketSize))
+	graphics.drawCircle(Ball.position, 0.1, vec4.RED)
+	graphics.drawRect(vec.V2(-0.9, Player.position), vec.V2(0.1, racketSize))
+	graphics.drawRect(vec.V2(0.8, Opponent.position), vec.V2(0.1, racketSize))
 
 	local scoreText = Player.score .. " - " .. Opponent.score
-	local measurements = Text.font:measureText(scoreText, 0.2)
-	Text.font:drawText(scoreText, Vec.V2(-measurements.width / 2, 0), 0.2)
+	local measurements = text.font:measureText(scoreText, 0.2)
+	text.font:drawText(scoreText, vec.V2(-measurements.width / 2, 0), 0.2)
 
 	-- Player input
-	if Io.isKeyDown("Up") then
+	if io.isKeyDown("Up") then
 		Player.position += deltaTime
 	end
-	if Io.isKeyDown("Down") then
+	if io.isKeyDown("Down") then
 		Player.position -= deltaTime
 	end
 

@@ -22,8 +22,6 @@ This manual is an unopiniated guide to making games using Vectarine. If you alre
 this guide is for you. If you are new to making games, you can still read this guide, but an opiniated guide is in the works for you!
 We assume you have some experience with programming and game making. You know the concept of function, variable, loops, etc.
 
-> 📖 Parts annotated with 👷 are a work-in-progress and describe the goals of vectarine, not its current state.
-
 # 🆕 Getting started
 
 I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text editor with the [Luau extension](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp) but
@@ -52,14 +50,14 @@ You can click the blue text `scripts/game.luau` to open it in your default text 
 Try to change the content of this file to:
 
 ```lua
-local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
-Debug.print("Loaded.")
+const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
+debug.print("Loaded.")
 function Update(deltaTime: number)
     -- Change the background color to red
-    Graphics.clear(Vec4.RED)
-    Debug.fprint("Rendered in ", deltaTime, "sec")
+    graphics.clear(vec4.RED)
+    debug.fprint("Rendered in ", deltaTime, "sec")
 end
 ```
 
@@ -77,13 +75,13 @@ Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` second
 You can print things to the console using the `debug` module. You can open the console by pressing <kbd>Ctrl</kbd>+<kbd>1</kbd>.
 
 ```lua
-local Debug = require('@vectarine/debug')
+const debug = require('@vectarine/debug')
 
-Debug.print("Game loaded")
+debug.print("Game loaded")
 
 function Update(timeDelta: number)
-    -- Use Debug.fprint when printing every frame to avoid flooding the console
-    Debug.fprint("Frame update, time since last frame: ", timeDelta, " seconds")
+    -- Use debug.fprint when printing every frame to avoid flooding the console
+    debug.fprint("Frame update, time since last frame: ", timeDelta, " seconds")
 end
 ```
 
@@ -110,26 +108,26 @@ The first argument to `V2` (called x) is the horizontal position, the second arg
 The screen is always 2 units wide and 2 units tall, regardless of the window size or aspect ratio.
 
 ```lua
---- Import the Vec module to create 2D vectors
-local Vec = require('@vectarine/vec')
--- Colors are represented as 4D vectors (red, green, blue, alpha). You need the Vec4 module to create them.
-local Vec4 = require('@vectarine/vec4')
-local V2 = Vec.V2 -- alias the V2 function as it is used very often
-local Graphics = require('@vectarine/graphics')
+--- Import the vec module to create 2D vectors
+const vec = require('@vectarine/vec')
+-- Colors are represented as 4D vectors (red, green, blue, alpha). You need the vec4 module to create them.
+const vec4 = require('@vectarine/vec4')
+const V2 = vec.V2 -- alias the V2 function as it is used very often
+const graphics = require('@vectarine/graphics')
 
 function Update(time_delta: number)
     -- Draw a white background.
-    local bgColor: Vec4.Vec4 = Vec4.WHITE
-    Graphics.clear(bgColor)
+    local bgColor: vec4.Vec4 = vec4.WHITE
+    graphics.clear(bgColor)
 
     -- Draw a blue rectangle at the bottom right of the screen
-    local rectColor = Vec4.createColor(0, 0, 1, 1)
-    Graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
+    local rectColor = vec4.createColor(0, 0, 1, 1)
+    graphics.drawRect(V2(0.7, -1), V2(0.3, 0.3), rectColor)
 
     -- Draw a red circle at the center of the screen with radius 0.1 (2 is the width of the screen)
-    -- Vec.ZERO2 is a constant for Vec.V2(0,0)
-    local circleColor = Vec4.V4(1, 0, 0, 1)
-    Graphics.drawCircle(Vec.ZERO2, 0.1, circleColor)
+    -- vec.ZERO2 is a constant for vec.V2(0,0)
+    local circleColor = vec4.V4(1, 0, 0, 1)
+    graphics.drawCircle(vec.ZERO2, 0.1, circleColor)
 end
 ```
 
@@ -165,35 +163,35 @@ You can add or remove a screen vector to a screen position to get another positi
 In general, you can perform the usual operations you'd expect with them:
 
 ```lua
-local Coord = require('@vectarine/coord')
-local Vec = require('@vectarine/vec')
-local Debug = require('@vectarine/debug')
-local Graphics = require('@vectarine/graphics')
-local Vec4 = require('@vectarine/vec4')
+const coord = require('@vectarine/coord')
+const vec = require('@vectarine/vec')
+const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
 
-local V2 = Vec.V2
+const V2 = vec.V2
 
 function Update(time_delta)
-    Graphics.clear(Vec4.WHITE)
-    local rectColor = Vec4.RED
+    graphics.clear(vec4.WHITE)
+    local rectColor = vec4.RED
 
     -- There are multiple ways to create a 'ScreenPosition' using the coordinate system you prefer
-    local pos = Coord.gl(V2(0, 0)) -- refer to the center of the screen
-    local other_pos = Coord.px(V2(200, 200)) -- refers to position (200,200), in pixels, from the top-left
-    Debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
+    local pos = coord.gl(V2(0, 0)) -- refer to the center of the screen
+    local other_pos = coord.px(V2(200, 200)) -- refers to position (200,200), in pixels, from the top-left
+    debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
 
     -- Draw a square at the center of the screen, with side length 200px
-    -- Coord.CENTER is a constant for Coord.gl(Vec.V2(0,0))
-    local squareSize = Coord.pxVec(V2(200, 200))
-    Graphics.drawRect(Coord.CENTER - squareSize:scale(0.5), squareSize, rectColor)
+    -- coord.CENTER is a constant for coord.gl(vec.V2(0,0))
+    local squareSize = coord.pxVec(V2(200, 200))
+    graphics.drawRect(coord.CENTER - squareSize:scale(0.5), squareSize, rectColor)
 
-    local pos2 = Coord.px(V2(100, 100)) -- refer to a position in pixels
-    local size2 = Coord.glVec(V2(1, 1)) -- a quarter of the screen
-    Graphics.drawRect(pos2, size2, rectColor)
+    local pos2 = coord.px(V2(100, 100)) -- refer to a position in pixels
+    local size2 = coord.glVec(V2(1, 1)) -- a quarter of the screen
+    graphics.drawRect(pos2, size2, rectColor)
 end
 ```
 
-> ⚠️ `Coord.pxVec(Vec.V2(1,1))` points towards the bottom-right whereas `Coord.glVec(Vec.V2(1,1))` points towards the top-right!
+> ⚠️ `coord.pxVec(vec.V2(1,1))` points towards the bottom-right whereas `coord.glVec(vec.V2(1,1))` points towards the top-right!
 
 `Graphics` contains a lot of other functions to draw images, arrows, or polygons. See [luau-api/graphics.luau](https://github.com/vanyle/vectarine/blob/main/luau-api/graphics.luau) for the full list.
 All functions can use `Vec` or `ScreenPosition` / `ScreenVec` when relevant to draw things. Use the style you prefer!
@@ -208,43 +206,45 @@ ones and how to use them.
 ## Getting the position of the mouse
 
 ```lua
-local Io = require("@vectarine/io")
-local Vec = require("@vectarine/vec")
-local Debug = require("@vectarine/debug")
-local Vec4 = require("@vectarine/vec4")
+const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
+const debug = require("@vectarine/debug")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
 
 function Update()
-    local m: Vec.Vec2 = Io.getMouse()
-    Debug.fprint(m) -- Print the position of the mouse on every frame
+    local m: vec.Vec2 = io.getMouse()
+    debug.fprint(m) -- Print the position of the mouse on every frame
     -- Draw a green circle at the position of the cursor.
-    Graphics.drawCircle(m, 0.1, Vec4.GREEN)
+    graphics.drawCircle(m, 0.1, vec4.GREEN)
 end
 ```
 
 ## Checking if a button is pressed
 
 ```lua
-local Io = require("@vectarine/io")
-local Vec = require("@vectarine/vec")
-local Debug = require("@vectarine/debug")
-local Vec4 = require("@vectarine/vec4")
+const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
+const debug = require("@vectarine/debug")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
 
 function Update()
-    local isSpacePressed = Io.isKeyDown("space")
+    local isSpacePressed = io.isKeyDown("space")
     -- Draw a rectangle when space is pressed
     if isSpacePressed then
-        Graphics.drawRect(Vec.V2(0, 0), Vec.V2(0.1, 0.2), Vec4.RED)
+        graphics.drawRect(vec.V2(0, 0), vec.V2(0.1, 0.2), vec4.RED)
     end
 
     -- If you need to perform something only once when a key is pressed, you can use `isKeyJustPressed`
-    if Io.isKeyJustPressed("R") then
-        Debug.print("R was just pressed!")
+    if io.isKeyJustPressed("R") then
+        debug.print("R was just pressed!")
     end
 
     -- Print pressed keys
-    Debug.fprint(Io.getKeysDown())
+    debug.fprint(io.getKeysDown())
     -- Print which mouse buttons are pressed
-    Debug.fprint(Io.getMouseState())
+    debug.fprint(io.getMouseState())
 end
 ```
 
@@ -252,7 +252,7 @@ end
 The key with the *W* scancode is the second letter of the top row. This means that if you are using letters for actions,
 users with different keyboards layouts (azerty, qwerty, etc.) will have the same experience, which is what you want.
 
-If you want to obtain the text typed by the user, use `Io.getTextInput()` instead which also takes uppercase into account. Alternatively, you can also use events to get this text.
+If you want to obtain the text typed by the user, use `io.getTextInput()` instead which also takes uppercase into account. Alternatively, you can also use events to get this text.
 
 ## Events
 
@@ -260,29 +260,29 @@ Sometimes, instead of checking every frame is a button is pressed, you want to p
 is pressed. To do this, you can use _events_.
 
 ```lua
-local Event = require("@vectarine/event")
-local Debug = require("@vectarine/debug")
+const event = require("@vectarine/event")
+const debug = require("@vectarine/debug")
 
 -- Notice that we subscribe to the event only once, not on every frame!
 local counter = 0
-Event.getKeyDownEvent():on(function(key: string)
+event.getKeyDownEvent():on(function(key: string)
     -- This is called once per press.
-	Debug.print("Key down: ", key)
+	debug.print("Key down: ", key)
     counter = counter + 1
 end)
 
 function Update()
-    Debug.fprint("Count: ", counter)
+    debug.fprint("Count: ", counter)
 end
 
 ```
 
-The _Event_ module has multiple useful events you can subscribe to.
-You can also create your own events using `Event.newEvent("name")` if you need to.
+The _event_ module has multiple useful events you can subscribe to.
+You can also create your own events using `event.newEvent("name")` if you need to.
 
 > 📖 Sometimes, you commonly want to perform an action when debugging
 > This can be spawning a specific enemy, teleporting to a location or resetting the state to some value.
-> You can use the `Event.getConsoleCommandEvent()` event to listen to what you are typing inside the console
+> You can use the `event.getConsoleCommandEvent()` event to listen to what you are typing inside the console
 > and trigger specific helpful behavior.
 
 # 🗺️ Global and Local variables
@@ -290,22 +290,21 @@ You can also create your own events using `Event.newEvent("name")` if you need t
 In Luau, variables and functions are global by default. You can make them local by adding the `local` keyword before defining them.
 
 ```lua
-local Debug = require("@vectarine/debug")
+const debug = require('@vectarine/debug')
 
 local someLocalNumber = 10
 myGlobalVar = 3
-
 -- To be explicit when defining globals, we usually use the syntax _G.variableName = value
 -- _G is the global object
 someLocalNumber = 11 -- Changing the value of an existing variable
 _G.otherGlobalValue = "abc" -- Setting a global value
 
 function thisIsGlobal()
-    Debug.print("a global function is called!")
+    debug.print("a global function is called!")
 end
 
 local function thisIsLocal()
-    Debug.print("a local function is called!")
+    debug.print("a local function is called!")
 end
 ```
 
@@ -321,21 +320,25 @@ want to reset when reloading and part that you want to keep.
 My recommendation is to **always use local**, but set them using `persist` API:
 
 ```lua
-local Persist = require("@vectarine/persist")
+const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
 
 -- playerPos is both a local and a global.
 -- Because it is local that you get proper typing and information if it is unused
 -- Because it is global, its value is preserved between reloads and you can edit it inside the watcher tool
--- The Vec.V2(0,0) is only used for the first initialization.
-local playerPos = Persist.onReload(Vec.V2(0, 0), "playerPos")
+-- The vec.V2(0,0) is only used for the first initialization.
+-- The persistance applied to this specific table. If you reassign the playerPos, you will lose the persistance. To avoid
+-- this, you should use `const` instead of `local` when defining it.
+const playerPos = persist.onReload(vec.V2(0, 0), "playerPos")
 
--- 👷 Persist.onRestart is not available yet
--- When you quit and restart the game, the player health is persisted.
--- Note that functions cannot be persisted, only strings, numbers, booleans, nil and tables made of these types.
-local playerInfo = Persist.onRestart({ health = 100 }, "playerInfo")
+
+-- You can use persist.save and persist.load to save and load values between game sessions.
+-- These function use the file system to store values, or IndexedDB on the web.
+persist.save({ health = 100 }, "playerInfo")
+local playerInfo = persist.load("playerInfo")
 ```
 
-Internally, `Persist.onReload` looks like this:
+Internally, `persist.onReload` looks like this:
 
 ```lua
 local function onReload(initialValue, name)
@@ -348,55 +351,56 @@ end
 
 # 🖼️ Loading images, scripts, and other resources
 
-You can load images, scripts, and other resources using the `Loader` module.
+You can load images, scripts, and other resources using the `loader` module.
 Let's see how to works with Images.
 
 ## Images
 
 ```lua
-local Loader = require("@vectarine/loader")
-local Vec = require("@vectarine/vec")
-local Coord = require("@vectarine/coord")
+const loader = require("@vectarine/loader")
+const vec = require("@vectarine/vec")
+const coord = require("@vectarine/coord")
 
-local myImage = Loader.loadImage("textures/my_image.png")
+local myImage = loader.loadImage("textures/my_image.png")
 
 function Update()
     if myImage:isReady() then
         -- Draw the image at the center of the screen with size 200x200 pixels
-        local size = Coord.pxDelta(Vec.V2(200, 200))
-        myImage:draw(Coord.gl(Vec.ZERO2) - size:scale(0.5), size)
+        local size = coord.pxDelta(vec.V2(200, 200))
+        myImage:draw(coord.gl(vec.ZERO2) - size:scale(0.5), size)
     end
 end
 ```
 
-> ⚠️ The path to a resource is case-sensitive.
-> "textures/my_image.png" is different from "textures/My_Image.png"!
+> ⚠️ Path to resources should always be in lowercase, and your resources should also be named in 
+> lowercase for best cross-platform compatibility.
+> For example, you should name your image "textures/my_image.png" instead of "textures/My_Image.png"!
 
 When you call `loadImage`, the image is not immediately available on all platforms. On the web, the browser needs to download it first.
 To represent this, `loadImage` returns a _resource handle_ which you can use to check if the resource is ready using `isReady`.
 
-All functions inside `Loader` behave this way. You can load scripts, shaders, fonts, and other resources using the same pattern.
+All functions inside `loader` behave this way. You can load scripts, shaders, fonts, and other resources using the same pattern.
 
 ## Text
 
 To draw text, you can either load your own font or use the default font.
 
 ```lua
-local Loader = require("@vectarine/loader")
-local Text = require("@vectarine/text")
-local Vec = require("@vectarine/vec")
+const loader = require("@vectarine/loader")
+const text = require("@vectarine/text")
+const vec = require("@vectarine/vec")
 
-local fontResource = Loader.loadFont("fonts/my_font.ttf")
+local fontResource = loader.loadFont("fonts/my_font.ttf")
 
 function Update()
     if not fontResource:isReady() then
         return
     end
     -- Using your own font:
-    fontResource:drawText("Hello", Vec.V2(0, 0), 0.16)
+    fontResource:drawText("Hello", vec.V2(0, 0), 0.16)
 
     -- Or using the default font (Roboto)
-    Text.font:drawText("world", Vec.V2(0, -0.16), 0.16)
+    text.font:drawText("world", vec.V2(0, -0.16), 0.16)
 end
 ```
 
@@ -421,11 +425,11 @@ show a loading screen or something else.
 Example:
 
 ```lua
-local Loader = require('@vectarine/loader')
-local Event = require('@vectarine/event')
+const loader = require('@vectarine/loader')
+const event = require('@vectarine/event')
 
-local otherScriptResource = Loader.loadScript("scripts/other_script.luau")
-local resourceReadyEvent = Event.getResourceLoadedEvent()
+local otherScriptResource = loader.loadScript("scripts/other_script.luau")
+local resourceReadyEvent = event.getResourceLoadedEvent()
 
 resourceReadyEvent:on(function(resource_handle)
     if otherScriptResource == resource_handle then
@@ -462,7 +466,8 @@ There is a simple example with 2 files: `helper.luau` and `main.luau`.
 
 ```lua
 -- helper.luau
-local module = {} -- This is where all our exports will go
+const loader = require('@vectarine/loader')
+const module = loader.init() or {} -- This is where all our exports will go
 local my_value = 3
 
 -- add_things is inside module, it gets exported
@@ -471,18 +476,21 @@ function module.add_things(a: number, b: number): number
     return a + b + my_value
 end
 
+-- You can also keep track of how many times the module has been reloaded
+module.reload_count = if module.reload_count then module.reload_count + 1 else 1
+
 return module -- return for the module to make it available
 ```
 
 ```lua
 -- main.luau
-local Debug = require('@vectarine/debug')
-local Loader = require('@vectarine/loader')
+const debug = require('@vectarine/debug')
+const loader = require('@vectarine/loader')
 
 --- We use the import 'technique'
-local helperResource, Helper = Loader.loadScript("scripts/helper.luau", require("helper.luau"))
+local helperResource, Helper = loader.loadScript("scripts/helper.luau", require("helper.luau"))
 
---- Loader.loadScript is what actually executes `helper.luau`.
+--- loader.loadScript is what actually executes `helper.luau`.
 --- require() returns an empty table, but is properly typed.
 --- When a table is passed as the second argument to loadScript, it is filled with the exports of the script.
 --- This gives the impression that require() returns the exports of the script, but it does not.
@@ -496,11 +504,11 @@ local helperResource, Helper = Loader.loadScript("scripts/helper.luau", require(
 function Update()
     if !helperResource.isReady() then
         -- Don't forget to add a loading state to indicate that the script is not ready yet!
-        Debug.fprint("Loading helper.luau...")
+        debug.fprint("Loading helper.luau...")
         return
     end
     -- The script is loaded and ready for use!
-    Debug.fprint("adding things: ", Helper.add_things(3+1))
+    debug.fprint("adding things: ", Helper.add_things(3+1))
 end
 ```
 
@@ -510,26 +518,26 @@ You can use `Widgets` to organize your rendering code. A widget can be a menu, a
 Widgets also help keep reloading snappy as Vectarine only needs to reload the code for the current screen.
 
 ```lua
-local Ui = require("@vectarine/ui")
-local Io = require("@vectarine/io")
-local Vec = require("@vectarine/vec")
+const ui = require("@vectarine/ui")
+const io = require("@vectarine/io")
+const vec = require("@vectarine/vec")
 
-local size_of_the_widget = Vec.V2(2, 2)
-local widget: Ui.Widget<any> = Ui.widget(size_of_the_widget, function()
+local size_of_the_widget = vec.V2(2, 2)
+local widget: ui.Widget<any> = ui.widget(size_of_the_widget, function()
     -- Code for drawing the widget.
 end)
 
-local another_widget: Ui.Widget<any> = Ui.widget(size_of_the_widget, function()
+local another_widget: ui.Widget<any> = ui.widget(size_of_the_widget, function()
     -- Code for drawing the other widget.
 end)
 
 -- List all the widgets you want to draw here
-local tabs: Ui.TabWidget<any> = Ui.tabs({ "default_tab_name" = widget, "another_tab_name" = another_widget })
+local tabs: ui.TabWidget<any> = ui.tabs({ "default_tab_name" = widget, "another_tab_name" = another_widget })
 tabs:setActiveTab("default_tab_name")
 
 function Update(time_delta: number)
     
-    if Io.isKeyJustPressed("Space") then
+    if io.isKeyJustPressed("Space") then
         -- Depending on the player action, you can switch to another screen
         tabs:setActiveTab("another_tab_name", {
             -- You can add transition between screens if you want, or transition directly
@@ -576,28 +584,28 @@ You can put it inside `gamedata/shaders/wave.glsl`.
 Then you can use it like so:
 
 ```lua
-local Canvas = require("@vectarine/canvas")
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Vec4 = require("@vectarine/vec4")
-local Graphics = require("@vectarine/graphics")
-local Vec = require("@vectarine/vec")
-local V2 = Vec.V2
+const canvas = require("@vectarine/canvas")
+const io = require("@vectarine/io")
+const loader = require("@vectarine/loader")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const V2 = vec.V2
 
-local shaderResource = Loader.loadShader("shaders/wave.glsl")
+local shaderResource = loader.loadShader("shaders/wave.glsl")
 
 -- Create a canvas of size 1200x800 pixels and attach the shader to it.
-local canvas = Canvas.createCanvas(1200, 800)
+local canvas = canvas.createCanvas(1200, 800)
 canvas:setShader(shaderResource)
 -- You can call canvas:setShader(nil) to stop using a given shader and draw the content of the canvas as-is.
 
 function Update()
     -- Now, we can draw to the canvas
     canvas:paint(function()
-        -- Every call to Graphics.drawSomething inside paint will be not displayed on the game window
+        -- Every call to graphics.drawSomething inside paint will be not displayed on the game window
         -- It will be drawn to the canvas instead
         -- Note: you can draw the content of one canvas to another canvas to chain multiple shader effects.
-        Graphics.drawRect(Vec.ZERO2, V2(0.1, 0.1), Vec4.RED)
+        graphics.drawRect(vec.ZERO2, V2(0.1, 0.1), vec4.RED)
     end)
 
     -- The canvas can be drawn like an image.
@@ -608,14 +616,14 @@ end
 
 You can find more information about shaders in [the great book of shaders](https://thebookofshaders.com/)
 
-> ⚠️ Inside the paint callback, `Coord:pxVec(V2(1, 1))` refers to 1px on the canvas, not on the window!
+> ⚠️ Inside the paint callback, `coord:pxVec(V2(1, 1))` refers to 1px on the canvas, not on the window!
 > You can pass an optional argument to pxVec to specify the size of the drawing area if you want.
 >
 > ```lua
 > canvas:paint(function()
->   local v1 = Coord.pxVec(V2(1, 1)) -- 1px on the canvas
->   local v2 = Coord.pxVec(V2(1, 1), Io.getWindowSize()) -- 1px on the window
->   local v3 = Coord.pxVec(V2(1, 1), V2(1200, 800)) -- 1px of a 1200x800 area, same as v1
+>   local v1 = coord.pxVec(V2(1, 1)) -- 1px on the canvas
+>   local v2 = coord.pxVec(V2(1, 1), io.getWindowSize()) -- 1px on the window
+>   local v3 = coord.pxVec(V2(1, 1), V2(1200, 800)) -- 1px of a 1200x800 area, same as v1
 > end)
 > ```
 
@@ -627,43 +635,43 @@ Vectarine provides a simple physics system to handle collisions and object inter
 Let's looks at an example:
 
 ```lua
-local Graphics = require("@vectarine/graphics")
-local Io = require("@vectarine/io")
-local Persist = require("@vectarine/persist")
-local Physics = require("@vectarine/physics")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
+const physics = require("@vectarine/physics")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
 
 -- A world is a collection of objects that can interact with each other
 -- You can add gravity to the world by setting the gravity property.
-local world = Persist.onReload(Physics.newWorld2(Vec.V2(0, -0.3)), "world")
+local world = persist.onReload(physics.newWorld2(vec.V2(0, -0.3)), "world")
 
-local boxCollider = Physics.newRectangleCollider(Vec.V2(0.1, 0.1))
-local circleCollider = Physics.newCircleCollider(0.1)
+local boxCollider = physics.newRectangleCollider(vec.V2(0.1, 0.1))
+local circleCollider = physics.newCircleCollider(0.1)
 
 -- Objects are given shape using colliders.
-local groundCollider = Physics.newRectangleCollider(Vec.V2(10, 0.1))
+local groundCollider = physics.newRectangleCollider(vec.V2(10, 0.1))
 
 -- Objects have multiple properties: position, velocity, rotation, etc...
 -- We create a 'static' object which will not move by itself.
-local ground = Persist.onReload(world:createObject(Vec.V2(-5, -1), 1, groundCollider, { "ground" }, "static"), "ground")
+local ground = persist.onReload(world:createObject(vec.V2(-5, -1), 1, groundCollider, { "ground" }, "static"), "ground")
 -- You can store extra data in objects
-ground.extra = { color = Vec4.createColor(0.5, 0.2, 0.4, 1) }
+ground.extra = { color = vec4.createColor(0.5, 0.2, 0.4, 1) }
 
 function Update(deltaTime: number)
-	Graphics.clear(Vec4.BLACK)
+	graphics.clear(vec4.BLACK)
 
-	if Io.isKeyJustPressed("space") then
+	if io.isKeyJustPressed("space") then
         -- Dynamic objects react to collisions and move
         -- Try replacing boxCollider with circleCollider, or using newPolygonCollider!
-		local object = world:createObject(Vec.V2(math.random(), 0), 1, boxCollider, { "box" }, "dynamic")
-		object.extra = { color = Vec4.createColor(math.random(), math.random(), math.random(), 1) }
+		local object = world:createObject(vec.V2(math.random(), 0), 1, boxCollider, { "box" }, "dynamic")
+		object.extra = { color = vec4.createColor(math.random(), math.random(), math.random(), 1) }
 	end
 
 	local objects = world:getObjects()
 	for _, obj in pairs(objects) do
         -- We can use getPoints() to get the collision shape of the object
-		Graphics.drawPolygon(obj:getPoints(), obj.extra.color)
+		graphics.drawPolygon(obj:getPoints(), obj.extra.color)
 	end
 
     -- Don't forget to call step to move the simulation forward in time
@@ -682,7 +690,7 @@ accurate the physics simulation is! You need to deal with this case in your code
 You can several options.
 
 - If you are writing an Idle game, the idle behavior is important, so you need to write some custom logic to account for it.
-- For other types of games, you can just pause the update function when you detect that the window is minimized. You can do so using the `Io.isWindowMinimized` function.
+- For other types of games, you can just pause the update function when you detect that the window is minimized. You can do so using the `io.isWindowMinimized` function.
 
 # 🚀 Performance Tips
 
@@ -706,36 +714,36 @@ Generally, the following happens to render a frame of your game:
 - You wait a little to sync with the monitor (Vectarine does that automatically)
 
 The profiler shows you how much time is spent on each of these steps and how this varies over time.
-You can also use the `Debug.timed` function to measure the time taken by a section of code and have it
+You can also use the `debug.timed` function to measure the time taken by a section of code and have it
 drawn in the profiler.
 
 ```lua
 function Update()
-    Debug.timed("AI", function()
+    debug.timed("AI", function()
         -- Your code here
     end)
 
-    Debug.timed("Graphics", function()
+    debug.timed("Graphics", function()
         -- Your code here
     end)
 
-    Debug.timed("Physics", function()
+    debug.timed("Physics", function()
         -- Your code here
     end)
 end
 ```
 
-`Debug.timed` will run your function and measure the time taken by it. You can nest `Debug.timed` calls to measure sub-sections of your code.
+`debug.timed` will run your function and measure the time taken by it. You can nest `debug.timed` calls to measure sub-sections of your code.
 
 You can also call `timed` inside loops to know you much time different parts of the loop take.
 
 ```lua
 function Update()
     for i = 0, 1000 do
-        Debug.timed("Loop Section A", function()
+        debug.timed("Loop Section A", function()
             -- Your code here
         end)
-        Debug.timed("Loop Section B", function()
+        debug.timed("Loop Section B", function()
             -- Your code here
         end)
     end
@@ -755,25 +763,25 @@ Let's compare 2 ways to draw a grid of 100x100 rectangles:
 
 ```lua
 -- Without fastlists, this takes about 5ms depending on your device
-Debug.timed("Without fastlists", function()
+debug.timed("Without fastlists", function()
     for x = 0, 100 do
         for y = 0, 100 do
-            local v = Vec.V2(-0.9 + x * 0.011, -0.9 + y * 0.011)
-            Graphics.drawRect(v, Vec.V2(0.01, 0.01), Vec4.BLUE)
+            local v = vec.V2(-0.9 + x * 0.011, -0.9 + y * 0.011)
+            graphics.drawRect(v, vec.V2(0.01, 0.01), vec4.BLUE)
         end
     end
 end)
 
 -- With fastlists, about 0.8 ms
-Debug.timed("With fastlist", function()
+debug.timed("With fastlist", function()
     -- Fastlist's version of a double nested for-loop
-    local positions = fastlist.newLinspace(Vec.V2(0, 0), Vec.V2(100, 100), Vec.V2(1, 1))
+    local positions = fastlist.newLinspace(vec.V2(0, 0), vec.V2(100, 100), vec.V2(1, 1))
     -- Scale the fastlist
-    positions = positions:scale(0.011) + Vec.V2(-0.9, -0.9)
+    positions = positions:scale(0.011) + vec.V2(-0.9, -0.9)
     -- We create separate fastlists for sizes and colors
-    local sizes = fastlist.fromValue(Vec.V2(0.01, 0.01), #positions)
-    local colors1 = fastlist.fromValue(Vec.V2(0, 0), #positions) -- R,G
-    local colors2 = fastlist.fromValue(Vec.V2(1, 1), #positions) -- B,A
+    local sizes = fastlist.fromValue(vec.V2(0.01, 0.01), #positions)
+    local colors1 = fastlist.fromValue(vec.V2(0, 0), #positions) -- R,G
+    local colors2 = fastlist.fromValue(vec.V2(1, 1), #positions) -- B,A
     -- We weave the fastlists together
     local together = positions:weave({ sizes, colors1, colors2 })
     -- We draw them
@@ -781,19 +789,19 @@ Debug.timed("With fastlist", function()
 end)
 
 -- If we use newLinspace properly, we can get down to 0.3ms!
-Debug.timed("With linspace", function()
-    local positions = fastlist.newLinspace(Vec.V2(-0.9, -0.9), Vec.V2(0.2, 0.2), Vec.V2(0.011, 0.011))
-    local sizes = fastlist.fromValue(Vec.V2(0.01, 0.01), #positions)
-    local colors1 = fastlist.fromValue(Vec.V2(1, 0), #positions)
-    local colors2 = fastlist.fromValue(Vec.V2(0, 1), #positions)
+debug.timed("With linspace", function()
+    local positions = fastlist.newLinspace(vec.V2(-0.9, -0.9), vec.V2(0.2, 0.2), vec.V2(0.011, 0.011))
+    local sizes = fastlist.fromValue(vec.V2(0.01, 0.01), #positions)
+    local colors1 = fastlist.fromValue(vec.V2(1, 0), #positions)
+    local colors2 = fastlist.fromValue(vec.V2(0, 1), #positions)
     local together = positions:weave({ sizes, colors1, colors2 })
-    Debug.fprint(#positions)
+    debug.fprint(#positions)
     together:drawRects()
 end)
 ```
 
 While fastlist are fast, they are less readable, so first write your code in a readable way and turn it to a fastlist later.
-A fastlist has the same functions as a `Vec` (`+`, `-`, `scale`, `max`, `dot`, etc...), so you can just change your types in the function signature and it will work.
+A fastlist has the same functions as a `vec` (`+`, `-`, `scale`, `max`, `dot`, etc...), so you can just change your types in the function signature and it will work.
 
 Moreover, fastlists have special functions to handle conditions, like `filterBetweenX`. Check `luau-api` to see all the available functions. 
 
@@ -811,8 +819,8 @@ the faster your game will run. Vectarine automatically groups your drawing instr
 
 ```lua
 -- This is one draw call
-Graphics.drawRect(V2(0, 0), V2(1, 1), Vec4.RED)
-Graphics.drawRect(V2(1, 1), V2(1, 1), Vec4.GREEN)
+graphics.drawRect(V2(0, 0), V2(1, 1), vec4.RED)
+graphics.drawRect(V2(1, 1), V2(1, 1), vec4.GREEN)
 ```
  
 As long as the "kind" of drawing you do is the same, Vectarine will be able to group the rendering instructions together and reduce the total number of draw calls. To help Vectarine do this grouping, you should try to group similar drawing function together.

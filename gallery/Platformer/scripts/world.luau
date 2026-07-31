@@ -1,21 +1,22 @@
-local Debug = require("@vectarine/debug")
-local Fastlist = require("@vectarine/fastlist")
-local Graphics = require("@vectarine/graphics")
-local Image = require("@vectarine/image")
-local Physics = require("@vectarine/physics")
-local Tile = require("@vectarine/tile")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+local debug = require("@vectarine/debug")
+local fastlist = require("@vectarine/fastlist")
+local graphics = require("@vectarine/graphics")
+local image = require("@vectarine/image")
+local loader = require("@vectarine/loader")
+local physics = require("@vectarine/physics")
+local tile = require("@vectarine/tile")
+local vec = require("@vectarine/vec")
+local vec4 = require("@vectarine/vec4")
 
 -- A module that handles infinite 2D worlds by streaming chunks.
 -- It does physics and graphics.
-local module = {}
+local module = loader.init() or {}
 
 local CHUNK_RADIUS = 1 -- How many chunks around the player to keep active
 local CHUNK_EXPIRE_TIME = 10 -- Seconds before an out-of-range chunk is removed from the pool.
 
 type GroundChunk = {
-	object: Physics.Object2,
+	object: physics.Object2,
 	lastNearTime: number,
 	cx: number,
 	cy: number,
@@ -23,18 +24,18 @@ type GroundChunk = {
 
 export type Layer = {
 	index: number,
-	tint: Vec4.Vec4,
+	tint: vec4.Vec4,
 }
 
 export type IWorld = {
-	world: Physics.World2,
-	level: Tile.Tilemap,
+	world: physics.World2,
+	level: tile.Tilemap,
 	collisionLayer: number,
 	solidBlocks: { number },
 	chunkSize: number,
 	groundChunks: { [string]: GroundChunk },
-	tiles: Image.ImageWithTileset,
-	tileset: Tile.TilesetResource,
+	tiles: image.ImageWithTileset,
+	tileset: tile.TilesetResource,
 	layers: { Layer },
 }
 
@@ -43,13 +44,13 @@ local function chunkKey(cx: number, cy: number): string
 end
 
 function module.createInfiniteWorld(
-	world: Physics.World2,
-	level: Tile.Tilemap,
+	world: physics.World2,
+	level: tile.Tilemap,
 	collisionLayer: number,
 	solidBlocks: { number },
 	chunkSize: number,
-	tiles: Image.ImageWithTileset,
-	tileset: Tile.TilesetResource,
+	tiles: image.ImageWithTileset,
+	tileset: tile.TilesetResource,
 	layers: { Layer }
 ): IWorld
 	return {
@@ -71,18 +72,18 @@ local function createGroundChunk(w: IWorld, cx: number, cy: number)
 		return
 	end
 
-	local low = Vec.V2(cx * w.chunkSize, cy * w.chunkSize)
-	local high = Vec.V2((cx + 1) * w.chunkSize, (cy + 1) * w.chunkSize)
+	local low = vec.V2(cx * w.chunkSize, cy * w.chunkSize)
+	local high = vec.V2((cx + 1) * w.chunkSize, (cy + 1) * w.chunkSize)
 
-	local collider = Physics.newVoxelCollider(Vec.V2(1, 1), w.level, w.collisionLayer, low, high, w.solidBlocks)
-	local obj = w.world:createObject(Vec.V2(0, 0), 1.0, collider, { "ground" }, "static")
+	local collider = physics.newVoxelCollider(vec.V2(1, 1), w.level, w.collisionLayer, low, high, w.solidBlocks)
+	local obj = w.world:createObject(vec.V2(0, 0), 1.0, collider, { "ground" }, "static")
 	obj:setFriction(0.0)
 
 	w.groundChunks[key] = { object = obj, lastNearTime = 0, cx = cx, cy = cy }
 end
 
 --- Update streaming ground chunks around the player position. Call every frame.
-function module.update(w: IWorld, playerPos: Vec.Vec2, deltaTime: number)
+function module.update(w: IWorld, playerPos: vec.Vec2, deltaTime: number)
 	local playerChunkX = math.floor(playerPos.x / w.chunkSize)
 	local playerChunkY = math.floor(playerPos.y / w.chunkSize)
 
@@ -100,13 +101,13 @@ function module.update(w: IWorld, playerPos: Vec.Vec2, deltaTime: number)
 
 	-- Remove chunks that have been far away for too long
 	for key, chunk in w.groundChunks do
-		local chunkCenter = Vec.V2((chunk.cx + 0.5) * w.chunkSize, (chunk.cy + 0.5) * w.chunkSize)
+		local chunkCenter = vec.V2((chunk.cx + 0.5) * w.chunkSize, (chunk.cy + 0.5) * w.chunkSize)
 		local distanceToPlayer = (chunkCenter - playerPos):length()
 		if distanceToPlayer > CHUNK_RADIUS * w.chunkSize * 2 then
 			chunk.lastNearTime = chunk.lastNearTime + deltaTime
 		end
 		if chunk.lastNearTime > CHUNK_EXPIRE_TIME then
-			w.world:removeObject(chunk.object :: Physics.Object2)
+			w.world:removeObject(chunk.object :: physics.Object2)
 			w.groundChunks[key] = nil
 		end
 	end
@@ -117,11 +118,11 @@ function module.drawColliders(w: IWorld)
 	for _, chunk in w.groundChunks do
 		local groundPoints = chunk.object:getPoints()
 		if #groundPoints > 0 then
-			local basePoints = Fastlist.fromTable(groundPoints)
+			local basePoints = fastlist.fromTable(groundPoints)
 			local points = basePoints:unweave(4)
-			table.insert(points, Fastlist.fromValue(Vec.V2(1, 0), #points[1]))
-			table.insert(points, Fastlist.fromValue(Vec.V2(0, 0.5), #points[1]))
-			local groundColliderDrawable = Fastlist.fromTable({}):weave(points)
+			table.insert(points, fastlist.fromValue(vec.V2(1, 0), #points[1]))
+			table.insert(points, fastlist.fromValue(vec.V2(0, 0.5), #points[1]))
+			local groundColliderDrawable = fastlist.fromTable({}):weave(points)
 			groundColliderDrawable:drawQuads()
 		end
 	end
@@ -129,17 +130,17 @@ end
 
 --- Draw the visible part of the level. Call inside the world-space transformation.
 function module.draw(w: IWorld)
-	local p1 = Graphics.inverseTransform(Vec.V2(-1, -1))
-	local p2 = Graphics.inverseTransform(Vec.V2(1, 1))
+	local p1 = graphics.inverseTransform(vec.V2(-1, -1))
+	local p2 = graphics.inverseTransform(vec.V2(1, 1))
 	p1 = p1:scale(1 / w.chunkSize)
 	p2 = p2:scale(1 / w.chunkSize)
-	local low = Vec.V2(math.min(p1.x, p2.x), math.min(p1.y, p2.y)):floor()
-	local high = Vec.V2(math.max(p1.x, p2.x), math.max(p1.y, p2.y)):ceil()
+	local low = vec.V2(math.min(p1.x, p2.x), math.min(p1.y, p2.y)):floor()
+	local high = vec.V2(math.max(p1.x, p2.x), math.max(p1.y, p2.y)):ceil()
 
 	for x = low.x - 1, high.x + 1, 1 do
 		for y = low.y - 1, high.y + 1, 1 do
 			for _, layer in w.layers do
-				local lvl: Tile.TilemapResource = w.level :: Tile.TilemapResource
+				local lvl: tile.TilemapResource = w.level :: tile.TilemapResource
 				lvl:getTilemapPart(
 					layer.index,
 					x * w.chunkSize,
@@ -156,9 +157,9 @@ function module.draw(w: IWorld)
 						end
 						local tint = layer.tint
 						if tileType.type == "coin" then
-							tint = Vec4.YELLOW
+							tint = vec4.YELLOW
 						end
-						w.tiles:drawTile(tileId, Vec.V2(x, y + 1), Vec.V2(1, -1), tint)
+						w.tiles:drawTile(tileId, vec.V2(x, y + 1), vec.V2(1, -1), tint)
 					end
 				)
 			end

@@ -6,6 +6,7 @@ use crate::{
 };
 use vectarine_plugin_sdk::glow;
 
+#[derive(Debug)]
 pub struct ScriptResource {
     pub script: RefCell<Option<Vec<u8>>>,
     /// If provided when the script is created, the return table of the script will be merged into this table.

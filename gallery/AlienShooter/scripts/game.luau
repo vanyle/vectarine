@@ -1,12 +1,12 @@
-local Graphics = require("@vectarine/graphics")
-local Io = require("@vectarine/io")
-local Loader = require("@vectarine/loader")
-local Persist = require("@vectarine/persist")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
-const V2 = Vec.V2
+const graphics = require("@vectarine/graphics")
+const io = require("@vectarine/io")
+const loader = require("@vectarine/loader")
+const persist = require("@vectarine/persist")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
+const V2 = vec.V2
 
-const fontResource = Loader.loadFont("fonts/m6x11.ttf")
+const fontResource = loader.loadFont("fonts/m6x11.ttf")
 
 const TOP = 1
 const BOTTOM = -1
@@ -29,20 +29,20 @@ const WAVE_BASE_COUNT = 4
 const WAVE_DELAY = 1.2
 
 -- Colors
-const COLOR_BG = Vec4.createColor(0.04, 0.04, 0.09, 1)
-const COLOR_PLAYER = Vec4.createColor(0.35, 0.9, 0.45, 1)
-const COLOR_PLAYER_DARK = Vec4.createColor(0.15, 0.55, 0.3, 1)
-const COLOR_FLAME = Vec4.createColor(1, 0.6, 0.1, 1)
-const COLOR_PROJECTILE = Vec4.createColor(1, 0.95, 0.3, 1)
-const COLOR_TEXT = Vec4.WHITE
-const COLOR_DIM = Vec4.createColor(0.6, 0.6, 0.7, 1)
-const COLOR_HEART = Vec4.createColor(0.95, 0.2, 0.3, 1)
+const COLOR_BG = vec4.createColor(0.04, 0.04, 0.09, 1)
+const COLOR_PLAYER = vec4.createColor(0.35, 0.9, 0.45, 1)
+const COLOR_PLAYER_DARK = vec4.createColor(0.15, 0.55, 0.3, 1)
+const COLOR_FLAME = vec4.createColor(1, 0.6, 0.1, 1)
+const COLOR_PROJECTILE = vec4.createColor(1, 0.95, 0.3, 1)
+const COLOR_TEXT = vec4.WHITE
+const COLOR_DIM = vec4.createColor(0.6, 0.6, 0.7, 1)
+const COLOR_HEART = vec4.createColor(0.95, 0.2, 0.3, 1)
 
 const WAVE_COLORS = {
-	Vec4.createColor(0.9, 0.3, 0.9, 1),
-	Vec4.createColor(0.3, 0.8, 0.95, 1),
-	Vec4.createColor(0.95, 0.5, 0.25, 1),
-	Vec4.createColor(0.5, 0.9, 0.4, 1),
+	vec4.createColor(0.9, 0.3, 0.9, 1),
+	vec4.createColor(0.3, 0.8, 0.95, 1),
+	vec4.createColor(0.95, 0.5, 0.25, 1),
+	vec4.createColor(0.5, 0.9, 0.4, 1),
 }
 
 const PLAYER_GRID = {
@@ -88,18 +88,18 @@ const HEART_GRID = {
 -- MARK: Game state (persisted across hot reloads)
 
 type Alien = {
-	pos: Vec.Vec2,
+	pos: vec.Vec2,
 	baseX: number,
 	speed: number,
 	phase: number,
 	wobble: number,
 	sprite_type: number,
-	color: Vec4.Vec4,
+	color: vec4.Vec4,
 	dead: boolean,
 }
 
 type Projectile = {
-	pos: Vec.Vec2,
+	pos: vec.Vec2,
 	dead: boolean,
 }
 
@@ -118,7 +118,7 @@ local function makeInitialState()
 	}
 end
 
-local State = Persist.onReload(makeInitialState(), "alienShooterState")
+local State = persist.onReload(makeInitialState(), "alienShooterState")
 
 -- Recomputed every frame from the window size.
 local aspectRatio = 1
@@ -135,12 +135,12 @@ local function clamp(value: number, low: number, high: number): number
 	return value
 end
 
-local function overlaps(c1: Vec.Vec2, half1: Vec.Vec2, c2: Vec.Vec2, half2: Vec.Vec2): boolean
+local function overlaps(c1: vec.Vec2, half1: vec.Vec2, c2: vec.Vec2, half2: vec.Vec2): boolean
 	return math.abs(c1.x - c2.x) <= half1.x + half2.x and math.abs(c1.y - c2.y) <= half1.y + half2.y
 end
 
 --- Draws a blocky pixel-art sprite centered on `center`.
-local function drawPixelSprite(center: Vec.Vec2, cell: Vec.Vec2, rows: { string }, color: Vec4.Vec4)
+local function drawPixelSprite(center: vec.Vec2, cell: vec.Vec2, rows: { string }, color: vec4.Vec4)
 	local height = #rows
 	local width = #rows[1]
 	local originX = center.x - (width * cell.x) / 2
@@ -151,13 +151,13 @@ local function drawPixelSprite(center: Vec.Vec2, cell: Vec.Vec2, rows: { string 
 			if string.sub(row, c, c) == "1" then
 				local cellX = originX + (c - 1) * cell.x
 				local cellY = originY + (height - r) * cell.y
-				Graphics.drawRect(V2(cellX, cellY), cell, color)
+				graphics.drawRect(V2(cellX, cellY), cell, color)
 			end
 		end
 	end
 end
 
-local function playerCenter(): Vec.Vec2
+local function playerCenter(): vec.Vec2
 	return V2(State.playerX, PLAYER_Y)
 end
 
@@ -210,15 +210,15 @@ local function shoot()
 end
 
 local function updatePlayer(dt: number)
-	if Io.isKeyDown("Left") then
+	if io.isKeyDown("Left") then
 		State.playerX -= PLAYER_SPEED * dt
-	elseif Io.isKeyDown("Right") then
+	elseif io.isKeyDown("Right") then
 		State.playerX += PLAYER_SPEED * dt
 	end
 	State.playerX = clamp(State.playerX, -fieldHalfWidth + PLAYER_HALF.x, fieldHalfWidth - PLAYER_HALF.x)
 
 	State.shootTimer -= dt
-	if Io.isKeyDown("Space") and State.shootTimer <= 0 then
+	if io.isKeyDown("Space") and State.shootTimer <= 0 then
 		shoot()
 	end
 end
@@ -313,12 +313,12 @@ local function drawPlayer()
 	local flicker = 0.5 + 0.5 * math.abs(math.sin(State.time * 22))
 	local flameHeight = 0.05 * flicker
 	local flameY = center.y - PLAYER_HALF.y - flameHeight
-	Graphics.drawRect(V2(center.x - 0.03, flameY), V2(0.02, flameHeight), COLOR_FLAME)
-	Graphics.drawRect(V2(center.x + 0.01, flameY), V2(0.02, flameHeight), COLOR_FLAME)
+	graphics.drawRect(V2(center.x - 0.03, flameY), V2(0.02, flameHeight), COLOR_FLAME)
+	graphics.drawRect(V2(center.x + 0.01, flameY), V2(0.02, flameHeight), COLOR_FLAME)
 
 	drawPixelSprite(center, PLAYER_CELL, PLAYER_GRID, COLOR_PLAYER)
 	-- Cockpit accent.
-	Graphics.drawRect(V2(center.x - 0.012, center.y - 0.01), V2(0.024, 0.03), COLOR_PLAYER_DARK)
+	graphics.drawRect(V2(center.x - 0.012, center.y - 0.01), V2(0.024, 0.03), COLOR_PLAYER_DARK)
 end
 
 local function drawAliens()
@@ -334,13 +334,13 @@ end
 local function drawProjectiles()
 	for _, p in State.projectiles do
 		local corner = p.pos - PROJECTILE_HALF
-		Graphics.drawRect(corner, PROJECTILE_SIZE, COLOR_PROJECTILE)
-		Graphics.drawRect(V2(p.pos.x - 0.004, corner.y), V2(0.008, PROJECTILE_SIZE.y), Vec4.WHITE)
+		graphics.drawRect(corner, PROJECTILE_SIZE, COLOR_PROJECTILE)
+		graphics.drawRect(V2(p.pos.x - 0.004, corner.y), V2(0.008, PROJECTILE_SIZE.y), vec4.WHITE)
 	end
 end
 
 local function drawWorld()
-	Graphics.withTransformation({ scale = V2(1 / aspectRatio, 1) }, function()
+	graphics.withTransformation({ scale = V2(1 / aspectRatio, 1) }, function()
 		drawAliens()
 		drawProjectiles()
 		drawPlayer()
@@ -351,7 +351,7 @@ local function drawHud()
 	fontResource:drawText("SCORE " .. State.score, V2(-0.97, 0.90), 0.09, COLOR_TEXT)
 	fontResource:drawText("WAVE " .. State.wave, V2(-0.97, 0.84), 0.07, COLOR_DIM)
 
-	Graphics.withTransformation({ scale = V2(1 / aspectRatio, 1) }, function()
+	graphics.withTransformation({ scale = V2(1 / aspectRatio, 1) }, function()
 		for i = 1, State.health do
 			local x = fieldHalfWidth - 0.09 - (i - 1) * 0.14
 			drawPixelSprite(V2(x, 0.9), V2(0.016, 0.016), HEART_GRID, COLOR_HEART)
@@ -359,14 +359,14 @@ local function drawHud()
 	end)
 end
 
-local function drawCenteredText(text: string, y: number, size: number, color: Vec4.Vec4)
+local function drawCenteredText(text: string, y: number, size: number, color: vec4.Vec4)
 	local measurements = fontResource:measureText(text, size)
 	fontResource:drawText(text, V2(-measurements.width / 2, y), size, color)
 end
 
 local function drawGameOver()
 	-- Dim the frozen scene.
-	Graphics.drawRect(V2(-1, -1), V2(2, 2), Vec4.createColor(0, 0, 0, 0.6))
+	graphics.drawRect(V2(-1, -1), V2(2, 2), vec4.createColor(0, 0, 0, 0.6))
 	drawCenteredText("GAME OVER", 0.35, 0.18, COLOR_HEART)
 	drawCenteredText("Final Score: " .. State.score, 0.05, 0.1, COLOR_TEXT)
 	drawCenteredText("Reached Wave " .. State.wave, -0.1, 0.08, COLOR_DIM)
@@ -376,12 +376,12 @@ end
 -- MARK: Entry point
 
 function Update(deltaTime: number)
-	Graphics.clear(COLOR_BG)
-	if Graphics.drawSplashScreenIfNeeded({ fontResource }, "Alien Shooter") then
+	graphics.clear(COLOR_BG)
+	if graphics.drawSplashScreenIfNeeded({ fontResource }, "Alien Shooter") then
 		return
 	end
 
-	aspectRatio = Io.getWindowSize().x / Io.getWindowSize().y
+	aspectRatio = io.getWindowSize().x / io.getWindowSize().y
 	fieldHalfWidth = aspectRatio
 	State.time += deltaTime
 
@@ -391,7 +391,7 @@ function Update(deltaTime: number)
 		updateAliens(deltaTime)
 		handleCollisions()
 		updateWaves(deltaTime)
-	elseif Io.isKeyJustPressed("Space") then
+	elseif io.isKeyJustPressed("Space") then
 		resetGame()
 	end
 

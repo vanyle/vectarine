@@ -10,10 +10,18 @@ local Tile = require("@vectarine/tile")
 --- Functions to load external resources like images, scripts, fonts, shaders, audio, etc.
 local module = {}
 
---- Loads and runs a Lua file at the given path.
---- If the script returns a table, it will be merged with the `results` table if provided.
---- The return value is a ScriptResource
---- @param path string For example scripts/monster.lua
+--- Loads and runs a Lua file at the given path.$
+--- For typing purposes, you can pass a table as the second argument, but this has no runtime effect.
+--- The return value is a ScriptResource and the module table returned by the script.
+---
+--- Example:
+--- ```luau
+--- local loader = require("@vectarine/loader")
+--- -- We pass require("other.luau") as the second argument to get proper type inference for the returned module "other".
+--- local res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
+--- ```
+--- @param path For example scripts/monster.lua
+--- @param type_hint A table to hint the type of the module returned by the script. This has no runtime effect.
 function module.loadScript<T>(path: string, type_hint: T): (Res.ScriptResource, T)
 	error("Implemented in native code")
 end
@@ -70,6 +78,22 @@ end
 --- @param path string
 --- @return TilemapResource
 function module.loadTilemap(path: string): Tile.TilemapResource
+	error("Implemented in native code")
+end
+
+--- Return a table which is referentially stable across script reloads for a given script, or nil if the script has never been loaded before.
+--- You should use this table to store the functions and properties declared in your script.
+--- ```luau
+--- local loader = require("@vectarine/loader")
+--- local module = loader.init() or {}
+--- if not module.hasBeenLoaded then
+---		--- This module has been loaded for the first time!
+--- end
+--- --- Define all the properties of your module here
+--- module.hasBeenLoaded = true
+--- return module
+--- ```
+function module.init(): nil
 	error("Implemented in native code")
 end
 

@@ -1,5 +1,6 @@
+local loader = require("@vectarine/loader")
 --- Functional helpers that shorten the code
-local module = {}
+local module = loader.init() or {}
 
 function module.map<A, B>(input: { A }, func: (A) -> B): { B }
 	local result = {}
