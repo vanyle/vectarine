@@ -12,6 +12,22 @@ function AudioResourceImpl.play(self: AudioResource, loop: boolean?, fadeIn: num
 	error("Implemented in native code")
 end
 
+--- Returns true if the audio resource is currently playing.
+function AudioResourceImpl.isPlaying(self: AudioResource): boolean
+	error("Implemented in native code")
+end
+
+--- Returns the duration of the audio resource in seconds.
+function AudioResourceImpl.getDuration(self: AudioResource): number
+	error("Implemented in native code")
+end
+
+--- Returns the current progress of the audio resource in seconds.
+--- This is a number between 0 and the duration.
+function AudioResourceImpl.getProgress(self: AudioResource): number
+	error("Implemented in native code")
+end
+
 --- Stop an audio resource.
 --- If fadeOut is provided, the audio will fade out over that many milliseconds.
 --- Does nothing if the audio is not playing.

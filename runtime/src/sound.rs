@@ -10,6 +10,7 @@ static DURATION_OF_BUFFER_IN_MS: f32 = 150.0;
 
 pub struct AudioResourceBuffer {
     pub buffer: VecDeque<f32>,
+    pub progress: usize, // How many samples have been played
     pub is_playing: bool,
     pub volume: f32,
     pub is_looped: bool,
@@ -19,10 +20,20 @@ impl Default for AudioResourceBuffer {
     fn default() -> Self {
         Self {
             buffer: VecDeque::new(),
-            is_playing: true,
+            progress: 0,
+            is_playing: false,
             is_looped: false,
             volume: 1.0,
         }
+    }
+}
+
+impl AudioResourceBuffer {
+    /// Clear the buffer and reset the state of the audio resource.
+    pub fn clear(&mut self) {
+        self.buffer.clear();
+        self.progress = 0;
+        self.is_playing = false;
     }
 }
 
@@ -46,12 +57,18 @@ impl AudioQueue {
         let mut output = vec![0.0; bytes_to_advance * size_of::<f32>()];
 
         for buffer in self.audio_buffers.values_mut() {
-            for output_sample in output.iter_mut() {
-                let sample = buffer.buffer.pop_front().unwrap_or(0.0);
-                if buffer.is_looped {
-                    buffer.buffer.push_back(sample);
+            if buffer.is_playing {
+                if !buffer.buffer.is_empty() {
+                    buffer.progress =
+                        (buffer.progress + bytes_to_advance).rem_euclid(buffer.buffer.len());
                 }
-                *output_sample += sample * buffer.volume;
+                for output_sample in output.iter_mut() {
+                    let sample = buffer.buffer.pop_front().unwrap_or(0.0);
+                    if buffer.is_looped {
+                        buffer.buffer.push_back(sample);
+                    }
+                    *output_sample += sample * buffer.volume;
+                }
             }
         }
 
@@ -96,6 +113,7 @@ pub fn init_sound_system(sdl: &Sdl) {
     });
 }
 
+/// Return a new channel id that can be used to play audio.
 pub fn get_available_channel() -> ChannelId {
     let mut channel_id = ChannelId(0);
     AUDIO_QUEUE.with_borrow_mut(|global_audio_queue| {
@@ -109,10 +127,11 @@ pub fn get_available_channel() -> ChannelId {
     channel_id
 }
 
-pub fn get_audio_buffer<F>(channel_id: ChannelId, f: F)
+pub fn get_audio_buffer<F, T>(channel_id: ChannelId, f: F) -> T
 where
-    F: FnOnce(&mut AudioResourceBuffer),
+    F: FnOnce(&mut AudioResourceBuffer) -> T,
 {
+    let mut result: Option<T> = None;
     AUDIO_QUEUE.with_borrow_mut(|global_audio_queue| {
         let audio_queue = global_audio_queue
             .as_mut()
@@ -121,7 +140,42 @@ where
             .audio_buffers
             .get_mut(&channel_id)
             .expect("Channel id refers to a channel in the buffers");
-        f(audio_buffer);
+        result = Some(f(audio_buffer));
+    });
+    result.expect("get_audio_buffer: f has been called")
+}
+
+pub fn set_sound_data_to_channel(
+    channel_id: ChannelId,
+    data_to_play: &[f32],
+    fade_in_ms: f32,
+    fade_out_ms: f32,
+    looped: bool,
+) {
+    let byte_count_needed_for_a_ms =
+        (crate::AUDIO_CHANNELS as f32 * crate::AUDIO_SAMPLE_FREQUENCY as f32) / 1000.0;
+
+    let samples_to_fade_in = (fade_in_ms * byte_count_needed_for_a_ms) as usize;
+    let samples_to_fade_out = (fade_out_ms * byte_count_needed_for_a_ms) as usize;
+
+    // For loop is clearer in this context
+    #[allow(clippy::needless_range_loop)]
+    get_audio_buffer(channel_id, |audio_buffer| {
+        audio_buffer.clear();
+        let mut sample_copy = data_to_play.to_vec();
+
+        // Linear fade
+        for i in 0..std::cmp::min(sample_copy.len(), samples_to_fade_in) {
+            sample_copy[i] *= i as f32 / samples_to_fade_in as f32;
+        }
+        for i in 0..std::cmp::min(sample_copy.len(), samples_to_fade_out) {
+            sample_copy[i] =
+                sample_copy[sample_copy.len() - i - 1] * (i as f32 / samples_to_fade_out as f32);
+        }
+
+        audio_buffer.buffer.extend(sample_copy);
+        audio_buffer.is_looped = looped;
+        audio_buffer.is_playing = true;
     });
 }
 

@@ -9,9 +9,10 @@ use crate::{
 };
 use vectarine_plugin_sdk::glow;
 
+// do not use this, the sample frequency should not be hardcoded (or we need to perform a resampling step)
 pub static AUDIO_SAMPLE_FREQUENCY: i32 = 48000; // in Hz
+
 pub static AUDIO_CHANNELS: i32 = 2; // Stereo
-pub static BYTES_PER_SAMPLE: u32 = 2; // 16-bit audio
 
 pub struct AudioResource {
     pub chunk: RefCell<Option<Box<[f32]>>>,
@@ -48,8 +49,6 @@ impl Resource for AudioResource {
         path: &Path,
         data: Box<[u8]>,
     ) -> Status {
-        let data_length = data.len();
-
         // Decode audio
         let readable_data = ReadableBytes::new(data);
         let read_only_source = Box::new(symphonia::core::io::ReadOnlySource::new(readable_data));
@@ -98,6 +97,10 @@ impl Resource for AudioResource {
         let mut result = Vec::new();
         let mut sample_buffer = Vec::new();
 
+        let Some(sample_rate) = audio_codec_params.sample_rate else {
+            return Status::Error("Unable to determine the sample rate".to_string());
+        };
+
         loop {
             let maybe_packet = probed.next_packet();
             let Ok(Some(packet)) = maybe_packet else {
@@ -113,10 +116,10 @@ impl Resource for AudioResource {
             result.extend_from_slice(&sample_buffer);
         }
 
+        let sample_count = result.len();
         self.chunk.replace(Some(result.into_boxed_slice()));
 
-        let duration_secs = data_length as f32
-            / (AUDIO_SAMPLE_FREQUENCY as f32 * AUDIO_CHANNELS as f32 * BYTES_PER_SAMPLE as f32);
+        let duration_secs = sample_count as f32 / (sample_rate as f32 * AUDIO_CHANNELS as f32);
         self.duration.replace(duration_secs);
 
         if self.currently_used_channel.borrow().is_none() {
@@ -133,7 +136,6 @@ impl Resource for AudioResource {
         _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
-        ui.label("[TODO] Audio Resource");
         let c = self.currently_used_channel.borrow();
         let c = c.as_ref();
         let Some(c) = c else {
@@ -141,6 +143,12 @@ impl Resource for AudioResource {
             return;
         };
         ui.label(format!("Using channel {:?}", c));
+        ui.label(format!("Is currently playing: {}", self.is_playing()));
+        ui.label(format!(
+            "Playback: {} / {} sec",
+            self.current_position(),
+            self.duration()
+        ));
     }
 
     fn get_type_name(&self) -> &'static str {
@@ -161,21 +169,22 @@ impl Resource for AudioResource {
 
 impl AudioResource {
     /// Start playing the audio from the beginning.
-    /// TODO: If `looped` is true, the audio will loop until paused.
-    /// TODO: If `fade_in_ms` is provided, the audio will fade in over that duration in milliseconds.
     pub fn play(&self, looped: bool, fade_in_ms: Option<i32>) {
         let channel = self.get_channel();
         let Some(channel) = channel else {
             println!("No available audio channels to play sound.");
             return;
         };
+        if sound::is_playing(channel) {
+            return;
+        }
         let chunk = self.chunk.borrow();
         let Some(chunk) = chunk.as_ref() else {
             println!("No audio chunk loaded to play.");
             return;
         };
         sound::resume_audio(channel);
-        sound::add_sound_data_to_channel(
+        sound::set_sound_data_to_channel(
             channel,
             chunk,
             fade_in_ms.unwrap_or(100) as f32,
@@ -225,7 +234,13 @@ impl AudioResource {
     }
 
     pub fn current_position(&self) -> f32 {
-        todo!("AudioResource.current_position() is not implemented yet");
+        let Some(channel) = self.get_channel() else {
+            return 0.0;
+        };
+        let progress_ratio = sound::get_audio_buffer(channel, |buffer| {
+            (buffer.progress as f32) / buffer.buffer.len() as f32
+        });
+        progress_ratio * self.duration()
     }
     /// Get the duration of the audio in seconds.
     /// Returns 0.0 if no audio is loaded or if the audio failed to load.
