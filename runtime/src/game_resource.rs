@@ -305,6 +305,7 @@ impl ResourceManager {
         if let Some(id) = self.get_id_by_path(path) {
             return id;
         }
+        println!("Scheduled loading: {}", path.display());
         let id = self.resources.borrow().len();
         let resource = Rc::new(builder());
         let name = path

@@ -13,7 +13,7 @@ use crate::{
     },
     graphics::batchdraw::BatchDraw2d,
     io::{fs::ReadOnlyFileSystem, process_events},
-    lua_env::{LuaEnvironment, print_lua_error_from_error},
+    lua_env::LuaEnvironment,
     metrics::{
         DRAW_CALL_METRIC_NAME, LUA_HEAP_SIZE_METRIC_NAME, LUA_SCRIPT_TIME_METRIC_NAME,
         MetricsHolder, TOTAL_FRAME_TIME_METRIC_NAME,
@@ -92,6 +92,7 @@ impl Game {
                 let path = Path::new(&game.main_script_path);
                 game.lua_env.resources.load_resource::<ScriptResource>(
                     path,
+                    None, // The main script is always loaded with no cause.
                     gl,
                     game.lua_env.lua_handle.clone(),
                     game.lua_env.default_events.resource_loaded_event.clone(),
@@ -159,6 +160,7 @@ impl Game {
         let path = Path::new(&game.main_script_path);
         game.lua_env.resources.load_resource::<ScriptResource>(
             path,
+            None,
             gl,
             game.lua_env.lua_handle.clone(),
             game.lua_env.default_events.resource_loaded_event.clone(),
@@ -253,14 +255,18 @@ impl Game {
         {
             let mut env_state = self.lua_env.env_state.borrow_mut();
             let (width, height) = drawable_screen_size(&window.borrow());
+            // imo this is wrong. Having the drawable size is interesting, but we should not mix it with the actual size.
             env_state.window_width = width;
             env_state.window_height = height;
             env_state.is_window_minimized = window.borrow().is_minimized();
             let aspect_ratio = width as f32 / height as f32;
+
             // This works in the editor, but not the runtime.
             // On the web, this is different, the aspect ratio needs to be squared??
             //self.batch.set_aspect_ratio(aspect_ratio * aspect_ratio);
 
+            // This is wrong: only the size matters, not the drawable size for aspect ratio
+            // Size is the actual size, drawable size is about crisp pixels.
             self.lua_env
                 .batch
                 .borrow_mut()
@@ -272,6 +278,8 @@ impl Game {
 
         {
             // This is incorrect on the web.
+            // note that it is right to set this to the drawable size (this is what the viewport is by definition to have an
+            // opengl coordinate system)
             let gl = &self.gl;
             set_viewport(gl, framebuffer_width, framebuffer_height);
         }
@@ -337,6 +345,9 @@ impl Game {
         };
         self.plugin_env.pre_lua_hook(plugin_interface);
 
+        // We poll every frame
+        self.lua_env.lua_handle.poll_pending_futures();
+
         let start_of_lua_update = std::time::Instant::now();
         if self.was_main_script_executed {
             let update_fn = self
@@ -345,13 +356,20 @@ impl Game {
                 .lua
                 .globals()
                 .get::<vectarine_plugin_sdk::mlua::Function>("Update");
+
             if let Ok(update_fn) = update_fn {
-                let err = update_fn.call::<()>((delta_time.as_secs_f32(),));
-                if let Err(err) = err {
-                    print_lua_error_from_error(&self.lua_env.lua_handle, &err);
-                }
+                let future = update_fn.call_async::<()>((delta_time.as_secs_f32(),));
+                self.lua_env
+                    .lua_handle
+                    .async_handler
+                    .borrow_mut()
+                    .execute_frame(&self.lua_env.lua_handle, future, true);
             } else {
-                print_warn("Update() function not found".to_string());
+                // If there are not futures pending, the update function will never exist.
+                // But if there are futures, we might need to wait for them to create the update function.
+                if !self.lua_env.lua_handle.are_futures_pending() {
+                    print_warn("Update() function not found".to_string());
+                }
             }
         }
         let lua_update_duration = start_of_lua_update.elapsed();
@@ -436,7 +454,8 @@ pub fn drawable_screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
 
 #[cfg(not(target_os = "emscripten"))]
 pub fn screen_size(window: &sdl2::video::Window) -> (u32, u32) {
-    window.size()
+    // This is what defines a pixel. We don't really care about the "drawable size". It is a multiple of a crisp pixel.
+    window.size() // window.drawable_size() ?? bad function name imo.
 }
 
 #[cfg(target_os = "emscripten")]

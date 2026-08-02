@@ -1,3 +1,4 @@
+pub mod async_handler;
 pub mod console;
 pub mod game;
 pub mod game_resource;
