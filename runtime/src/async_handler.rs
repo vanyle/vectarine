@@ -7,7 +7,7 @@ use std::task::{Context, Wake, Waker};
 
 use futures::future::Either;
 
-use crate::console::{print_err, print_warn};
+use crate::console::print_warn;
 use crate::game_resource::{self, Resource, ResourceManager, Status};
 use crate::lua_env::{LuaHandle, print_lua_error_from_error};
 use vectarine_plugin_sdk::mlua;
@@ -40,7 +40,7 @@ impl<T: Resource + 'static> Future for ResourceFuture<T> {
         let id = self
             .manager
             .get_id_by_path(&self.resource_path)
-            .expect("A resource future was created for a resource that was never scheduled to be loaded. This is a bug in make_resource_future.");
+            .expect("A resource future was created for a resource that was never scheduled to be loaded. This might be a bug in make_resource_future.");
         let resource_holder = self.manager.get_holder_by_id(id);
         match resource_holder.get_status() {
             Status::Loading => std::task::Poll::Pending,
@@ -133,7 +133,6 @@ impl AsyncLuaHandle {
         match result {
             std::task::Poll::Ready(Ok(_)) => true,
             std::task::Poll::Ready(Err(err)) => {
-                print_err("Something when wrong during the execution of a future.".to_string());
                 print_lua_error_from_error(lua_handle, &err);
                 true
             }
@@ -163,7 +162,6 @@ impl AsyncLuaHandle {
         match polled {
             std::task::Poll::Ready(Ok(_)) => {}
             std::task::Poll::Ready(Err(err)) => {
-                print_err("Something when wrong during the execution of a future.".to_string());
                 print_lua_error_from_error(lua_handle, &err);
             }
             std::task::Poll::Pending => {
@@ -183,7 +181,6 @@ impl AsyncLuaHandle {
             match polled {
                 std::task::Poll::Ready(Ok(_)) => false,
                 std::task::Poll::Ready(Err(err)) => {
-                    print_err("Something when wrong during the execution of a future.".to_string());
                     print_lua_error_from_error(lua_handle, &err);
                     false
                 }

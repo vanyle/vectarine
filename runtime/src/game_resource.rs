@@ -328,6 +328,32 @@ impl ResourceManager {
         self.schedule_load_resource_with_builder::<T, _>(path, loading_cause_path, T::default)
     }
 
+    /// Most of the time, cyclic imports are ok, except for scripts, because they are loaded in an async way.
+    pub fn is_cyclic_loading_request(
+        &self,
+        canonical_initial_requested_path: &Path,
+        canonical_loading_cause_path: &Path,
+    ) -> bool {
+        if canonical_initial_requested_path == canonical_loading_cause_path {
+            return true;
+        }
+        let maybe_resource = self.get_id_by_path(canonical_loading_cause_path);
+        let Some(resource_id) = maybe_resource else {
+            println!(
+                "This is strange, the loading cause of a resource does not exist: {}",
+                canonical_loading_cause_path.display()
+            );
+            return false;
+        };
+        let maybe_cause = &self
+            .get_holder_by_id(resource_id)
+            .loading_cause_resource_path;
+        let Some(cause) = maybe_cause else {
+            return false; // we reached the root, there were no cycles!
+        };
+        self.is_cyclic_loading_request(canonical_initial_requested_path, cause)
+    }
+
     /// Create a new resource from a file and schedule it for loading.
     /// If the resource already exists at that path, do nothing.
     /// Return the id of the resource.
@@ -335,20 +361,19 @@ impl ResourceManager {
     /// We try to validate the path is possible. If we cannot, we use the path as-is.
     pub fn schedule_load_resource_with_builder<T: Resource + 'static, F: FnOnce() -> T>(
         &self,
-        path: &Path,
+        relative_path: &Path,
         loading_cause_path: Option<&Path>,
         builder: F,
     ) -> ResourceId {
-        let standard_path = resolve_dot_relative_paths(path, loading_cause_path);
-        let canonical_path = get_canonical_absolute_path(&self.base_path, &standard_path);
+        let standard_path = resolve_dot_relative_paths(relative_path, loading_cause_path);
 
-        if let Some(&id) = self.path_to_id.borrow().get(&canonical_path) {
+        if let Some(&id) = self.path_to_id.borrow().get(&standard_path) {
             return id;
         }
 
         let id = ResourceId(self.resources.borrow().len());
         let resource = Rc::new(builder());
-        let name = path
+        let name = relative_path
             .file_stem()
             .unwrap_or_default()
             .to_string_lossy()
@@ -356,7 +381,7 @@ impl ResourceManager {
 
         self.resources.borrow_mut().push(Rc::new(ResourceHolder {
             status: RefCell::new(Status::Unloaded),
-            path: standard_path,
+            path: standard_path.clone(),
             name,
             dependencies: RefCell::new(HashSet::new()),
             dependent: RefCell::new(HashSet::new()),
@@ -364,7 +389,7 @@ impl ResourceManager {
             resource,
         }));
 
-        self.path_to_id.borrow_mut().insert(canonical_path, id);
+        self.path_to_id.borrow_mut().insert(standard_path, id);
 
         id
     }
@@ -461,8 +486,7 @@ impl ResourceManager {
     }
 
     pub fn get_id_by_path(&self, path: &Path) -> Option<ResourceId> {
-        let to_match = get_canonical_absolute_path(&self.base_path, path);
-        self.path_to_id.borrow().get(&to_match).copied()
+        self.path_to_id.borrow().get(path).copied()
     }
 
     pub fn get_by_id<T: Resource + 'static>(&self, id: ResourceId) -> Result<Rc<T>, String> {
@@ -607,10 +631,7 @@ pub fn get_absolute_path(current_base_path: &Path, resource_path: &Path) -> Stri
     abs_path.to_string_lossy().replace("\\", "/")
 }
 pub fn get_canonical_absolute_path(current_base_path: &Path, resource_path: &Path) -> PathBuf {
-    current_base_path
-        .join(resource_path)
-        .canonicalize()
-        .unwrap_or_else(|_| current_base_path.join(resource_path))
+    get_absolute_path(current_base_path, resource_path).into()
 }
 
 pub fn has_no_uppercase(s: &str) -> bool {
