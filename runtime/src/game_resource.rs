@@ -298,6 +298,7 @@ impl ResourceManager {
             resources: RefCell::new(Vec::new()),
             base_path: base_path.to_path_buf(),
             file_system,
+            path_to_id: RefCell::new(HashMap::default()),
         }
     }
 
@@ -305,11 +306,14 @@ impl ResourceManager {
         &*self.file_system
     }
 
+    /// Used when function seem to want a resource manager, but don't actually need it.
+    /// Contains no resources and cannot load them. All resources will get an error status.
     pub fn dummy_manager() -> Self {
         Self {
             resources: RefCell::new(Vec::new()),
             base_path: PathBuf::new(),
             file_system: Box::new(DummyFileSystem {}),
+            path_to_id: RefCell::new(HashMap::default()),
         }
     }
 
@@ -335,18 +339,20 @@ impl ResourceManager {
         loading_cause_path: Option<&Path>,
         builder: F,
     ) -> ResourceId {
-        if let Some(id) = self.get_id_by_path(path) {
+        let standard_path = resolve_dot_relative_paths(path, loading_cause_path);
+        let canonical_path = get_canonical_absolute_path(&self.base_path, &standard_path);
+
+        if let Some(&id) = self.path_to_id.borrow().get(&canonical_path) {
             return id;
         }
-        let id = self.resources.borrow().len();
+
+        let id = ResourceId(self.resources.borrow().len());
         let resource = Rc::new(builder());
         let name = path
             .file_stem()
             .unwrap_or_default()
             .to_string_lossy()
             .to_string();
-
-        let standard_path = resolve_dot_relative_paths(path, loading_cause_path);
 
         self.resources.borrow_mut().push(Rc::new(ResourceHolder {
             status: RefCell::new(Status::Unloaded),
@@ -358,7 +364,9 @@ impl ResourceManager {
             resource,
         }));
 
-        ResourceId(id)
+        self.path_to_id.borrow_mut().insert(canonical_path, id);
+
+        id
     }
 
     pub fn schedule_load_script_resource(
@@ -452,17 +460,9 @@ impl ResourceManager {
         );
     }
 
-    /// Performance: O(n) for now. Store the ID and use instead get_by_id if you already have the id.
-    /// instead of get_by_path.
     pub fn get_id_by_path(&self, path: &Path) -> Option<ResourceId> {
         let to_match = get_canonical_absolute_path(&self.base_path, path);
-        for (i, res) in self.resources.borrow().iter().enumerate() {
-            let p = get_canonical_absolute_path(&self.base_path, &res.path);
-            if to_match == p {
-                return Some(ResourceId(i));
-            }
-        }
-        None
+        self.path_to_id.borrow().get(&to_match).copied()
     }
 
     pub fn get_by_id<T: Resource + 'static>(&self, id: ResourceId) -> Result<Rc<T>, String> {

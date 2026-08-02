@@ -16,7 +16,6 @@ symphonia = { version = "0.6.0", features = ["opt-simd", "all-meta", "all-codecs
 num-traits = "0.2.19"
 nalgebra = "0.34.1"
 vectarine-plugin-sdk = { path = "../vectarine-plugin-sdk" }
-ouroboros = "0.18.5"
 futures = "0.3.33"
 
 [target.'cfg(not(target_os = "emscripten"))'.dependencies]

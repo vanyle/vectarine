@@ -10,19 +10,17 @@ use futures::future::Either;
 use crate::console::{print_err, print_warn};
 use crate::game_resource::{self, Resource, ResourceManager, Status};
 use crate::lua_env::{LuaHandle, print_lua_error_from_error};
-use ouroboros::self_referencing;
 use vectarine_plugin_sdk::mlua;
 use vectarine_plugin_sdk::mlua::function::AsyncCallFuture;
 
 pub struct DummyWaker;
-
+#[allow(clippy::manual_noop_waker)]
 impl Wake for DummyWaker {
-    fn wake(self: Arc<Self>) {
-        // In a fully featured custom runtime, this would push your future
-        // to a "ready" queue to be polled again.
-        // For a simple frame-by-frame game loop, a no-op is perfectly fine.
-    }
+    // The frame-by-frame polling wakes the futures as needed.
+    fn wake(self: Arc<Self>) {}
 }
+
+type FutureQueue = Vec<Pin<Box<dyn Future<Output = Result<(), mlua::Error>>>>>;
 
 /// Turn a value of type T into a future that is immediately ready with that value.
 pub fn futurify<T>(t: T) -> impl Future<Output = T> {
@@ -42,7 +40,7 @@ impl<T: Resource + 'static> Future for ResourceFuture<T> {
         let id = self
             .manager
             .get_id_by_path(&self.resource_path)
-            .expect("Tkt");
+            .expect("A resource future was created for a resource that was never scheduled to be loaded. This is a bug in make_resource_future.");
         let resource_holder = self.manager.get_holder_by_id(id);
         match resource_holder.get_status() {
             Status::Loading => std::task::Poll::Pending,
@@ -69,8 +67,8 @@ pub fn make_resource_future<T: Resource + 'static>(
 ) -> impl Future<Output = Option<Rc<T>>> {
     let resource_path =
         game_resource::resolve_dot_relative_paths(&resource_path, loading_cause_path);
-    let id_opt = manager.get_id_by_path(&resource_path);
-    if let Some(id) = id_opt {
+    let maybe_resource_id = manager.get_id_by_path(&resource_path);
+    if let Some(id) = maybe_resource_id {
         let holder = manager.get_holder_by_id(id);
         if holder.get_status() == Status::Loaded {
             if let Ok(res) = holder.get_underlying_resource::<T>() {
@@ -81,13 +79,13 @@ pub fn make_resource_future<T: Resource + 'static>(
         } else if let Status::Error(_) = holder.get_status() {
             return Either::Left(std::future::ready(None));
         }
-    } else {
-        manager.schedule_load_script_resource(
-            resource_path.as_path(),
-            loading_cause_path,
-            target_table,
-        );
     }
+
+    manager.schedule_load_script_resource(
+        resource_path.as_path(),
+        loading_cause_path,
+        target_table,
+    );
     Either::Right(ResourceFuture {
         manager,
         resource_path,
@@ -95,13 +93,9 @@ pub fn make_resource_future<T: Resource + 'static>(
     })
 }
 
-#[self_referencing]
 struct AsyncHandlerInternal {
-    future_queue: Vec<Pin<Box<dyn Future<Output = Result<(), mlua::Error>>>>>,
-    waker: Waker,
-    #[borrows(waker)]
-    #[not_covariant]
-    ctx: Context<'this>,
+    future_queue: FutureQueue,
+    ctx: Context<'static>,
 }
 
 /// A simple single-threaded async runtime for Lua coroutines.
@@ -117,14 +111,12 @@ impl Default for AsyncLuaHandle {
 
 impl AsyncLuaHandle {
     pub fn new() -> Self {
-        let waker = Waker::from(Arc::new(DummyWaker));
-        let internal = AsyncHandlerInternalBuilder {
+        let internal = AsyncHandlerInternal {
             future_queue: Vec::new(),
-            waker,
-            ctx_builder: |w| Context::from_waker(w),
-        }
-        .build();
-
+            // If we used a custom waker, we'd need a crate like ouroboros as the waker would we stored in this internal struct too (and would thus be self-referential).
+            // However, as we do the waking ourselves, this is not needed.
+            ctx: Context::from_waker(Waker::noop()),
+        };
         AsyncLuaHandle { internal }
     }
 
@@ -136,7 +128,7 @@ impl AsyncLuaHandle {
         lua_handle: &Rc<LuaHandle>,
         mut future: Pin<Box<dyn Future<Output = Result<(), mlua::Error>>>>,
     ) -> bool {
-        let result = self.internal.with_ctx_mut(|ctx| future.as_mut().poll(ctx));
+        let result = future.as_mut().poll(&mut self.internal.ctx);
 
         match result {
             std::task::Poll::Ready(Ok(_)) => true,
@@ -146,16 +138,14 @@ impl AsyncLuaHandle {
                 true
             }
             std::task::Poll::Pending => {
-                self.internal.with_future_queue_mut(|queue| {
-                    queue.push(future);
-                });
+                self.internal.future_queue.push(future);
                 false
             }
         }
     }
 
     pub fn are_futures_pending(&self) -> bool {
-        self.internal.with_future_queue(|queue| !queue.is_empty())
+        !self.internal.future_queue.is_empty()
     }
 
     /// Schedule the lua coroutine to be executed at a later time.
@@ -169,7 +159,7 @@ impl AsyncLuaHandle {
         print_warning_if_pending: bool,
     ) {
         let mut pinned = Box::pin(future);
-        let polled = self.internal.with_ctx_mut(|ctx| pinned.as_mut().poll(ctx));
+        let polled = pinned.as_mut().poll(&mut self.internal.ctx);
         match polled {
             std::task::Poll::Ready(Ok(_)) => {}
             std::task::Poll::Ready(Err(err)) => {
@@ -188,21 +178,17 @@ impl AsyncLuaHandle {
     /// This function needs to be called regularly to update running futures, usually once per frame.
     /// Do not call it directly, call `LuaHandle::poll_pending_futures` instead.
     pub fn poll_pending_futures(&mut self, lua_handle: &Rc<LuaHandle>) {
-        self.internal.with_mut(|fields| {
-            fields.future_queue.retain_mut(|future| {
-                let polled = future.as_mut().poll(fields.ctx);
-                match polled {
-                    std::task::Poll::Ready(Ok(_)) => false,
-                    std::task::Poll::Ready(Err(err)) => {
-                        print_err(
-                            "Something when wrong during the execution of a future.".to_string(),
-                        );
-                        print_lua_error_from_error(lua_handle, &err);
-                        false
-                    }
-                    std::task::Poll::Pending => true,
+        self.internal.future_queue.retain_mut(|future| {
+            let polled = future.as_mut().poll(&mut self.internal.ctx);
+            match polled {
+                std::task::Poll::Ready(Ok(_)) => false,
+                std::task::Poll::Ready(Err(err)) => {
+                    print_err("Something when wrong during the execution of a future.".to_string());
+                    print_lua_error_from_error(lua_handle, &err);
+                    false
                 }
-            });
+                std::task::Poll::Pending => true,
+            }
         });
     }
 }
