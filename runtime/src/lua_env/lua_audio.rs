@@ -78,6 +78,36 @@ pub fn setup_audio_api(
                 Ok(audio_res.get_volume())
             }
         });
+        registry.add_method("isPlaying", {
+            let resources = Rc::clone(resources);
+            move |_lua, audio_resource_id, (): ()| {
+                let audio_res = resources.get_by_id::<AudioResource>(audio_resource_id.0);
+                let Ok(audio_res) = audio_res else {
+                    return Ok(false);
+                };
+                Ok(audio_res.is_playing())
+            }
+        });
+        registry.add_method("getDuration", {
+            let resources = Rc::clone(resources);
+            move |_lua, audio_resource_id, (): ()| {
+                let audio_res = resources.get_by_id::<AudioResource>(audio_resource_id.0);
+                let Ok(audio_res) = audio_res else {
+                    return Ok(0.0);
+                };
+                Ok(audio_res.duration())
+            }
+        });
+        registry.add_method("getProgress", {
+            let resources = Rc::clone(resources);
+            move |_lua, audio_resource_id, (): ()| {
+                let audio_res = resources.get_by_id::<AudioResource>(audio_resource_id.0);
+                let Ok(audio_res) = audio_res else {
+                    return Ok(0.0);
+                };
+                Ok(audio_res.current_position())
+            }
+        });
     })?;
 
     Ok(audio_module)

@@ -11,7 +11,8 @@
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
-- [ ] Update luau-api folder automatically.
+- [ ] Update luau-api folder automatically (so it can be gitignored).
+- [ ] Make the gallery scrollable
 - [ ] When creating a new project, allow to use a gallery project as a template
 - [ ] Allow scrolling in the gallery to show more projects
 - [ ] Show resources in a nicer way (draw_debug_gui)

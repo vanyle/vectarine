@@ -63,7 +63,7 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ui: &mut egui::Ui) {
 
                 ui.separator();
                 ui.heading("External Editor");
-                ui.label("Select the default editor used to open scripts.");
+                ui.label("Select your preferred editor, used to open scripts.");
 
                 {
                     let mut config = editor.config.borrow_mut();

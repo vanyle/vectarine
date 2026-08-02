@@ -7,6 +7,7 @@ use runtime::glow;
 use runtime::{egui, egui_glow};
 
 use crate::editorinterface::EditorState;
+use crate::editorinterface::extra::openfileatline;
 
 pub fn draw_editor_resources(
     editor: &EditorState,
@@ -62,11 +63,49 @@ fn draw_scroll_area_content(editor: &EditorState, ui: &mut egui::Ui, game: &mut 
     }
 
     ui.horizontal(|ui| {
-        if ui.button("Open game folder").clicked() {
+        let explorer_software = {
+            #[cfg(target_os = "windows")]
+            {
+                "File Explorer"
+            }
+            #[cfg(target_os = "macos")]
+            {
+                "Finder"
+            }
+            #[cfg(target_os = "linux")]
+            {
+                "your File Manager"
+            }
+        };
+        if ui
+            .button("Open game folder")
+            .on_hover_text(format!("Open the game folder in {}", explorer_software))
+            .clicked()
+        {
             let absolute_path = game.lua_env.resources.get_absolute_path(&PathBuf::new());
             editor.config.borrow_mut().is_always_on_top = false;
             editor.window.borrow_mut().set_always_on_top(false);
             open::that(absolute_path).ok();
+        }
+        if ui
+            .button("Open game folder in editor")
+            .on_hover_text(
+                "Opens the game folder in your preferred text editor",
+            )
+            .clicked()
+        {
+            let absolute_path = game.lua_env.resources.get_absolute_path(&PathBuf::new());
+            editor.config.borrow_mut().is_always_on_top = false;
+            editor.window.borrow_mut().set_always_on_top(false);
+            let prefered_editor = editor.config.borrow().text_editor;
+            let opened = openfileatline::open_folder(
+                &PathBuf::from(&absolute_path),
+                prefered_editor,
+            );
+            if !opened {
+                println!("Unable to open {} in your prefered text editor ({:?}). Falling back to OS default.", absolute_path, prefered_editor);
+                open::that(absolute_path).ok();
+            }
         }
 
         let resource_count = game.lua_env.resources.enumerate().count();
@@ -147,9 +186,22 @@ fn draw_resource_table(
                             .link(res.get_path().to_string_lossy().to_string())
                             .clicked()
                         {
-                            // Open the file
+                            let path = res.get_path();
                             let absolute_path = resources.get_absolute_path(res.get_path());
-                            open::that(absolute_path).ok();
+                            match path.extension() {
+                                // Open the file
+                                Some(ext) if ext == "luau" || ext == "lua" => {
+                                    let absolute_path = resources.get_absolute_path(path);
+                                    openfileatline::open_file_at_line(
+                                        &PathBuf::from(&absolute_path),
+                                        0,
+                                        editor.config.borrow().text_editor,
+                                    );
+                                }
+                                _ => {
+                                    open::that(absolute_path).ok();
+                                }
+                            }
                         }
                     });
                     row.col(|ui| {

@@ -62,22 +62,40 @@ and load all of the other files needed.
 
 You can press on the blue link to open the script in your default `luau` editor. You can also open the game folder to open the `.luau` file manually.
 
+For convenience, in Vectarine, in the preferences menu, you can set your preferred text editor. This editor will be used by Vectarine to open `.luau` files.
+
+<Aside type='tip'>
+You can use the `Resources` tab to see all the files in your project.
+If a file is missing, corrupted, or fails to load, the error will be shown inside this window.
+</Aside>
+
 An empty game script looks like this:
 
 export const startedEmptyGame = `const debug = require('@vectarine/debug')
 const graphics = require('@vectarine/graphics')
 const vec4 = require('@vectarine/vec4')
 const vec = require('@vectarine/vec')
-debug.print("Loaded.")
+
+-- Need help to get started?
+-- Read: https://github.com/vanyle/vectarine/blob/main/docs/user-manual.md
+-- The manual is available offline in the Help menu.
+
+debug.print(\"Loaded.\")
+
 function Update(deltaTime: number)
     graphics.clear(vec4.WHITE)
-    graphics.drawSplashScreen("Empty game", 0.0)
-    debug.fprint("Rendered in ", deltaTime, "sec")
+    if graphics.drawSplashScreenIfNeeded({
+        -- Put the resources that need to be loaded here.
+    }, \"Loading\") then
+        return
+    end
+    graphics.drawSplashScreen(\"Empty game\", 0.0)
+    debug.fprint(\"Rendered in \", deltaTime, \"sec\")
 end`;
 
-<Code lang="luau" code={startedEmptyGame} />
+<Code lang="luau" code={startedEmptyGame} showLineNumbers mark={["graphics.drawSplashScreen(\"Empty game\", 0.0)"]} />
 
-Before explaining what all the code does, try to replace "Empty game" with "Hello Vectarine!" and save the file.
+Before explaining what all the code does, try to replace "Empty game" at line 19 with "Hello Vectarine!" and save the file.
 You should see the change in the editor immediately without needing to restart the game.
 
 ## Editing Luau code

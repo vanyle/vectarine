@@ -104,6 +104,100 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
     }
 }
 
+pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>) -> bool {
+    let absolute_path = folder_path
+        .canonicalize()
+        .expect("Failed to canonicalize path. This should not happen because the file exists")
+        .display()
+        .to_string();
+
+    match prefered_text_editor {
+        None => false,
+        Some(TextEditor::Antigravity) => {
+            let is_antigravity = which::which("antigravity").is_ok();
+            if is_antigravity {
+                let res = Command::new("antigravity")
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::SublimeText) => {
+            let is_sublime = which::which("subl").is_ok();
+            if is_sublime {
+                let res = Command::new("subl")
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Zed) => {
+            let is_zed = which::which("zed").is_ok();
+            if is_zed {
+                let res = Command::new("zed")
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::VSCode) => {
+            let is_code = which::which("code").is_ok();
+            if is_code {
+                let res = Command::new("code")
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Cursor) => {
+            let is_cursor = which::which("cursor").is_ok();
+            if is_cursor {
+                let res = Command::new("cursor")
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Vim) => {
+            let is_vim = which::which("vim").is_ok();
+            if is_vim {
+                open_in_terminal("vim", &[absolute_path])
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Neovim) => {
+            let is_neovim = which::which("nvim").is_ok();
+            if is_neovim {
+                open_in_terminal("nvim", &[absolute_path])
+            } else {
+                false
+            }
+        }
+        Some(TextEditor::Emacs) => {
+            let is_emacs = which::which("emacsclient").is_ok();
+            if is_emacs {
+                let res = Command::new("emacsclient")
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                res.is_ok()
+            } else {
+                false
+            }
+        }
+    }
+}
+
 fn open_in_terminal(command: &str, args: &[String]) -> bool {
     #[cfg(target_os = "macos")]
     {
