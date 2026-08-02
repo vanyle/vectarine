@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
+use vectarine_plugin_sdk::mlua::UserDataMethods;
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
-use vectarine_plugin_sdk::mlua::{UserDataMethods, chunk};
 
 use crate::game_resource::script_resource::ScriptResource;
 use crate::game_resource::tile_resource::TilemapResource;

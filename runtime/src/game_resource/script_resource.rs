@@ -16,19 +16,36 @@ pub struct ScriptResource {
 impl Resource for ScriptResource {
     fn load_from_data(
         self: std::rc::Rc<Self>,
-        _assigned_id: ResourceId,
-        _dependency_reporter: &super::DependencyReporter,
+        assigned_id: ResourceId,
+        dependency_reporter: &super::DependencyReporter,
         lua: &Rc<LuaHandle>,
         _gl: std::sync::Arc<glow::Context>,
         path: &Path,
         data: Box<[u8]>,
     ) -> Status {
-        // Problem: async_file_file needs to be able to signal, when the future is completed, that the given resource is ready.
-        let finished =
-            lua.async_run_file_and_display_error(&data, path, self.target_table.as_ref());
         self.script.replace(Some(data.to_vec()));
 
-        if finished {
+        let dependency_reporter = dependency_reporter.clone();
+        let lua_future = lua.clone();
+        let path = path.to_path_buf();
+        let future = Box::pin(async move {
+            let result = lua_future
+                .async_run_file_and_display_error(&data, &path, self.target_table.as_ref())
+                .await;
+            match result {
+                Ok(_) => {
+                    dependency_reporter.mark_as_ready(assigned_id);
+                    Ok(())
+                }
+                Err(e) => {
+                    dependency_reporter.mark_as_error(assigned_id, e.to_string());
+                    Err(e)
+                }
+            }
+        });
+
+        let is_ready = lua.async_handler.borrow_mut().schedule_future(lua, future);
+        if is_ready {
             Status::Loaded
         } else {
             Status::Loading

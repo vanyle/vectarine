@@ -369,6 +369,8 @@ impl Game {
                 // But if there are futures, we might need to wait for them to create the update function.
                 if !self.lua_env.lua_handle.are_futures_pending() {
                     print_warn("Update() function not found".to_string());
+                } else {
+                    // Manually draw a loading screen here (maybe with progress based on the number of pending futures).
                 }
             }
         }
