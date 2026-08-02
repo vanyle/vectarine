@@ -20,11 +20,11 @@ impl ReadOnlyFileSystem for LocalFileSystem {
         };
 
         let path = Path::new(filename);
-        if path.is_relative() // Only perform this check for relative paths.
-            && let Ok(canonical) = path.canonicalize()
-        {
+
+        if let Ok(canonical) = path.canonicalize() {
             let canonical_with_slash = canonical.to_string_lossy().replace("\\", "/");
             let ends_with = canonical_with_slash.ends_with(filename);
+
             if !ends_with {
                 // Access might work on MacOS or Windows, but not on the web (path is case-sensitive + you might be accessing a file outside the bundle)
                 // We fail on all platforms for consistency and to catch errors early.
