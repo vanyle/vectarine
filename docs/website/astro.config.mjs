@@ -15,7 +15,6 @@ export default defineConfig({
     site: "https://vectarineengine.com",
     integrations: [
         expressiveCode(),
-
         starlight({
             title: "Vectarine",
             favicon: "vectarine.png",
