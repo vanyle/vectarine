@@ -207,7 +207,7 @@ impl LuaEnvironment {
         let lua_handle = Rc::new(LuaHandle {
             lua,
             project_path: resources.get_resource_path(),
-            async_handler: async_handler.clone(),
+            async_handler,
         });
 
         // We create a table used to store rust state that is tied to the lua environment, for internal use.
