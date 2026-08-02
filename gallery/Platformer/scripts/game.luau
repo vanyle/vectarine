@@ -24,11 +24,9 @@ local vec = require("@vectarine/vec")
 local vec4 = require("@vectarine/vec4")
 
 -- Script resources
-local fRes, f = loader.loadScript("scripts/f.luau", require("./f"))
-local InteractableRes, Interactable = loader.loadScript("scripts/interactable.luau", require("./interactable"))
-local InteractableTypes = require("./interactable")
-local WorldRes, World = loader.loadScript("scripts/world.luau", require("./world"))
-local WorldTypes = require("./world")
+local Interactable = require("./interactable")
+local World = require("./world")
+local f = require("./f")
 
 -- Constants
 local FOREGROUND_LAYER = 2
@@ -88,9 +86,9 @@ local world = physics.newWorld2(vec.ZERO2, camera)
 local factor = vec.V2(0.1, -0.1)
 local offset = vec.V2(-1, 1)
 
-local infiniteWorld: WorldTypes.IWorld
+local infiniteWorld: World.IWorld
 
-local interactibleManager: InteractableTypes.InteractableManager
+local interactibleManager: Interactable.InteractableManager
 
 function makePlayer()
 	-- By default, we make the player collider way too big.
@@ -183,17 +181,12 @@ if areResourcesLoaded.loaded then
 end
 
 function Update(deltaTime: number)
-	if
-		graphics.drawSplashScreenIfNeeded({
-			tiles_tiles,
-			tiles_image,
-			fRes,
-			InteractableRes,
-			WorldRes,
-			icons_tiles,
-			icons_image,
-		})
-	then
+	if graphics.drawSplashScreenIfNeeded({
+		tiles_tiles,
+		tiles_image,
+		icons_tiles,
+		icons_image,
+	}) then
 		return
 	end
 	if not areResourcesLoaded.loaded then

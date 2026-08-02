@@ -24,7 +24,7 @@ local module = {}
 --- ```
 --- @param path For example scripts/monster.lua
 --- @param type_hint A table to hint the type of the module returned by the script. This has no runtime effect.
-function module.loadScript<T>(path: string, type_hint: T): (Res.ScriptResource, T)
+function module.loadScript<T>(path: string, type_hint: T?): (Res.ScriptResource, T)
 	error("Implemented in native code")
 end
 
