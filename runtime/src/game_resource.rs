@@ -6,9 +6,9 @@ use std::{
     sync::Arc,
 };
 
-use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::mlua::IntoLua;
 use vectarine_plugin_sdk::serde::{Deserialize, Serialize};
+use vectarine_plugin_sdk::{egui::ahash::HashMap, glow};
 
 use crate::{
     game_resource::script_resource::ScriptResource,
@@ -147,6 +147,16 @@ impl ResourceHolder {
         );
     }
 
+    /// For resources that are loaded in an async manner, you can use this to mark them as ready if you have access to the resource holder.
+    pub fn mark_as_ready(&self) {
+        self.status.replace(Status::Loaded);
+    }
+
+    /// For resources that are loaded in an async manner, you can use this to mark them as error if you have access to the resource holder.
+    pub fn mark_as_error(&self, error_message: String) {
+        self.status.replace(Status::Error(error_message));
+    }
+
     pub fn get_name(&self) -> &str {
         &self.name
     }
@@ -195,6 +205,8 @@ impl ResourceHolder {
 pub struct ResourceManager {
     file_system: Box<dyn ReadOnlyFileSystem>,
     resources: RefCell<Vec<Rc<ResourceHolder>>>,
+    // Optimization to find resource ids in O(1)
+    path_to_id: RefCell<HashMap<PathBuf, ResourceId>>,
     base_path: PathBuf,
 }
 
@@ -225,6 +237,7 @@ impl std::fmt::Debug for ResourceManager {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DependencyReporter {
     resource_manager: Weak<ResourceManager>,
 }
@@ -256,6 +269,26 @@ impl DependencyReporter {
             .upgrade()
             .ok_or_else(|| "Failed to upgrade ResourceManager".to_string())?;
         resource_manager.get_by_id::<T>(*resource_id)
+    }
+
+    /// For resources that are loaded in an async manner, you can use this to mark them as ready if you have access to the resource holder.
+    pub fn mark_as_ready(&self, resource_id: ResourceId) {
+        let resource_manager = self
+            .resource_manager
+            .upgrade()
+            .expect("Failed to upgrade ResourceManager");
+        let holder = resource_manager.get_holder_by_id(resource_id);
+        holder.mark_as_ready();
+    }
+
+    /// For resources that are loaded in an async manner, you can use this to mark them as error if you have access to the resource holder.
+    pub fn mark_as_error(&self, resource_id: ResourceId, error_message: String) {
+        let resource_manager = self
+            .resource_manager
+            .upgrade()
+            .expect("Failed to upgrade ResourceManager");
+        let holder = resource_manager.get_holder_by_id(resource_id);
+        holder.mark_as_error(error_message);
     }
 }
 
@@ -305,7 +338,6 @@ impl ResourceManager {
         if let Some(id) = self.get_id_by_path(path) {
             return id;
         }
-        println!("Scheduled loading: {}", path.display());
         let id = self.resources.borrow().len();
         let resource = Rc::new(builder());
         let name = path

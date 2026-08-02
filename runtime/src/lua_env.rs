@@ -60,21 +60,21 @@ impl LuaHandle {
     /// Run the given Lua file content assuming it is at the given path.
     /// If the file returns a table, and a target_table is provided, the table will be merged into the target_table.
     /// Returns true if the execution was synchronous and completed, false if it was asynchronous and is still running.
-    pub fn async_run_file_and_display_error(
+    pub fn schedule_run_file_and_display_error(
         self: &Rc<Self>,
         file_content: &[u8],
         file_path: &Path,
         target_table: Option<&vectarine_plugin_sdk::mlua::Table>,
     ) -> bool {
-        // lua.set_compiler(compiler);
-        // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
         let content_vec = file_content.to_vec();
         let file_path_str = file_path.to_string_lossy().into_owned();
         let file_path_name = format!("@{}", file_path_str);
         let target_table_owned = target_table.cloned();
 
         // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
+        // lua_chunk.set_compiler(compiler);
         let lua_chunk = self.lua.load(content_vec);
+
         let future = Box::pin(async move {
             let result = lua_chunk
                 .set_name(file_path_name)
@@ -91,7 +91,7 @@ impl LuaHandle {
                     let table = value.as_table();
                     let Some(table) = table else {
                         print_warn(format!(
-                            "Script {} did not return a table, so we cannot put its exports into the table provided when calling LoadScript.",
+                            "Script {} did not return a table, so we cannot put its exports into the table provided when calling require.",
                             file_path_str
                         ));
                         return Ok(());
@@ -109,7 +109,54 @@ impl LuaHandle {
         });
         self.async_handler
             .borrow_mut()
-            .schedule_future(&self, future)
+            .schedule_future(self, future)
+    }
+
+    pub async fn async_run_file_and_display_error(
+        self: &Rc<Self>,
+        file_content: &[u8],
+        file_path: &Path,
+        target_table: Option<&vectarine_plugin_sdk::mlua::Table>,
+    ) -> Result<(), vectarine_plugin_sdk::mlua::Error> {
+        let content_vec = file_content.to_vec();
+        let file_path_str = file_path.to_string_lossy().into_owned();
+        let file_path_name = format!("@{}", file_path_str);
+        let target_table_owned = target_table.cloned();
+
+        // Note: We could change the optimization level of the chunk here (for example, inside the runtime)
+        // lua_chunk.set_compiler(compiler);
+        let lua_chunk = self.lua.load(content_vec);
+
+        let result = lua_chunk
+            .set_name(file_path_name)
+            .eval_async::<vectarine_plugin_sdk::mlua::Value>()
+            .await;
+
+        match result {
+            Err(error) => Err(error),
+            Ok(value) => {
+                // Merge the table with the argument table if provided.
+                let Some(target_table) = target_table_owned else {
+                    return Ok(());
+                };
+                let table = value.as_table();
+                let Some(table) = table else {
+                    print_warn(format!(
+                        "Script {} did not return a table, so we cannot put its exports into the table provided when calling require.",
+                        file_path_str
+                    ));
+                    return Ok(());
+                };
+
+                for pair in table
+                    .pairs::<vectarine_plugin_sdk::mlua::Value, vectarine_plugin_sdk::mlua::Value>()
+                {
+                    let Ok((key, value)) = pair else { continue };
+                    let _ = target_table.raw_set(key, value);
+                }
+                Ok(())
+            }
+        }
     }
 }
 
@@ -270,11 +317,6 @@ impl LuaEnvironment {
 
                     let path = PathBuf::from(module_name.clone() + ".luau");
 
-                    println!(
-                        "Async loading of: {} using cause: {:?}",
-                        path.display(),
-                        module_path.as_deref()
-                    );
                     let maybe_script_resource = make_resource_future::<ScriptResource>(
                         resources,
                         module_path.as_deref(),
@@ -282,11 +324,6 @@ impl LuaEnvironment {
                         path,
                     )
                     .await;
-
-                    println!(
-                        "A script resource finished loading: {:?}",
-                        maybe_script_resource.is_some()
-                    );
 
                     let make_empty_table = || {
                         let module = lua.create_table()?;
@@ -302,9 +339,6 @@ impl LuaEnvironment {
                     {
                         Ok(script_table)
                     } else {
-                        println!(
-                            "The export table of that resource was empty, returning an empty table instead."
-                        );
                         make_empty_table() // should not happen
                     }
                 }
@@ -333,7 +367,7 @@ impl LuaEnvironment {
 
     pub fn run_file_and_display_error(&self, file_content: &[u8], file_path: &Path) {
         self.lua_handle
-            .async_run_file_and_display_error(file_content, file_path, None);
+            .schedule_run_file_and_display_error(file_content, file_path, None);
     }
 }
 
