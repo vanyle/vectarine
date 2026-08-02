@@ -326,6 +326,10 @@ impl Game {
             gl.disable(glow::DEPTH_TEST);
             // gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE); // Not needed for 2D.
             gl.enable(glow::MULTISAMPLE);
+
+            // If we don't clear and the game crashes, it looks weird.
+            gl.clear_color(0.0, 0.0, 0.0, 1.0);
+            gl.clear(glow::COLOR_BUFFER_BIT);
         }
 
         let plugin_interface = PluginInterface {
