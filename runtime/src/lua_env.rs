@@ -296,6 +296,7 @@ impl LuaEnvironment {
             .globals()
             .get::<vectarine_plugin_sdk::mlua::Function>("require")
             .unwrap();
+
         add_global_async_fn(&lua_handle.lua, "require", {
             let resources = resources.clone();
             move |lua, module_name: String| {
@@ -317,6 +318,20 @@ impl LuaEnvironment {
 
                     let path = PathBuf::from(module_name.clone() + ".luau");
 
+                    let canonical = crate::game_resource::resolve_dot_relative_paths(
+                        &path,
+                        module_path.as_deref(),
+                    );
+                    if let Some(module_path) = module_path.clone()
+                        && resources.is_cyclic_loading_request(&canonical, &module_path)
+                    {
+                        return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(format!(
+                            "Cyclic import detected, when requiring {} from {}",
+                            canonical.display(),
+                            module_path.display()
+                        )));
+                    }
+
                     let maybe_script_resource = make_resource_future::<ScriptResource>(
                         resources,
                         module_path.as_deref(),
@@ -325,21 +340,23 @@ impl LuaEnvironment {
                     )
                     .await;
 
-                    let make_empty_table = || {
-                        let module = lua.create_table()?;
-                        module.raw_set("@vectarine/filename", module_name)?;
-                        module.raw_set(
-                            "info",
-                            "Thank you cowboy! But your module is in another castle!",
-                        )?;
-                        Ok(module)
-                    };
                     if let Some(script_table) =
                         maybe_script_resource.and_then(|sr| sr.target_table.clone())
                     {
                         Ok(script_table)
                     } else {
-                        make_empty_table() // should not happen
+                        let make_empty_table = || {
+                            let module = lua.create_table()?;
+                            module.raw_set("@vectarine/filename", module_name)?;
+                            module.raw_set(
+                                "info",
+                                "Thank you cowboy! But your module is in another castle!",
+                            )?;
+                            Ok(module)
+                        };
+                        // Should not happen, this means a script resource was initialized without a target table.
+                        // This is a runtime bug.
+                        make_empty_table()
                     }
                 }
             }
