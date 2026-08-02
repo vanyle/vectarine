@@ -418,9 +418,9 @@ multiple files.
 
 ## Scripts as Resources
 
-To run another `.luau` file, it needs to be loaded as a resource. You can load it using the `loadScript`.
-Loading resources is not instant. The system needs to wait the resources to become ready. Meanwhile, you can
-show a loading screen or something else.
+To run another `.luau` file, you can use `require`.
+Loading resources is not instant. The system needs to wait the resources to become ready and shows a loading screen in the meantime.
+You can use `loader.loadScript` to schedule the loading of a script and check if it is ready or not.
 
 Example:
 
@@ -439,13 +439,14 @@ end)
 
 -- You can also check at any point if a resource is ready or not:
 if otherScriptResource:isReady() then
-    -- OK
+    local otherScript = require("other_script.luau")
+    -- OK, I can now use functions and variables defined inside other_script.luau
 end
 ```
 
 ## Using modules
 
-Once a script is loaded, all future calls to `loadScript` with the same path will return a handle to the same resource and are instant.
+Once a script is loaded, all calls to `require` with the same path will return a handle to the same script and are instant.
 
 By default all global variables and functions are shared between files.
 This has pros and cons:
@@ -459,7 +460,6 @@ Because of that, we recommend doing the following (this is just a recommendation
 
 - Keep functions local whenever possible using the `local function(...) function_content() end` syntax.
 - Put the functions and variables exported by a module in a table that gets returned.
-- When calling `loadScript`, pass the require call as the second argument to gather the exports of the script with proper types.
 - Never use globals.
 
 There is a simple example with 2 files: `helper.luau` and `main.luau`.
@@ -487,28 +487,12 @@ return module -- return for the module to make it available
 const debug = require('@vectarine/debug')
 const loader = require('@vectarine/loader')
 
---- We use the import 'technique'
-local helperResource, Helper = loader.loadScript("scripts/helper.luau", require("helper.luau"))
-
---- loader.loadScript is what actually executes `helper.luau`.
---- require() returns an empty table, but is properly typed.
---- When a table is passed as the second argument to loadScript, it is filled with the exports of the script.
---- This gives the impression that require() returns the exports of the script, but it does not.
-
---- Note that the Helper variable is still empty until the resource is ready.
-
---- Also, note that `helper.luau` is only executed once. If you rerun loadScript, you'll get a handle to the same resource.
---- However, Helper will always be filled with the latest exports of the script, even if it is reloaded.
---- This only works if the script returns a table, otherwise, this is ignored.
+-- require pauses execution until the module is loaded and returns the module table
+local helper = require("./helper")
 
 function Update()
-    if !helperResource.isReady() then
-        -- Don't forget to add a loading state to indicate that the script is not ready yet!
-        debug.fprint("Loading helper.luau...")
-        return
-    end
     -- The script is loaded and ready for use!
-    debug.fprint("adding things: ", Helper.add_things(3+1))
+    debug.fprint("adding things: ", helper.add_things(3+1))
 end
 ```
 

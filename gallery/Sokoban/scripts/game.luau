@@ -20,11 +20,8 @@ local persist = require("@vectarine/persist")
 local vec = require("@vectarine/vec")
 local vec4 = require("@vectarine/vec4")
 
-local worldRes, worldManager = loader.loadScript("scripts/world.luau", require("./world"))
-local worldTypes = require("./world")
-
-local signRes, sign = loader.loadScript("scripts/sign.luau", require("./sign"))
-local signTypes = require("./sign")
+local sign = require("./sign")
+local worldManager = require("./world")
 
 local tiles_tiles = loader.loadTileset("textures/tileset.tsx")
 local tiles_image = loader.loadImage("textures/tileset.png", false)
@@ -39,8 +36,8 @@ local areResourcesLoaded = persist.onReload({ loaded = false }, "areResourcesLoa
 local gameCamera = persist.onReload(camera.new(), "camera")
 local ZOOM_LEVEL = 0.12 -- This factor is choosen so that you can see the current room + about 1.5 tile of the surrounding ones
 
-local world: worldTypes.IWorld
-local signManager: signTypes.SignManager
+local world: worldManager.IWorld
+local signManager: sign.SignManager
 
 -- You can explore the level freely by setting noclip to true from the watcher.
 local debugging = persist.onReload({
@@ -70,8 +67,6 @@ function Update(deltaTime: number)
 	if graphics.drawSplashScreenIfNeeded({
 		tiles_tiles,
 		tiles_image,
-		worldRes,
-		signRes,
 	}) then
 		return
 	end

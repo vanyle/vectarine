@@ -26,7 +26,7 @@ Let's consider the following example:
 
 export const mainLuau1 = `const loader = require("@vectarine/loader")
 const debug = require("@vectarine/debug")
-const res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
+const res, other = loader.loadScript("scripts/other.luau", {} :: any)
 
 local value = nil
 if res:isReady() then
