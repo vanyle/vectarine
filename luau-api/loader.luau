@@ -10,7 +10,9 @@ local Tile = require("@vectarine/tile")
 --- Functions to load external resources like images, scripts, fonts, shaders, audio, etc.
 local module = {}
 
---- Loads and runs a Lua file at the given path.$
+--- Similar to require(), but it is synchronous and will return an empty table if the script has not been loaded yet.
+--- Usually, you should use require() unless you want to load your scripts asynchronously, if you have a lot of scripts.
+---
 --- For typing purposes, you can pass a table as the second argument, but this has no runtime effect.
 --- The return value is a ScriptResource and the module table returned by the script.
 ---

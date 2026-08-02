@@ -2,7 +2,7 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 
 use crate::{
     game_resource::{Resource, ResourceId, Status},
-    lua_env::{LuaHandle, run_file_and_display_error_from_lua_handle},
+    lua_env::LuaHandle,
 };
 use vectarine_plugin_sdk::glow;
 
@@ -23,9 +23,16 @@ impl Resource for ScriptResource {
         path: &Path,
         data: Box<[u8]>,
     ) -> Status {
-        run_file_and_display_error_from_lua_handle(lua, &data, path, self.target_table.as_ref());
+        // Problem: async_file_file needs to be able to signal, when the future is completed, that the given resource is ready.
+        let finished =
+            lua.async_run_file_and_display_error(&data, path, self.target_table.as_ref());
         self.script.replace(Some(data.to_vec()));
-        Status::Loaded
+
+        if finished {
+            Status::Loaded
+        } else {
+            Status::Loading
+        }
     }
 
     fn draw_debug_gui(

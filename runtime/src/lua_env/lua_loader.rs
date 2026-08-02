@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use vectarine_plugin_sdk::mlua::UserDataMethods;
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
+use vectarine_plugin_sdk::mlua::{UserDataMethods, chunk};
 
 use crate::game_resource::script_resource::ScriptResource;
 use crate::game_resource::tile_resource::TilemapResource;
@@ -195,15 +195,18 @@ pub fn setup_loader_api(
 }
 
 /// Get the resource path corresponding to the script resource currently being executed.
-fn get_path_of_current_chunk(lua: &vectarine_plugin_sdk::mlua::Lua) -> Option<PathBuf> {
-    let maybe_chunk_name = lua
-        .inspect_stack(1, |dbg| {
-            let source = dbg.source().source;
-            source.map(|s| s.to_string())
-        })
-        .flatten();
-    let chunk_name = maybe_chunk_name?;
-    let path_name = chunk_name.strip_prefix("@")?;
-    let path = PathBuf::from(path_name);
-    Some(path)
+pub fn get_path_of_current_chunk(lua: &vectarine_plugin_sdk::mlua::Lua) -> Option<PathBuf> {
+    let stack_depths_tried = [1, 2]; // 1 for regular, 2 for async
+    stack_depths_tried.iter().find_map(|depth| {
+        let maybe_chunk_name = lua
+            .inspect_stack(*depth, |dbg| {
+                let source = dbg.source().source;
+                source.map(|s| s.to_string())
+            })
+            .flatten();
+        let chunk_name = maybe_chunk_name?;
+        let path_name = chunk_name.strip_prefix("@")?;
+        let path = PathBuf::from(path_name);
+        Some(path)
+    })
 }
