@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
 use vectarine_plugin_sdk::mlua::UserDataMethods;
@@ -62,17 +63,21 @@ pub fn setup_loader_api(
 
     add_fn_to_table(lua, &loader_module, "loadText", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<TextResource>(Path::new(&path));
+        move |lua, path: String| {
+            let cause = get_path_of_current_chunk(lua);
+            let id = resources
+                .schedule_load_resource::<TextResource>(Path::new(&path), cause.as_deref());
             Ok(TextResourceId::from_id(id))
         }
     });
 
     add_fn_to_table(lua, &loader_module, "loadImage", {
         let resources = resources.clone();
-        move |_, (path, antialiasing): (String, Option<bool>)| {
+        move |lua, (path, antialiasing): (String, Option<bool>)| {
+            let cause = get_path_of_current_chunk(lua);
             let id = resources.schedule_load_resource_with_builder::<ImageResource, _>(
                 Path::new(&path),
+                cause.as_deref(),
                 || ImageResource {
                     texture: RefCell::new(None),
                     egui_id: RefCell::new(None),
@@ -91,40 +96,50 @@ pub fn setup_loader_api(
 
     add_fn_to_table(lua, &loader_module, "loadFont", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<FontResource>(Path::new(&path));
+        move |lua, path: String| {
+            let cause = get_path_of_current_chunk(lua);
+            let id = resources
+                .schedule_load_resource::<FontResource>(Path::new(&path), cause.as_deref());
             Ok(FontResourceId::from_id(id))
         }
     });
 
     add_fn_to_table(lua, &loader_module, "loadAudio", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<AudioResource>(Path::new(&path));
+        move |lua, path: String| {
+            let cause = get_path_of_current_chunk(lua);
+            let id = resources
+                .schedule_load_resource::<AudioResource>(Path::new(&path), cause.as_deref());
             Ok(AudioResourceId::from_id(id))
         }
     });
 
     add_fn_to_table(lua, &loader_module, "loadShader", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<ShaderResource>(Path::new(&path));
+        move |lua, path: String| {
+            let cause = get_path_of_current_chunk(lua);
+            let id = resources
+                .schedule_load_resource::<ShaderResource>(Path::new(&path), cause.as_deref());
             Ok(ShaderResourceId::from_id(id))
         }
     });
 
     add_fn_to_table(lua, &loader_module, "loadTileset", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<TilesetResource>(Path::new(&path));
+        move |lua, path: String| {
+            let cause = get_path_of_current_chunk(lua);
+            let id = resources
+                .schedule_load_resource::<TilesetResource>(Path::new(&path), cause.as_deref());
             Ok(TilesetResourceId::from_id(id))
         }
     });
 
     add_fn_to_table(lua, &loader_module, "loadTilemap", {
         let resources = resources.clone();
-        move |_, path: String| {
-            let id = resources.schedule_load_resource::<TilemapResource>(Path::new(&path));
+        move |lua, path: String| {
+            let cause = get_path_of_current_chunk(lua);
+            let id = resources
+                .schedule_load_resource::<TilemapResource>(Path::new(&path), cause.as_deref());
             Ok(TilemapResourceId::from_id(id))
         }
     });
@@ -132,9 +147,13 @@ pub fn setup_loader_api(
     add_fn_to_table(lua, &loader_module, "loadScript", {
         let resources = resources.clone();
         move |lua, (path, _type_hint): (String, Option<vectarine_plugin_sdk::mlua::Table>)| {
+            let cause = get_path_of_current_chunk(lua);
             let dummy_table = lua.create_table()?;
-            let (id, table) =
-                resources.schedule_load_script_resource(Path::new(&path), dummy_table);
+            let (id, table) = resources.schedule_load_script_resource(
+                Path::new(&path),
+                cause.as_deref(),
+                dummy_table,
+            );
 
             Ok((
                 ScriptResourceId::from_id(id),
@@ -150,20 +169,11 @@ pub fn setup_loader_api(
         move |lua, (): ()| {
             // Level 0 is the rust code, level 1 is the caller.
             // The chunk name has the format @scripts/file.luau in general
-            let maybe_chunk_name = lua
-                .inspect_stack(1, |dbg| {
-                    let source = dbg.source().source;
-                    source.map(|s| s.to_string())
-                })
-                .flatten();
-            let Some(chunk_name) = maybe_chunk_name else {
+            let maybe_path = get_path_of_current_chunk(lua);
+            let Some(path) = maybe_path else {
                 return lua.create_table();
             };
-            let Some(path_name) = chunk_name.strip_prefix("@") else {
-                return lua.create_table();
-            };
-            let path = Path::new(path_name);
-            let resource_id = resources.get_id_by_path(path);
+            let resource_id = resources.get_id_by_path(&path);
             let Some(resource_id) = resource_id else {
                 return lua.create_table();
             };
@@ -182,4 +192,18 @@ pub fn setup_loader_api(
     });
 
     Ok(loader_module)
+}
+
+/// Get the resource path corresponding to the script resource currently being executed.
+fn get_path_of_current_chunk(lua: &vectarine_plugin_sdk::mlua::Lua) -> Option<PathBuf> {
+    let maybe_chunk_name = lua
+        .inspect_stack(1, |dbg| {
+            let source = dbg.source().source;
+            source.map(|s| s.to_string())
+        })
+        .flatten();
+    let chunk_name = maybe_chunk_name?;
+    let path_name = chunk_name.strip_prefix("@")?;
+    let path = PathBuf::from(path_name);
+    Some(path)
 }

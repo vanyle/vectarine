@@ -65,11 +65,15 @@ pub struct ResourceHolder {
     status: RefCell<Status>,
 
     name: String,
+    /// The path to the resources after its canonicalization. There is a bijection between paths and resources. This path is relative to the game project folder.
     path: PathBuf,
     /// A list of ids of other resources that this resource needs to work
     dependencies: RefCell<HashSet<ResourceId>>,
     /// A list of ids of other resources that depend on this resource
     dependent: RefCell<HashSet<ResourceId>>,
+
+    /// The path of the resource that caused this resource to be loaded. Is used to resolve relative paths.
+    loading_cause_resource_path: Option<PathBuf>,
 }
 
 impl ResourceHolder {
@@ -99,7 +103,18 @@ impl ResourceHolder {
         };
 
         self.status.replace(Status::Loading);
-        let abs_path = get_absolute_path(&resource_manager.base_path, &self.path);
+
+        let abs_path = match validate_and_canonicalize_resource_path(
+            &self.path,
+            &resource_manager.base_path,
+            self.loading_cause_resource_path.as_deref(),
+        ) {
+            Err(cause) => {
+                self.status.replace(Status::Error(cause));
+                return;
+            }
+            Ok(abs_path) => abs_path,
+        };
 
         // We pass data to the resource into the closure.
         // As this data needs to be kept alive, every piece of state pass inside needs Rc or Arc.
@@ -268,17 +283,23 @@ impl ResourceManager {
     /// Create a new resource from a file and schedule it for loading.
     /// If the resource already exists at that path, do nothing.
     /// Return the id of the resource.
-    pub fn schedule_load_resource<T: Resource + 'static>(&self, path: &Path) -> ResourceId {
-        self.schedule_load_resource_with_builder::<T, _>(path, T::default)
+    pub fn schedule_load_resource<T: Resource + 'static>(
+        &self,
+        path: &Path,
+        loading_cause_path: Option<&Path>,
+    ) -> ResourceId {
+        self.schedule_load_resource_with_builder::<T, _>(path, loading_cause_path, T::default)
     }
 
     /// Create a new resource from a file and schedule it for loading.
     /// If the resource already exists at that path, do nothing.
     /// Return the id of the resource.
     /// The builder function is called to create the unloaded resource instance.
+    /// We try to validate the path is possible. If we cannot, we use the path as-is.
     pub fn schedule_load_resource_with_builder<T: Resource + 'static, F: FnOnce() -> T>(
         &self,
         path: &Path,
+        loading_cause_path: Option<&Path>,
         builder: F,
     ) -> ResourceId {
         if let Some(id) = self.get_id_by_path(path) {
@@ -292,12 +313,15 @@ impl ResourceManager {
             .to_string_lossy()
             .to_string();
 
+        let standard_path = resolve_dot_relative_paths(path, loading_cause_path);
+
         self.resources.borrow_mut().push(Rc::new(ResourceHolder {
             status: RefCell::new(Status::Unloaded),
-            path: path.to_path_buf(),
+            path: standard_path,
             name,
             dependencies: RefCell::new(HashSet::new()),
             dependent: RefCell::new(HashSet::new()),
+            loading_cause_resource_path: loading_cause_path.map(|p| p.to_path_buf()),
             resource,
         }));
 
@@ -307,6 +331,7 @@ impl ResourceManager {
     pub fn schedule_load_script_resource(
         &self,
         path: &Path,
+        loading_cause_path: Option<&Path>,
         target_table: vectarine_plugin_sdk::mlua::Table,
     ) -> (ResourceId, vectarine_plugin_sdk::mlua::Table) {
         if let Some(id) = self.get_id_by_path(path) {
@@ -325,7 +350,7 @@ impl ResourceManager {
             // We return a reference to the exports of the script which is dynamically updated when reloading.
             return (id, exports.clone());
         }
-        let rid = self.schedule_load_resource_with_builder(path, || {
+        let rid = self.schedule_load_resource_with_builder(path, loading_cause_path, || {
             ScriptResource::make_with_target_table(target_table.clone())
         });
         (rid, target_table)
@@ -337,6 +362,7 @@ impl ResourceManager {
     pub fn load_resource<T: Resource + 'static>(
         self: &Rc<Self>,
         path: &Path,
+        loading_cause_path: Option<&Path>,
         gl: Arc<glow::Context>,
         lua: Rc<LuaHandle>,
         loaded_event: EventType,
@@ -344,11 +370,12 @@ impl ResourceManager {
         if let Some(id) = self.get_id_by_path(path) {
             return id;
         }
-        let id = self.schedule_load_resource::<T>(path);
+        let id = self.schedule_load_resource::<T>(path, loading_cause_path);
         self.reload(id, gl, lua, loaded_event);
         id
     }
 
+    /// Declare that the resource with id `resource_id` depends on the resource at `path`.
     fn declare_dependency<T: Resource + 'static>(
         self: &Rc<Self>,
         resource_id: ResourceId,
@@ -370,7 +397,8 @@ impl ResourceManager {
             resource.dependent.borrow_mut().insert(resource_id);
             return;
         };
-        self.schedule_load_resource::<T>(path);
+        let loading_cause_path = Some(resource.path.as_path()); // Self caused the resource at `path` to be loaded.
+        self.schedule_load_resource::<T>(path, loading_cause_path);
     }
 
     pub fn reload(
@@ -525,8 +553,24 @@ pub trait Resource: ResourceToAny {
 }
 
 pub fn get_absolute_path(current_base_path: &Path, resource_path: &Path) -> String {
+    // canonicalize cannot be called here. we are in the runtime, there is potentially no true filesystem!
     let abs_path = current_base_path.join(resource_path);
-    // let abs_path = abs_path.canonicalize().unwrap_or(abs_path);
+
+    // Absolutize by removing . and .. components. We need to make the path unique.
+    let components = abs_path.components().collect::<Vec<_>>();
+    let mut stack = Vec::new();
+    for component in components {
+        match component {
+            std::path::Component::ParentDir => {
+                stack.pop();
+            }
+            std::path::Component::CurDir => {}
+            _ => {
+                stack.push(component);
+            }
+        }
+    }
+    let abs_path = stack.iter().collect::<PathBuf>();
     abs_path.to_string_lossy().replace("\\", "/")
 }
 pub fn get_canonical_absolute_path(current_base_path: &Path, resource_path: &Path) -> PathBuf {
@@ -534,6 +578,54 @@ pub fn get_canonical_absolute_path(current_base_path: &Path, resource_path: &Pat
         .join(resource_path)
         .canonicalize()
         .unwrap_or_else(|_| current_base_path.join(resource_path))
+}
+
+pub fn has_no_uppercase(s: &str) -> bool {
+    s.chars().all(|c| !c.is_ascii_uppercase())
+}
+
+/// If a path is of the form "./filename.extension", it is relative to the file loading the resource. In this
+/// case, we resolve the path provided
+pub fn resolve_dot_relative_paths(
+    maybe_dot_relative_path: &Path,
+    base_path: Option<&Path>,
+) -> PathBuf {
+    let components = maybe_dot_relative_path.components().collect::<Vec<_>>();
+    if components.is_empty() {
+        return maybe_dot_relative_path.to_path_buf();
+    }
+    let first_path = components[0];
+
+    if first_path == std::path::Component::CurDir
+        && let Some(base_path) = base_path
+    {
+        // The path is relative to the loading_cause_path.
+        return PathBuf::from(get_absolute_path(
+            base_path.parent().expect("Loading cause path has a parent"),
+            maybe_dot_relative_path,
+        ));
+    }
+    maybe_dot_relative_path.to_path_buf()
+}
+
+/// Depending on the platform, paths can be interpreted in different ways (case-sensitivity, relative vs absolute, etc.)
+/// To avoid ambiguity, we ban some types of paths and product and error describing why that path is not valid.
+pub fn validate_and_canonicalize_resource_path(
+    resource_path: &Path,
+    game_project_path: &Path,
+    maybe_loading_cause_path: Option<&Path>,
+) -> Result<String, String> {
+    if !has_no_uppercase(&resource_path.to_string_lossy()) {
+        return Err("Resource paths must be lowercase to be cross-platform!".to_string());
+    }
+
+    // All paths must be of the form:
+    // - "foldername/filename.extension" (in that case, the path is given from the root of the game project folder)
+    // - "./filename.extension" (in that case, the path is relative to the file loading the resource)
+
+    let resolved_path = resolve_dot_relative_paths(resource_path, maybe_loading_cause_path);
+    let abs_path = get_absolute_path(game_project_path, resolved_path.as_path());
+    Ok(abs_path)
 }
 
 pub trait ResourceToAny: 'static {
