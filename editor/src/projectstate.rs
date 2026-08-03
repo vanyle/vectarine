@@ -5,7 +5,6 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
-    time::Instant,
 };
 
 use runtime::{
@@ -20,7 +19,7 @@ use runtime::{
 use runtime::{io::localfs::LocalFileSystem, sdl2};
 
 use crate::{
-    luau,
+    luau::{self, HookError, HookTiming},
     pluginsystem::{
         gameplugin::GamePlugin,
         trustedplugin::{TrustedPlugin, is_dynamic_library_file},
@@ -38,8 +37,8 @@ pub struct ProjectState {
     pub game: Game,
     pub video: Rc<sdl2::VideoSubsystem>,
     pub window: Rc<RefCell<sdl2::video::Window>>,
-    pub hook_timing: Rc<RefCell<Option<Instant>>>,
-    pub hook_error: Rc<RefCell<Option<luau::InfiniteLoopError>>>,
+    pub hook_timing: HookTiming,
+    pub hook_error: HookError,
     pub plugins: Rc<RefCell<Vec<GamePlugin>>>,
 }
 
