@@ -17,10 +17,20 @@ export default defineConfig({
         expressiveCode(),
         starlight({
             title: "Vectarine",
+            titleDelimiter: " | ",
+            tagline: "The cross-platform game engine focusing on ultra fast prototyping and having fun.",
             favicon: "vectarine.png",
             customCss: ["./src/styles/custom.css"],
+            logo: {
+                src: "./src/assets/vectarine.png",
+                alt: "Vectarine Logo",
+            },
             components: {
                 SocialIcons: "./src/components/SocialIcons.astro",
+                SiteTitle: "./src/components/SiteTitle.astro",
+            },
+            editLink: {
+                baseUrl: 'https://github.com/vanyle/vectarine/edit/main/docs/website',
             },
             plugins: [
                 starlightKbd({
@@ -43,10 +53,6 @@ export default defineConfig({
                 },
             ],
             sidebar: [
-                {
-                    label: "Welcome",
-                    link: "/",
-                },
                 {
                     label: "Gallery",
                     items: [
@@ -76,8 +82,8 @@ export default defineConfig({
                             link: "/guides/getting-started/",
                         },
                         {
-                            label: "A guided tour",
-                            link: "/guides/a-guided-tour/",
+                            label: "Overview",
+                            link: "/guides/overview/",
                         },
                     ],
                 },

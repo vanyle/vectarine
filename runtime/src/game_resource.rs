@@ -486,6 +486,12 @@ impl ResourceManager {
     }
 
     pub fn get_id_by_path(&self, path: &Path) -> Option<ResourceId> {
+        if path.is_absolute()
+            && let Some(relative_path) = path.strip_prefix(&self.base_path).ok()
+        {
+            // Make the path relative to the base path. This is a bit hacky, but it works.
+            return self.get_id_by_path(relative_path);
+        }
         self.path_to_id.borrow().get(path).copied()
     }
 

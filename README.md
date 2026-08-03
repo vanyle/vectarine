@@ -63,7 +63,7 @@ Additionally, you'll need:
 
 <br>
 
-See **[The guided tour](https://vectarineengine.com/guides/a-guided-tour.html)** for detailed information on how to make games with vectarine.
+See **[The guided tour](https://vectarineengine.com/guides/overview.html)** for detailed information on how to make games with vectarine.
 
 If this is your first time making games, read the guide to [create your first game](https://vectarineengine.com/guides/getting-started.html)
 
