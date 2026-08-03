@@ -316,10 +316,16 @@ impl LuaEnvironment {
                         return original_require.call(module_name);
                     }
 
-                    let path = PathBuf::from(module_name.clone() + ".luau");
+                    let module_as_path = PathBuf::from(&module_name);
+                    // Apppend .luau if needed
+                    let module_as_path = if module_as_path.extension().is_none() {
+                        PathBuf::from(module_name.clone() + ".luau")
+                    } else {
+                        module_as_path
+                    };
 
                     let canonical = crate::game_resource::resolve_dot_relative_paths(
-                        &path,
+                        &module_as_path,
                         module_path.as_deref(),
                     );
                     if let Some(module_path) = module_path.clone()
@@ -336,9 +342,12 @@ impl LuaEnvironment {
                         resources,
                         module_path.as_deref(),
                         lua.create_table()?,
-                        path,
+                        module_as_path,
                     )
                     .await;
+
+                    // We need to handle the case where loading fails. Instead of just returning an empty table,
+                    // we need to return a lua error. Maybe make_resource_future should return a Result<Rc<T>, Error> ?
 
                     if let Some(script_table) =
                         maybe_script_resource.and_then(|sr| sr.target_table.clone())

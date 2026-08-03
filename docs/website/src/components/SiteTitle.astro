@@ -1,0 +1,105 @@
+---
+import config from 'virtual:starlight/user-config';
+import { logos } from 'virtual:starlight/user-images';
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+---
+<div class="site-nav-container">
+	<a href={siteTitleHref} class="site-title sl-flex">
+		{
+			config.logo && logos.dark && (
+				<>
+					<img
+						class:list={{ 'light:sl-hidden print:hidden': !('src' in config.logo) }}
+						alt={config.logo.alt}
+						src={logos.dark.src}
+						width={logos.dark.width}
+						height={logos.dark.height}
+					/>
+					{/* Show light alternate if a user configure both light and dark logos. */}
+					{!('src' in config.logo) && (
+						<img
+							class="dark:sl-hidden print:block"
+							alt={config.logo.alt}
+							src={logos.light?.src}
+							width={logos.light?.width}
+							height={logos.light?.height}
+						/>
+					)}
+				</>
+			)
+		}
+		<span class:list={{ 'sr-only': config.logo?.replacesTitle }} translate="no">
+			{siteTitle.split('').map((char, index) => (
+				<span 
+					class="animated-letter"
+					style={`animation-delay: ${index * 0.08}s;`}
+				>{char === ' ' ? '\u00A0' : char}</span>
+			))}
+		</span>
+	</a>
+	<a class="sl-flex top-nav-link" href="/guides/overview/">Overview</a>
+	<a class="sl-flex top-nav-link" href="/gallery/the-gallery.html">Gallery</a>
+</div>
+<style>
+		.site-nav-container{
+			display: flex;
+			align-items: center;
+			gap: var(--sl-nav-gap);
+		}
+		.site-title {
+			align-items: center;
+			gap: var(--sl-nav-gap);
+			font-size: var(--sl-text-h4);
+			font-weight: 600;
+			color: var(--sl-color-text);
+			text-decoration: none;
+			white-space: nowrap;
+			min-width: 0;
+		}
+		span.sr-only {
+			overflow: hidden;
+		}
+		img {
+			height: calc(var(--sl-nav-height) - 2 * var(--sl-nav-pad-y));
+			width: auto;
+			max-width: 100%;
+			object-fit: contain;
+			object-position: 0 50%;
+		}
+
+		/* Top Navigation Links Styling */
+		.top-nav-link {
+			text-decoration: none;
+			color: var(--sl-color-text-accent);
+			font-size: var(--sl-text-sm);
+			font-weight: 600;
+			padding: 0.4rem 1rem;
+			border-radius: 999px; /* Pill shape */
+			background-color: transparent;
+			border: 1px solid var(--sl-color-text-accent);
+			transition: all 0.2s ease-in-out;
+		}
+		.top-nav-link:hover {
+			color: var(--sl-color-text-invert);
+			background-color: var(--sl-color-text-accent);
+			transform: scale(1.05);
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+		}
+
+		.animated-letter {
+			display: inline-block;
+			color: black;
+			animation: colorTurn 0.6s ease-out forwards;
+		}
+
+		@keyframes colorTurn {
+			0% {
+				transform: translateY(2px);
+				opacity: 0.8;
+			}
+			100% {
+				transform: translateY(0);
+				opacity: 1;
+			}
+		}
+</style>

@@ -6,6 +6,11 @@ description: Learn how hot reloading works and build projects that take advantag
 import { Code } from "@astrojs/starlight/components";
 import { Kbd } from 'starlight-kbd/components';
 
+As you program your game, you want to see changes live. While Vectarine supports hot-reloading, it's important to structure your code
+appropriately to best take advantage of it. Let's see how.
+
+## Resources
+
 Vectarine thinks in terms of resources. A resource is basically a file, it can be code, an image, sound, etc.
 Each resource is hot-reloaded individually.
 
@@ -17,21 +22,19 @@ When you edit a file, Vectarine hot-reloads it, meaning it rereads its content a
 Each resource can depend on other resources, for example a Luau script can draw an image. Because the script holds a pointer
 to the image resource, when the image is hot-reloaded, the script will use the new version of the image without needing to be reloaded itself.
 
-For scripts, a script resource is a Luau table that is returned by the script.
-Inside a module, you can use `loader.init()` to get the content of the module itself, and `loader.loadScript(path, require(path))` to get the content from other scripts.
+## Scripts
+
+A script resource is a Luau table that is returned by the script file.
+Inside a module, you can use `loader.init()` to get the content of the module itself, and `require(path)` to get the content from other scripts.
 
 You need to keep this in mind, when dealing with scripts requiring other scripts.
 
 Let's consider the following example:
 
-export const mainLuau1 = `const loader = require("@vectarine/loader")
-const debug = require("@vectarine/debug")
-const res, other = loader.loadScript("scripts/other.luau", {} :: any)
+export const mainLuau1 = `const debug = require("@vectarine/debug")
+const other = require("./other.luau")
 
-local value = nil
-if res:isReady() then
-    value = other.getPopulation()
-end
+local value = other.getPopulation()
 
 function Update()
     debug.fprint("Value is ", value)
@@ -50,8 +53,8 @@ return module`;
 
 In this example:
 
-- When the game is first loaded, `other` is not ready, so `nil` will be printed in the console.
-- If we edit `main.luau`, `other` will be ready this time and `3` will be printed in the console.
+- When the game is first loaded, `other` is not ready, so Vectarine pauses execution of `main.luau` and starts loading `other.luau`.
+- Once `other.luau` is loaded, `main.luau` is resumed and `other.getPopulation()` is called, returning `3` which is printed in the console.
 - If we edit `other.luau` to replace the `3` by a `6`, main won't be reloaded, so `3` will still be printed.
 - If we edit `main.luau` again, `other.getPopulation` will be called once again `6` will be printed in the console.
 
@@ -86,30 +89,19 @@ This design where we initialize an object with functions in its properties in `o
 
 Now, let's say we change `main.luau` to the following:
 
-export const mainLuau2 = `const loader = require("@vectarine/loader")
+export const mainLuau2 = `const other = require("./other")
 const debug = require("@vectarine/debug")
-const event = require("@vectarine/event")
-const res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
-
-local value = nil
-event.getResourceLoadedEvent():on(function(r)
-    if res:isReady() then
-        value = other.getPopulation()
-    end
-end)
 
 function Update()
-    if res:isReady() then
-        local population = other.getPopulation()
-        debug.fprint("Population is " .. population:count())
-    else
-        debug.fprint("Other script is not loaded yet")
-    end
+    local population = other.getPopulation()
+    debug.fprint("Population is ", population:count())
 end`;
 
 <Code lang="luau" title="main.luau" code={mainLuau2} />
 
-This will work, but it is a lot more verbose, especially if you have multiple modules and you want to keep track what needs to be reloaded when.
+This will work, but we are creating a new population object every frame which is not ideal.
+
+## An object-oriented approach
 
 The best solution is to rethink the structure of the code:
 
@@ -118,87 +110,76 @@ export const otherLuau3 = `const loader = require("@vectarine/loader")
 -- It's return type is marked as nil for auto-completion reasons.
 const module = loader.init() or {}
 
-module.reloadCounter = module.reloadCounter or 0
-module.reloadCounter += 1 -- This counter is incremented every reload.
-
-module.population = module.population or {}
-module.population.count = function(self: populationType)
-    return self.humans + self.aliens
+-- We put the functions associated with the population type inside the module.
+module.count = function(self: Population)
+	return self.humans + self.aliens
 end
 
-export type populationType = {
-    humans: number,
-    aliens: number,
-} & typeof module.population
-
-function module.getPopulation(): population
-    const data = {
-        humans = 3,
-        aliens = 5,
-    }
-    setmetatable(data, { __index = module.population })
-    return data
+-- This function is the "constructor" for our Population type
+function module.makePopulation(): Population
+	const data = {
+		humans = 3,
+		aliens = 5,
+	}
+	-- The metatable is set to the module itself, so that population:count() will always use the latest version of the count function, even after hot-reloading.
+	return setmetatable(data, { __index = module }) :: Population
 end
 
-return module`;
+export type Population = {
+	humans: number,
+	aliens: number,
+} & typeof(setmetatable({}, { __index = module }))
+
+return module
+`;
 
 <Code lang="luau" title="other.luau" code={otherLuau3} />
 
-export const mainLuau3 = `const loader = require("@vectarine/loader")
+export const mainLuau3 = `const other = require("./other.luau")
 const debug = require("@vectarine/debug")
-const res, other = loader.loadScript("scripts/other.luau", require("other.luau"))
 
-local population
-if res:isReady() then
-    population = other.getPopulation()
-end
+local population = other.makePopulation()
 
 function Update()
-    if population ~= nil then 
-        debug.fprint("Population is ", other.count(population))
-    end
+    debug.fprint("Population is ", population:count())
 end`;
 
 <Code lang="luau" title="main.luau" code={mainLuau3} />
 
+With this design, when you edit the count function in `other.luau`, `main.luau` calls the latest version without you needing to reload it or create a new population object.
+
 What is happening here is that when you hot-reload `other.luau`, module is not recreated. The same table is kept and its old content is merged with the new one.
 This content is what gets returned by `module.init()`
-This means that `main.luau` has a reference to the newest version of the `count` function and hot-reloading works as expected!
+This means that `main.luau` has a reference to the newest version of the `count` function through the metatable of `population` and hot-reloading works as expected!
 
-# Lessons for organizing code
+## Lessons for organizing code
 
 We can thus learn the following principles for organizing code in a hot-reloading friendly way:
 
 - Except for `main.luau`, avoid putting code in the global scope. Instead, put it inside functions. You don't know when code in the global scope will be executed which can lead to issues with loading order.
 - Use function in modules and avoid storing functions in objects
+- Define one main type per module with associated functions for working with that type in the module.
 
-Some more tips:
-
-**Put all your types in a `types.luau` file** that you can import using `require` without a `loadScript`.
-As types don't exist at runtime, you don't need to load them and they don't need any hot-reloading, they are there for auto-completion and type checking only.
-
-**loadScript always returns the same underlying script instance**, so you can load the same script in multiple other scripts without fear! To make sure the script
-is loaded, you just need to wait for it one, inside the entry point of your game using the following pattern:
-
+Unlike scripts, some resources like images and sound are not immediately ready when loaded. You can use `Graphics.drawSplashScreenIfNeeded` to display a splash screen while waiting for resources to be ready.
 
 export const mainLuau4 = `const loader = require("@vectarine/loader")
 const graphics = require("@vectarine/graphics")
 
 -- load your scripts
-local otherResource, other = loader.loadScript("scripts/other.luau", require("other.luau"))
-local other2Resource, other2 = loader.loadScript("scripts/other2.luau", require("other2.luau"))
+local image = loader.loadImage("textures/image.png")
+local sound = loader.loadAudio("audio/sound.mp3")
 
 
 function Once()
 	_G.isOnceCalled = true
-    -- Your init code here
+    -- Your init code here. You can be sure that the image and sound are now ready to be used.
 end
 
 function Update(deltaTime: number)
 	if
 		graphics.drawSplashScreenIfNeeded({
-            otherResource,
-            other2Resource,
+            image,
+            sound,
         })
     then
         return
@@ -213,7 +194,7 @@ end`;
 <Code lang="luau" title="main.luau" code={mainLuau4} />
 
 Because `Update` is the entry point of your game, all code that gets called from it will access resources that are already loaded.
-Inside `drawSplashScreenIfNeeded`, you can put scripts, but also images, sounds, etc.
+Inside `drawSplashScreenIfNeeded`, you can put images, sound, fonts and even scripts resources (coming from the `loadScript` function)!
 
 `
 
