@@ -141,6 +141,7 @@ fn gui_main() {
 
         if let Some(project) = editor_state.project.borrow_mut().as_mut() {
             let game = &mut project.game;
+            luau::update_hook_timing(&project.hook_timing); // Setup infinite loop detection early in the frame.
 
             game.load_resource_as_needed();
             let script_reloaded = reload_assets_if_needed(
@@ -178,9 +179,7 @@ fn gui_main() {
                     editor_state.editor_want_keyboard,
                 );
 
-                *project.hook_timing.borrow_mut() = Some(std::time::Instant::now());
                 game.main_loop(game_events, &window, delta_duration, true);
-                *project.hook_timing.borrow_mut() = None;
             }
         } else {
             // Clear the screen when no project is loaded
