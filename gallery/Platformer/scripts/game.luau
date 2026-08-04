@@ -24,9 +24,9 @@ local vec = require("@vectarine/vec")
 local vec4 = require("@vectarine/vec4")
 
 -- Script resources
-local Interactable = require("./interactable")
-local World = require("./world")
 local f = require("./f")
+local interactableModule = require("./interactable")
+local worldModule = require("./world")
 
 -- Constants
 local FOREGROUND_LAYER = 2
@@ -51,7 +51,7 @@ local icons_tiles = loader.loadTileset("textures/icons_sheet.tsx")
 local icons = icons_image:withTileset(icons_tiles)
 
 -- Persisted state
-local camera = persist.onReload(camera.new(), "camera")
+local gameCamera = persist.onReload(camera.new(), "camera")
 
 local player = persist.onReload({
 	o = (nil :: any) :: physics.Object2,
@@ -82,13 +82,11 @@ end
 
 -- Non persisted state
 
-local world = physics.newWorld2(vec.ZERO2, camera)
+local world = physics.newWorld2(vec.ZERO2, gameCamera)
 local factor = vec.V2(0.1, -0.1)
 local offset = vec.V2(-1, 1)
 
-local infiniteWorld: World.IWorld
-
-local interactibleManager: Interactable.InteractableManager
+local interactibleManager: interactableModule.InteractableManager
 
 function makePlayer()
 	-- By default, we make the player collider way too big.
@@ -108,77 +106,71 @@ function makePlayer()
 end
 
 -- Initialization function
-function Init()
-	infiniteWorld =
-		World.createInfiniteWorld(world, level, COLLISION_LAYER, SOLID_BLOCKS, LEVEL_SIZE, tiles, tiles_tiles, {
-			{ index = FAR_BACKGROUND_LAYER, tint = vec4.GRAY },
-			{ index = COLLISION_LAYER, tint = vec4.WHITE },
-			{ index = FOREGROUND_LAYER, tint = vec4.WHITE },
-		})
 
-	player.o = makePlayer()
-	camera.position = vec.ZERO2 - player.o.position
-	camera.zoom = debugging.zoomLevel
-
-	interactibleManager = Interactable.newInteractibleManager(tiles, icons)
-	Interactable.newInteractible(interactibleManager, "npc", vec.V2(6, 6), {
-		"Hello! (Press B to continue)",
-		"Welcome the Vectarine physics demo",
-		"This demo will show you how to use Vectarine's physics system",
-		"It has also uses tilemaps to represent an infinite level.",
-		"Use the arrow keys to move.",
-	})
-	Interactable.newInteractible(
-		interactibleManager,
-		"npc",
-		vec.V2(12, 6),
-		{ "Use the up arrow to jump", "You can restart this demo with Ctrl+R" }
-	)
-
-	Interactable.newInteractible(interactibleManager, "npc", vec.V2(23, 6), {
-		"You are too big to fit inside this gap.",
-		"Vectarine has a watcher tool that you can open using Ctrl+3",
-		"You can also open it from the Tools menu at the top.",
-		"Using the watcher tool, search for the colliders variable.",
-		"Try to check the show checkbox",
-		"You will be able to change your collider size from there too.",
+local infiniteWorld: worldModule.IWorld =
+	worldModule.createInfiniteWorld(world, level, COLLISION_LAYER, SOLID_BLOCKS, LEVEL_SIZE, tiles, tiles_tiles, {
+		{ index = FAR_BACKGROUND_LAYER, tint = vec4.GRAY },
+		{ index = COLLISION_LAYER, tint = vec4.WHITE },
+		{ index = FOREGROUND_LAYER, tint = vec4.WHITE },
 	})
 
-	Interactable.newInteractible(interactibleManager, "npc", vec.V2(33, 4), {
-		"Doors are currently disabled",
-		"Using the watcher tool, search for doors to enable them",
-	})
+player.o = makePlayer()
+gameCamera.position = vec.ZERO2 - player.o.position
+gameCamera.zoom = debugging.zoomLevel
 
-	Interactable.newInteractible(interactibleManager, "open_door", vec.V2(30, 4), {}, vec.V2(30, -1))
+interactibleManager = interactableModule.newInteractibleManager(tiles, icons)
+interactableModule.newInteractible(interactibleManager, "npc", vec.V2(6, 6), {
+	"Hello! (Press B to continue)",
+	"Welcome the Vectarine physics demo",
+	"This demo will show you how to use Vectarine's physics system",
+	"It has also uses tilemaps to represent an infinite level.",
+	"Use the arrow keys to move.",
+})
+interactableModule.newInteractible(
+	interactibleManager,
+	"npc",
+	vec.V2(12, 6),
+	{ "Use the up arrow to jump", "You can restart this demo with Ctrl+R" }
+)
 
-	Interactable.newInteractible(interactibleManager, "open_door", vec.V2(30, -1), {}, vec.V2(30, 4))
+interactableModule.newInteractible(interactibleManager, "npc", vec.V2(23, 6), {
+	"You are too big to fit inside this gap.",
+	"Vectarine has a watcher tool that you can open using Ctrl+3",
+	"You can also open it from the Tools menu at the top.",
+	"Using the watcher tool, search for the colliders variable.",
+	"Try to check the show checkbox",
+	"You will be able to change your collider size from there too.",
+})
 
-	Interactable.newInteractible(interactibleManager, "npc", vec.V2(48, 8), {
-		"Looks like you're stuck in a hole.",
-		"You can search for 'movement' in watcher to change your jump settings",
-	})
+interactableModule.newInteractible(interactibleManager, "npc", vec.V2(33, 4), {
+	"Doors are currently disabled",
+	"Using the watcher tool, search for doors to enable them",
+})
 
-	Interactable.newInteractible(interactibleManager, "npc", vec.V2(54, -1), {
-		"This is the end of the level",
-		"You can explore it in no-clip mode!",
-		"Enable it using the debugging object in watcher",
-		"Have fun testing and modifying the demo! :)",
-	})
+interactableModule.newInteractible(interactibleManager, "open_door", vec.V2(30, 4), {}, vec.V2(30, -1))
 
-	Interactable.newInteractible(interactibleManager, "npc", vec.V2(49, -3), {
-		"Check the resources with Ctrl+2",
-		"You can open level.tmx with Tiled or another level editor",
-		"You can edit the level while playing the game!",
-		"These signs and other interactible objects are not part of the level!",
-	})
+interactableModule.newInteractible(interactibleManager, "open_door", vec.V2(30, -1), {}, vec.V2(30, 4))
 
-	world.gravity = vec.V2(0, 60)
-end
--- If the resource are already loaded (hot reload), we can init right away.
--- Otherwise, we need to wait for the resource to load.
-if areResourcesLoaded.loaded then
-	Init()
-end
+interactableModule.newInteractible(interactibleManager, "npc", vec.V2(48, 8), {
+	"Looks like you're stuck in a hole.",
+	"You can search for 'movement' in watcher to change your jump settings",
+})
+
+interactableModule.newInteractible(interactibleManager, "npc", vec.V2(54, -1), {
+	"This is the end of the level",
+	"You can explore it in no-clip mode!",
+	"Enable it using the debugging object in watcher",
+	"Have fun testing and modifying the demo! :)",
+})
+
+interactableModule.newInteractible(interactibleManager, "npc", vec.V2(49, -3), {
+	"Check the resources with Ctrl+2",
+	"You can open level.tmx with Tiled or another level editor",
+	"You can edit the level while playing the game!",
+	"These signs and other interactible objects are not part of the level!",
+})
+
+world.gravity = vec.V2(0, 60)
 
 function Update(deltaTime: number)
 	if graphics.drawSplashScreenIfNeeded({
@@ -189,22 +181,15 @@ function Update(deltaTime: number)
 	}) then
 		return
 	end
-	if not areResourcesLoaded.loaded then
-		areResourcesLoaded.loaded = true
-		Init()
-		-- We need to want one frame for init to finish.
-		graphics.drawSplashScreen("Initializing.")
-		return
-	end
 
 	if isSmallPlayer ~= colliders.isSmallPlayer then
 		isSmallPlayer = colliders.isSmallPlayer
 		player.o = makePlayer()
 	end
 
-	World.update(infiniteWorld, player.o.position, deltaTime)
+	infiniteWorld:update(player.o.position, deltaTime)
 
-	camera.zoom = debugging.zoomLevel / 100
+	gameCamera.zoom = debugging.zoomLevel / 100
 
 	local groundDetectWidth = 0.6 -- Larger value = coyote time kind of.
 	local groundDetectYOffset = colliders.isSmallPlayer and -0.3 or -0.55
@@ -253,7 +238,7 @@ function Update(deltaTime: number)
 	end
 
 	-- We need to more clearly distinguish between world pos and screen pos and coordinate system and stuff.
-	camera:moveTowards(vec.ZERO2 - player.o.position, 0.02)
+	gameCamera:moveTowards(vec.ZERO2 - player.o.position, 0.02)
 
 	local windowSize = io.getWindowSize()
 	local yScale = windowSize.x / windowSize.y
@@ -265,10 +250,10 @@ function Update(deltaTime: number)
 	-- local t = level:getTile(COLLISION_LAYER, integerPlayerPos.x, integerPlayerPos.y + 1) -- +y = down
 
 	graphics.clear(vec4.BLACK)
-	graphics.withTransformation({ translation = camera.position, scale = factor:scale(camera.zoom) }, function()
+	graphics.withTransformation({ translation = gameCamera.position, scale = factor:scale(gameCamera.zoom) }, function()
 		graphics.withTransformation({ translation = offset }, function()
-			World.draw(infiniteWorld)
-			Interactable.drawInteractibles(interactibleManager, deltaTime, player.o.position, player)
+			infiniteWorld:draw()
+			interactableModule.drawInteractibles(interactibleManager, deltaTime, player.o.position, player)
 			local playerDrawOffset = colliders.isSmallPlayer and -0.41 or -0.7
 			tiles:drawTile("player", (player.o.position - vec.V2(0.5, playerDrawOffset)), vec.V2(1, -1))
 			drawColliders(onGroundZone)
@@ -292,7 +277,7 @@ function drawColliders(onGroundZone: { pos: vec.Vec2, size: vec.Vec2 })
 	graphics.drawPolygon(player.o:getPoints(), vec4.V4(1, 0, 0, 0.5))
 
 	-- Draw ground colliders for debug
-	World.drawColliders(infiniteWorld)
+	infiniteWorld:drawColliders()
 
 	graphics.drawRect(onGroundZone.pos, onGroundZone.size, vec4.BLUE)
 end
