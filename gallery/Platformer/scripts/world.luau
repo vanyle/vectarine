@@ -27,18 +27,6 @@ export type Layer = {
 	tint: vec4.Vec4,
 }
 
-export type IWorld = {
-	world: physics.World2,
-	level: tile.Tilemap,
-	collisionLayer: number,
-	solidBlocks: { number },
-	chunkSize: number,
-	groundChunks: { [string]: GroundChunk },
-	tiles: image.ImageWithTileset,
-	tileset: tile.TilesetResource,
-	layers: { Layer },
-}
-
 local function chunkKey(cx: number, cy: number): string
 	return cx .. "," .. cy
 end
@@ -53,7 +41,7 @@ function module.createInfiniteWorld(
 	tileset: tile.TilesetResource,
 	layers: { Layer }
 ): IWorld
-	return {
+	return setmetatable({
 		world = world,
 		level = level,
 		collisionLayer = collisionLayer,
@@ -63,7 +51,7 @@ function module.createInfiniteWorld(
 		tiles = tiles,
 		tileset = tileset,
 		layers = layers,
-	}
+	}, { __index = module }) :: IWorld
 end
 
 local function createGroundChunk(w: IWorld, cx: number, cy: number)
@@ -166,5 +154,17 @@ function module.draw(w: IWorld)
 		end
 	end
 end
+
+export type IWorld = {
+	world: physics.World2,
+	level: tile.Tilemap,
+	collisionLayer: number,
+	solidBlocks: { number },
+	chunkSize: number,
+	groundChunks: { [string]: GroundChunk },
+	tiles: image.ImageWithTileset,
+	tileset: tile.TilesetResource,
+	layers: { Layer },
+} & typeof(setmetatable({}, { __index = module }))
 
 return module
