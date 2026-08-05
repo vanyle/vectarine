@@ -4,7 +4,6 @@ use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::glow::HasContext;
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
 use vectarine_plugin_sdk::sdl2;
-use vectarine_plugin_sdk::sdl2::video::WindowPos;
 
 use crate::{
     console::print_warn,

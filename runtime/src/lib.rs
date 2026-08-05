@@ -91,10 +91,16 @@ where
 
     let _ = video_subsystem.gl_set_swap_interval(SwapInterval::VSync);
 
+    let window = Rc::new(RefCell::new(SdlDrawingSurface {
+        window,
+        video_subsystem,
+    }));
+
+    window.borrow_mut().set_drawable_size_in_px(800, 600);
+
     RenderingBlock {
         sdl: sdl_context,
-        video: Rc::new(video_subsystem),
-        window: Rc::new(RefCell::new(SdlDrawingSurface { window })),
+        window,
         event_pump,
         gl_context,
         gl,
@@ -131,7 +137,6 @@ pub fn lib_main() {
 
     let RenderingBlock {
         sdl,
-        video,
         window,
         mut event_pump,
         gl,

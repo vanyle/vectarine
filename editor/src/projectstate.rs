@@ -7,6 +7,7 @@ use std::{
     sync::Arc,
 };
 
+use runtime::io::localfs::LocalFileSystem;
 use runtime::{
     anyhow::{self},
     console,
@@ -17,7 +18,6 @@ use runtime::{
     lua_env::BUILT_IN_MODULES,
     projectinfo::{ProjectInfo, get_project_info},
 };
-use runtime::{io::localfs::LocalFileSystem, sdl2};
 
 use crate::{
     luau::{self, HookError, HookTiming},
@@ -36,7 +36,6 @@ pub struct ProjectState {
     pub project_path: PathBuf,
     pub project_info: ProjectInfo,
     pub game: Game,
-    pub video: Rc<sdl2::VideoSubsystem>,
     pub window: Rc<RefCell<SdlDrawingSurface>>,
     pub hook_timing: HookTiming,
     pub hook_error: HookError,
@@ -72,7 +71,6 @@ impl ProjectState {
         project_path: &Path,
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
-        video: Rc<sdl2::VideoSubsystem>,
         window: Rc<RefCell<SdlDrawingSurface>>,
         trusted_plugins: &[TrustedPlugin],
         callback: F,
@@ -117,7 +115,6 @@ impl ProjectState {
                     project_path: project_path.to_path_buf(),
                     project_info,
                     game,
-                    video,
                     window,
                     hook_timing,
                     hook_error,

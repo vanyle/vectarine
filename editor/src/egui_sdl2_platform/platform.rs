@@ -1,4 +1,5 @@
 use runtime::anyhow;
+use runtime::drawing_surface::sdl_drawing_surface::get_linux_window_scaling;
 use runtime::egui;
 use runtime::egui::{Modifiers, Pos2};
 use runtime::sdl2;
@@ -60,17 +61,18 @@ impl Platform {
         sdl: &sdl2::Sdl,
         video: &sdl2::VideoSubsystem,
     ) {
+        let linux_scaling = get_linux_window_scaling(video);
         for event in events {
             #[allow(clippy::collapsible_match)]
             match event {
-                // Handle reizing
+                // Handle resizing
                 Event::Window { win_event, .. } => match win_event {
                     WindowEvent::Resized(w, h) | WindowEvent::SizeChanged(w, h) => {
                         self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
                             egui::Pos2::ZERO,
                             egui::Vec2 {
-                                x: *w as f32,
-                                y: *h as f32,
+                                x: *(w) as f32 / linux_scaling,
+                                y: *h as f32 / linux_scaling,
                             },
                         ));
                     }
@@ -114,7 +116,8 @@ impl Platform {
                 // Handle mouse motion
                 Event::MouseMotion { x, y, .. } => {
                     // Update the pointer position
-                    self.pointer_pos = egui::Pos2::new(*x as f32, *y as f32);
+                    self.pointer_pos =
+                        egui::Pos2::new(*x as f32 / linux_scaling, *y as f32 / linux_scaling);
                     self.raw_input
                         .events
                         .push(egui::Event::PointerMoved(self.pointer_pos));
@@ -289,7 +292,9 @@ impl Platform {
             match cmd {
                 egui::OutputCommand::CopyText(text) => {
                     editor_state
-                        .video
+                        .window
+                        .borrow()
+                        .video_subsystem
                         .clipboard()
                         .set_clipboard_text(text)
                         .map_err(|e| {
