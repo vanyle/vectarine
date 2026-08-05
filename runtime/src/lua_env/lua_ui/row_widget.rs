@@ -17,11 +17,11 @@ pub struct Row {
 }
 
 impl VectarineWidget for Row {
-    fn size(&self) -> Vec2 {
+    fn size(&self, lua: &mlua::Lua) -> Vec2 {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
         for child in &self.children {
-            let child_size: crate::math::Vect<2> = child.0.borrow().size();
+            let child_size: crate::math::Vect<2> = child.0.borrow().size(lua);
             width += child_size.x();
             height = height.max(child_size.y());
         }
@@ -54,10 +54,10 @@ impl VectarineWidget for Row {
         draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
-        let container_height = self.size().y() - self.padding.top - self.padding.bottom;
+        let container_height = self.size(lua).y() - self.padding.top - self.padding.bottom;
         let mut x_offset = self.padding.left;
         for child in &self.children {
-            let child_size = child.0.borrow().size();
+            let child_size = child.0.borrow().size(lua);
             let child_height = child_size.y();
             let y_offset = self.padding.bottom
                 + match self.alignment {

@@ -174,7 +174,7 @@ impl ImageWidget {
 }
 
 impl VectarineWidget for ImageWidget {
-    fn size(&self) -> Vec2 {
+    fn size(&self, _lua: &mlua::Lua) -> Vec2 {
         self.size
     }
 

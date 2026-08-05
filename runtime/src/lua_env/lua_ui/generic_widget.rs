@@ -15,7 +15,7 @@ pub struct GenericWidget {
 }
 
 impl VectarineWidget for GenericWidget {
-    fn size(&self) -> Vec2 {
+    fn size(&self, _lua: &mlua::Lua) -> Vec2 {
         self.size
     }
     fn draw(

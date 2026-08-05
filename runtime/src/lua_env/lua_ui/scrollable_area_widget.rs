@@ -24,17 +24,17 @@ pub struct ScrollableArea {
 }
 
 impl ScrollableArea {
-    fn content_height(&self) -> f32 {
-        self.content.0.borrow().size().y()
+    fn content_height(&self, lua: &mlua::Lua) -> f32 {
+        self.content.0.borrow().size(lua).y()
     }
 
-    fn max_scroll(&self) -> f32 {
-        (self.content_height() - self.view_size.y()).max(0.0)
+    fn max_scroll(&self, lua: &mlua::Lua) -> f32 {
+        (self.content_height(lua) - self.view_size.y()).max(0.0)
     }
 
     /// Ratio of the visible portion to the total content height (0.0..=1.0).
-    fn visible_ratio(&self) -> f32 {
-        let ch = self.content_height();
+    fn visible_ratio(&self, lua: &mlua::Lua) -> f32 {
+        let ch = self.content_height(lua);
         if ch <= 0.0 {
             1.0
         } else {
@@ -43,8 +43,8 @@ impl ScrollableArea {
     }
 
     /// Scroll progress from 0.0 (top) to 1.0 (bottom).
-    fn scroll_ratio(&self) -> f32 {
-        let max = self.max_scroll();
+    fn scroll_ratio(&self, lua: &mlua::Lua) -> f32 {
+        let max = self.max_scroll(lua);
         if max <= 0.0 {
             0.0
         } else {
@@ -54,6 +54,7 @@ impl ScrollableArea {
 
     fn draw_default_scrollbar(
         &mut self,
+        lua: &mlua::Lua,
         batch: &RefCell<batchdraw::BatchDraw2d>,
         io_env: &RefCell<IoEnvState>,
         view_width: f32,
@@ -109,13 +110,13 @@ impl ScrollableArea {
             let track_bottom = -1.0_f32;
             let ratio = 1.0 - ((local_my - track_bottom - thumb_height / 2.0) / thumb_travel);
             let new_ratio = ratio.clamp(0.0, 1.0);
-            self.scroll_offset = new_ratio * self.max_scroll();
+            self.scroll_offset = new_ratio * self.max_scroll(lua);
         }
     }
 }
 
 impl VectarineWidget for ScrollableArea {
-    fn size(&self) -> Vec2 {
+    fn size(&self, _lua: &mlua::Lua) -> Vec2 {
         self.view_size
     }
 
@@ -137,10 +138,10 @@ impl VectarineWidget for ScrollableArea {
         draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
-        let content_height = self.content_height();
+        let content_height = self.content_height(lua);
         let view_height = self.view_size.y();
         let view_width = self.view_size.x();
-        let max_scroll = self.max_scroll();
+        let max_scroll = self.max_scroll(lua);
 
         if current_state.is_mouse_inside {
             let wheel_y = io_env.borrow().mouse_state.wheel_y;
@@ -207,8 +208,8 @@ impl VectarineWidget for ScrollableArea {
 
         // Draw scrollbar (only when content overflows)
         if max_scroll > 0.0 {
-            let scroll_ratio = self.scroll_ratio();
-            let visible_ratio = self.visible_ratio();
+            let scroll_ratio = self.scroll_ratio(lua);
+            let visible_ratio = self.visible_ratio(lua);
             if let Some(ref draw_fn) = self.scrollbar_draw_fn {
                 let info = lua.create_table()?;
                 info.raw_set("scrollRatio", scroll_ratio)?;
@@ -221,6 +222,7 @@ impl VectarineWidget for ScrollableArea {
                 self.scroll_offset = clamped * max_scroll;
             } else {
                 self.draw_default_scrollbar(
+                    lua,
                     batch,
                     io_env,
                     view_width,
