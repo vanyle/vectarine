@@ -15,7 +15,7 @@ use notify_debouncer_full::{
 use runtime::{
     anyhow::{self},
     console,
-    drawing_surface::sdl_drawing_surface::SdlDrawingSurface,
+    drawing_surface::sdl_drawing_surface::{SdlDrawingSurface, get_linux_window_scaling},
     egui, egui_glow, glow,
     graphics::batchdraw::BatchDraw2d,
     io::{
@@ -62,7 +62,6 @@ pub struct EditorState {
     pub project: Rc<RefCell<Option<ProjectState>>>,
 
     pub start_time: std::time::Instant,
-    pub video: Rc<sdl2::VideoSubsystem>,
     pub window: Rc<RefCell<SdlDrawingSurface>>,
     pub gl: Arc<glow::Context>,
 
@@ -102,7 +101,6 @@ impl EditorState {
         let config_store = self.config.clone();
         let project = self.project.clone();
         let gl = self.gl.clone();
-        let video = self.video.clone();
         let window = self.window.clone();
         let debouncer = self.debouncer.clone();
         let trusted_plugins = self.get_trusted_plugins();
@@ -141,7 +139,6 @@ impl EditorState {
                             &project_path,
                             Box::new(LocalFileSystem),
                             gl,
-                            video,
                             window,
                             &trusted_plugins,
                             |loaded_project| {
@@ -157,7 +154,6 @@ impl EditorState {
     }
 
     pub fn new(
-        video: Rc<sdl2::VideoSubsystem>,
         window: Rc<RefCell<SdlDrawingSurface>>,
         gl: Arc<glow::Context>,
         editor_window: sdl2::video::Window,
@@ -170,7 +166,6 @@ impl EditorState {
             start_time: Instant::now(),
             project: Rc::new(RefCell::new(None)),
             editor_batch_draw,
-            video,
             window,
             gl,
             editor_specific_window: editor_window,
@@ -205,7 +200,6 @@ impl EditorState {
             project_path,
             file_system,
             self.gl.clone(),
-            self.video.clone(),
             self.window.clone(),
             &self.get_trusted_plugins(),
             |project| {
@@ -264,7 +258,7 @@ impl EditorState {
         painter: &mut egui_glow::Painter,
     ) {
         platform.update_time(self.start_time.elapsed().as_secs_f64());
-        platform.handle_events(latest_events, sdl, &self.video);
+        platform.handle_events(latest_events, sdl, &self.window.borrow().video_subsystem);
 
         let mut egui_eats_keyboard = false;
         let mut egui_eats_mouse = false;
@@ -309,15 +303,16 @@ impl EditorState {
                 let size = window_with_editor.size();
                 let drawable_size = window_with_editor.drawable_size();
                 // Ratio of hardware pixel (pixel) to software pixels (points)
-                let pixels_per_point = drawable_size.0 as f32 / size.0 as f32;
+                let linux_scaling = get_linux_window_scaling(&self.window.borrow().video_subsystem);
+                let pixels_per_point = linux_scaling * drawable_size.0 as f32 / size.0 as f32;
                 platform.set_pixels_per_point(pixels_per_point);
 
                 // Make UI text crisp
                 platform.raw_input.screen_rect = Some(egui::Rect::from_min_size(
                     egui::Pos2::ZERO,
                     egui::Vec2 {
-                        x: size.0 as f32,
-                        y: size.1 as f32,
+                        x: size.0 as f32 / linux_scaling,
+                        y: size.1 as f32 / linux_scaling,
                     },
                 ));
 

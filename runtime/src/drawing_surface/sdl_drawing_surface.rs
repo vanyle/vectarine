@@ -1,9 +1,11 @@
 use crate::drawing_surface::DrawingSurface;
+use vectarine_plugin_sdk::sdl2::VideoSubsystem;
 use vectarine_plugin_sdk::sdl2::sys::SDL_WindowFlags;
 use vectarine_plugin_sdk::sdl2::video::{FullscreenType, Window, WindowPos};
 
 pub struct SdlDrawingSurface {
     pub window: Window,
+    pub video_subsystem: VideoSubsystem,
 }
 
 impl DrawingSurface for SdlDrawingSurface {
@@ -12,8 +14,12 @@ impl DrawingSurface for SdlDrawingSurface {
         drawable_screen_size(&self.window)
     }
 
-    fn set_drawable_size_in_px(&mut self, width: u32, height: u32) {
-        let _ = self.window.set_size(width, height);
+    fn set_drawable_size_in_px(&mut self, logical_width: u32, logical_height: u32) {
+        let scaling = get_linux_window_scaling(&self.video_subsystem);
+        let _ = self.window.set_size(
+            (logical_width as f32 * scaling) as u32,
+            (logical_height as f32 * scaling) as u32,
+        );
     }
 
     fn is_minimized(&self) -> bool {
@@ -105,4 +111,23 @@ pub fn get_screen_size(_window: &Window) -> (u32, u32) {
     let width = size.get(&Val::from_str("width")).as_i32();
     let height = size.get(&Val::from_str("height")).as_i32();
     (width as u32, height as u32)
+}
+
+/// On Ubuntu, windows are too small by default.
+/// We resize the windows based on the total screen size so that they occupy roughly the same share of the screen as on other platforms.
+pub fn get_linux_window_scaling(_video_subsystem: &VideoSubsystem) -> f32 {
+    #[cfg(target_os = "linux")]
+    {
+        let display_width = _video_subsystem
+            .display_bounds(0)
+            .map(|rect| rect.width())
+            .ok()
+            .unwrap_or(1920);
+        f32::max(1.0, display_width as f32 / 1920.0)
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        1.0
+    }
 }

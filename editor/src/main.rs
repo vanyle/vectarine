@@ -51,7 +51,6 @@ fn get_project_to_open_from_args() -> Option<PathBuf> {
 fn gui_main() {
     let RenderingBlock {
         sdl,
-        video,
         window,
         mut event_pump,
         gl,
@@ -64,7 +63,7 @@ fn gui_main() {
     init_sound_system(&sdl);
 
     let (editor_window, mut editor_interface) =
-        editorextrawindow::create_specific_editor_window(&video, &gl);
+        editorextrawindow::create_specific_editor_window(&window.borrow().video_subsystem, &gl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 
@@ -76,7 +75,6 @@ fn gui_main() {
         .expect("Failed to create platform");
 
     let mut editor_state = EditorState::new(
-        video.clone(),
         window.clone(),
         gl.clone(),
         editor_window,
@@ -100,10 +98,15 @@ fn gui_main() {
 
     // Send a fake resize event to egui to initialize drawable area size
     // This is needed on high-DPI screen where the drawable size is greater than window size
-    send_window_resize_sync_event(&sdl, &video, &window.borrow().window, &mut platform);
     send_window_resize_sync_event(
         &sdl,
-        &video,
+        &window.borrow().video_subsystem,
+        &window.borrow().window,
+        &mut platform,
+    );
+    send_window_resize_sync_event(
+        &sdl,
+        &window.borrow().video_subsystem,
         &editor_state.editor_specific_window,
         &mut editor_interface.platform,
     );

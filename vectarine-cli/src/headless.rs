@@ -63,8 +63,10 @@ where
 
     RenderingBlock {
         sdl: sdl_context,
-        video: Rc::new(video_subsystem),
-        window: Rc::new(RefCell::new(SdlDrawingSurface { window })),
+        window: Rc::new(RefCell::new(SdlDrawingSurface {
+            window,
+            video_subsystem,
+        })),
         event_pump,
         gl_context,
         gl,
