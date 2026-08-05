@@ -14,9 +14,9 @@ use notify_debouncer_full::{
 };
 use runtime::{
     anyhow::{self},
-    console, egui_glow,
-    game::drawable_screen_size,
-    glow,
+    console,
+    drawing_surface::sdl_drawing_surface::SdlDrawingSurface,
+    egui, egui_glow, glow,
     graphics::batchdraw::BatchDraw2d,
     io::{
         fs::{FileSystem, ReadOnlyFileSystem},
@@ -63,7 +63,7 @@ pub struct EditorState {
 
     pub start_time: std::time::Instant,
     pub video: Rc<sdl2::VideoSubsystem>,
-    pub window: Rc<RefCell<sdl2::video::Window>>,
+    pub window: Rc<RefCell<SdlDrawingSurface>>,
     pub gl: Arc<glow::Context>,
 
     pub editor_specific_window: sdl2::video::Window,
@@ -158,7 +158,7 @@ impl EditorState {
 
     pub fn new(
         video: Rc<sdl2::VideoSubsystem>,
-        window: Rc<RefCell<sdl2::video::Window>>,
+        window: Rc<RefCell<SdlDrawingSurface>>,
         gl: Arc<glow::Context>,
         editor_window: sdl2::video::Window,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
@@ -302,17 +302,28 @@ impl EditorState {
 
                 let window_with_editor = match self.config.borrow().window_style {
                     WindowStyle::GameSeparateFromEditor => &self.editor_specific_window,
-                    WindowStyle::GameWithEditor => &self.window.borrow(),
+                    WindowStyle::GameWithEditor => &self.window.borrow().window,
                 };
 
                 // Render the editor interface on top of the game.
-                let size = drawable_screen_size(window_with_editor);
+                let size = window_with_editor.size();
+                let drawable_size = window_with_editor.drawable_size();
+                // Ratio of hardware pixel (pixel) to software pixels (points)
+                let pixels_per_point = drawable_size.0 as f32 / size.0 as f32;
+                platform.set_pixels_per_point(pixels_per_point);
 
-                let pixel_per_point = size.0 as f32 / window_with_editor.size().0 as f32;
+                // Make UI text crisp
+                platform.raw_input.screen_rect = Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::Vec2 {
+                        x: size.0 as f32,
+                        y: size.1 as f32,
+                    },
+                ));
 
                 painter.paint_and_update_textures(
-                    [size.0, size.1],
-                    pixel_per_point,
+                    [drawable_size.0, drawable_size.1],
+                    pixels_per_point,
                     pj,
                     &full_output.textures_delta,
                 );

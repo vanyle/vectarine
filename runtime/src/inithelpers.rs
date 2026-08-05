@@ -3,10 +3,12 @@ use std::mem::ManuallyDrop;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use sdl2::video::Window;
 use sdl2::video::gl_attr::GLAttr;
 use sdl2::{EventPump, Sdl, VideoSubsystem};
 use vectarine_plugin_sdk::{glow, sdl2};
+
+use crate::drawing_surface::DrawingSurface;
+use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 
 #[cfg(target_os = "macos")]
 pub fn set_opengl_attributes(gl_attr: GLAttr) {
@@ -31,7 +33,7 @@ pub fn set_opengl_attributes(gl_attr: GLAttr) {
 /// A datastructure that holds the primitives needed to interact with the environment. (windows, graphics, io, sound, etc.)
 pub struct RenderingBlock {
     pub video: Rc<VideoSubsystem>,
-    pub window: Rc<RefCell<Window>>,
+    pub window: Rc<RefCell<SdlDrawingSurface>>,
     pub event_pump: EventPump,
     pub sdl: Sdl,
     pub gl: Arc<glow::Context>,

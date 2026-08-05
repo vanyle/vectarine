@@ -20,7 +20,7 @@ pub struct Platform {
     // The egui modifiers
     modifiers: Modifiers,
     // The raw input
-    raw_input: egui::RawInput,
+    pub raw_input: egui::RawInput,
 
     // We need to store this because egui doesn't register scroll events it seems.
     smooth_scroll_delta: egui::Vec2,
@@ -32,6 +32,7 @@ pub struct Platform {
 impl Platform {
     /// Construct a new [`Platform`]
     pub fn new(screen_size: (u32, u32)) -> anyhow::Result<Self> {
+        let context = egui::Context::default();
         Ok(Self {
             cursor: Cursor::from_system(SystemCursor::Arrow).ok(),
             system_cursor: SystemCursor::Arrow,
@@ -48,7 +49,7 @@ impl Platform {
             },
             smooth_scroll_delta: egui::Vec2::ZERO,
             modifiers: Modifiers::default(),
-            egui_ctx: egui::Context::default(),
+            egui_ctx: context,
         })
     }
 

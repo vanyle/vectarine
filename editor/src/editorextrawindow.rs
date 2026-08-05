@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use runtime::{
     anyhow, egui_glow,
-    game::drawable_screen_size,
     game_resource::{ResourceManager, font_resource},
     glow,
     graphics::batchdraw::BatchDraw2d,
@@ -46,8 +45,8 @@ impl EditorInterfaceWithGl {
     pub fn new(window: &Window, gl: &Arc<glow::Context>) -> anyhow::Result<Self> {
         let painter =
             egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
-        let platform = egui_sdl2_platform::Platform::new(drawable_screen_size(window))
-            .expect("Failed to create platform");
+        let platform =
+            egui_sdl2_platform::Platform::new(window.size()).expect("Failed to create platform");
 
         Ok(Self {
             platform,
@@ -75,7 +74,7 @@ pub fn render_editor_in_extra_window(
         .editor_specific_window
         .gl_make_current(gl_context)
         .expect("Failed to make context current");
-    let (width, height) = drawable_screen_size(&editor_state.editor_specific_window);
+    let (width, height) = editor_state.editor_specific_window.size();
     let aspect_ratio = width as f32 / height as f32;
     editor_state
         .editor_batch_draw
@@ -108,7 +107,7 @@ pub fn draw_info_in_empty_game_window(
     batch_draw: &mut BatchDraw2d,
 ) {
     batch_draw.drawing_target.enable_multisampling();
-    let (width, height) = drawable_screen_size(game_window);
+    let (width, height) = game_window.size();
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
 
@@ -124,7 +123,7 @@ pub fn draw_error_in_game_window(
     error: &crate::luau::InfiniteLoopError,
 ) {
     batch_draw.drawing_target.enable_multisampling();
-    let (width, height) = drawable_screen_size(game_window);
+    let (width, height) = game_window.size();
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
 

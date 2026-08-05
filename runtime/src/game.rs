@@ -8,6 +8,7 @@ use vectarine_plugin_sdk::sdl2::video::WindowPos;
 
 use crate::{
     console::print_warn,
+    drawing_surface::DrawingSurface,
     game_resource::{
         Resource, ResourceId, ResourceManager, Status, script_resource::ScriptResource,
     },
@@ -43,8 +44,7 @@ impl Game {
         project_info: &ProjectInfo,
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
-        video: &Rc<sdl2::VideoSubsystem>,
-        window: &Rc<RefCell<sdl2::video::Window>>,
+        window: &Rc<RefCell<dyn DrawingSurface>>,
         callback: F,
     ) where
         F: FnOnce(vectarine_plugin_sdk::anyhow::Result<Self>),
@@ -58,7 +58,7 @@ impl Game {
         };
 
         let _ = window.borrow_mut().set_title(&project_info.title);
-        let _ = window.borrow_mut().set_size(
+        let _ = window.borrow_mut().set_drawable_size_in_px(
             project_info.default_screen_width,
             project_info.default_screen_height,
         );
@@ -83,7 +83,7 @@ impl Game {
                     plugin_environment,
                 );
 
-                game.load(video, window);
+                game.load(window);
                 game.plugin_env.init(PluginInterface {
                     lua: &game.lua_env.lua_handle.lua,
                 });
@@ -113,8 +113,7 @@ impl Game {
         project_info: &ProjectInfo,
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
-        video: &Rc<sdl2::VideoSubsystem>,
-        window: &Rc<RefCell<sdl2::video::Window>>,
+        window: &Rc<RefCell<dyn DrawingSurface>>,
         deterministic: bool,
     ) -> vectarine_plugin_sdk::anyhow::Result<Self> {
         // TODO: from_project_safe_sync contains duplicated code with from_project. A refacto would be cool.
@@ -126,7 +125,7 @@ impl Game {
         };
 
         let _ = window.borrow_mut().set_title(&project_info.title);
-        let _ = window.borrow_mut().set_size(
+        let _ = window.borrow_mut().set_drawable_size_in_px(
             project_info.default_screen_width,
             project_info.default_screen_height,
         );
@@ -151,7 +150,7 @@ impl Game {
             let _ = chunk.exec();
         }
 
-        game.load(video, window);
+        game.load(window);
         game.plugin_env.init(PluginInterface {
             lua: &game.lua_env.lua_handle.lua,
         });
@@ -191,32 +190,20 @@ impl Game {
 
     /// Initializes the game environment with the current video and window information.
     /// This needs to be called before loading Lua scripts.
-    fn load(
-        &mut self,
-        video: &Rc<sdl2::VideoSubsystem>,
-        window: &Rc<RefCell<sdl2::video::Window>>,
-    ) {
+    fn load(&mut self, window: &Rc<RefCell<dyn DrawingSurface>>) {
         // Make screen and window size accessible inside Load.
-        if let Ok(display_size) = video.display_bounds(0) {
-            self.lua_env.env_state.borrow_mut().screen_width = display_size.width();
-            self.lua_env.env_state.borrow_mut().screen_height = display_size.height();
 
-            let size = screen_size(&window.borrow());
-            let drawable_size = drawable_screen_size(&window.borrow());
-            let (px_ratio_x, px_ratio_y) = (
-                drawable_size.0 as f32 / size.0 as f32,
-                drawable_size.1 as f32 / size.1 as f32,
-            );
+        let screen_size = window.borrow().get_screen_size_in_px();
 
-            self.lua_env.env_state.borrow_mut().px_ratio_x = px_ratio_x;
-            self.lua_env.env_state.borrow_mut().px_ratio_y = px_ratio_y;
-        }
+        self.lua_env.env_state.borrow_mut().screen_width = screen_size.0;
+        self.lua_env.env_state.borrow_mut().screen_height = screen_size.1;
 
-        {
-            let (width, height) = screen_size(&window.borrow());
-            self.lua_env.env_state.borrow_mut().window_width = width;
-            self.lua_env.env_state.borrow_mut().window_height = height;
-        }
+        self.lua_env.env_state.borrow_mut().px_ratio_x = 1.0; // investigate this, it's strange to have that.
+        self.lua_env.env_state.borrow_mut().px_ratio_y = 1.0;
+
+        let (width, height) = window.borrow().get_drawable_size_in_px();
+        self.lua_env.env_state.borrow_mut().window_width = width;
+        self.lua_env.env_state.borrow_mut().window_height = height;
     }
 
     pub fn get_resource_or_print_error<T>(&self, id: ResourceId) -> Option<Rc<T>>
@@ -240,7 +227,7 @@ impl Game {
     pub fn main_loop<'a>(
         &mut self,
         events: impl Iterator<Item = &'a sdl2::event::Event>,
-        window: &Rc<RefCell<sdl2::video::Window>>,
+        window: &Rc<RefCell<dyn DrawingSurface>>,
         delta_time: std::time::Duration,
         _in_editor: bool,
     ) {
@@ -254,7 +241,7 @@ impl Game {
         let framebuffer_height;
         {
             let mut env_state = self.lua_env.env_state.borrow_mut();
-            let (width, height) = drawable_screen_size(&window.borrow());
+            let (width, height) = window.borrow().get_drawable_size_in_px();
             // imo this is wrong. Having the drawable size is interesting, but we should not mix it with the actual size.
             env_state.window_width = width;
             env_state.window_height = height;
@@ -300,21 +287,21 @@ impl Game {
             let mut env_state = self.lua_env.env_state.borrow_mut();
             if let Some(target_size) = env_state.window_target_size {
                 let (target_width, target_height) = target_size;
-                let _ = window.borrow_mut().set_size(target_width, target_height);
+                window
+                    .borrow_mut()
+                    .set_drawable_size_in_px(target_width, target_height);
                 env_state.window_target_size = None;
             }
             if let Some(fullscreen_request) = env_state.fullscreen_state_request {
-                let _ = window.borrow_mut().set_fullscreen(fullscreen_request);
+                window.borrow_mut().set_is_fullscreen(fullscreen_request);
                 env_state.fullscreen_state_request = None;
             }
             if let Some(title) = env_state.window_title.take() {
-                window.borrow_mut().set_title(&title).unwrap_or(());
+                window.borrow_mut().set_title(&title);
             }
 
             if env_state.center_window_request {
-                window
-                    .borrow_mut()
-                    .set_position(WindowPos::Centered, WindowPos::Centered);
+                window.borrow_mut().center_window();
                 env_state.center_window_request = false;
             }
         }
@@ -437,36 +424,6 @@ impl Game {
             );
         }
     }
-}
-
-#[cfg(not(target_os = "emscripten"))]
-pub fn drawable_screen_size(window: &sdl2::video::Window) -> (u32, u32) {
-    window.drawable_size()
-}
-
-#[cfg(target_os = "emscripten")]
-pub fn drawable_screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
-    use emscripten_val::Val;
-    // On the web, the drawable size and the screen size are the same.
-    let size = Val::global("vectarine").call("getDrawableScreenSize", &[]);
-    let width = size.get(&Val::from_str("width")).as_i32();
-    let height = size.get(&Val::from_str("height")).as_i32();
-    (width as u32, height as u32)
-}
-
-#[cfg(not(target_os = "emscripten"))]
-pub fn screen_size(window: &sdl2::video::Window) -> (u32, u32) {
-    // This is what defines a pixel. We don't really care about the "drawable size". It is a multiple of a crisp pixel.
-    window.size() // window.drawable_size() ?? bad function name imo.
-}
-
-#[cfg(target_os = "emscripten")]
-pub fn screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
-    use emscripten_val::Val;
-    let size = Val::global("vectarine").call("getScreenSize", &[]);
-    let width = size.get(&Val::from_str("width")).as_i32();
-    let height = size.get(&Val::from_str("height")).as_i32();
-    (width as u32, height as u32)
 }
 
 #[cfg(not(target_os = "emscripten"))]

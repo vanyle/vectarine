@@ -1,11 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{path::PathBuf, sync::mpsc::channel};
+use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::mpsc::channel};
 
 use runtime::{
-    egui_glow,
-    game::drawable_screen_size,
-    init_sdl,
+    drawing_surface::DrawingSurface,
+    egui_glow, init_sdl,
     inithelpers::RenderingBlock,
     io::{localfs::LocalFileSystem, time::now_ms},
     sound::init_sound_system,
@@ -72,7 +71,8 @@ fn gui_main() {
     let mut painter =
         egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
 
-    let mut platform = egui_sdl2_platform::Platform::new(drawable_screen_size(&window.borrow()))
+    // The "screen_size" provided needs to be the size of the viewport.
+    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().get_drawable_size_in_px())
         .expect("Failed to create platform");
 
     let mut editor_state = EditorState::new(
@@ -93,13 +93,14 @@ fn gui_main() {
 
     window
         .borrow_mut()
+        .window
         .set_always_on_top(editor_state.config.borrow().is_always_on_top);
 
     window.borrow_mut().set_resizable(true);
 
     // Send a fake resize event to egui to initialize drawable area size
     // This is needed on high-DPI screen where the drawable size is greater than window size
-    send_window_resize_sync_event(&sdl, &video, &window.borrow(), &mut platform);
+    send_window_resize_sync_event(&sdl, &video, &window.borrow().window, &mut platform);
     send_window_resize_sync_event(
         &sdl,
         &video,
@@ -113,17 +114,18 @@ fn gui_main() {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
         let (game_window_events, editor_window_events): (Vec<_>, Vec<_>) = latest_events
             .into_iter()
-            .partition(|e| e.get_window_id() == Some(editor_state.window.borrow().id()));
+            .partition(|e| e.get_window_id() == Some(editor_state.window.borrow().window.id()));
 
         window
             .borrow_mut()
+            .window
             .gl_make_current(&gl_context)
             .expect("Failed to make context current");
 
         if window.borrow().is_minimized() {
             // Preserve CPU when minimized
             clear_window(&gl);
-            window.borrow().gl_swap_window();
+            window.borrow().window.gl_swap_window();
             std::thread::sleep(std::time::Duration::from_millis(100));
             continue;
         }
@@ -157,10 +159,11 @@ fn gui_main() {
 
             window
                 .borrow_mut()
+                .window
                 .gl_make_current(&gl_context)
                 .expect("Failed to make context current");
             unsafe {
-                let (w, h) = drawable_screen_size(&window.borrow());
+                let (w, h) = window.borrow().get_drawable_size_in_px();
                 gl.viewport(0, 0, w as i32, h as i32);
             }
 
@@ -168,7 +171,7 @@ fn gui_main() {
                 clear_window(&gl);
                 draw_error_in_game_window(
                     &gl,
-                    &window.borrow(),
+                    &window.borrow().window,
                     &mut editor_state.editor_batch_draw,
                     error,
                 );
@@ -179,12 +182,16 @@ fn gui_main() {
                     editor_state.editor_want_keyboard,
                 );
 
-                game.main_loop(game_events, &window, delta_duration, true);
+                // TODO: This call renders the game. We need to use a different framebuffer here to allow the resolution of the game to
+                // be independent of the resolution of the editor.
+                let drawing_surface = window.clone() as Rc<RefCell<dyn DrawingSurface>>;
+                game.main_loop(game_events, &drawing_surface, delta_duration, true);
             }
         } else {
             // Clear the screen when no project is loaded
             window
                 .borrow()
+                .window
                 .gl_make_current(&gl_context)
                 .expect("Failed to make context current");
             clear_window(&gl);
@@ -192,7 +199,7 @@ fn gui_main() {
             if window_style == WindowStyle::GameSeparateFromEditor {
                 draw_info_in_empty_game_window(
                     &gl,
-                    &window.borrow(),
+                    &window.borrow().window,
                     &mut editor_state.editor_batch_draw,
                 );
             }
@@ -201,7 +208,7 @@ fn gui_main() {
         match window_style {
             WindowStyle::GameSeparateFromEditor => {
                 // We finished drawing the game. If it is separate from the editor, we can swap.
-                window.borrow().gl_swap_window();
+                window.borrow().window.gl_swap_window();
 
                 editor_state
                     .editor_specific_window
@@ -223,6 +230,7 @@ fn gui_main() {
                 editor_state.editor_specific_window.hide();
                 window
                     .borrow()
+                    .window
                     .gl_make_current(&gl_context)
                     .expect("Failed to make context current");
                 editor_state.draw_editor_interface(
@@ -231,7 +239,7 @@ fn gui_main() {
                     &game_window_events,
                     &mut painter,
                 );
-                window.borrow().gl_swap_window();
+                window.borrow().window.gl_swap_window();
             }
         }
     }

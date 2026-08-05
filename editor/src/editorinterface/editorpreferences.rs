@@ -27,6 +27,7 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ui: &mut egui::Ui) {
                         editor
                             .window
                             .borrow_mut()
+                            .window
                             .set_always_on_top(config.is_always_on_top);
                     }
                 }

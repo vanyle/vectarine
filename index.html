@@ -22,8 +22,10 @@
 				transform: translate(-50%, -50%);
 			}
 
-			/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-			canvas {
+			#canvas-container {
+				display: flex;
+				justify-content: center;
+				align-items: center;
 				border: 0px none;
 				position: absolute;
 				top: 0;
@@ -31,6 +33,15 @@
 				width: 100vw;
 				height: 100vh;
 				background-color: black;
+				padding: 0;
+				margin: 0;
+			}
+			/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+			canvas {
+				background-color: black;
+				border: 0px none;
+				padding: 0;
+				margin: 0;
 			}
 
 			#status {
@@ -92,11 +103,12 @@
 			</div>
 			<div id="status">Loading Vectarine ...</div>
 		</div>
-
+		<div id="canvas-container">
 		<canvas
 			id="canvas"
 			oncontextmenu="event.preventDefault()"
 		></canvas>
+		</div>
 		<script>
 			const debugMode = location.hash === "#debug";
 
@@ -187,14 +199,28 @@
 				exited_did_rust: exited_did_rust,
 				getScreenSize: function () {
 					return {
-						width: canvas.clientWidth,
-						height: canvas.clientHeight,
+						width: document.body.clientWidth,
+						height: document.body.clientHeight,
 					};
 				},
 				getDrawableScreenSize: function () {
 					return {
 						width: canvas.width,
 						height: canvas.height,
+					};
+				},
+				setDrawableScreenSize: function(width, height) {
+					canvas.width = width;
+					canvas.height = height;
+				},
+				getCanvasPosition: function () {
+					// Used to properly map mouse coordinates to the canvas since the canvas could be scaled and moved around the page.
+					const rect = canvas.getBoundingClientRect();
+					return {
+						x: rect.left,
+						y: rect.top,
+						width: rect.width,
+						height: rect.height,
 					};
 				},
 			};

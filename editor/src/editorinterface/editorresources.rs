@@ -84,7 +84,7 @@ fn draw_scroll_area_content(editor: &EditorState, ui: &mut egui::Ui, game: &mut 
         {
             let absolute_path = game.lua_env.resources.get_absolute_path(&PathBuf::new());
             editor.config.borrow_mut().is_always_on_top = false;
-            editor.window.borrow_mut().set_always_on_top(false);
+            editor.window.borrow_mut().window.set_always_on_top(false);
             open::that(absolute_path).ok();
         }
         if ui
@@ -96,7 +96,7 @@ fn draw_scroll_area_content(editor: &EditorState, ui: &mut egui::Ui, game: &mut 
         {
             let absolute_path = game.lua_env.resources.get_absolute_path(&PathBuf::new());
             editor.config.borrow_mut().is_always_on_top = false;
-            editor.window.borrow_mut().set_always_on_top(false);
+            editor.window.borrow_mut().window.set_always_on_top(false);
             let prefered_editor = editor.config.borrow().text_editor;
             let opened = openfileatline::open_folder(
                 &PathBuf::from(&absolute_path),
