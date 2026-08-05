@@ -7,7 +7,7 @@ use runtime::egui::{Modal, Popup, RichText, UiBuilder};
 
 use crate::editorinterface::{EditorState, emptyscreen::open_file_dialog_and_load_project};
 
-pub fn draw_editor_menu(editor: &mut EditorState, ui: &mut egui::Ui) {
+pub fn draw_editor_menu(editor: &mut EditorState, ui: &mut egui::Ui) -> f32 {
     if ui.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Num1)) {
         let mut config = editor.config.borrow_mut();
         config.is_console_shown = !config.is_console_shown;
@@ -55,7 +55,7 @@ pub fn draw_editor_menu(editor: &mut EditorState, ui: &mut egui::Ui) {
         }
     }
 
-    egui::Panel::top("toppanel").show_inside(ui, |ui| {
+    let response = egui::Panel::top("toppanel").show_inside(ui, |ui| {
         ui.horizontal(|ui| {
             ui.label(RichText::new("Vectarine Editor").size(18.0));
             egui::MenuBar::new().ui(ui, |ui| {
@@ -172,6 +172,7 @@ pub fn draw_editor_menu(editor: &mut EditorState, ui: &mut egui::Ui) {
         // let window_handle = editor.window.borrow().raw();
         // sdl2_sys::SDL_SetWindowHitTest(window_handle, callback, callback_data)
     });
+    response.response.rect.height()
 }
 
 fn get_manual_path() -> Option<PathBuf> {

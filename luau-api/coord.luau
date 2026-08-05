@@ -20,6 +20,14 @@ function ScreenVecImpl.scale(self: ScreenVec, k: number): ScreenVec
 	error("Implemented in native code")
 end
 
+ScreenVecImpl.__add = function(a: ScreenVec, b: ScreenVec): ScreenVec
+	error("Implemented in native code")
+end
+
+ScreenVecImpl.__sub = function(a: ScreenVec, b: ScreenVec): ScreenVec
+	error("Implemented in native code")
+end
+
 --------------------------------------
 
 local ScreenPositionImpl = { screen_position = true }

@@ -35,6 +35,7 @@ use crate::{
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
+    game_drawing_surface::GameDrawingSurface,
     pluginsystem::trustedplugin::{self, PluginEntry, TrustedPlugin},
     projectstate::ProjectState,
 };
@@ -63,6 +64,7 @@ pub struct EditorState {
 
     pub start_time: std::time::Instant,
     pub window: Rc<RefCell<SdlDrawingSurface>>,
+    pub game_drawing_surface: Rc<RefCell<GameDrawingSurface>>,
     pub gl: Arc<glow::Context>,
 
     pub editor_specific_window: sdl2::video::Window,
@@ -166,6 +168,7 @@ impl EditorState {
             start_time: Instant::now(),
             project: Rc::new(RefCell::new(None)),
             editor_batch_draw,
+            game_drawing_surface: Rc::new(RefCell::new(GameDrawingSurface::new(window.clone()))),
             window,
             gl,
             editor_specific_window: editor_window,
@@ -200,7 +203,7 @@ impl EditorState {
             project_path,
             file_system,
             self.gl.clone(),
-            self.window.clone(),
+            self.game_drawing_surface.clone(),
             &self.get_trusted_plugins(),
             |project| {
                 match project {
@@ -256,15 +259,16 @@ impl EditorState {
         sdl: &sdl2::Sdl,
         latest_events: &[sdl2::event::Event],
         painter: &mut egui_glow::Painter,
-    ) {
+    ) -> f32 {
         platform.update_time(self.start_time.elapsed().as_secs_f64());
         platform.handle_events(latest_events, sdl, &self.window.borrow().video_subsystem);
 
         let mut egui_eats_keyboard = false;
         let mut egui_eats_mouse = false;
+        let mut menu_height = 0.0;
 
         let full_output = platform.run(self, &mut |ui, editor_state| {
-            draw_editor_menu(editor_state, ui);
+            let menu_height = draw_editor_menu(editor_state, ui);
 
             if editor_state.project.borrow().is_none() {
                 draw_empty_screen(editor_state, ui);
@@ -281,30 +285,32 @@ impl EditorState {
 
             egui_eats_keyboard = ui.egui_wants_keyboard_input();
             egui_eats_mouse = ui.egui_wants_pointer_input() || ui.is_pointer_over_egui();
+            menu_height
         });
 
         self.editor_want_keyboard = egui_eats_keyboard;
         self.editor_want_mouse = egui_eats_mouse;
 
+        let window_with_editor = match self.config.borrow().window_style {
+            WindowStyle::GameSeparateFromEditor => &self.editor_specific_window,
+            WindowStyle::GameWithEditor => &self.window.borrow().window,
+        };
+        // Render the editor interface on top of the game.
+        let size = window_with_editor.size();
+        let drawable_size = window_with_editor.drawable_size();
+        // Ratio of hardware pixel (pixel) to software pixels (points)
+        let linux_scaling = get_linux_window_scaling(&self.window.borrow().video_subsystem);
+        let pixels_per_point = linux_scaling * drawable_size.0 as f32 / size.0 as f32;
+
         // Stop drawing the egui frame and get the full output
         // let full_output = platform.end_frame(&self.video);
         match full_output {
-            Ok(full_output) => {
+            Ok((full_output, m_height)) => {
+                menu_height = m_height * pixels_per_point; // Convert from egui points to true pixels
                 // Get the paint jobs
                 let paint_jobs = platform.tessellate(&full_output);
                 let pj = paint_jobs.as_slice();
 
-                let window_with_editor = match self.config.borrow().window_style {
-                    WindowStyle::GameSeparateFromEditor => &self.editor_specific_window,
-                    WindowStyle::GameWithEditor => &self.window.borrow().window,
-                };
-
-                // Render the editor interface on top of the game.
-                let size = window_with_editor.size();
-                let drawable_size = window_with_editor.drawable_size();
-                // Ratio of hardware pixel (pixel) to software pixels (points)
-                let linux_scaling = get_linux_window_scaling(&self.window.borrow().video_subsystem);
-                let pixels_per_point = linux_scaling * drawable_size.0 as f32 / size.0 as f32;
                 platform.set_pixels_per_point(pixels_per_point);
 
                 // Make UI text crisp
@@ -325,6 +331,7 @@ impl EditorState {
             }
             Err(e) => println!("Failed to render debug ui: {e:?}"),
         };
+        menu_height
     }
 
     pub fn get_trusted_plugins(&self) -> Vec<TrustedPlugin> {

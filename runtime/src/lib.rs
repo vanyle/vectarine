@@ -15,6 +15,7 @@ pub mod projectinfo;
 pub mod sound;
 
 use crate::drawing_surface::DrawingSurface;
+use crate::drawing_surface::SurfaceMargins;
 use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 // Re-export commonly used crates for the editor
 use crate::inithelpers::RenderingBlock;
@@ -178,6 +179,7 @@ pub fn lib_main() {
                         &drawing_surface,
                         delta_duration,
                         false,
+                        SurfaceMargins::default(),
                     );
 
                     // These are for debug and are never displayed in the runtime.

@@ -1,6 +1,14 @@
-use vectarine_plugin_sdk::sdl2::video::FullscreenType;
+use vectarine_plugin_sdk::{glow, sdl2::video::FullscreenType};
 
 pub mod sdl_drawing_surface;
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct SurfaceMargins {
+    pub top: f32,
+    pub bottom: f32,
+    pub left: f32,
+    pub right: f32,
+}
 
 /// Represents a place on which the game is drawn.
 /// This can be an SDL window directly, or a framebuffer.
@@ -29,4 +37,10 @@ pub trait DrawingSurface {
     fn get_screen_size_in_px(&self) -> (u32, u32);
 
     fn set_title(&mut self, title: &str);
+
+    /// Wrapper around the OpenGL `glViewport` function to only draw in this area of the surface.
+    /// # Safety
+    /// The GL context provided needs to be valid.
+    /// The caller needs to use the same thread that owns the GL context.
+    unsafe fn configure_viewport(&self, gl: &glow::Context, margins: SurfaceMargins);
 }

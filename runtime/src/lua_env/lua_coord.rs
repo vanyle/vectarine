@@ -28,10 +28,10 @@ impl ScreenPosition {
         self.0
     }
     #[inline(always)]
-    pub fn as_px(self, screen_width: f32, screen_height: f32) -> Vec2 {
+    pub fn as_px(self, window_width: f32, window_height: f32) -> Vec2 {
         Vec2::new(
-            (self.0.x() + 1.0) * 0.5 * screen_width,
-            (1.0 - self.0.y()) * 0.5 * screen_height,
+            (self.0.x() + 1.0) * 0.5 * window_width,
+            (1.0 - self.0.y()) * 0.5 * window_height,
         )
     }
     #[inline(always)]
@@ -39,23 +39,23 @@ impl ScreenPosition {
         ScreenPosition(v)
     }
     #[inline(always)]
-    pub fn from_px(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
+    pub fn from_px(v: Vec2, window_width: f32, window_height: f32) -> Self {
         ScreenPosition(Vec2::new(
-            -1.0 + (v.x() * 2.0 / screen_width),
-            1.0 - (v.y() * 2.0 / screen_height),
+            -1.0 + (v.x() * 2.0 / window_width),
+            1.0 - (v.y() * 2.0 / window_height),
         ))
     }
     #[inline(always)]
-    pub fn from_vw(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
+    pub fn from_vw(v: Vec2, window_width: f32, window_height: f32) -> Self {
         ScreenPosition(Vec2::new(
             -1.0 + v.x() * 2.0 / 100.0,
-            -1.0 + v.y() * 2.0 / 100.0 * screen_width / screen_height,
+            -1.0 + v.y() * 2.0 / 100.0 * window_width / window_height,
         ))
     }
     #[inline(always)]
-    pub fn from_vh(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
+    pub fn from_vh(v: Vec2, window_width: f32, window_height: f32) -> Self {
         ScreenPosition(Vec2::new(
-            -1.0 + v.x() * 2.0 / 100.0 * screen_height / screen_width,
+            -1.0 + v.x() * 2.0 / 100.0 * window_height / window_width,
             -1.0 + v.y() * 2.0 / 100.0,
         ))
     }
@@ -71,17 +71,17 @@ impl ScreenVec {
         ScreenVec(self.0.scale(k))
     }
     #[inline(always)]
-    pub fn from_px(v: Vec2, screen_width: f32, screen_height: f32) -> Self {
+    pub fn from_px(v: Vec2, window_width: f32, window_height: f32) -> Self {
         ScreenVec(Vec2::new(
-            v.x() * 2.0 / screen_width,
-            -v.y() * 2.0 / screen_height,
+            v.x() * 2.0 / window_width,
+            -v.y() * 2.0 / window_height,
         ))
     }
     #[inline(always)]
-    pub fn as_px(self, screen_width: f32, screen_height: f32) -> Vec2 {
+    pub fn as_px(self, window_width: f32, window_height: f32) -> Vec2 {
         Vec2::new(
-            self.0.x() * screen_width * 0.5,
-            -self.0.y() * screen_height * 0.5,
+            self.0.x() * window_width * 0.5,
+            -self.0.y() * window_height * 0.5,
         )
     }
 }
@@ -99,6 +99,22 @@ impl ops::Add<ScreenVec> for ScreenPosition {
     #[inline(always)]
     fn add(self, rhs: ScreenVec) -> Self::Output {
         ScreenPosition(self.0 + rhs.0)
+    }
+}
+
+impl ops::Add for ScreenVec {
+    type Output = ScreenVec;
+    #[inline(always)]
+    fn add(self, rhs: Self) -> Self::Output {
+        ScreenVec(self.0 + rhs.0)
+    }
+}
+
+impl ops::Sub for ScreenVec {
+    type Output = ScreenVec;
+    #[inline(always)]
+    fn sub(self, rhs: Self) -> Self::Output {
+        ScreenVec(self.0 - rhs.0)
     }
 }
 
@@ -128,8 +144,8 @@ pub fn setup_coords_api(
         registry.add_method(
             "px",
             #[inline(always)]
-            move |_lua, this, (screen_size,): (Option<Vec2>,)| {
-                let viewport = if let Some(screen_size) = screen_size {
+            move |_lua, this, (framebuffer_size,): (Option<Vec2>,)| {
+                let viewport = if let Some(screen_size) = framebuffer_size {
                     Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
                 } else {
                     get_viewport(&gl)
@@ -141,6 +157,18 @@ pub fn setup_coords_api(
             "scale",
             #[inline(always)]
             |_, this, (k,): (f32,)| Ok(this.scale(k)),
+        );
+
+        registry.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Add,
+            #[inline(always)]
+            |_, (this, k): (ScreenVec, ScreenVec)| Ok(this + k),
+        );
+
+        registry.add_meta_function(
+            vectarine_plugin_sdk::mlua::MetaMethod::Sub,
+            #[inline(always)]
+            |_, (this, k): (ScreenVec, ScreenVec)| Ok(this - k),
         );
 
         registry.add_meta_method(
@@ -236,9 +264,9 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "pxVec", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
+        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+            let viewport = if let Some(framebuffer_size) = framebuffer_size {
+                Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -269,9 +297,9 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vw", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
+        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+            let viewport = if let Some(framebuffer_size) = framebuffer_size {
+                Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -286,9 +314,9 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vwVec", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
+        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+            let viewport = if let Some(framebuffer_size) = framebuffer_size {
+                Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -302,9 +330,9 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vh", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
+        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+            let viewport = if let Some(framebuffer_size) = framebuffer_size {
+                Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };
@@ -319,9 +347,9 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vhVec", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
-            let viewport = if let Some(screen_size) = screen_size {
-                Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
+        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+            let viewport = if let Some(framebuffer_size) = framebuffer_size {
+                Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
                 get_viewport(&gl)
             };

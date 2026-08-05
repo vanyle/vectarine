@@ -1,4 +1,5 @@
-use crate::drawing_surface::DrawingSurface;
+use crate::drawing_surface::{DrawingSurface, SurfaceMargins};
+use vectarine_plugin_sdk::glow::{self, HasContext};
 use vectarine_plugin_sdk::sdl2::VideoSubsystem;
 use vectarine_plugin_sdk::sdl2::sys::SDL_WindowFlags;
 use vectarine_plugin_sdk::sdl2::video::{FullscreenType, Window, WindowPos};
@@ -56,6 +57,17 @@ impl DrawingSurface for SdlDrawingSurface {
     fn set_title(&mut self, title: &str) {
         // SDL's set_title works on the web by default
         let _ = self.window.set_title(title);
+    }
+
+    unsafe fn configure_viewport(&self, gl: &glow::Context, margins: SurfaceMargins) {
+        let (drawable_width, drawable_height) = self.get_drawable_size_in_px();
+        let (viewport_x, viewport_y, viewport_width, viewport_height) = (
+            margins.left as i32,
+            margins.top as i32,
+            (drawable_width as f32 - margins.left - margins.right) as i32,
+            (drawable_height as f32 - margins.top - margins.bottom) as i32,
+        );
+        unsafe { gl.viewport(viewport_x, viewport_y, viewport_width, viewport_height) }
     }
 }
 
