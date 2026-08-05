@@ -11,7 +11,7 @@ use runtime::io::localfs::LocalFileSystem;
 use runtime::{
     anyhow::{self},
     console,
-    drawing_surface::{DrawingSurface, sdl_drawing_surface::SdlDrawingSurface},
+    drawing_surface::DrawingSurface,
     game::Game,
     glow,
     io::fs::ReadOnlyFileSystem,
@@ -36,7 +36,7 @@ pub struct ProjectState {
     pub project_path: PathBuf,
     pub project_info: ProjectInfo,
     pub game: Game,
-    pub window: Rc<RefCell<SdlDrawingSurface>>,
+    pub window: Rc<RefCell<dyn DrawingSurface>>,
     pub hook_timing: HookTiming,
     pub hook_error: HookError,
     pub plugins: Rc<RefCell<Vec<GamePlugin>>>,
@@ -71,7 +71,7 @@ impl ProjectState {
         project_path: &Path,
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
-        window: Rc<RefCell<SdlDrawingSurface>>,
+        window: Rc<RefCell<dyn DrawingSurface>>,
         trusted_plugins: &[TrustedPlugin],
         callback: F,
     ) where

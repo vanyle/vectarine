@@ -127,9 +127,7 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
         Some(TextEditor::SublimeText) => {
             let is_sublime = which::which("subl").is_ok();
             if is_sublime {
-                let res = Command::new("subl")
-                    .args([absolute_path.as_str()])
-                    .spawn();
+                let res = Command::new("subl").args([absolute_path.as_str()]).spawn();
                 res.is_ok()
             } else {
                 false
@@ -138,9 +136,7 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
         Some(TextEditor::Zed) => {
             let is_zed = which::which("zed").is_ok();
             if is_zed {
-                let res = Command::new("zed")
-                    .args([absolute_path.as_str()])
-                    .spawn();
+                let res = Command::new("zed").args([absolute_path.as_str()]).spawn();
                 res.is_ok()
             } else {
                 false
@@ -149,9 +145,7 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
         Some(TextEditor::VSCode) => {
             let is_code = which::which("code").is_ok();
             if is_code {
-                let res = Command::new("code")
-                    .args([absolute_path.as_str()])
-                    .spawn();
+                let res = Command::new("code").args([absolute_path.as_str()]).spawn();
                 res.is_ok()
             } else {
                 false

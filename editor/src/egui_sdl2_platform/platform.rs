@@ -271,20 +271,22 @@ impl Platform {
         self.raw_input.time = Some(duration);
     }
 
-    pub fn run<F>(
+    pub fn run<F, T>(
         &mut self,
         editor_state: &mut EditorState,
         draw_ui: &mut F,
-    ) -> anyhow::Result<egui::FullOutput>
+    ) -> anyhow::Result<(egui::FullOutput, T)>
     where
-        F: FnMut(&mut egui::Ui, &mut EditorState),
+        F: FnMut(&mut egui::Ui, &mut EditorState) -> T,
+        T: Default,
     {
+        let mut t: T = Default::default();
         let output = self.egui_ctx.run_ui(self.raw_input.take(), |ui| {
             ui.input_mut(|input| {
                 input.smooth_scroll_delta = self.smooth_scroll_delta;
             });
 
-            draw_ui(ui, editor_state);
+            t = draw_ui(ui, editor_state);
         });
 
         // Update the clipboard
@@ -335,7 +337,7 @@ impl Platform {
             }
         }
 
-        Ok(output)
+        Ok((output, t))
     }
 
     /// Tessellate the egui frame

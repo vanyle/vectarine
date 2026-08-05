@@ -10,6 +10,7 @@ use runtime::anyhow;
 use runtime::console;
 use runtime::console::ConsoleMessage;
 use runtime::drawing_surface::DrawingSurface;
+use runtime::drawing_surface::SurfaceMargins;
 use runtime::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 use runtime::game::Game;
 use runtime::glow::HasContext;
@@ -206,6 +207,7 @@ impl GameHeadlessRunner {
             &drawing_surface,
             delta_duration,
             false,
+            SurfaceMargins::default(),
         );
 
         let mut logs: Vec<ConsoleMessage> = Vec::new();

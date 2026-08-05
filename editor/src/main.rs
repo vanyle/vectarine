@@ -3,13 +3,12 @@
 use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::mpsc::channel};
 
 use runtime::{
-    drawing_surface::DrawingSurface,
+    drawing_surface::{DrawingSurface, SurfaceMargins},
     egui_glow, init_sdl,
     inithelpers::RenderingBlock,
     io::{localfs::LocalFileSystem, time::now_ms},
     sound::init_sound_system,
 };
-use vectarine_plugin_sdk::glow::HasContext;
 
 use crate::{
     editorconfig::WindowStyle,
@@ -26,6 +25,7 @@ pub mod editorextrawindow;
 pub mod editorinterface;
 pub mod egui_sdl2_platform;
 pub mod export;
+pub mod game_drawing_surface;
 pub mod luau;
 pub mod pluginsystem;
 pub mod projectstate;
@@ -113,6 +113,7 @@ fn gui_main() {
 
     // The main loop
     let mut start_of_frame = now_ms();
+    let mut game_margin_top = 0.0;
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
         let (game_window_events, editor_window_events): (Vec<_>, Vec<_>) = latest_events
@@ -129,7 +130,12 @@ fn gui_main() {
             // Preserve CPU when minimized
             clear_window(&gl);
             window.borrow().window.gl_swap_window();
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            if let Some(project) = editor_state.project.borrow_mut().as_mut() {
+                // Ignore infinite loop errors while minimized: do not track frame timings.
+                *project.hook_error.borrow_mut() = None;
+                *project.hook_timing.borrow_mut() = None;
+            }
             continue;
         }
 
@@ -165,16 +171,15 @@ fn gui_main() {
                 .window
                 .gl_make_current(&gl_context)
                 .expect("Failed to make context current");
-            unsafe {
-                let (w, h) = window.borrow().get_drawable_size_in_px();
-                gl.viewport(0, 0, w as i32, h as i32);
-            }
 
+            let ref_game_drawing_surface =
+                editor_state.game_drawing_surface.clone() as Rc<RefCell<dyn DrawingSurface>>;
             if let Some(ref error) = *project.hook_error.borrow() {
                 clear_window(&gl);
+                let game_drawing_surface = ref_game_drawing_surface.borrow();
                 draw_error_in_game_window(
                     &gl,
-                    &window.borrow().window,
+                    &*game_drawing_surface,
                     &mut editor_state.editor_batch_draw,
                     error,
                 );
@@ -185,10 +190,18 @@ fn gui_main() {
                     editor_state.editor_want_keyboard,
                 );
 
-                // TODO: This call renders the game. We need to use a different framebuffer here to allow the resolution of the game to
-                // be independent of the resolution of the editor.
-                let drawing_surface = window.clone() as Rc<RefCell<dyn DrawingSurface>>;
-                game.main_loop(game_events, &drawing_surface, delta_duration, true);
+                game.main_loop(
+                    game_events,
+                    &ref_game_drawing_surface,
+                    delta_duration,
+                    true,
+                    SurfaceMargins {
+                        left: 0.0,
+                        right: 0.0,
+                        top: game_margin_top,
+                        bottom: 0.0,
+                    },
+                );
             }
         } else {
             // Clear the screen when no project is loaded
@@ -219,6 +232,7 @@ fn gui_main() {
                     .expect("Failed to make context current");
                 clear_window(&gl);
 
+                game_margin_top = 0.0;
                 editorextrawindow::render_editor_in_extra_window(
                     &sdl,
                     &gl,
@@ -236,7 +250,8 @@ fn gui_main() {
                     .window
                     .gl_make_current(&gl_context)
                     .expect("Failed to make context current");
-                editor_state.draw_editor_interface(
+                // We're a frame late, but it should be fine.
+                game_margin_top = editor_state.draw_editor_interface(
                     &mut platform,
                     &sdl,
                     &game_window_events,

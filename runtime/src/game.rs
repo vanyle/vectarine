@@ -7,7 +7,7 @@ use vectarine_plugin_sdk::sdl2;
 
 use crate::{
     console::print_warn,
-    drawing_surface::DrawingSurface,
+    drawing_surface::{DrawingSurface, SurfaceMargins},
     game_resource::{
         Resource, ResourceId, ResourceManager, Status, script_resource::ScriptResource,
     },
@@ -56,8 +56,8 @@ impl Game {
             return;
         };
 
-        let _ = window.borrow_mut().set_title(&project_info.title);
-        let _ = window.borrow_mut().set_drawable_size_in_px(
+        window.borrow_mut().set_title(&project_info.title);
+        window.borrow_mut().set_drawable_size_in_px(
             project_info.default_screen_width,
             project_info.default_screen_height,
         );
@@ -123,8 +123,8 @@ impl Game {
             ));
         };
 
-        let _ = window.borrow_mut().set_title(&project_info.title);
-        let _ = window.borrow_mut().set_drawable_size_in_px(
+        window.borrow_mut().set_title(&project_info.title);
+        window.borrow_mut().set_drawable_size_in_px(
             project_info.default_screen_width,
             project_info.default_screen_height,
         );
@@ -229,6 +229,7 @@ impl Game {
         window: &Rc<RefCell<dyn DrawingSurface>>,
         delta_time: std::time::Duration,
         _in_editor: bool,
+        margins: SurfaceMargins,
     ) {
         self.lua_env
             .batch
@@ -236,20 +237,24 @@ impl Game {
             .drawing_target
             .reset_draw_call_counter();
 
+        let gl = &self.gl;
+        unsafe {
+            window.borrow().configure_viewport(gl, margins);
+        }
+
+        sound::update_sound_system();
+
         let framebuffer_width;
         let framebuffer_height;
         {
             let mut env_state = self.lua_env.env_state.borrow_mut();
+
             let (width, height) = window.borrow().get_drawable_size_in_px();
             // imo this is wrong. Having the drawable size is interesting, but we should not mix it with the actual size.
             env_state.window_width = width;
             env_state.window_height = height;
             env_state.is_window_minimized = window.borrow().is_minimized();
             let aspect_ratio = width as f32 / height as f32;
-
-            // This works in the editor, but not the runtime.
-            // On the web, this is different, the aspect ratio needs to be squared??
-            //self.batch.set_aspect_ratio(aspect_ratio * aspect_ratio);
 
             // This is wrong: only the size matters, not the drawable size for aspect ratio
             // Size is the actual size, drawable size is about crisp pixels.
@@ -260,30 +265,13 @@ impl Game {
 
             framebuffer_width = width;
             framebuffer_height = height;
-        }
 
-        {
-            // This is incorrect on the web.
-            // note that it is right to set this to the drawable size (this is what the viewport is by definition to have an
-            // opengl coordinate system)
-            let gl = &self.gl;
-            set_viewport(gl, framebuffer_width, framebuffer_height);
-        }
-
-        {
-            sound::update_sound_system()
-        }
-
-        {
-            let env_state = self.lua_env.env_state.borrow_mut();
             if env_state.is_window_resizeable {
                 window.borrow_mut().set_resizable(true);
             } else {
                 window.borrow_mut().set_resizable(false);
             }
-        }
-        {
-            let mut env_state = self.lua_env.env_state.borrow_mut();
+
             if let Some(target_size) = env_state.window_target_size {
                 let (target_width, target_height) = target_size;
                 window

@@ -3,7 +3,9 @@
 use std::sync::Arc;
 
 use runtime::{
-    anyhow, egui_glow,
+    anyhow,
+    drawing_surface::DrawingSurface,
+    egui_glow,
     game_resource::{ResourceManager, font_resource},
     glow,
     graphics::batchdraw::BatchDraw2d,
@@ -118,12 +120,12 @@ pub fn draw_info_in_empty_game_window(
 
 pub fn draw_error_in_game_window(
     gl: &Arc<glow::Context>,
-    game_window: &Window,
+    game_window: &dyn DrawingSurface,
     batch_draw: &mut BatchDraw2d,
     error: &crate::luau::InfiniteLoopError,
 ) {
     batch_draw.drawing_target.enable_multisampling();
-    let (width, height) = game_window.size();
+    let (width, height) = game_window.get_drawable_size_in_px();
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
 
