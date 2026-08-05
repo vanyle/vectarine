@@ -176,19 +176,20 @@ pub fn draw_new_game_window_content(
 }
 
 pub fn open_folder_dialog_and_create_project(state: &mut EditorState) -> Option<PathBuf> {
-    state.window.borrow_mut().set_always_on_top(false); // prevent editor from being over the file picker.
+    state.window.borrow_mut().window.set_always_on_top(false); // prevent editor from being over the file picker.
     let path = rfd::FileDialog::new()
         .set_title("Select a location where the Vectarine project folder will be created")
         .pick_folder();
     state
         .window
         .borrow_mut()
+        .window
         .set_always_on_top(state.config.borrow().is_always_on_top);
     path
 }
 
 pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
-    state.window.borrow_mut().set_always_on_top(false); // prevent editor from being over the file picker.
+    state.window.borrow_mut().window.set_always_on_top(false); // prevent editor from being over the file picker.
     let path = rfd::FileDialog::new()
         .add_filter("Vectarine Project", &["vecta", "toml"])
         .set_title("Open Vectarine Project")
@@ -196,6 +197,7 @@ pub fn open_file_dialog_and_load_project(state: &mut EditorState) {
     state
         .window
         .borrow_mut()
+        .window
         .set_always_on_top(state.config.borrow().is_always_on_top);
 
     let Some(path) = path else {

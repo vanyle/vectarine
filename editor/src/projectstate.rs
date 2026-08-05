@@ -10,6 +10,7 @@ use std::{
 use runtime::{
     anyhow::{self},
     console,
+    drawing_surface::{DrawingSurface, sdl_drawing_surface::SdlDrawingSurface},
     game::Game,
     glow,
     io::fs::ReadOnlyFileSystem,
@@ -36,7 +37,7 @@ pub struct ProjectState {
     pub project_info: ProjectInfo,
     pub game: Game,
     pub video: Rc<sdl2::VideoSubsystem>,
-    pub window: Rc<RefCell<sdl2::video::Window>>,
+    pub window: Rc<RefCell<SdlDrawingSurface>>,
     pub hook_timing: HookTiming,
     pub hook_error: HookError,
     pub plugins: Rc<RefCell<Vec<GamePlugin>>>,
@@ -46,13 +47,13 @@ impl ProjectState {
     pub fn reload(&mut self) {
         console::print_reload();
         let gl = self.game.gl.clone();
+        let drawable_surface: Rc<RefCell<dyn DrawingSurface>> = self.window.clone();
         Game::from_project(
             &self.project_path,
             &self.project_info,
             Box::new(LocalFileSystem),
             gl,
-            &self.video,
-            &self.window,
+            &drawable_surface,
             |result| {
                 let Ok(game) = result else {
                     return;
@@ -72,7 +73,7 @@ impl ProjectState {
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
         video: Rc<sdl2::VideoSubsystem>,
-        window: Rc<RefCell<sdl2::video::Window>>,
+        window: Rc<RefCell<SdlDrawingSurface>>,
         trusted_plugins: &[TrustedPlugin],
         callback: F,
     ) where
@@ -94,13 +95,14 @@ impl ProjectState {
             return;
         };
 
+        let drawing_surface = window.clone() as Rc<RefCell<dyn DrawingSurface>>;
+
         Game::from_project(
             project_path,
             &project_info.clone(),
             file_system,
             gl,
-            &video.clone(),
-            &window.clone(),
+            &drawing_surface,
             move |result| {
                 let Ok(game) = result else {
                     callback(Err(anyhow::anyhow!(

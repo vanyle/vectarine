@@ -1,5 +1,6 @@
 pub mod async_handler;
 pub mod console;
+pub mod drawing_surface;
 pub mod game;
 pub mod game_resource;
 pub mod graphics;
@@ -13,6 +14,8 @@ pub mod native_plugin;
 pub mod projectinfo;
 pub mod sound;
 
+use crate::drawing_surface::DrawingSurface;
+use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 // Re-export commonly used crates for the editor
 use crate::inithelpers::RenderingBlock;
 use crate::inithelpers::set_opengl_attributes;
@@ -91,7 +94,7 @@ where
     RenderingBlock {
         sdl: sdl_context,
         video: Rc::new(video_subsystem),
-        window: Rc::new(RefCell::new(window)),
+        window: Rc::new(RefCell::new(SdlDrawingSurface { window })),
         event_pump,
         gl_context,
         gl,
@@ -143,14 +146,15 @@ pub fn lib_main() {
     // Initialize IDBFS for persistent storage on Emscripten
     init_fs();
 
+    let drawing_surface: Rc<RefCell<dyn DrawingSurface>> = window.clone();
+
     loader(move |(project_path, project_info, fs)| {
         Game::from_project(
             &project_path,
             &project_info,
             fs,
             gl,
-            &video,
-            &window.clone(),
+            &drawing_surface.clone(),
             |result| {
                 let Ok(mut game) = result else {
                     panic!("Failed to load the game project at {:?}", project_path);
@@ -164,7 +168,12 @@ pub fn lib_main() {
                     let delta_duration =
                         std::time::Duration::from_micros(((now_instant - now) * 1000.0) as u64);
                     now = now_instant;
-                    game.main_loop(latest_events.iter(), &window, delta_duration, false);
+                    game.main_loop(
+                        latest_events.iter(),
+                        &drawing_surface,
+                        delta_duration,
+                        false,
+                    );
 
                     // These are for debug and are never displayed in the runtime.
                     // We still need to clear them to avoid memory leaks.
@@ -181,7 +190,7 @@ pub fn lib_main() {
                     }
                     console::clear_all_logs();
 
-                    window.borrow().gl_swap_window();
+                    window.borrow().window.gl_swap_window();
                 });
             },
         );

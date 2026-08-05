@@ -309,8 +309,8 @@ function module.getScreenSize(): Vec.Vec2
 	error("Implemented in native code")
 end
 
---- Sets the window size
---- Does nothing on the web
+--- Sets the window size. On the web and in the editor, this adds black borders to make the window match the requested aspect ratio.
+--- On desktop, this will resize the window to the requested size.
 function module.setWindowSize(width: number, height: number): ()
 	error("Implemented in native code")
 end

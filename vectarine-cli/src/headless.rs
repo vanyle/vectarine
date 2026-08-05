@@ -9,6 +9,8 @@ use std::sync::Arc;
 use runtime::anyhow;
 use runtime::console;
 use runtime::console::ConsoleMessage;
+use runtime::drawing_surface::DrawingSurface;
+use runtime::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 use runtime::game::Game;
 use runtime::glow::HasContext;
 use runtime::glow::PixelPackData;
@@ -62,7 +64,7 @@ where
     RenderingBlock {
         sdl: sdl_context,
         video: Rc::new(video_subsystem),
-        window: Rc::new(RefCell::new(window)),
+        window: Rc::new(RefCell::new(SdlDrawingSurface { window })),
         event_pump,
         gl_context,
         gl,
@@ -107,14 +109,13 @@ impl Display for FrameResult {
 /// You can use this to step the game forward, inspect it, take screenshots, etc.
 pub struct GameHeadlessRunner {
     game: Game,
-    window: Rc<RefCell<Window>>,
+    drawing_surface: Rc<RefCell<SdlDrawingSurface>>,
 }
 
 impl GameHeadlessRunner {
     pub fn new(project_path: &Path) -> vectarine_plugin_sdk::anyhow::Result<Self> {
         let RenderingBlock {
             sdl: _sdl,
-            video,
             window,
             event_pump: _event_pump,
             gl,
@@ -144,13 +145,14 @@ impl GameHeadlessRunner {
             ));
         };
 
+        let drawing_surface =
+            window.clone() as Rc<RefCell<dyn runtime::drawing_surface::DrawingSurface>>;
         let result = Game::from_project_safe_sync(
             project_path,
             &project_info,
             local_fs,
             gl,
-            &video,
-            &window,
+            &drawing_surface,
             true,
         );
 
@@ -165,11 +167,14 @@ impl GameHeadlessRunner {
             }
         };
 
-        Ok(GameHeadlessRunner { game, window })
+        Ok(GameHeadlessRunner {
+            game,
+            drawing_surface: window,
+        })
     }
 
     pub fn window_id(&self) -> u32 {
-        self.window.borrow().id()
+        self.drawing_surface.borrow().window.id()
     }
 
     pub fn run_lua_code(
@@ -192,8 +197,14 @@ impl GameHeadlessRunner {
     ) -> FrameResult {
         self.game.load_resource_as_needed();
 
-        self.game
-            .main_loop(latest_events.iter(), &self.window, delta_duration, false);
+        // Sadly, it looks like this clone is required.
+        let drawing_surface: Rc<RefCell<dyn DrawingSurface>> = self.drawing_surface.clone();
+        self.game.main_loop(
+            latest_events.iter(),
+            &drawing_surface,
+            delta_duration,
+            false,
+        );
 
         let mut logs: Vec<ConsoleMessage> = Vec::new();
         let mut frame_logs: Vec<String> = Vec::new();
@@ -205,14 +216,14 @@ impl GameHeadlessRunner {
         });
         console::clear_all_logs();
 
-        self.window.borrow().gl_swap_window();
+        self.drawing_surface.borrow().window.gl_swap_window();
 
         FrameResult { logs, frame_logs }
     }
 
     /// Takes a screenshot of the current game state and return the raw RGBA pixel data along with the width and height of the image.
     pub fn screenshot(&self) -> vectarine_plugin_sdk::anyhow::Result<(Vec<u8>, u32, u32)> {
-        let (width, height) = self.window.borrow().drawable_size();
+        let (width, height) = self.drawing_surface.borrow().window.drawable_size();
         let mut pixel_buffer = vec![0u8; (width * height * 4) as usize];
         unsafe {
             let format = glow::RGBA;
