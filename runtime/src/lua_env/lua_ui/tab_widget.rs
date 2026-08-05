@@ -58,10 +58,10 @@ impl TabWidget {
 }
 
 impl VectarineWidget for TabWidget {
-    fn size(&self) -> Vec2 {
+    fn size(&self, lua: &mlua::Lua) -> Vec2 {
         self.tabs
             .get(&self.current_tab)
-            .map(|w| w.0.borrow().size())
+            .map(|w| w.0.borrow().size(lua))
             .unwrap_or(Vec2::new(0.0, 0.0))
     }
 
@@ -97,7 +97,7 @@ impl VectarineWidget for TabWidget {
         if let Some((old_tab_key, style, progress)) = transition_info
             && progress < 1.0
         {
-            let widget_size = self.size();
+            let widget_size = self.size(lua);
             let w = widget_size.x();
             let h = widget_size.y();
 

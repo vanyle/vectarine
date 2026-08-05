@@ -47,7 +47,7 @@ impl<T: VectarineWidget + 'static> WidgetToAny for T {
 
 /// Represents a UI widget in Vectarine from the Rust side.
 pub trait VectarineWidget: WidgetToAny {
-    fn size(&self) -> Vec2;
+    fn size(&self, lua: &mlua::Lua) -> Vec2;
     fn draw(
         &mut self,
         lua: &mlua::Lua,
@@ -76,7 +76,7 @@ pub trait VectarineWidget: WidgetToAny {
         draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
-        let widget_size = self.size();
+        let widget_size = self.size(lua);
         let state = self.event_state_mut();
         if process_events {
             let io = io_env.borrow();
@@ -270,7 +270,9 @@ pub fn setup_ui_api(
     )?;
 
     lua.register_userdata_type::<WidgetBox>(|registry| {
-        registry.add_method("size", |_, widget, (): ()| Ok(widget.0.borrow().size()));
+        registry.add_method("size", |lua, widget, (): ()| {
+            Ok(widget.0.borrow().size(lua))
+        });
 
         registry.add_method("draw", {
             let batch = batch.clone();

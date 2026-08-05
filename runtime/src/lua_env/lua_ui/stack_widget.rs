@@ -16,11 +16,11 @@ pub struct Stack {
 }
 
 impl VectarineWidget for Stack {
-    fn size(&self) -> Vec2 {
+    fn size(&self, lua: &mlua::Lua) -> Vec2 {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
         for child in &self.children {
-            let child_size = child.0.borrow().size();
+            let child_size = child.0.borrow().size(lua);
             width = width.max(child_size.x());
             height = height.max(child_size.y());
         }
@@ -45,12 +45,12 @@ impl VectarineWidget for Stack {
         draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
-        let stack_size = self.size();
+        let stack_size = self.size(lua);
         let stack_width = stack_size.x();
         let stack_height = stack_size.y();
 
         for child in &self.children {
-            let child_size = child.0.borrow().size();
+            let child_size = child.0.borrow().size(lua);
             let child_width = child_size.x();
             let child_height = child_size.y();
 

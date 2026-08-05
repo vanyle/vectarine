@@ -42,7 +42,7 @@ impl Slider {
 }
 
 impl VectarineWidget for Slider {
-    fn size(&self) -> Vec2 {
+    fn size(&self, _lua: &mlua::Lua) -> Vec2 {
         self.size
     }
 
@@ -66,7 +66,7 @@ impl VectarineWidget for Slider {
     ) -> mlua::Result<()> {
         let slider_width = self.size.x();
         let slider_height = self.size.y();
-        let handle_width = self.handle.0.borrow().size().x();
+        let handle_width = self.handle.0.borrow().size(lua).x();
 
         // The travel range for the handle's left edge
         let travel = (slider_width - handle_width).max(0.0);
@@ -112,7 +112,7 @@ impl VectarineWidget for Slider {
         let current_transform = batch.borrow().affine_transform;
 
         // Track: draw at the slider's position, spanning the full width
-        let track_height = self.track.0.borrow().size().y();
+        let track_height = self.track.0.borrow().size(lua).y();
         let track_y_offset = (slider_height - track_height) / 2.0;
         batch.borrow_mut().affine_transform = current_transform.combine(&AffineTransform::new(
             Vec2::new(0.0, track_y_offset),
@@ -131,7 +131,7 @@ impl VectarineWidget for Slider {
         result?;
 
         // Handle: draw at the computed horizontal position, vertically centered
-        let handle_height = self.handle.0.borrow().size().y();
+        let handle_height = self.handle.0.borrow().size(lua).y();
         let handle_y_offset = (slider_height - handle_height) / 2.0;
         batch.borrow_mut().affine_transform = current_transform.combine(&AffineTransform::new(
             Vec2::new(handle_x, handle_y_offset),
