@@ -3,7 +3,7 @@ path = "../../gallery/Sokoban/game.vecta"
 description = "Sokoban runs without errors"
 
 [[step]]
-wait_for_frames = 5
+wait_for_frames = 10
 
 [[step]]
 compare_screenshot_to = "./sokoban-screenshot.png"
