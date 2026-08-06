@@ -2,6 +2,8 @@ name: ✨ Lint, Build & Test
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -15,6 +17,18 @@ on:
       - 'vectarine-plugin-template/**'
       - 'vectarine-cli/**'
   pull_request:
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'clippy.toml'
+      - 'cross.toml'
+      - 'mise.toml'
+      - 'rust-toolchain.toml'
+      - 'runtime/**'
+      - 'editor/**'
+      - 'vectarine-plugin-sdk/**'
+      - 'vectarine-plugin-template/**'
+      - 'vectarine-cli/**'
 
 env:
     CARGO_TERM_COLOR: always
@@ -55,6 +69,7 @@ jobs:
             - name: 🖼️ Integration test
               id: screenshot_test
               continue-on-error: true
+
               run: cargo run -p vectarine-cli -- test --path testdata -d 10
 
             - name: 🖼️ Regenerate screenshots
@@ -70,3 +85,7 @@ jobs:
                 retention-days: 1
                 name: screenshot-results
                 path: testdata
+            
+            - name: 📝 Mark the workflow as failed if the integration test failed
+              if: ${{ steps.screenshot_test.outcome == 'failure' }}
+              run: exit 1
