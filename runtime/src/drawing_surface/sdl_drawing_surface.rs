@@ -79,7 +79,7 @@ pub fn drawable_screen_size(window: &Window) -> (u32, u32) {
 }
 
 #[cfg(target_os = "emscripten")]
-pub fn drawable_screen_size(_window: &sdl2::video::Window) -> (u32, u32) {
+pub fn drawable_screen_size(_window: &Window) -> (u32, u32) {
     use emscripten_val::Val;
     // On the web, the drawable size and the screen size are the same.
     // Aspect ratio is preserved at the JS level, not here.
@@ -95,12 +95,12 @@ pub fn set_drawable_screen_size(window: &mut Window, width: u32, height: u32) {
 }
 
 #[cfg(target_os = "emscripten")]
-pub fn set_drawable_screen_size(window: &mut Window, width: u32, height: u32) {
+pub fn set_drawable_screen_size(_window: &mut Window, width: u32, height: u32) {
     use emscripten_val::Val;
     // Resize the underlying canvas.
     let _ = Val::global("vectarine").call(
         "setDrawableScreenSize",
-        &[Val::from_f64(width as f64), Val::from_f64(height as f64)],
+        &[&Val::from_(width as f64), &Val::from_(height as f64)],
     );
 }
 
