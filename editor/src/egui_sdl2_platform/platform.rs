@@ -74,8 +74,8 @@ impl Platform {
                         self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
                             egui::Pos2::ZERO,
                             egui::Vec2 {
-                                x: pixel_size.0 as f32,
-                                y: pixel_size.1 as f32,
+                                x: pixel_size.0,
+                                y: pixel_size.1,
                             },
                         ));
                     }

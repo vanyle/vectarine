@@ -131,8 +131,8 @@ impl DrawingSurface for GameDrawingSurface {
             .borrow()
             .get_drawable_size_in_hardware_px();
 
-        let x_framebuffer = (x as f32) * density.0;
-        let y_framebuffer = (y as f32) * density.1;
+        let x_framebuffer = x * density.0;
+        let y_framebuffer = y * density.1;
 
         let available_size = (
             surface_size.0 as f32 - margins.left - margins.right,

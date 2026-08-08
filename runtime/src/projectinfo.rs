@@ -13,6 +13,7 @@ pub struct ProjectInfo {
     pub default_screen_width: u32,
     pub default_screen_height: u32,
     pub plugins: Vec<String>,
+    pub vectarine_version: Option<String>,
 }
 
 impl Default for ProjectInfo {
@@ -27,6 +28,7 @@ impl Default for ProjectInfo {
             default_screen_width: 800,
             default_screen_height: 600,
             loading_animation: "pixel".to_string(),
+            vectarine_version: None,
         }
     }
 }
@@ -79,5 +81,9 @@ pub fn get_project_info(project_manifest_content: &str) -> Result<ProjectInfo> {
         logo_path: get_str_or_default("logo_path", "assets/logo.png"),
         plugins: plugins.unwrap_or_else(std::vec::Vec::new),
         loading_animation: get_str_or_default("loading_animation", "default"),
+        vectarine_version: manifest
+            .get("vectarine_version")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
     })
 }

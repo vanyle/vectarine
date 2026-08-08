@@ -19,7 +19,6 @@ use crate::{
     reload::reload_assets_if_needed,
 };
 
-pub mod buildinfo;
 pub mod editorconfig;
 pub mod editorextrawindow;
 pub mod editorinterface;
@@ -71,8 +70,9 @@ fn gui_main() {
         egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
 
     // The "screen_size" provided needs to be the size of the viewport.
-    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().get_drawable_size_in_hardware_px())
-        .expect("Failed to create platform");
+    let mut platform =
+        egui_sdl2_platform::Platform::new(window.borrow().get_drawable_size_in_hardware_px())
+            .expect("Failed to create platform");
 
     let mut editor_state = EditorState::new(
         window.clone(),

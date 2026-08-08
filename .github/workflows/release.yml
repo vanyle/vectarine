@@ -150,7 +150,7 @@ jobs:
                   cache-workspace-crates: true
 
             - name: 🏗️ Build runtime (web)
-              run: cargo build -p runtime --target=wasm32-unknown-emscripten --profile release-emscripten
+              run: RUST_BACKTRACE=1 cargo build -p runtime --target=wasm32-unknown-emscripten --profile release-emscripten
 
             - name: 📖 Make PDF
               run: mise run pdfify-manual
