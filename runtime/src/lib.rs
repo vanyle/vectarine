@@ -92,12 +92,15 @@ where
 
     let _ = video_subsystem.gl_set_swap_interval(SwapInterval::VSync);
 
-    let window = Rc::new(RefCell::new(SdlDrawingSurface {
+    let window = Rc::new(RefCell::new(SdlDrawingSurface::new(
         window,
         video_subsystem,
-    }));
+        None,
+    )));
 
-    window.borrow_mut().set_drawable_size_in_px(800, 600);
+    window
+        .borrow_mut()
+        .set_drawable_size_in_logical_px(800, 600);
 
     RenderingBlock {
         sdl: sdl_context,

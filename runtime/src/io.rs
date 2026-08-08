@@ -1,3 +1,4 @@
+use crate::drawing_surface::{DrawingSurface, SurfaceMargins};
 use crate::{game::Game, lua_env::print_lua_error_from_error};
 use std::collections::HashMap;
 use vectarine_plugin_sdk::mlua::IntoLua;
@@ -86,8 +87,8 @@ impl Default for IoEnvState {
 pub fn process_events<'a>(
     game: &mut Game,
     events: impl Iterator<Item = &'a sdl2::event::Event>,
-    framebuffer_width: f32,
-    framebuffer_height: f32,
+    surface: &mut dyn DrawingSurface,
+    margins: &SurfaceMargins,
 ) {
     {
         let mut env_state = game.lua_env.env_state.borrow_mut();
@@ -230,12 +231,16 @@ pub fn process_events<'a>(
                 yrel: _,
             } => {
                 let mut env_state = game.lua_env.env_state.borrow_mut();
-                let px_ratio_x = env_state.px_ratio_x; // convert between real and fake pixels
-                let px_ratio_y = env_state.px_ratio_y;
                 let mouse_state = &mut env_state.mouse_state;
 
-                mouse_state.x = (*x as f32) * px_ratio_x / framebuffer_width * 2.0 - 1.0;
-                mouse_state.y = -((*y as f32) * px_ratio_y / framebuffer_height * 2.0 - 1.0);
+                // let viewport = get_viewport(&game.gl);
+                // Invert the viewport formula. Be careful, OpenGL's origin is bottom-left, while SDL's origin is top-left.
+                // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
+                let (open_gl_x, open_gl_y) =
+                    surface.convert_sdl_to_opengl_coordinates(*x as f32, *y as f32, margins);
+
+                mouse_state.x = open_gl_x;
+                mouse_state.y = open_gl_y;
                 mouse_state.is_left_down = mousestate.left();
                 mouse_state.is_right_down = mousestate.right();
             }
@@ -255,6 +260,7 @@ pub fn process_events<'a>(
                 pressure,
                 ..
             } => {
+                // (x,y) is normalized to [0, 1]
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 update_touch(&mut env_state, *touch_id, *finger_id, *x, *y, *pressure);
             }

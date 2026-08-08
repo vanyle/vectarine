@@ -15,7 +15,7 @@ use notify_debouncer_full::{
 use runtime::{
     anyhow::{self},
     console,
-    drawing_surface::sdl_drawing_surface::{SdlDrawingSurface, get_linux_window_scaling},
+    drawing_surface::{DrawingSurface, sdl_drawing_surface::SdlDrawingSurface},
     egui, egui_glow, glow,
     graphics::batchdraw::BatchDraw2d,
     io::{
@@ -35,7 +35,7 @@ use crate::{
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
-    game_drawing_surface::GameDrawingSurface,
+    game_drawing_surface::{self, GameDrawingSurface},
     pluginsystem::trustedplugin::{self, PluginEntry, TrustedPlugin},
     projectstate::ProjectState,
 };
@@ -261,7 +261,17 @@ impl EditorState {
         painter: &mut egui_glow::Painter,
     ) -> f32 {
         platform.update_time(self.start_time.elapsed().as_secs_f64());
-        platform.handle_events(latest_events, sdl, &self.window.borrow().video_subsystem);
+        {
+            let editor_surface = self.window.borrow();
+            let game_drawing_surface = self.game_drawing_surface.borrow();
+            platform.handle_events(
+                latest_events,
+                sdl,
+                editor_surface.deref(),
+                game_drawing_surface.deref(),
+                &self.window.borrow().video_subsystem,
+            );
+        }
 
         let mut egui_eats_keyboard = false;
         let mut egui_eats_mouse = false;
@@ -296,35 +306,35 @@ impl EditorState {
             WindowStyle::GameWithEditor => &self.window.borrow().window,
         };
         // Render the editor interface on top of the game.
-        let size = window_with_editor.size();
         let drawable_size = window_with_editor.drawable_size();
         // Ratio of hardware pixel (pixel) to software pixels (points)
-        let linux_scaling = get_linux_window_scaling(&self.window.borrow().video_subsystem);
-        let pixels_per_point = linux_scaling * drawable_size.0 as f32 / size.0 as f32;
+        let size_in_px = self.window.borrow().get_size_in_vectarine_px();
+        let pixels_per_point_x = drawable_size.0 as f32 / size_in_px.0;
+        let pixels_per_point_y = drawable_size.1 as f32 / size_in_px.1;
 
         // Stop drawing the egui frame and get the full output
         // let full_output = platform.end_frame(&self.video);
         match full_output {
             Ok((full_output, m_height)) => {
-                menu_height = m_height * pixels_per_point; // Convert from egui points to true pixels
+                menu_height = m_height * pixels_per_point_y; // Convert from egui points to true framebuffer pixels
                 // Get the paint jobs
                 let paint_jobs = platform.tessellate(&full_output);
                 let pj = paint_jobs.as_slice();
 
-                platform.set_pixels_per_point(pixels_per_point);
+                platform.set_pixels_per_point(pixels_per_point_x);
 
                 // Make UI text crisp
                 platform.raw_input.screen_rect = Some(egui::Rect::from_min_size(
                     egui::Pos2::ZERO,
                     egui::Vec2 {
-                        x: size.0 as f32 / linux_scaling,
-                        y: size.1 as f32 / linux_scaling,
+                        x: size_in_px.0,
+                        y: size_in_px.1,
                     },
                 ));
 
                 painter.paint_and_update_textures(
                     [drawable_size.0, drawable_size.1],
-                    pixels_per_point,
+                    pixels_per_point_x,
                     pj,
                     &full_output.textures_delta,
                 );

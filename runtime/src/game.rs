@@ -1,4 +1,4 @@
-use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
+use std::{cell::RefCell, ops::DerefMut, path::Path, rc::Rc, sync::Arc};
 
 use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::glow::HasContext;
@@ -57,7 +57,7 @@ impl Game {
         };
 
         window.borrow_mut().set_title(&project_info.title);
-        window.borrow_mut().set_drawable_size_in_px(
+        window.borrow_mut().set_drawable_size_in_logical_px(
             project_info.default_screen_width,
             project_info.default_screen_height,
         );
@@ -124,7 +124,7 @@ impl Game {
         };
 
         window.borrow_mut().set_title(&project_info.title);
-        window.borrow_mut().set_drawable_size_in_px(
+        window.borrow_mut().set_drawable_size_in_logical_px(
             project_info.default_screen_width,
             project_info.default_screen_height,
         );
@@ -200,7 +200,7 @@ impl Game {
         self.lua_env.env_state.borrow_mut().px_ratio_x = 1.0; // investigate this, it's strange to have that.
         self.lua_env.env_state.borrow_mut().px_ratio_y = 1.0;
 
-        let (width, height) = window.borrow().get_drawable_size_in_px();
+        let (width, height) = window.borrow().get_drawable_size_in_hardware_px();
         self.lua_env.env_state.borrow_mut().window_width = width;
         self.lua_env.env_state.borrow_mut().window_height = height;
     }
@@ -244,12 +244,10 @@ impl Game {
 
         sound::update_sound_system();
 
-        let framebuffer_width;
-        let framebuffer_height;
         {
             let mut env_state = self.lua_env.env_state.borrow_mut();
 
-            let (width, height) = window.borrow().get_drawable_size_in_px();
+            let (width, height) = window.borrow().get_drawable_size_in_hardware_px();
             // imo this is wrong. Having the drawable size is interesting, but we should not mix it with the actual size.
             env_state.window_width = width;
             env_state.window_height = height;
@@ -263,9 +261,6 @@ impl Game {
                 .borrow_mut()
                 .set_aspect_ratio(aspect_ratio);
 
-            framebuffer_width = width;
-            framebuffer_height = height;
-
             if env_state.is_window_resizeable {
                 window.borrow_mut().set_resizable(true);
             } else {
@@ -276,7 +271,7 @@ impl Game {
                 let (target_width, target_height) = target_size;
                 window
                     .borrow_mut()
-                    .set_drawable_size_in_px(target_width, target_height);
+                    .set_drawable_size_in_logical_px(target_width, target_height);
                 env_state.window_target_size = None;
             }
             if let Some(fullscreen_request) = env_state.fullscreen_state_request {
@@ -293,12 +288,7 @@ impl Game {
             }
         }
 
-        process_events(
-            self,
-            events,
-            framebuffer_width as f32,
-            framebuffer_height as f32,
-        );
+        process_events(self, events, window.borrow_mut().deref_mut(), &margins);
 
         // 2D Settings
         unsafe {

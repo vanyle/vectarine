@@ -1,5 +1,5 @@
 use runtime::anyhow;
-use runtime::drawing_surface::sdl_drawing_surface::get_linux_window_scaling;
+use runtime::drawing_surface::{DrawingSurface, SurfaceMargins};
 use runtime::egui;
 use runtime::egui::{Modifiers, Pos2};
 use runtime::sdl2;
@@ -59,20 +59,23 @@ impl Platform {
         &mut self,
         events: &[Event],
         sdl: &sdl2::Sdl,
+        editor_surface: &dyn DrawingSurface,
+        _game_surface: &dyn DrawingSurface,
         video: &sdl2::VideoSubsystem,
     ) {
-        let linux_scaling = get_linux_window_scaling(video);
         for event in events {
             #[allow(clippy::collapsible_match)]
             match event {
                 // Handle resizing
                 Event::Window { win_event, .. } => match win_event {
-                    WindowEvent::Resized(w, h) | WindowEvent::SizeChanged(w, h) => {
+                    WindowEvent::Resized(_w, _h) | WindowEvent::SizeChanged(_w, _h) => {
+                        let pixel_size = editor_surface.get_size_in_vectarine_px();
+
                         self.raw_input.screen_rect = Some(egui::Rect::from_min_size(
                             egui::Pos2::ZERO,
                             egui::Vec2 {
-                                x: *(w) as f32 / linux_scaling,
-                                y: *h as f32 / linux_scaling,
+                                x: pixel_size.0 as f32,
+                                y: pixel_size.1 as f32,
                             },
                         ));
                     }
@@ -115,12 +118,19 @@ impl Platform {
                 }
                 // Handle mouse motion
                 Event::MouseMotion { x, y, .. } => {
-                    // Update the pointer position
-                    self.pointer_pos =
-                        egui::Pos2::new(*x as f32 / linux_scaling, *y as f32 / linux_scaling);
+                    let open_gl_pos_editor = editor_surface.convert_sdl_to_opengl_coordinates(
+                        *x as f32,
+                        *y as f32,
+                        &SurfaceMargins::default(),
+                    );
+                    let window_size_egui = editor_surface.get_size_in_vectarine_px();
+                    let mouse_x = (open_gl_pos_editor.0 + 1.0) / 2.0 * window_size_egui.0;
+                    let mouse_y = (1.0 - (open_gl_pos_editor.1 + 1.0) / 2.0) * window_size_egui.1;
+                    self.pointer_pos = egui::Pos2::new(mouse_x, mouse_y);
+
                     self.raw_input
                         .events
-                        .push(egui::Event::PointerMoved(self.pointer_pos));
+                        .push(egui::Event::PointerMoved((mouse_x, mouse_y).into()));
                 }
                 // Handle the mouse scrolling
                 Event::MouseWheel { x, y, .. } => {

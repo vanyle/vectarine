@@ -125,7 +125,7 @@ pub fn draw_error_in_game_window(
     error: &crate::luau::InfiniteLoopError,
 ) {
     batch_draw.drawing_target.enable_multisampling();
-    let (width, height) = game_window.get_drawable_size_in_px();
+    let (width, height) = game_window.get_drawable_size_in_hardware_px();
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
 
@@ -178,6 +178,8 @@ pub fn send_window_resize_sync_event(
     video: &runtime::sdl2::VideoSubsystem,
     window: &Window,
     platform: &mut egui_sdl2_platform::Platform,
+    game_surface: &dyn DrawingSurface,
+    editor_surface: &dyn DrawingSurface,
 ) {
     let (width, height) = window.size();
     let event: Event = Event::Window {
@@ -185,7 +187,7 @@ pub fn send_window_resize_sync_event(
         window_id: window.id(),
         win_event: WindowEvent::Resized(width as i32, height as i32),
     };
-    platform.handle_events(&[event], sdl, video);
+    platform.handle_events(&[event], sdl, editor_surface, game_surface, video);
 }
 
 pub fn draw_centered_text(
