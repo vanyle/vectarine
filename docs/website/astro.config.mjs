@@ -26,8 +26,10 @@ export default defineConfig({
                 alt: "Vectarine Logo",
             },
             components: {
+                Header: "./src/components/Header.astro",
                 SocialIcons: "./src/components/SocialIcons.astro",
                 SiteTitle: "./src/components/SiteTitle.astro",
+                Hero: "./src/components/Hero.astro",
             },
             editLink: {
                 baseUrl: 'https://github.com/vanyle/vectarine/edit/main/docs/website',
@@ -58,7 +60,7 @@ export default defineConfig({
                     items: [
                         {
                             label: "What is the Gallery?",
-                            link: "/gallery/the-gallery/",
+                            link: "/gallery/",
                         },
                         {
                             label: "Snake",

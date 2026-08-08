@@ -8,6 +8,9 @@
     /* Wider content, narrower TOC */
     --sl-content-width: 65rem;
     --sl-sidebar-width: 16rem;
+
+    --sl-color-accent: #5d001d;
+    --sl-color-accent-high: color-mix(in hsl, #5d001d 50%, #ffffff 50%);
 }
 
 .sl-markdown-content img{

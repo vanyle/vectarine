@@ -37,8 +37,6 @@ const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
 			))}
 		</span>
 	</a>
-	<a class="sl-flex top-nav-link" href="/guides/overview/">Overview</a>
-	<a class="sl-flex top-nav-link" href="/gallery/the-gallery.html">Gallery</a>
 </div>
 <style>
 		.site-nav-container{
@@ -88,7 +86,7 @@ const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
 
 		.animated-letter {
 			display: inline-block;
-			color: black;
+			color: var(--sl-color-text);
 			animation: colorTurn 0.6s ease-out forwards;
 		}
 
