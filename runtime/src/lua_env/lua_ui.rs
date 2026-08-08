@@ -262,8 +262,10 @@ pub fn setup_ui_api(
                     *debug_outline_ref = toggle.unwrap_or(true);
                 }
                 draw_fn.call::<()>(())?;
-                // New borrow to ensure we drop the mutable borrow before calling the draw_fn again as calls to withDebugOutline can be nested.
-                *is_debug_outline_enabled.borrow_mut() = previous_state;
+                {
+                    // New borrow to ensure we drop the mutable borrow before calling the draw_fn again as calls to withDebugOutline can be nested.
+                    *is_debug_outline_enabled.borrow_mut() = previous_state;
+                }
                 Ok(())
             }
         })?,
@@ -281,12 +283,14 @@ pub fn setup_ui_api(
             move |lua, widget: &WidgetBox, (extra,): (mlua::Value,)| {
                 let result = widget.0.try_borrow_mut();
                 if let Ok(mut widget) = result {
+                    let is_debug_outline_enabled = { *is_debug_outline_enabled.borrow() };
+
                     widget.event_processing_draw(
                         lua,
                         &batch,
                         &io_env,
                         true,
-                        *is_debug_outline_enabled.borrow(),
+                        is_debug_outline_enabled,
                         extra,
                     )
                 } else {
