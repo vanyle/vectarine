@@ -34,10 +34,17 @@ impl DrawingSurface for SdlDrawingSurface {
     /// Note that SDL provides no API to set the drawable size in hardware pixels, so we set the logical size instead.
     fn set_drawable_size_in_logical_px(&mut self, logical_width: u32, logical_height: u32) {
         let (scaling_x, scaling_y) = self.scaling;
+
         let _ = self.window.set_size(
             (logical_width as f32 * scaling_x) as u32,
             (logical_height as f32 * scaling_y) as u32,
         );
+
+        #[cfg(target_os = "emscripten")]
+        {
+            use emscripten_val::Val;
+            let _ = Val::global("vectarine").call("resizeCanvas", &[]);
+        }
     }
 
     fn is_minimized(&self) -> bool {

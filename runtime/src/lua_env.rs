@@ -241,7 +241,7 @@ impl LuaEnvironment {
         let color_module = lua_handle.lua.create_table().unwrap();
         register_vectarine_module(&lua_handle.lua, "color", color_module);
 
-        let coords_module = lua_coord::setup_coords_api(&lua_handle.lua, &gl).unwrap();
+        let coords_module = lua_coord::setup_coords_api(&lua_handle.lua, &gl, &env_state).unwrap();
         register_vectarine_module(&lua_handle.lua, "coord", coords_module);
 
         let (event_module, default_events, _event_manager) =
