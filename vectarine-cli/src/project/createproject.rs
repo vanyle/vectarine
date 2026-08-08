@@ -4,6 +4,7 @@ use std::{fs, path::Path};
 use runtime::anyhow;
 use runtime::{projectinfo::ProjectInfo, toml};
 
+use crate::buildinfo;
 use crate::project::copydirall::copy_dir_all;
 use crate::project::geteditorpaths::get_luau_api_path;
 
@@ -19,7 +20,6 @@ const vec = require('@vectarine/vec')
 debug.print(\"Loaded.\")
 
 function Update(deltaTime: number)
-    graphics.clear(vec4.WHITE)
     if graphics.drawSplashScreenIfNeeded({
         -- Put the resources that need to be loaded here.
     }, \"Loading\") then
@@ -64,6 +64,7 @@ pub fn create_game_and_get_path(game_name: &str, game_path: &Path) -> anyhow::Re
     let script_folder = project_folder.join("scripts");
     let project_info = ProjectInfo {
         title: game_name.to_string(),
+        vectarine_version: Some(buildinfo::get_version().to_string()),
         ..ProjectInfo::default()
     };
 

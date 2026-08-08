@@ -11,6 +11,9 @@ zip = "6.0.0"
 regex = "1.12.2"
 directories = "6.0.0"
 
+[build-dependencies]
+chrono = "0.4.45"
+
 [package.metadata.vcpkg]
 dependencies = ["sdl2"]
 git = "https://github.com/microsoft/vcpkg"

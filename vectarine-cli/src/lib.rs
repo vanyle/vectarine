@@ -1,5 +1,6 @@
 use clap::Parser;
 
+pub mod buildinfo;
 pub mod cliarg;
 pub mod features;
 pub mod headless;

@@ -344,7 +344,7 @@
 				let script = document.createElement("script");
 				script.onerror = scriptLoadError;
 				script.src =
-					"target/wasm32-unknown-emscripten/debug/runtime.js";
+					"target/wasm32-unknown-emscripten/release-emscripten/runtime.js";
 				document.head.appendChild(script);
 			});
 			addEventListener('resize', resizeCanvas);

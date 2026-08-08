@@ -1,9 +1,9 @@
 use std::{cell::Cell, path::PathBuf};
 
-use crate::buildinfo;
 use runtime::console;
 use runtime::egui;
 use runtime::egui::{Modal, Popup, RichText, UiBuilder};
+use vectarine_cli::buildinfo;
 
 use crate::editorinterface::{EditorState, emptyscreen::open_file_dialog_and_load_project};
 

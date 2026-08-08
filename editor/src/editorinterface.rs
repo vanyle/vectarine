@@ -35,7 +35,7 @@ use crate::{
     },
     egui_sdl2_platform,
     export::exportinterface::draw_editor_export,
-    game_drawing_surface::{self, GameDrawingSurface},
+    game_drawing_surface::GameDrawingSurface,
     pluginsystem::trustedplugin::{self, PluginEntry, TrustedPlugin},
     projectstate::ProjectState,
 };

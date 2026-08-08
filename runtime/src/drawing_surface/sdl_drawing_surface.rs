@@ -215,20 +215,20 @@ fn get_screen_size_linux() -> Result<(u32, u32), String> {
 
                 // Look for "connected primary" or just "connected"
                 for line in stdout.lines() {
-                    if line.contains(" connected ") {
-                        // Look for a string like: "376mm x 301mm"
-                        // The format is often like "... 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm"
-                        if let Some(pos) = line.rfind(") ") {
-                            let size_str = &line[pos + 2..];
-                            let parts: Vec<&str> = size_str.split("mm x ").collect();
-                            if parts.len() == 2 {
-                                if let (Ok(width), Ok(height)) = (
-                                    parts[0].trim().parse::<u32>(),
-                                    parts[1].trim_end_matches("mm").parse::<u32>(),
-                                ) {
-                                    return Ok((width, height));
-                                }
-                            }
+                    // Look for a string like: "376mm x 301mm"
+                    // The format is often like "... 1920x1080+0+0 (normal left inverted right x axis y axis) 527mm x 296mm"
+                    if line.contains(" connected ")
+                        && let Some(pos) = line.rfind(") ")
+                    {
+                        let size_str = &line[pos + 2..];
+                        let parts: Vec<&str> = size_str.split("mm x ").collect();
+                        if parts.len() == 2
+                            && let (Ok(width), Ok(height)) = (
+                                parts[0].trim().parse::<u32>(),
+                                parts[1].trim_end_matches("mm").parse::<u32>(),
+                            )
+                        {
+                            return Ok((width, height));
                         }
                     }
                 }
