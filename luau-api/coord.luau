@@ -63,43 +63,70 @@ export type ScreenPosition = typeof(setmetatable({} :: Vec.Vec2Data, ScreenPosit
 --- The pixel convention has the origin (0,0) in the upper-left of the screen, with the lower-right at (screen_width-1, screen_height-1)
 --- This is the same convention as most other graphics APIs like HTML5 Canvas, Love2d, Processing, Raylib etc...
 ---
+--- You can use either `coord.px(10, 10)` or `coord.px(Vec.V2(10, 10))` to make ScreenPosition.
 --- To perform the conversion, this function uses the screen size of the current drawing target (screen or canvas) unless `screen_size_px` is provided.
-function module.px(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenPosition
+function module.px(
+	v_or_x: Vec.Vec2 | number,
+	screen_size_px_or_y: number | Vec.Vec2?,
+	screen_size_px_or_nil: Vec.Vec2?
+): ScreenPosition
 	error("Implemented in native code")
 end
 
 --- Converts a Vec2 in pixels to a ScreenVec
 --- The pixel convention has the origin (0,0) in the upper-left of the screen
 ---
+--- You can use either `coord.pxVec(10, 10)` or `coord.pxVec(Vec.V2(10, 10))` to make a ScreenVec.
+---
 --- To perform the conversion, this function uses the screen size of the current drawing target (screen or canvas) unless `screen_size_px` is provided.
-function module.pxVec(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenVec
+function module.pxVec(
+	v_or_x: Vec.Vec2 | number,
+	screen_size_px_or_y: number | Vec.Vec2?,
+	screen_size_px_or_nil: Vec.Vec2?
+): ScreenVec
 	error("Implemented in native code")
 end
 
 --- Converts a Vec2 using the OpenGL convention to a ScreenPosition
 --- The OpenGL convention has the origin (0,0) in the center of the screen, with the bottom-left at (-1,-1) and the upper-right at (1,1)
-function module.gl(v: Vec.Vec2): ScreenPosition
+function module.gl(v_or_x: Vec.Vec2 | number, y_or_nil: number | Vec.Vec2?): ScreenPosition
 	error("Implemented in native code")
 end
 
 --- Converts a Vec2 using the OpenGL convention to a ScreenVec
-function module.glVec(v: Vec.Vec2): ScreenVec
+function module.glVec(v_or_x: Vec.Vec2 | number, y_or_nil: number | Vec.Vec2?): ScreenVec
 	error("Implemented in native code")
 end
 
-function module.vw(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenPosition
+function module.vw(
+	v_or_x: Vec.Vec2 | number,
+	screen_size_px_or_y: number | Vec.Vec2?,
+	screen_size_px_or_nil: Vec.Vec2?
+): ScreenPosition
 	error("Implemented in native code")
 end
 
-function module.vwVec(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenVec
+function module.vwVec(
+	v_or_x: Vec.Vec2 | number,
+	screen_size_px_or_y: number | Vec.Vec2?,
+	screen_size_px_or_nil: Vec.Vec2?
+): ScreenVec
 	error("Implemented in native code")
 end
 
-function module.vh(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenPosition
+function module.vh(
+	v_or_x: Vec.Vec2 | number,
+	screen_size_px_or_y: number | Vec.Vec2?,
+	screen_size_px_or_nil: Vec.Vec2?
+): ScreenPosition
 	error("Implemented in native code")
 end
 
-function module.vhVec(v: Vec.Vec2, screen_size_px: Vec.Vec2?): ScreenVec
+function module.vhVec(
+	v_or_x: Vec.Vec2 | number,
+	screen_size_px_or_y: number | Vec.Vec2?,
+	screen_size_px_or_nil: Vec.Vec2?
+): ScreenVec
 	error("Implemented in native code")
 end
 

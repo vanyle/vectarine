@@ -3,8 +3,9 @@ use std::rc::Rc;
 use std::{ops, sync::Arc};
 
 use vectarine_plugin_sdk::glow::Context;
-use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods};
+use vectarine_plugin_sdk::mlua::{self, AnyUserData, FromLua, IntoLua, UserDataMethods};
 
+use crate::lua_env::lua_fastlist::value_to_f32;
 use crate::{
     auto_impl_lua_copy,
     graphics::glframebuffer::{Viewport, get_viewport},
@@ -120,8 +121,26 @@ impl ops::Sub for ScreenVec {
     }
 }
 
+pub fn extract_vec_for_args(
+    lua: &mlua::Lua,
+    v_or_x: mlua::Value,
+    screensize_or_y: mlua::Value,
+    screensize_or_nil: Option<Vec2>,
+) -> (Option<Vec2>, Option<Vec2>) {
+    if let Some(x) = value_to_f32(&v_or_x)
+        && let Some(y) = value_to_f32(&screensize_or_y)
+    {
+        (Some(Vec2::new(x, y)), screensize_or_nil)
+    } else if let Ok(v) = Vec2::from_lua(v_or_x.clone(), lua) {
+        let maybe_screensize = Vec2::from_lua(screensize_or_y, lua).ok();
+        (Some(v), maybe_screensize)
+    } else {
+        (None, None)
+    }
+}
+
 pub fn setup_coords_api(
-    lua: &vectarine_plugin_sdk::mlua::Lua,
+    lua: &mlua::Lua,
     gl: &Arc<Context>,
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
@@ -262,7 +281,20 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "px", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, screen_size): (Vec2, Option<Vec2>)| {
+        move |lua,
+              (v_or_x, screen_size_or_y, screen_size_or_nil): (
+            mlua::Value,
+            mlua::Value,
+            Option<Vec2>,
+        )| {
+            let (v, screen_size) =
+                extract_vec_for_args(lua, v_or_x, screen_size_or_y, screen_size_or_nil);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
+
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
@@ -280,7 +312,19 @@ pub fn setup_coords_api(
         let gl = gl.clone();
         let env_state = env_state.clone();
         #[inline(always)]
-        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+        move |lua,
+              (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
+            mlua::Value,
+            mlua::Value,
+            Option<Vec2>,
+        )| {
+            let (v, framebuffer_size) =
+                extract_vec_for_args(lua, v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
@@ -304,7 +348,15 @@ pub fn setup_coords_api(
         &coords_module,
         "gl",
         #[inline(always)]
-        move |_, (v,): (Vec2,)| Ok(ScreenPosition::from_opengl(v)),
+        move |lua, (v_or_x, y_or_nil): (mlua::Value, mlua::Value)| {
+            let (v, _) = extract_vec_for_args(lua, v_or_x, y_or_nil, None);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
+            Ok(ScreenPosition::from_opengl(v))
+        },
     );
 
     add_fn_to_table(
@@ -312,13 +364,33 @@ pub fn setup_coords_api(
         &coords_module,
         "glVec",
         #[inline(always)]
-        move |_, (v,): (Vec2,)| Ok(ScreenVec(v)),
+        move |lua, (v_or_x, y_or_nil): (mlua::Value, mlua::Value)| {
+            let (v, _) = extract_vec_for_args(lua, v_or_x, y_or_nil, None);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
+            Ok(ScreenVec(v))
+        },
     );
 
     add_fn_to_table(lua, &coords_module, "vw", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+        move |lua,
+              (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
+            mlua::Value,
+            mlua::Value,
+            Option<Vec2>,
+        )| {
+            let (v, framebuffer_size) =
+                extract_vec_for_args(lua, v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
@@ -335,7 +407,19 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vwVec", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+        move |lua,
+              (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
+            mlua::Value,
+            mlua::Value,
+            Option<Vec2>,
+        )| {
+            let (v, framebuffer_size) =
+                extract_vec_for_args(lua, v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
@@ -351,7 +435,19 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vh", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+        move |lua,
+              (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
+            mlua::Value,
+            mlua::Value,
+            Option<Vec2>,
+        )| {
+            let (v, framebuffer_size) =
+                extract_vec_for_args(lua, v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
@@ -368,7 +464,19 @@ pub fn setup_coords_api(
     add_fn_to_table(lua, &coords_module, "vhVec", {
         let gl = gl.clone();
         #[inline(always)]
-        move |_lua, (v, framebuffer_size): (Vec2, Option<Vec2>)| {
+        move |lua,
+              (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
+            mlua::Value,
+            mlua::Value,
+            Option<Vec2>,
+        )| {
+            let (v, framebuffer_size) =
+                extract_vec_for_args(lua, v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil);
+            let Some(v) = v else {
+                return Err(vectarine_plugin_sdk::mlua::Error::RuntimeError(
+                    "Invalid arguments".to_string(),
+                ));
+            };
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {

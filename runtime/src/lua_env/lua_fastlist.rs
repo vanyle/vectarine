@@ -95,7 +95,7 @@ where
 }
 
 /// Extract an f32 from a mlua::Value that may be Number or Integer
-fn value_to_f32(value: &mlua::Value) -> Option<f32> {
+pub fn value_to_f32(value: &mlua::Value) -> Option<f32> {
     match value {
         mlua::Value::Number(n) => Some(*n as f32),
         mlua::Value::Integer(n) => Some(*n as f32),

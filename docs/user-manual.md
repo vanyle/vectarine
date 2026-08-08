@@ -186,7 +186,7 @@ function Update(time_delta)
     local squareSize = coord.pxVec(V2(200, 200))
     graphics.drawRect(coord.CENTER - squareSize:scale(0.5), squareSize, rectColor)
 
-    local pos2 = coord.px(V2(100, 100)) -- refer to a position in pixels
+    local pos2 = coord.px(100, 100) -- refer to a position in pixels
     local size2 = coord.glVec(V2(1, 1)) -- a quarter of the screen
     graphics.drawRect(pos2, size2, rectColor)
 end
@@ -373,9 +373,9 @@ function Update()
 end
 ```
 
-> ⚠️ Path to resources should always be in lowercase, and your resources should also be named in 
+> ⚠️ Path to resources must always be in lowercase, and your resources must also be named in 
 > lowercase for best cross-platform compatibility.
-> For example, you should name your image "textures/my_image.png" instead of "textures/My_Image.png"!
+> For example, you must name your image "textures/my_image.png" instead of "textures/My_Image.png"!
 
 When you call `loadImage`, the image is not immediately available on all platforms. On the web, the browser needs to download it first.
 To represent this, `loadImage` returns a _resource handle_ which you can use to check if the resource is ready using `isReady`.

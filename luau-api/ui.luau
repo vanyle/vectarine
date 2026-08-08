@@ -13,7 +13,7 @@ The core concept is a `Widget`, which is a rectangular area on the screen which 
 
 The main widget is the Generic widget obtained using the `ui.widget` function which is drawn using a function you provide.
 
-You can compose widgets together using the `ui.column` and `ui.row` widgets.
+You can compose widgets together using the `ui.column`, `ui.row` and `ui.stack` widgets.
 
 Widgets are immutable: once they are created, you cannot change their content.
 Use the generic widget and its draw function to create dynamic widgets that can react to game state or user input.
@@ -71,9 +71,12 @@ export type ContainerOptions = {
 --- Create a generic widget with a fixed preferred size and a custom draw function.
 --- Can be used to create custom widgets or draw parts of the game in the UI.
 --- Can also be used for buttons, or to make part of the UI react to events
----@param size Vec.Vec2 — the preferred size of this widget
+---@param size Vec.Vec2 — the preferred size of this widget or a function that returns the preferred size
 ---@param drawFn (event: EventState, extra: T) -> () — called to draw the widget content
-function module.widget<T>(size: Vec.Vec2, drawFn: (event: EventState, extra: T) -> ()): Widget<T>
+function module.widget<T>(
+	size: Vec.Vec2 | ((extra: T) -> Vec.Vec2),
+	drawFn: (event: EventState, extra: T) -> ()
+): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -83,6 +86,10 @@ end
 ---@param options ContainerOptions — optional padding and gap
 ---@param children { Widget<T> } — ordered list of child widgets
 function module.column<T>(options: ContainerOptions, children: { Widget<T> }): Widget<T>
+	error("Implemented in native code")
+end
+
+function module.spacer<any>(size: Vec.Vec2): Widget<any>
 	error("Implemented in native code")
 end
 
