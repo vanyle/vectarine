@@ -33,7 +33,9 @@ pub struct TouchState {
 #[derive(Debug)]
 pub struct IoEnvState {
     // Inputs
-    pub window_width: u32, // Size of the framebuffer in pixels.
+    /// Width of the framebuffer in pixels.
+    pub window_width: u32,
+    /// Height of the framebuffer in pixels.
     pub window_height: u32,
     pub is_window_minimized: bool,
     pub screen_width: u32,

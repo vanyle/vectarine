@@ -40,7 +40,11 @@ impl DrawingSurface for GameDrawingSurface {
     }
 
     fn set_drawable_size_in_logical_px(&mut self, width: u32, height: u32) {
-        self.target_size = (width, height);
+        let (density_x, density_y) = self.density_ratio();
+        self.target_size = (
+            (width as f32 * density_x) as u32,
+            (height as f32 * density_y) as u32,
+        );
     }
 
     fn is_minimized(&self) -> bool {

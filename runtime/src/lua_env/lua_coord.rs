@@ -8,7 +8,7 @@ use vectarine_plugin_sdk::mlua::{self, AnyUserData, FromLua, IntoLua, UserDataMe
 use crate::lua_env::lua_fastlist::value_to_f32;
 use crate::{
     auto_impl_lua_copy,
-    graphics::glframebuffer::{Viewport, get_viewport},
+    graphics::glframebuffer::Viewport,
     lua_env::{IoEnvState, add_fn_to_table, lua_vec2::Vec2},
 };
 
@@ -131,7 +131,7 @@ pub fn extract_vec_for_args(
         && let Some(y) = value_to_f32(&screensize_or_y)
     {
         (Some(Vec2::new(x, y)), screensize_or_nil)
-    } else if let Ok(v) = Vec2::from_lua(v_or_x.clone(), lua) {
+    } else if let Ok(v) = Vec2::from_lua(v_or_x, lua) {
         let maybe_screensize = Vec2::from_lua(screensize_or_y, lua).ok();
         (Some(v), maybe_screensize)
     } else {
@@ -141,13 +141,12 @@ pub fn extract_vec_for_args(
 
 pub fn setup_coords_api(
     lua: &mlua::Lua,
-    gl: &Arc<Context>,
+    _gl: &Arc<Context>,
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let coords_module = lua.create_table()?;
 
     lua.register_userdata_type::<ScreenVec>(|registry| {
-        let gl = gl.clone();
         let env_state = env_state.clone();
         registry.add_meta_function(
             vectarine_plugin_sdk::mlua::MetaMethod::Add,
@@ -171,11 +170,10 @@ pub fn setup_coords_api(
                 let viewport = if let Some(screen_size) = framebuffer_size {
                     Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
                 } else {
-                    let drawable_viewport = get_viewport(&gl);
                     let env = env_state.borrow();
                     Viewport::from_size(
-                        (drawable_viewport.width as f32 / env.px_ratio_x) as i32,
-                        (drawable_viewport.height as f32 / env.px_ratio_y) as i32,
+                        (env.window_width as f32 / env.px_ratio_x) as i32,
+                        (env.window_height as f32 / env.px_ratio_y) as i32,
                     )
                 };
                 Ok(this.as_px(viewport.width as f32, viewport.height as f32))
@@ -208,7 +206,6 @@ pub fn setup_coords_api(
     })?;
 
     lua.register_userdata_type::<ScreenPosition>(|registry| {
-        let gl = gl.clone();
         let env_state = env_state.clone();
         registry.add_method(
             "gl",
@@ -222,11 +219,10 @@ pub fn setup_coords_api(
                 let viewport = if let Some(screen_size) = screen_size {
                     Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
                 } else {
-                    let drawable_viewport = get_viewport(&gl);
                     let env = env_state.borrow();
                     Viewport::from_size(
-                        (drawable_viewport.width as f32 / env.px_ratio_x) as i32,
-                        (drawable_viewport.height as f32 / env.px_ratio_y) as i32,
+                        (env.window_width as f32 / env.px_ratio_x) as i32,
+                        (env.window_height as f32 / env.px_ratio_y) as i32,
                     )
                 };
                 Ok(this.as_px(viewport.width as f32, viewport.height as f32))
@@ -279,7 +275,7 @@ pub fn setup_coords_api(
     })?;
 
     add_fn_to_table(lua, &coords_module, "px", {
-        let gl = gl.clone();
+        let env_state = env_state.clone();
         #[inline(always)]
         move |lua,
               (v_or_x, screen_size_or_y, screen_size_or_nil): (
@@ -298,7 +294,11 @@ pub fn setup_coords_api(
             let viewport = if let Some(screen_size) = screen_size {
                 Viewport::from_size(screen_size.x() as i32, screen_size.y() as i32)
             } else {
-                get_viewport(&gl)
+                let env = env_state.borrow();
+                Viewport::from_size(
+                    (env.window_width as f32 / env.px_ratio_x) as i32,
+                    (env.window_height as f32 / env.px_ratio_y) as i32,
+                )
             };
             Ok(ScreenPosition::from_px(
                 v,
@@ -309,7 +309,6 @@ pub fn setup_coords_api(
     });
 
     add_fn_to_table(lua, &coords_module, "pxVec", {
-        let gl = gl.clone();
         let env_state = env_state.clone();
         #[inline(always)]
         move |lua,
@@ -328,11 +327,10 @@ pub fn setup_coords_api(
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
-                let drawable_viewport = get_viewport(&gl);
                 let env = env_state.borrow();
                 Viewport::from_size(
-                    (drawable_viewport.width as f32 / env.px_ratio_x) as i32,
-                    (drawable_viewport.height as f32 / env.px_ratio_y) as i32,
+                    (env.window_width as f32 / env.px_ratio_x) as i32,
+                    (env.window_height as f32 / env.px_ratio_y) as i32,
                 )
             };
             Ok(ScreenVec::from_px(
@@ -376,7 +374,7 @@ pub fn setup_coords_api(
     );
 
     add_fn_to_table(lua, &coords_module, "vw", {
-        let gl = gl.clone();
+        let env_state = env_state.clone();
         #[inline(always)]
         move |lua,
               (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
@@ -394,7 +392,11 @@ pub fn setup_coords_api(
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
-                get_viewport(&gl)
+                let env = env_state.borrow();
+                Viewport::from_size(
+                    (env.window_width as f32 / env.px_ratio_x) as i32,
+                    (env.window_height as f32 / env.px_ratio_y) as i32,
+                )
             };
             Ok(ScreenPosition::from_vw(
                 v,
@@ -405,7 +407,7 @@ pub fn setup_coords_api(
     });
 
     add_fn_to_table(lua, &coords_module, "vwVec", {
-        let gl = gl.clone();
+        let env_state = env_state.clone();
         #[inline(always)]
         move |lua,
               (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
@@ -423,7 +425,11 @@ pub fn setup_coords_api(
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
-                get_viewport(&gl)
+                let env = env_state.borrow();
+                Viewport::from_size(
+                    (env.window_width as f32 / env.px_ratio_x) as i32,
+                    (env.window_height as f32 / env.px_ratio_y) as i32,
+                )
             };
             Ok(ScreenVec(Vec2::new(
                 v.x() * 2.0 / 100.0,
@@ -433,7 +439,7 @@ pub fn setup_coords_api(
     });
 
     add_fn_to_table(lua, &coords_module, "vh", {
-        let gl = gl.clone();
+        let env_state = env_state.clone();
         #[inline(always)]
         move |lua,
               (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
@@ -451,7 +457,11 @@ pub fn setup_coords_api(
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
-                get_viewport(&gl)
+                let env = env_state.borrow();
+                Viewport::from_size(
+                    (env.window_width as f32 / env.px_ratio_x) as i32,
+                    (env.window_height as f32 / env.px_ratio_y) as i32,
+                )
             };
             Ok(ScreenPosition::from_vh(
                 v,
@@ -462,7 +472,7 @@ pub fn setup_coords_api(
     });
 
     add_fn_to_table(lua, &coords_module, "vhVec", {
-        let gl = gl.clone();
+        let env_state = env_state.clone();
         #[inline(always)]
         move |lua,
               (v_or_x, framebuffer_size_or_y, framebuffer_size_or_nil): (
@@ -480,7 +490,11 @@ pub fn setup_coords_api(
             let viewport = if let Some(framebuffer_size) = framebuffer_size {
                 Viewport::from_size(framebuffer_size.x() as i32, framebuffer_size.y() as i32)
             } else {
-                get_viewport(&gl)
+                let env = env_state.borrow();
+                Viewport::from_size(
+                    (env.window_width as f32 / env.px_ratio_x) as i32,
+                    (env.window_height as f32 / env.px_ratio_y) as i32,
+                )
             };
             Ok(ScreenVec(Vec2::new(
                 v.x() * 2.0 / 100.0 * viewport.height as f32 / viewport.width as f32,
