@@ -4,6 +4,7 @@ mod image_widget;
 mod row_widget;
 mod scrollable_area_widget;
 mod slider_widget;
+mod spacer_widget;
 mod stack_widget;
 mod tab_widget;
 mod text_widget;
@@ -14,6 +15,7 @@ use crate::auto_impl_lua_clone;
 use crate::graphics::batchdraw;
 use crate::graphics::shape::Quad;
 use crate::io::IoEnvState;
+use crate::lua_env::lua_ui::spacer_widget::SpacerWidget;
 use vectarine_plugin_sdk::mlua::{self, userdata::UserDataMethods};
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 
@@ -373,6 +375,17 @@ pub fn setup_ui_api(
             let widget = WidgetBox(RefCell::new(Box::new(GenericWidget {
                 size,
                 draw_fn,
+                event_state: EventState::default(),
+            })));
+            Ok(widget)
+        })?,
+    )?;
+
+    ui_module.raw_set(
+        "spacer",
+        lua.create_function(|_lua, (size,): (Vec2,)| {
+            let widget = WidgetBox(RefCell::new(Box::new(SpacerWidget {
+                size,
                 event_state: EventState::default(),
             })));
             Ok(widget)

@@ -89,6 +89,8 @@ function module.column<T>(options: ContainerOptions, children: { Widget<T> }): W
 	error("Implemented in native code")
 end
 
+--- Create a spacer widget that takes up space but does not draw anything.
+--- This can be used to create gaps between widgets or to push widgets apart.
 function module.spacer<any>(size: Vec.Vec2): Widget<any>
 	error("Implemented in native code")
 end
