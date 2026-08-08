@@ -33,12 +33,12 @@ pub struct TouchState {
 #[derive(Debug)]
 pub struct IoEnvState {
     // Inputs
-    pub window_width: u32,
+    pub window_width: u32, // Size of the framebuffer in pixels.
     pub window_height: u32,
     pub is_window_minimized: bool,
     pub screen_width: u32,
     pub screen_height: u32,
-    pub px_ratio_x: f32,
+    pub px_ratio_x: f32, // Ratio of framebuffer pixels to vectarine 'pixels', >1.0 on high-DPI displays.
     pub px_ratio_y: f32,
     pub mouse_state: MouseState,
     pub current_touches: HashMap<(i64, i64), TouchState>,

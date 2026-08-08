@@ -42,9 +42,6 @@
 				border: 0px none;
 				padding: 0;
 				margin: 0;
-				width: 100%;
-  				height: 100%;
-  				object-fit: contain;
 			}
 
 			#status {
@@ -195,11 +192,38 @@
 			}
 
 			const canvas = document.getElementById("canvas");
+
+			window.resizeCanvas = function() {
+				const windowWidth = innerWidth;
+				const windowHeight = innerHeight;
+				const windowRatio = windowWidth / windowHeight;
+				const aspectRatio = canvas.width / canvas.height;
+
+				let displayWidth, displayHeight;
+
+				if (windowRatio > aspectRatio) {
+					// Window is wider than target aspect ratio -> height-constrained
+					displayHeight = windowHeight;
+					displayWidth = windowHeight * aspectRatio;
+				} else {
+					// Window is taller than target aspect ratio -> width-constrained
+					displayWidth = windowWidth;
+					displayHeight = windowWidth / aspectRatio;
+				}
+
+				// Set visual dimensions and position via JS inline styles
+				canvas.style.width = `${displayWidth}px`;
+				canvas.style.height = `${displayHeight}px`;
+				canvas.style.left = `${(windowWidth - displayWidth) / 2}px`;
+				canvas.style.top = `${(windowHeight - displayHeight) / 2}px`;
+			}
+
 			window.vectarine = {
 				read_file_for_rust: read_file_for_rust,
 				sleep_for_rust: sleep_for_rust,
 				ready_is_rust: ready_is_rust,
 				exited_did_rust: exited_did_rust,
+				resizeCanvas: resizeCanvas,
 				getScreenSize: function () {
 					return {
 						width: document.body.clientWidth,
@@ -215,16 +239,6 @@
 				setDrawableScreenSize: function(width, height) {
 					canvas.width = width;
 					canvas.height = height;
-				},
-				getCanvasPosition: function () {
-					// Used to properly map mouse coordinates to the canvas since the canvas could be scaled and moved around the page.
-					const rect = canvas.getBoundingClientRect();
-					return {
-						x: rect.left,
-						y: rect.top,
-						width: rect.width,
-						height: rect.height,
-					};
 				},
 			};
 
@@ -326,12 +340,14 @@
 					"Error loading runtime, is the file there?";
 			}
 			addEventListener("load", () => {
+				resizeCanvas();
 				let script = document.createElement("script");
 				script.onerror = scriptLoadError;
 				script.src =
 					"target/wasm32-unknown-emscripten/debug/runtime.js";
 				document.head.appendChild(script);
 			});
+			addEventListener('resize', resizeCanvas);
 		</script>
 	</body>
 </html>

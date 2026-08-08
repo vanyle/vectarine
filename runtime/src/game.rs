@@ -197,12 +197,14 @@ impl Game {
         self.lua_env.env_state.borrow_mut().screen_width = screen_size.0;
         self.lua_env.env_state.borrow_mut().screen_height = screen_size.1;
 
-        self.lua_env.env_state.borrow_mut().px_ratio_x = 1.0; // investigate this, it's strange to have that.
-        self.lua_env.env_state.borrow_mut().px_ratio_y = 1.0;
-
         let (width, height) = window.borrow().get_drawable_size_in_hardware_px();
         self.lua_env.env_state.borrow_mut().window_width = width;
         self.lua_env.env_state.borrow_mut().window_height = height;
+
+        let (width_px, height_px) = window.borrow().get_size_in_vectarine_px();
+
+        self.lua_env.env_state.borrow_mut().px_ratio_x = width as f32 / width_px;
+        self.lua_env.env_state.borrow_mut().px_ratio_y = height as f32 / height_px;
     }
 
     pub fn get_resource_or_print_error<T>(&self, id: ResourceId) -> Option<Rc<T>>
@@ -252,10 +254,12 @@ impl Game {
             env_state.window_width = width;
             env_state.window_height = height;
             env_state.is_window_minimized = window.borrow().is_minimized();
-            let aspect_ratio = width as f32 / height as f32;
 
-            // This is wrong: only the size matters, not the drawable size for aspect ratio
-            // Size is the actual size, drawable size is about crisp pixels.
+            let (width_px, height_px) = window.borrow().get_size_in_vectarine_px();
+            env_state.px_ratio_x = width as f32 / width_px;
+            env_state.px_ratio_y = height as f32 / height_px;
+            let aspect_ratio = width_px / height_px;
+
             self.lua_env
                 .batch
                 .borrow_mut()
