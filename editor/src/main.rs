@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::mpsc::channel};
+use std::{cell::RefCell, ops::Deref, path::PathBuf, rc::Rc, sync::mpsc::channel};
 
 use runtime::{
     drawing_surface::{DrawingSurface, SurfaceMargins},
@@ -71,7 +71,7 @@ fn gui_main() {
         egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
 
     // The "screen_size" provided needs to be the size of the viewport.
-    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().get_drawable_size_in_px())
+    let mut platform = egui_sdl2_platform::Platform::new(window.borrow().get_drawable_size_in_hardware_px())
         .expect("Failed to create platform");
 
     let mut editor_state = EditorState::new(
@@ -98,17 +98,22 @@ fn gui_main() {
 
     // Send a fake resize event to egui to initialize drawable area size
     // This is needed on high-DPI screen where the drawable size is greater than window size
+    // Or is it??
     send_window_resize_sync_event(
         &sdl,
         &window.borrow().video_subsystem,
         &window.borrow().window,
         &mut platform,
+        editor_state.game_drawing_surface.borrow().deref(),
+        editor_state.window.borrow().deref(),
     );
     send_window_resize_sync_event(
         &sdl,
         &window.borrow().video_subsystem,
         &editor_state.editor_specific_window,
         &mut editor_interface.platform,
+        editor_state.game_drawing_surface.borrow().deref(),
+        editor_state.window.borrow().deref(),
     );
 
     // The main loop

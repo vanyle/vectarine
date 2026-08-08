@@ -11,11 +11,11 @@ export type Event<T> = typeof(setmetatable({}, EventTypeImpl)) & { __data_type: 
 --- all its subscriptions will be cleared.
 --- You can pass any type when triggering the event and it will be forwarded to its subscribers. For example:
 --- ```
---- local event: Event.Event<number> = Event.newEvent("hit")
---- event:on(function(damage: number)
+--- local hitEvent: event.Event<number> = event.newEvent("hit")
+--- hitEvent:on(function(damage: number)
 ---     print("Hit with damage: " .. damage)
 --- end)
---- event:dispatch(10) -- This will print "Hit with damage: 10"
+--- hitEvent:dispatch(10) -- This will print "Hit with damage: 10"
 --- ```
 --- @param name string The name of the event type
 --- @return EventType

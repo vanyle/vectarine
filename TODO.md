@@ -1,5 +1,10 @@
 # TO-DO
 
+- [ ] Update luau-api folder automatically (so it can be gitignored).
+- [ ] Make the gallery scrollable
+- [ ] When creating a new project, allow to use a gallery project as a template
+- [ ] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.
+  -> This allows users to distribute games as a single file (which self-decompresses)
 - [ ] Android support
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Better heap info
@@ -11,17 +16,11 @@
 - [ ] Aseprite support
   - [ ] Load Aseprite files as images
   - [ ] Load Aseprite files as tilesets
-- [ ] Update luau-api folder automatically (so it can be gitignored).
-- [ ] Make the gallery scrollable
-- [ ] When creating a new project, allow to use a gallery project as a template
-- [ ] Allow scrolling in the gallery to show more projects
 - [ ] Show resources in a nicer way (draw_debug_gui)
 - [ ] Debug tooling for physics?
 - [ ] A low/no-code way to get started??
 - [ ] Play/pause the project in the editor
 - [ ] Data files
-- [ ] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.
-  -> This allows users to distribute games as a single file (which self-decompresses)
 - [ ] Add a command palette to the editor
 - [ ] Screenshot API
   - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
