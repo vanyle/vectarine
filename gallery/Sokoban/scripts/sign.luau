@@ -56,26 +56,28 @@ function module.drawDialog(world: worldTypes.IWorld, signManager: SignManager)
 							graphics.drawRect(vec.V2(-1, -1), vec.V2(0.95, 0.65), vec4.BLACK)
 						end),
 						ui.column({}, {
-							ui.text(vec.V2(0.9, 0.05), { align = "left", fitting = { size = 0.08 } }, function()
-								return {
-									text = "The Sign",
-									color = vec4.WHITE,
-								}
-							end),
+							ui.text("The Sign", {
+								align = "left",
+								color = vec4.WHITE,
+								fontSize = 0.08,
+								maxWidth = 0.9,
+								maxHeight = 0.05,
+							}),
 							ui.widget(vec.V2(0.0, 0.07), function() end),
-							ui.text(vec.V2(0.9, 0.4), { align = "left", fitting = { size = 0.1 } }, function()
-								local progress = math.floor(signManager.messageProgress)
-								return {
-									text = sign_message[signManager.currentMessage]:sub(1, progress),
-									color = vec4.WHITE,
-								}
-							end),
-							ui.text(vec.V2(0.9, 0.05), { align = "left", fitting = { size = 0.08 } }, function()
-								return {
-									text = "Press B to continue",
-									color = vec4.WHITE,
-								}
-							end),
+							ui.text(
+								function()
+									local progress = math.floor(signManager.messageProgress)
+									return sign_message[signManager.currentMessage]:sub(1, progress)
+								end,
+								{ align = "left", fontSize = 0.1, color = vec4.WHITE, maxWidth = 0.9, maxHeight = 0.4 }
+							),
+							ui.text("Press B to continue", {
+								align = "left",
+								color = vec4.WHITE,
+								fontSize = 0.08,
+								maxWidth = 0.9,
+								maxHeight = 0.05,
+							}),
 						}),
 					}),
 				}),
