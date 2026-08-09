@@ -489,7 +489,7 @@ pub fn setup_ui_api(
                 let get_color_fn = match color {
                     Some(mlua::Value::Function(f)) => Some(f),
                     Some(color @ mlua::Value::UserData(_)) => {
-                        let color = Vec4::from_lua(color, &lua)?;
+                        let color = Vec4::from_lua(color, lua)?;
                         Some(lua.create_function(move |_, (): ()| Ok(color))?)
                     }
                     _ => None,
