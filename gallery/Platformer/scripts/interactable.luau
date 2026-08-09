@@ -124,9 +124,7 @@ function drawDialog(text: string)
 					ui.widget(vec.V2(0.75, 0.45), function()
 						graphics.drawRect(vec.V2(-1, -1), vec.V2(0.75, 0.45), vec4.BLACK)
 					end),
-					ui.text(vec.V2(0.7, 0.4), { align = "left", fitting = { size = 0.1 } }, function()
-						return { text = text, color = vec4.WHITE }
-					end),
+					ui.text(text, { align = "left", fontSize = 0.1, color = vec4.WHITE, maxWidth = 0.7, maxHeight = 0.4 }),
 				}),
 			}),
 		})
