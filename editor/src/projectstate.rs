@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     collections::HashSet,
-    fs,
+    fs::{self},
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
@@ -143,24 +143,27 @@ impl ProjectState {
         let luau_api_folder = project_folder.join("luau-api");
 
         // Read the files in the folder
-        let Ok(files) = fs::read_dir(&project_plugins_folder) else {
-            return;
-        };
 
-        let plugin_files = files.filter_map(|file| {
-            let Ok(file) = file else {
-                return None;
-            };
-            let path = file.path();
-            if !does_path_end_with(&path, PLUGIN_FILE_EXTENSION) {
-                return None;
+        let game_plugins = {
+            if let Ok(files) = fs::read_dir(&project_plugins_folder) {
+                let plugin_files = files.filter_map(|file| {
+                    let Ok(file) = file else {
+                        return None;
+                    };
+                    let path = file.path();
+                    if !does_path_end_with(&path, PLUGIN_FILE_EXTENSION) {
+                        return None;
+                    }
+                    Some(path)
+                });
+                plugin_files
+                    .filter_map(|path| GamePlugin::from_path(&path, trusted_plugins))
+                    .collect::<Vec<GamePlugin>>()
+            } else {
+                let _ = fs::create_dir_all(&project_plugins_folder);
+                Vec::new()
             }
-            Some(path)
-        });
-
-        let game_plugins = plugin_files
-            .filter_map(|path| GamePlugin::from_path(&path, trusted_plugins))
-            .collect::<Vec<GamePlugin>>();
+        };
 
         // Filter out untrusted plugins
         let trusted_dynamic_library_paths = game_plugins
@@ -169,20 +172,19 @@ impl ProjectState {
             .map(|plugin| plugin.dynamic_library_path.clone())
             .collect::<HashSet<PathBuf>>();
 
-        let Ok(files) = fs::read_dir(&project_plugins_folder) else {
-            return;
-        };
-        for file in files {
-            let Ok(file) = file else {
-                continue;
-            };
-            let path = file.path();
-            if !is_dynamic_library_file(&path) {
-                continue;
-            }
-            // Only keep trusted dynamic libraries
-            if !trusted_dynamic_library_paths.contains(&path) {
-                let _ = fs::remove_file(&path);
+        if let Ok(files) = fs::read_dir(&project_plugins_folder) {
+            for file in files {
+                let Ok(file) = file else {
+                    continue;
+                };
+                let path = file.path();
+                if !is_dynamic_library_file(&path) {
+                    continue;
+                }
+                // Only keep trusted dynamic libraries
+                if !trusted_dynamic_library_paths.contains(&path) {
+                    let _ = fs::remove_file(&path);
+                }
             }
         }
 
@@ -240,7 +242,7 @@ impl ProjectState {
         BUILT_IN_MODULES.iter().for_each(|module_name| {
             let src = luau_editor_path.join(format!("{}.luau", module_name));
             let dest = luau_api_folder.join(format!("{}.luau", module_name));
-            if !src.exists() {
+            if !dest.exists() {
                 // avoid unnecessary file writing.
                 let _ = fs::copy(src, dest);
             }
