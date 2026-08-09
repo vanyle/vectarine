@@ -1,7 +1,8 @@
-local Image = require("@vectarine/image")
-local Text = require("@vectarine/text")
-local Vec = require("@vectarine/vec")
-local Vec4 = require("@vectarine/vec4")
+local coord = require("@vectarine/coord")
+local image = require("@vectarine/image")
+local text = require("@vectarine/text")
+local vec = require("@vectarine/vec")
+local vec4 = require("@vectarine/vec4")
 
 --[[
 # UI module
@@ -23,7 +24,7 @@ local module = {}
 
 export type Widget<T> = {
 	--- Returns the preferred size of this widget.
-	size: (self: Widget<T>) -> Vec.Vec2,
+	size: (self: Widget<T>, extra: T) -> vec.Vec2,
 	--- Draws this widget at the current position in the batch.
 	draw: (self: Widget<T>, extra: T) -> (),
 	--- Return the event state from the last time this widget was drawn. You can use this to react to events on the widget (e.g. mouse hover, clicks).
@@ -73,10 +74,7 @@ export type ContainerOptions = {
 --- Can also be used for buttons, or to make part of the UI react to events
 ---@param size Vec.Vec2 — the preferred size of this widget or a function that returns the preferred size
 ---@param drawFn (event: EventState, extra: T) -> () — called to draw the widget content
-function module.widget<T>(
-	size: Vec.Vec2 | ((extra: T) -> Vec.Vec2),
-	drawFn: (event: EventState, extra: T) -> ()
-): Widget<T>
+function module.widget<T>(size: vec.Vec2, drawFn: (event: EventState, extra: T) -> ()): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -91,31 +89,32 @@ end
 
 --- Create a spacer widget that takes up space but does not draw anything.
 --- This can be used to create gaps between widgets or to push widgets apart.
-function module.spacer<any>(size: Vec.Vec2): Widget<any>
+function module.spacer<any>(size: vec.Vec2): Widget<any>
 	error("Implemented in native code")
 end
 
-type TextOptions = {
+--- Options for text widgets, allows you to customize the color, font, size and alignment of the text.
+type TextOptions<T> = {
 	--- Horizontal alignment of the text within the widget. Defaults to "center".
 	align: ("left" | "center" | "right")?,
-	-- Optional font to use for this text. If not provided, the default font will be used.
-	font: Text.FontResource?,
+	--- Optional font to use for this text. If not provided, the default font will be used.
+	font: text.FontResource?,
+	--- Optional color of the text. If not provided, the text will be black.
+	color: (vec4.Vec4 | ((event: EventState, extra: T) -> vec4.Vec4))?,
+	--- Optional font size of the text. If not provided, the 0.1 will be used.
+	fontSize: number?,
 
-	-- How to make the text fit within the widget?
-	-- "shrink": the text size is adjusted to make it fit in the widget.
-	-- {size: number}: the text size is fixed to the given number, there can be line breaks and the text might end with "..." if it doesn't fit.
-	fitting: "shrink" | { size: number } | nil,
+	-- Optional width of the text. If provided, the text will be wrapped to fit within this width.
+	maxWidth: number?,
+	-- Optional height of the text. If provided, the text will be clipped with ellipsis to fit within this height.
+	maxHeight: number?,
 }
 
 --- Create a text widget that draws the given text. The size of the text is computed such that
 --- the text fits on a single line within the given size.
 --- The `getText` function is called each frame to get the text to draw and its color. You can use it to dynamically
 --- change the text without needing to wrap the text widget in a generic widget.
-function module.text<T>(
-	size: Vec.Vec2,
-	options: TextOptions,
-	getText: { text: string, color: Vec4.Vec4 } | ((event: EventState, extra: T) -> { text: string, color: Vec4.Vec4 })
-): Widget<T>
+function module.text<T>(text: string | ((event: EventState, extra: T) -> string), options: TextOptions<T>): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -123,7 +122,7 @@ type ImageWidgetOptions<T> = {
 	-- Should the aspect ratio of the image be preserved? If it is, there might be empty space on the sides of the image.
 	preserveAspectRatio: boolean?,
 	-- Optional color tint to apply to the image when drawing. Defaults to white (no tint).
-	tint: ((event: EventState, extra: T) -> Vec4.Vec4)?,
+	tint: ((event: EventState, extra: T) -> vec4.Vec4)?,
 	-- If provided, the image will be drawn in 9-slices to preserve its corners when scaled. This assumes that the image is
 	-- designed for this and has the appropriate borders. If preserveAspectRatio is also true, this has no effect.
 	-- The number is the ratio of the corners to the total image size (e.g. 0.2 means corners are 20% of the image size). Defaults to nil.
@@ -131,7 +130,7 @@ type ImageWidgetOptions<T> = {
 }
 
 --- Create a widget that draws the given image. The image is scaled to fit the widget's size
-function module.image<T>(size: Vec.Vec2, image: Image.ImageResource, options: ImageWidgetOptions<T>): Widget<T>
+function module.image<T>(size: vec.Vec2, image: image.ImageResource, options: ImageWidgetOptions<T>): Widget<T>
 	error("Implemented in native code")
 end
 
@@ -167,7 +166,7 @@ export type ScrollbarInfo = {
 ---@param viewSize Vec.Vec2 — the visible area size
 ---@param drawScrollbar ((info: ScrollbarInfo) -> number)? — optional custom scrollbar drawing function that receives the current scroll state and returns the desired scrollbar ratio.
 function module.scrollableArea<T>(
-	viewSize: Vec.Vec2,
+	viewSize: vec.Vec2,
 	content: Widget<T>,
 	drawScrollbar: ((info: ScrollbarInfo) -> number)?
 ): Widget<T>
@@ -203,7 +202,7 @@ type SliderOptions = {
 
 --- Create a slider widget that allows the user to select a value by horizontally dragging a handle along a track.
 --- You need to pass a track and handle widget to provide the appearance of the slider.
-function module.slider<T>(size: Vec.Vec2, options: SliderOptions, track: Widget<T>, handle: Widget<T>): Widget<T>
+function module.slider<T>(size: vec.Vec2, options: SliderOptions, track: Widget<T>, handle: Widget<T>): Widget<T>
 	error("Implemented in native code")
 end
 

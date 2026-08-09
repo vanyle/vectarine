@@ -31,14 +31,14 @@ impl FontResourceId {
     }
 
     /// Access the underlying FontResource. Returns None if the resource is not yet loaded.
-    pub fn get_font_resource<F>(
+    pub fn get_font_resource<F, R>(
         &self,
         gl: &Arc<Context>,
         resources: &ResourceManager,
         callback: F,
-    ) -> Option<()>
+    ) -> Option<R>
     where
-        F: FnOnce(&mut FontRenderingData),
+        F: FnOnce(&mut FontRenderingData) -> R,
     {
         if let Some(font_id) = self.0 {
             let font_resource = resources.get_by_id::<FontResource>(font_id);
@@ -52,11 +52,10 @@ impl FontResourceId {
             let Some(font_resource) = font_resource.as_mut() else {
                 return None; // Doesn't break any invariant, font resources are allowed to not be loaded.
             };
-            callback(font_resource);
+            Some(callback(font_resource))
         } else {
-            font_resource::use_default_font(gl, callback);
-        };
-        Some(())
+            Some(font_resource::use_default_font(gl, callback))
+        }
     }
 }
 

@@ -17,11 +17,11 @@ pub struct Column {
 }
 
 impl VectarineWidget for Column {
-    fn size(&self, lua: &mlua::Lua) -> Vec2 {
+    fn size(&self, lua: &mlua::Lua, io_env: &RefCell<IoEnvState>, _extra: &mlua::Value) -> Vec2 {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
         for child in &self.children {
-            let child_size: crate::math::Vect<2> = child.0.borrow().size(lua);
+            let child_size: crate::math::Vect<2> = child.0.borrow().size(lua, io_env, _extra);
             width = width.max(child_size.x());
             height += child_size.y();
         }
@@ -54,11 +54,12 @@ impl VectarineWidget for Column {
         draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
-        let container_width = self.size(lua).x() - self.padding.left - self.padding.right;
+        let container_width =
+            self.size(lua, io_env, &extra).x() - self.padding.left - self.padding.right;
         let mut y_offset = self.padding.bottom;
         // Reverse order because top is Y+, so the first child shown at the top needs to be the last drawn.
         for child in self.children.iter().rev() {
-            let child_size = child.0.borrow().size(lua);
+            let child_size = child.0.borrow().size(lua, io_env, &extra);
             let child_width = child_size.x();
             let x_offset = self.padding.left
                 + match self.alignment {

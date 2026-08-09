@@ -143,12 +143,10 @@ const graphics = require("@vectarine/graphics")
 const V2 = vec.V2
 
 -- Create a text widget
-local firstLine = ui.text(V2(0.4, 0.1), {}, { text = "Hello, Vectarine!", color = vec4.WHITE })
+local firstLine = ui.text("Hello, Vectarine!", { fontSize = 0.1, color = vec4.WHITE })
 -- Create another text widget. Instead of passing a string, you can also pass a function that returns a string
 -- This is useful to make the text reactive as we'll see later.
-local secondLine = ui.text(V2(0.4, 0.1), {}, function()
-	return { text = "Another line of text", color = vec4.WHITE }
-end)
+local secondLine = ui.text(function() return "Another line of text" end, { fontSize = 0.1, maxWidth = 0.4, maxHeight = 0.1, color = vec4.WHITE })
 
 local column = ui.column({ padding = 0.1 }, { firstLine, secondLine })
 
@@ -160,8 +158,7 @@ end`;
 
 <Code lang="luau" code={makingUiTextWidget} />
 
-The text inside the `text` widget will try to be as big as possible while fitting inside the widget.
-You can use it for titles, buttons, or any other text you want to display.
+You can use the text widget for titles, buttons, or any other text you want to display.
 
 The image widget is similar to the text widget, but it displays an image instead of text.
 
@@ -196,7 +193,7 @@ const graphics = require("@vectarine/graphics")
 const V2 = vec.V2
 
 local buttonBackground = ui.image(V2(0.5, 0.5), imageButtonResource, { nineSlicing = 0.2 })
-local buttonText = ui.text(V2(0.5, 0.1), {}, {text = "Click me!", color = vec4.WHITE})
+local buttonText = ui.text("Click me", {color = vec4.WHITE})
 
 -- Widgets in a stack are drawn in order, from first to last, so the button text needs to be the last in the list
 -- to be drawn on top of the button background.
@@ -229,7 +226,7 @@ const V2 = vec.V2
 function createButton(text: string, size: vec.Vec2): ui.Widget
     -- All our buttons are text with an image and 0.1 units of padding around the text
     local buttonBackground = ui.image(size + V2(0.1, 0.2), imageButtonResource, { nineSlicing = 0.2 })
-    local buttonText = ui.text(size, {}, {text = text, color = vec4.WHITE})
+    local buttonText = ui.text(text, {maxWidth = size.x - 0.2, maxHeight = size.y - 0.2, fontSize = size.y - 0.2, align = "center", color = vec4.WHITE})
     return ui.stack({ alignX = "center", alignY = "center" }, { buttonBackground, buttonText })
 end`;
 
@@ -286,14 +283,16 @@ export const makingUiTextHover = `const ui = require("@vectarine/ui")
 const vec = require("@vectarine/vec")
 const vec4 = require("@vectarine/vec4")
 const V2 = vec.V2
-local textWidget = ui.text(V2(0.5, 0.1), {}, function(eventState: ui.EventState)
-    -- The text of this widget changes when the mouse is hovering it.
-    -- You could also change the color for getting various effects.
-    local text = if eventState.isMouseInside then "Hovering!" else "Not hovering"
-    return { text = text, color = vec4.WHITE }
-end)`;
+local textWidget = ui.text(
+    function(eventState: ui.EventState)
+        return if eventState.isMouseInside then "Hovering!" else "Not hovering" end
+    end,
+    { fontSize = 0.1, color = vec4.WHITE }
+)`;
 
 <Code lang="luau" code={makingUiTextHover} />
+
+You can also pass a function as the color to change the color of the text when the mouse is hovering it.
 
 ## Conditional rendering and dynamic UIs
 
@@ -362,7 +361,7 @@ end`;
 
 <Code lang="luau" code={makingUiConditionalFast} />
 
-The `extra` argument is propagated to all the children of row, column and stack widgets, so you can access it anywhere.
+The `extra` argument is propagated to all the children of row, column and stack widgets, so you can access it anywhere (inside `text` widgets too!).
 
 ## Debugging UI
 
