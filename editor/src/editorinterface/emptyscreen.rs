@@ -22,14 +22,14 @@ pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
 
     egui::Window::new("No project loaded")
         .default_width(384.0)
-        .default_height(256.0)
+        .default_height(512.0)
         .title_bar(false)
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ui, |ui| {
             StripBuilder::new(ui)
-                .size(Size::remainder().at_most(384.0))
+                .size(Size::remainder().at_most(512.0))
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
                         NEW_GAME_PATH.with_borrow_mut(|new_game_path| {
@@ -79,22 +79,51 @@ pub fn draw_empty_screen_window_content(
             ui.style_mut().spacing.button_padding =
                 egui::Spacing::default().button_padding;
         });
-        if false {
-            ui.add_space(8.0);
-            ui.with_layout(Layout::top_down(Align::Min), |ui| {
-                ui.label(RichText::new("Recent projects").size(18.0));
-                ui.add_space(4.0);
-                ui.label(RichText::new("No recent projects found").size(14.0));
-            });
-        }
-        ui.add_space(8.0);
 
+        thread_local! {
+            static IS_GALLERY_SHOWN: RefCell<bool> = const {RefCell::new(true)};
+        }
+
+        ui.add_space(8.0);
+        
         ui.with_layout(Layout::top_down(Align::Min), |ui| {
-            ui.label(RichText::new("Gallery").size(24.0)).on_hover_text_at_pointer(
+            ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                let gallery_label = {
+                    let text = RichText::new("Gallery").size(24.0);
+                    let label = ui.selectable_label(IS_GALLERY_SHOWN.with_borrow(|b| *b), text);
+                    if IS_GALLERY_SHOWN.with_borrow(|b| *b) {
+                        label.on_hover_cursor(egui::CursorIcon::Default)
+                    } else {
+                        label.on_hover_cursor(egui::CursorIcon::PointingHand)
+                    }
+                };
+                let recent_projects_label = {
+                    let text = RichText::new("Recent projects").size(24.0);
+                    let label = ui.selectable_label(!IS_GALLERY_SHOWN.with_borrow(|b| *b), text);
+                    if !IS_GALLERY_SHOWN.with_borrow(|b| *b) {
+                        label.on_hover_cursor(egui::CursorIcon::Default)
+                    } else {
+                        label.on_hover_cursor(egui::CursorIcon::PointingHand)
+                    }
+                };
+                if gallery_label.on_hover_text_at_pointer(
                 "The gallery contains example projects and template to get started quickly and learn features of Vectarine."
-            );
+                ).clicked() {
+                    IS_GALLERY_SHOWN.replace(true);
+                }
+                ui.add_space(16.0);
+                if recent_projects_label.on_hover_text_at_pointer(
+                "The recent projects section shows projects you have worked on recently."
+                ).clicked() {
+                    IS_GALLERY_SHOWN.replace(false);
+                }
+            });
             ui.add_space(4.0);
-            draw_gallery(state, ui);
+            if IS_GALLERY_SHOWN.with_borrow(|b| *b) {
+                draw_gallery(state, ui);
+            }else {
+                draw_recent_projects(state, ui);
+            }
         });
     });
 }
@@ -223,122 +252,163 @@ pub fn trim_string_with_ellipsis(s: &str, max_len: usize) -> String {
 
 pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
     thread_local! {
-        static GALLERY_PROJECTS: RefCell<Vec<(PathBuf, ProjectInfo)>> = const { RefCell::new(vec![]) };
         static INITIALIZED: RefCell<bool> = const { RefCell::new(false) };
+        static GALLERY_PROJECTS: RefCell<Vec<(PathBuf, ProjectInfo)>> = const { RefCell::new(vec![]) };
+    }
+    let is_initialized = INITIALIZED.with_borrow(|id| *id);
+    if !is_initialized {
+        let gallery_path = get_gallery_path();
+        let Ok(entries) = std::fs::read_dir(&gallery_path) else {
+            println!("Failed to read gallery directory at {:?}.", gallery_path);
+            INITIALIZED.with_borrow_mut(|id| *id = true);
+            return;
+        };
+        let gallery_projects = make_project_list_from_paths(entries.flatten().map(|e| e.path()));
+        GALLERY_PROJECTS.replace(gallery_projects);
+        INITIALIZED.with_borrow_mut(|id| *id = true);
     }
 
-    // Initialize the gallery if needed
-    GALLERY_PROJECTS.with_borrow_mut(|gallery_projects| {
-        if !INITIALIZED.with_borrow(|id| *id) {
-            let gallery_path = get_gallery_path();
-            let Ok(entries) = std::fs::read_dir(&gallery_path) else {
-                println!("Failed to read gallery directory at {:?}.", gallery_path);
-                INITIALIZED.with_borrow_mut(|id| *id = true);
-                return;
-            };
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if !path.is_dir() {
-                    continue;
-                }
-                let project_file = path.join("game.vecta");
-
-                if !project_file.is_file() {
-                    println!(
-                        "Gallery project at {:?} is missing game.vecta file, skipping.",
-                        path
-                    );
-                    continue;
-                }
-                let project_manifest_content =
-                    std::fs::read_to_string(&project_file).unwrap_or_default();
-                let project_info = get_project_info(&project_manifest_content);
-                let Ok(project_info) = project_info else {
-                    println!(
-                        "Failed to parse project info for gallery project at {:?}, skipping.",
-                        path
-                    );
-                    continue;
-                };
-                gallery_projects.push((project_file, project_info));
-            }
-            INITIALIZED.with_borrow_mut(|id| *id = true);
+    GALLERY_PROJECTS.with_borrow(|gallery_paths|{
+        if gallery_paths.is_empty() {
+            ui.label("No gallery projects found. The gallery folder might be missing or empty.");
+            ui.label(format!("The gallery folder is located at {}", get_gallery_path().display()));
+        } else {
+            draw_project_list(state, ui, gallery_paths);
         }
     });
+}
 
-    // Draw the gallery projects
-    GALLERY_PROJECTS.with_borrow(|gallery_projects| {
-        egui::Grid::new("project_list")
-            .num_columns(1)
-            .spacing([0.0, 8.0])
-            .show(ui, |ui| {
-                for (project_file, project_info) in gallery_projects.iter().cloned() {
-                    ui.scope_builder(
-                        UiBuilder::new()
-                            .id_salt("interactive_container")
-                            .sense(Sense::click()),
-                        |ui| {
-                            let response = ui.response();
-                            let bg_fill = ui.style().interact(&response).bg_fill;
-                            let rect = response.rect;
-                            let layer_id = response.layer_id;
-                            let is_hovering = {
-                                rect.is_positive() && {
-                                    let pointer_pos = ui.input(|i| i.pointer.interact_pos());
-                                    if let Some(pointer_pos) = pointer_pos {
-                                        rect.contains(pointer_pos)
-                                            && ui.layer_id_at(pointer_pos) == Some(layer_id)
-                                    } else {
-                                        false
-                                    }
-                                }
-                            };
-                            let stroke = if is_hovering {
-                                Stroke::new(2.0_f32, egui::Color32::WHITE)
-                            } else {
-                                Stroke::new(2.0_f32, egui::Color32::TRANSPARENT)
-                            };
-                            let mut is_clicked = false;
+pub fn draw_recent_projects(state: &mut EditorState, ui: &mut egui::Ui) {
+    thread_local! {
+        static INITIALIZED: RefCell<bool> = const { RefCell::new(false) };
+        static RECENT_PROJECTS: RefCell<Vec<(PathBuf, ProjectInfo)>> = const { RefCell::new(vec![]) };
+    }
 
-                            Frame::canvas(ui.style())
-                                .fill(bg_fill.gamma_multiply(0.3))
-                                .stroke(stroke)
-                                .show(ui, |ui| {
-                                    ui.set_min_width(500.0);
-                                    ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                                        ui.vertical(|ui| {
-                                            let label_response = ui.label(
-                                                RichText::new(project_info.title)
-                                                    .strong()
-                                                    .size(18.0),
-                                            );
-                                            is_clicked |= label_response.clicked();
-                                            let description = trim_string_with_ellipsis(
-                                                &project_info.description,
-                                                80,
-                                            );
-                                            let label_response =
-                                                ui.label(RichText::new(description).size(12.0));
-                                            is_clicked |= label_response.clicked();
-                                        });
-                                    });
-                                });
-                            if response.clicked() || is_clicked {
-                                state.load_project(
-                                    Box::new(LocalFileSystem),
-                                    &project_file,
-                                    |result| {
-                                        if let Err(e) = result {
-                                            // TO-DO: show error in GUI
-                                            println!("Failed to load project: {e}");
-                                        }
-                                    },
-                                );
-                            }
-                        },
-                    );
-                    ui.end_row();
-                }
-            });
+    let is_initialized = INITIALIZED.with_borrow(|id| *id);
+    if !is_initialized {
+        let config = state.config.borrow_mut();
+        let recent_projects_as_string = &config.recent_project_paths;
+        
+        let recent_projects = make_project_list_from_paths(recent_projects_as_string.iter().map(PathBuf::from));
+        RECENT_PROJECTS.replace(recent_projects);
+        INITIALIZED.with_borrow_mut(|id| *id = true);
+    }
+    
+        RECENT_PROJECTS.with_borrow(|recent_project_paths|{
+        if recent_project_paths.is_empty() {
+            ui.label("No recent projects found.");
+        } else {
+            draw_project_list(state, ui, recent_project_paths);
+        }
     });
 }
+
+pub fn draw_project_list(state: &mut EditorState, ui: &mut egui::Ui, project_infos: &[(PathBuf, ProjectInfo)]) {
+    // Draw the list of projects
+    egui::ScrollArea::vertical().show(ui, |ui| {
+            egui::Grid::new("project_list")
+                .num_columns(1)
+                .spacing([0.0, 8.0])
+                .show(ui, |ui| {
+                    for (project_folder, project_info) in project_infos.iter().cloned() {
+                        ui.scope_builder(
+                            UiBuilder::new()
+                                .id_salt("interactive_container")
+                                .sense(Sense::click()),
+                            |ui| {
+                                let response = ui.response();
+                                let bg_fill = ui.style().interact(&response).bg_fill;
+                                let rect = response.rect;
+                                let layer_id = response.layer_id;
+                                let is_hovering = {
+                                    rect.is_positive() && {
+                                        let pointer_pos = ui.input(|i| i.pointer.interact_pos());
+                                        if let Some(pointer_pos) = pointer_pos {
+                                            rect.contains(pointer_pos)
+                                                && ui.layer_id_at(pointer_pos) == Some(layer_id)
+                                        } else {
+                                            false
+                                        }
+                                    }
+                                };
+                                let stroke = if is_hovering {
+                                    Stroke::new(2.0_f32, egui::Color32::WHITE)
+                                } else {
+                                    Stroke::new(2.0_f32, egui::Color32::TRANSPARENT)
+                                };
+                                let mut is_clicked = false;
+
+                                Frame::canvas(ui.style())
+                                    .fill(bg_fill.gamma_multiply(0.3))
+                                    .stroke(stroke)
+                                    .show(ui, |ui| {
+                                        ui.set_min_width(500.0);
+                                        ui.with_layout(
+                                            Layout::left_to_right(Align::Center),
+                                            |ui| {
+                                                ui.vertical(|ui| {
+                                                    let label_response = ui.label(
+                                                        RichText::new(project_info.title)
+                                                            .strong()
+                                                            .size(18.0),
+                                                    );
+                                                    is_clicked |= label_response.clicked();
+                                                    let description = trim_string_with_ellipsis(
+                                                        &project_info.description,
+                                                        80,
+                                                    );
+                                                    let label_response = ui.label(
+                                                        RichText::new(description).size(12.0),
+                                                    );
+                                                    is_clicked |= label_response.clicked();
+                                                });
+                                            },
+                                        );
+                                    });
+                                if response.clicked() || is_clicked {
+                                    state.load_project(
+                                        Box::new(LocalFileSystem),
+                                        &project_folder.join("game.vecta"),
+                                        |result| {
+                                            if let Err(e) = result {
+                                                // TO-DO: show error in GUI
+                                                println!("Failed to load project: {e}");
+                                            }
+                                        },
+                                    );
+                                }
+                            },
+                        );
+                        ui.end_row();
+                    }
+                });
+    });
+}
+
+pub fn make_project_list_from_paths(paths: impl IntoIterator<Item = PathBuf>) -> Vec<(PathBuf, ProjectInfo)> {
+    let mut projects_infos = vec![];
+    for path in paths {
+        if !path.is_dir() {
+            // println!("Project path {:?} is not a directory, skipping.", path);
+            continue;
+        }
+        let project_file = path.join("game.vecta");
+        if !project_file.is_file() {
+            continue;
+        }
+        let project_manifest_content =
+            std::fs::read_to_string(&project_file).unwrap_or_default();
+        let project_info = get_project_info(&project_manifest_content);
+        let Ok(project_info) = project_info else {
+            println!(
+                "Failed to parse project info for project at {:?}, skipping.",
+                path
+            );
+            continue;
+        };
+        projects_infos.push((path.clone(), project_info));
+    }
+    projects_infos.sort_by(|a, b| a.1.title.cmp(&b.1.title));
+    projects_infos
+}
+

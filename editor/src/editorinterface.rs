@@ -191,6 +191,20 @@ impl EditorState {
         }
     }
 
+    fn update_recent_projects(&self, new_recent_project: &Path) {
+        let mut config = self.config.borrow_mut();
+        let project_path_str = new_recent_project.to_string_lossy().to_string();
+
+        config
+            .recent_project_paths
+            .retain(|p| p != &project_path_str);
+
+        config.recent_project_paths.insert(0, project_path_str);
+        if config.recent_project_paths.len() > 10 {
+            config.recent_project_paths.truncate(10);
+        }
+    }
+
     pub fn load_project<F>(
         &self,
         file_system: Box<dyn ReadOnlyFileSystem>,
@@ -217,6 +231,9 @@ impl EditorState {
                 };
                 self.config.borrow_mut().opened_project_path =
                     Some(project_path.to_string_lossy().to_string());
+                if let Some(project_folder) = project_path.parent() {
+                    self.update_recent_projects(project_folder);
+                }
 
                 let parent = project_path.parent();
                 if let Some(parent) = parent {

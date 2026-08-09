@@ -1,6 +1,5 @@
 # TO-DO
 
-- [ ] Make the gallery scrollable
 - [ ] When creating a new project, allow to use a gallery project as a template
 - [ ] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.
   -> This allows users to distribute games as a single file (which self-decompresses)

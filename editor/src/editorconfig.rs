@@ -60,7 +60,11 @@ pub struct EditorConfig {
 
     pub window_style: WindowStyle,
 
+    #[serde(default)]
     pub opened_project_path: Option<String>,
+
+    #[serde(default)]
+    pub recent_project_paths: Vec<String>,
 
     pub text_editor: Option<TextEditor>,
 }
