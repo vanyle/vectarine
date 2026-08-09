@@ -1,6 +1,6 @@
 # Contributing
 
-When adding features, keep in mind [the design principles of Vectarine!](./docs/engine/engine-design-principles.md)
+When adding features, keep in mind [the design principles of Vectarine!](https://vectarineengine.com/guides/design-principles/)
 
 Documentation about parts of the engine are inside the `docs/engine` folder.
 

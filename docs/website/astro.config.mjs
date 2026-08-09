@@ -116,6 +116,10 @@ export default defineConfig({
                             label: "Create a native plugin",
                             link: "/guides/create-a-plugin/",
                         },
+                        {
+                            label: "The Design Principles of Vectarine",
+                            link: "/guides/design-principles/",
+                        }
                     ],
                 },
             ],

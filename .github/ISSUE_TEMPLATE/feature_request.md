@@ -13,7 +13,7 @@ assignees: ''
 
 **How goes this feature fit into the design principles of Vectarine**
 
-You can check the design principles in the [Engine Design Principles](https://github.com/vanyle/vectarine/blob/main/docs/engine/engine-design-principles.md) document.
+You can check the design principles in the [Vectarine Design Principles](https://vectarineengine.com/guides/design-principles/) document.
 
 **Luau API**
 

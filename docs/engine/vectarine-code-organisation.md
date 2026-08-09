@@ -9,7 +9,7 @@ Vectarine is made of 4 rust crates:
 
 We have the following static dependencies (--> = is used by):
 
-vectarine-plugin-sdk --> runtime --> editor
+vectarine-plugin-sdk --> runtime --> vectarine-cli --> editor
                   \----> vectarine-plugin-template
 
 ## Who does what? What are the main structs?
@@ -29,6 +29,11 @@ The editor is a GUI program that is able to run multiple games during its lifeti
 The editor wraps the `Game` inside a `ProjectState` which is the combination of a `Game` with various infos the editor need to provide debugging,
 and manage the associated project.
 
+**The CLI**
+
+The CLI as a command line tool able to scaffold and test projects. The scaffolding code is used by the editor to create new projects and for 
+exports.
+
 **The SDK**
 
 The SDK is there to store types that need to be shared between plugins, the runtime and the editor. It is used to ensure that all these project use libraries of the same
@@ -40,9 +45,15 @@ The plugin template is a project that compiles to dynamic libraries to be stored
 
 ## If I add a dependency, where should I add it?
 
-If it exist only for **building** games (and not executing them), it should be inside the editor.
+If it exist only for **building** games (and not executing them), it should be inside the CLI.
 
-Example: toml_edit is used to edit toml files. This is only used to save game projects, so it is inside the editor.
+Example: toml_edit is used to edit toml files. This is only used to save game projects, so it is inside the CLI.
+
+If it exists for **showing a debugging interface** and general **developer experience**, it should be inside the editor.
+
+Example:
+- egui is used to show the editor interface. This is only used inside the editor, so it is inside the editor.
+- notify-debouncer-full is used for watching file changes to trigger hot reload. This is only used inside the editor, so it is inside the editor.
 
 If it is needed for **general game purposes**, it needs to be inside vectarine-plugin-sdk.
 
