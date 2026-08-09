@@ -6,16 +6,11 @@ use crate::graphics::batchdraw;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_text::FontResourceId;
 use crate::lua_env::lua_vec2::Vec2;
+use crate::lua_env::lua_vec4::Vec4;
 use vectarine_plugin_sdk::glow;
 use vectarine_plugin_sdk::mlua;
 
 use super::{Alignment, EventState, VectarineWidget};
-
-#[derive(Clone, Copy)]
-pub enum TextFitting {
-    Shrink,
-    FixedSize(f32),
-}
 
 struct TextLayout {
     font_size: f32,
@@ -33,19 +28,88 @@ impl TextLayout {
 }
 
 pub struct TextWidget {
-    pub size: Vec2,
+    pub width: Option<f32>,
+    pub height: Option<f32>,
     pub get_text_fn: mlua::Function,
-    pub gl: Arc<glow::Context>,
-    pub align: Alignment,
+    pub get_color_fn: Option<mlua::Function>,
     pub font_id: FontResourceId,
+    pub font_size: f32,
+    pub align: Alignment,
+    // For now, we don't handle line-height or letter spacing.
+    pub gl: Arc<glow::Context>,
     pub resources: Rc<ResourceManager>,
     pub event_state: EventState,
-    pub fitting: TextFitting,
 }
 
 impl VectarineWidget for TextWidget {
-    fn size(&self, _lua: &mlua::Lua) -> Vec2 {
-        self.size
+    // Currently, performance is `size` is very bad.
+    // We could cache the value in case get_text_fn is actually just a constant.
+    // We'll do that later if people complain.
+    fn size(&self, lua: &mlua::Lua, io_env: &RefCell<IoEnvState>, extra: &mlua::Value) -> Vec2 {
+        let aspect_ratio = {
+            let io = io_env.borrow();
+            io.window_width as f32 / io.window_height as f32
+        };
+        match (self.width, self.height) {
+            // Easy case: width and height are known and are the exact size of the widget.
+            (Some(w), Some(h)) => Vec2::new(w, h),
+            (Some(w), None) => {
+                // The widget is `w` wide, and the text wraps to as many lines as it needs.
+                let event_table = self
+                    .event_state
+                    .to_lua(lua)
+                    .expect("Conversion to table should never fail");
+                let text = self
+                    .get_text_fn
+                    .call::<String>((&event_table, extra))
+                    .expect("Failed to call get_text_fn");
+
+                let layout = TextLayout {
+                    font_size: self.font_size,
+                    aspect_ratio,
+                    widget_width: w,
+                    align: self.align,
+                };
+
+                let line_count =
+                    self.font_id
+                        .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+                            wrap_lines(font_renderer, &text, &layout).len()
+                        });
+
+                let Some(line_count) = line_count else {
+                    // Font not loaded => Text not rendered, so we return a height of 0.0.
+                    return Vec2::new(w, 0.0);
+                };
+
+                // A line height is, by definition, the font_size, and we always show at least one line.
+                Vec2::new(w, line_count.max(1) as f32 * self.font_size)
+            }
+            (None, maybe_height) => {
+                // The height is the height of a single line, and the width is the width of the text.
+                let event_table = self
+                    .event_state
+                    .to_lua(lua)
+                    .expect("Conversion to table should never fail");
+                let text = self
+                    .get_text_fn
+                    .call::<String>((&event_table, extra))
+                    .expect("Failed to call get_text_fn");
+
+                let Some((w, _h, _max_ascent)) =
+                    self.font_id
+                        .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+                            font_renderer.measure_text(&text, self.font_size, aspect_ratio)
+                        })
+                else {
+                    // Font not loaded => Text not rendered, so we return a size of 0.0, 0.0
+                    return Vec2::new(0.0, maybe_height.unwrap_or(0.0));
+                };
+                // The height of the line should not depend on the actual written text!
+                // Remember that font_size is, by definition, the maximum height a line of text can have.
+                Vec2::new(w, maybe_height.unwrap_or(self.font_size))
+            }
+        }
     }
 
     fn draw(
@@ -62,60 +126,51 @@ impl VectarineWidget for TextWidget {
             .to_lua(lua)
             .expect("Conversion to table should never fail");
         // Double-borrow issue can happen here as get_text_fn might need to borrow self.
-        let result = self.get_text_fn.call::<mlua::Table>((event_table, extra))?;
-        let text = result.raw_get::<String>("text")?;
-        let color: [f32; 4] = match result.raw_get::<crate::lua_env::lua_vec4::Vec4>("color") {
-            Ok(c) => c.0,
-            Err(_) => [1.0, 1.0, 1.0, 1.0],
+        let text = { self.get_text_fn.call::<String>((&event_table, &extra))? };
+        let color = match &self.get_color_fn {
+            None => Vec4::new(0.0, 0.0, 0.0, 1.0),
+            Some(function) => function.call::<Vec4>((&event_table, &extra))?,
         };
 
-        let io = io_env.borrow();
-        let aspect_ratio = io.window_width as f32 / io.window_height as f32;
+        let aspect_ratio = {
+            let io = io_env.borrow();
+            io.window_width as f32 / io.window_height as f32
+        };
 
-        let align = self.align;
-        let fitting = self.fitting;
+        let true_size = self.size(lua, io_env, &extra);
+
         self.font_id
-            .get_font_resource(&self.gl, &self.resources, |font_renderer| match fitting {
-                TextFitting::Shrink => {
-                    let layout = TextLayout {
-                        font_size: self.size.y(),
+            .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+                draw_fixed_size(
+                    font_renderer,
+                    &self.gl,
+                    batch,
+                    &text,
+                    color.0,
+                    TextLayout {
+                        font_size: self.font_size,
                         aspect_ratio,
-                        widget_width: self.size.x(),
-                        align,
-                    };
-                    draw_shrink(font_renderer, &self.gl, batch, &text, color, layout);
-                }
-                TextFitting::FixedSize(font_size) => {
-                    let layout = TextLayout {
-                        font_size,
-                        aspect_ratio,
-                        widget_width: self.size.x(),
-                        align,
-                    };
-                    draw_fixed_size(
-                        font_renderer,
-                        &self.gl,
-                        batch,
-                        &text,
-                        color,
-                        layout,
-                        self.size.y(),
-                    );
-                }
+                        widget_width: true_size.x(),
+                        align: self.align,
+                    },
+                    true_size.y(),
+                );
             });
         Ok(())
     }
 
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
         Box::new(TextWidget {
-            size: self.size,
             get_text_fn: self.get_text_fn.clone(),
             gl: self.gl.clone(),
             align: self.align,
             font_id: self.font_id,
             resources: self.resources.clone(),
             event_state: self.event_state.clone(),
-            fitting: self.fitting,
+            get_color_fn: self.get_color_fn.clone(),
+            font_size: self.font_size,
+            width: self.width,
+            height: self.height,
         })
     }
 
@@ -152,31 +207,6 @@ fn draw_aligned_line(
     batch
         .borrow_mut()
         .draw_text(x, y, line, color, layout.font_size, font_renderer);
-}
-
-fn draw_shrink(
-    font_renderer: &mut FontRenderingData,
-    gl: &Arc<glow::Context>,
-    batch: &RefCell<batchdraw::BatchDraw2d>,
-    text: &str,
-    color: [f32; 4],
-    mut layout: TextLayout,
-) {
-    let (measured_width, _, _) = font_renderer.measure_text(text, 1.0, layout.aspect_ratio);
-
-    if measured_width * layout.font_size > layout.widget_width {
-        layout.font_size = layout.widget_width / measured_width;
-    }
-
-    font_renderer.enrich_atlas(gl, text);
-    draw_aligned_line(
-        font_renderer,
-        batch,
-        text,
-        color,
-        &layout,
-        -1.0 + font_renderer.get_max_baseline_height(layout.font_size),
-    );
 }
 
 /// Wraps `text` into lines that fit within the layout's widget width.

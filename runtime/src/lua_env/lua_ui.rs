@@ -16,6 +16,7 @@ use crate::graphics::batchdraw;
 use crate::graphics::shape::Quad;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_ui::spacer_widget::SpacerWidget;
+use crate::lua_env::lua_vec4::Vec4;
 use vectarine_plugin_sdk::mlua::{self, userdata::UserDataMethods};
 use vectarine_plugin_sdk::mlua::{FromLua, IntoLua};
 
@@ -49,7 +50,7 @@ impl<T: VectarineWidget + 'static> WidgetToAny for T {
 
 /// Represents a UI widget in Vectarine from the Rust side.
 pub trait VectarineWidget: WidgetToAny {
-    fn size(&self, lua: &mlua::Lua) -> Vec2;
+    fn size(&self, lua: &mlua::Lua, io_env: &RefCell<IoEnvState>, extra: &mlua::Value) -> Vec2;
     fn draw(
         &mut self,
         lua: &mlua::Lua,
@@ -78,7 +79,7 @@ pub trait VectarineWidget: WidgetToAny {
         draw_debug_outline: bool,
         extra: mlua::Value,
     ) -> mlua::Result<()> {
-        let widget_size = self.size(lua);
+        let widget_size = self.size(lua, io_env, &extra);
         let state = self.event_state_mut();
         if process_events {
             let io = io_env.borrow();
@@ -274,8 +275,11 @@ pub fn setup_ui_api(
     )?;
 
     lua.register_userdata_type::<WidgetBox>(|registry| {
-        registry.add_method("size", |lua, widget, (): ()| {
-            Ok(widget.0.borrow().size(lua))
+        registry.add_method("size", {
+            let io_env = env_state.clone();
+            move |lua, widget: &WidgetBox, (extra,): (mlua::Value,)| {
+                Ok(widget.0.borrow().size(lua, &io_env, &extra))
+            }
         });
 
         registry.add_method("draw", {
@@ -456,15 +460,15 @@ pub fn setup_ui_api(
         let gl = batch.borrow().drawing_target.gl().clone();
         let resources = _resources.clone();
         lua.create_function(
-            move |lua, (size, options, get_text): (Vec2, mlua::Table, mlua::Value)| {
+            move |lua, (get_text, options): (mlua::Value, mlua::Table)| {
                 let get_text_fn = match get_text {
                     mlua::Value::Function(f) => f,
-                    mlua::Value::Table(properties) => {
-                        lua.create_function(move |_, _: mlua::MultiValue| Ok(properties.clone()))?
+                    mlua::Value::String(text) => {
+                        lua.create_function(move |_, _: mlua::MultiValue| Ok(text.clone()))?
                     }
                     other => {
                         return Err(mlua::Error::external(format!(
-                            "text() expects a string or a function that returns a string, got {}",
+                            "ui.text() expects a string or a function that returns a string, got {}",
                             other.type_name()
                         )));
                     }
@@ -477,26 +481,31 @@ pub fn setup_ui_api(
                 let font_id = options
                     .raw_get::<crate::lua_env::lua_text::FontResourceId>("font")
                     .unwrap_or_else(|_| crate::lua_env::lua_text::FontResourceId::default_font());
-                let fitting = match options.raw_get::<mlua::Value>("fitting") {
-                    Ok(mlua::Value::Table(t)) => {
-                        let size = t.raw_get::<f32>("size").map_err(|_| {
-                            mlua::Error::external(
-                                "fitting table must have a 'size' field of type number",
-                            )
-                        })?;
-                        text_widget::TextFitting::FixedSize(size)
+                let width = options.raw_get::<f32>("maxWidth").ok();
+                let height = options.raw_get::<f32>("maxHeight").ok();
+                let font_size = options.raw_get::<f32>("fontSize").unwrap_or(0.1);
+                let color = options.raw_get::<mlua::Value>("color").ok(); // TODO: match here
+
+                let get_color_fn = match color {
+                    Some(mlua::Value::Function(f)) => Some(f),
+                    Some(color @ mlua::Value::UserData(_)) => {
+                        let color = Vec4::from_lua(color, &lua)?;
+                        Some(lua.create_function(move |_, (): ()| Ok(color))?)
                     }
-                    _ => text_widget::TextFitting::Shrink,
+                    _ => None,
                 };
+
                 let widget = WidgetBox(RefCell::new(Box::new(TextWidget {
-                    size,
                     get_text_fn,
                     gl: gl.clone(),
+                    width,
+                    height,
+                    font_size,
+                    get_color_fn,
                     align,
                     font_id,
                     resources: resources.clone(),
                     event_state: EventState::default(),
-                    fitting,
                 })));
                 Ok(widget)
             },
