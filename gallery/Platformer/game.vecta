@@ -6,3 +6,4 @@ tags = []
 loading_animation = "pixel"
 default_screen_width = 800
 default_screen_height = 600
+plugins = []
