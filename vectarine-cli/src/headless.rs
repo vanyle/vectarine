@@ -66,12 +66,13 @@ where
         sdl: sdl_context,
         window: Rc::new(RefCell::new(SdlDrawingSurface::new(
             window,
-            video_subsystem,
+            &video_subsystem,
             Some((1.0, 1.0)),
         ))),
         event_pump,
         gl_context,
         gl,
+        video_subsystem,
     }
 }
 

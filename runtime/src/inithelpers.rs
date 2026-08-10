@@ -36,4 +36,5 @@ pub struct RenderingBlock {
     pub sdl: Sdl,
     pub gl: Arc<glow::Context>,
     pub gl_context: ManuallyDrop<sdl2::video::GLContext>,
+    pub video_subsystem: sdl2::VideoSubsystem,
 }

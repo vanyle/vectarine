@@ -67,7 +67,7 @@ pub struct EditorState {
     pub game_drawing_surface: Rc<RefCell<GameDrawingSurface>>,
     pub gl: Arc<glow::Context>,
 
-    pub editor_specific_window: sdl2::video::Window,
+    pub editor_specific_window_surface: Rc<RefCell<SdlDrawingSurface>>,
     pub editor_batch_draw: BatchDraw2d,
     debouncer: Rc<RefCell<Debouncer<notify::RecommendedWatcher, RecommendedCache>>>,
 
@@ -160,6 +160,7 @@ impl EditorState {
         gl: Arc<glow::Context>,
         editor_window: sdl2::video::Window,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
+        video: &runtime::sdl2::VideoSubsystem,
     ) -> Self {
         let editor_batch_draw = BatchDraw2d::new(&gl).expect("Failed to create editor batch draw");
         Self {
@@ -171,7 +172,11 @@ impl EditorState {
             game_drawing_surface: Rc::new(RefCell::new(GameDrawingSurface::new(window.clone()))),
             window,
             gl,
-            editor_specific_window: editor_window,
+            editor_specific_window_surface: Rc::new(RefCell::new(SdlDrawingSurface::new(
+                editor_window,
+                video,
+                None,
+            ))),
             debouncer: Rc::new(RefCell::new(
                 new_debouncer(
                     Duration::from_millis(10),
@@ -274,19 +279,18 @@ impl EditorState {
         &mut self,
         platform: &mut egui_sdl2_platform::Platform,
         sdl: &sdl2::Sdl,
+        video: &sdl2::VideoSubsystem,
         latest_events: &[sdl2::event::Event],
         painter: &mut egui_glow::Painter,
     ) -> f32 {
         platform.update_time(self.start_time.elapsed().as_secs_f64());
         {
             let editor_surface = self.window.borrow();
-            let game_drawing_surface = self.game_drawing_surface.borrow();
             platform.handle_events(
                 latest_events,
                 sdl,
-                editor_surface.deref(),
-                game_drawing_surface.deref(),
-                &self.window.borrow().video_subsystem,
+                editor_surface.deref(), // <-- might be incorrect here.
+                video,
             );
         }
 
@@ -294,7 +298,7 @@ impl EditorState {
         let mut egui_eats_mouse = false;
         let mut menu_height = 0.0;
 
-        let full_output = platform.run(self, &mut |ui, editor_state| {
+        let full_output = platform.run(video, self, &mut |ui, editor_state| {
             let menu_height = draw_editor_menu(editor_state, ui);
 
             if editor_state.project.borrow().is_none() {
@@ -318,14 +322,17 @@ impl EditorState {
         self.editor_want_keyboard = egui_eats_keyboard;
         self.editor_want_mouse = egui_eats_mouse;
 
-        let window_with_editor = match self.config.borrow().window_style {
-            WindowStyle::GameSeparateFromEditor => &self.editor_specific_window,
-            WindowStyle::GameWithEditor => &self.window.borrow().window,
+        let surface_with_editor_ref = match self.config.borrow().window_style {
+            WindowStyle::GameSeparateFromEditor => &self.editor_specific_window_surface,
+            WindowStyle::GameWithEditor => &self.window,
         };
+        let surface_with_editor = surface_with_editor_ref.borrow();
+        let window_with_editor = &surface_with_editor.window;
+
         // Render the editor interface on top of the game.
         let drawable_size = window_with_editor.drawable_size();
         // Ratio of hardware pixel (pixel) to software pixels (points)
-        let size_in_px = self.window.borrow().get_size_in_vectarine_px();
+        let size_in_px = surface_with_editor.get_size_in_vectarine_px();
         let pixels_per_point_x = drawable_size.0 as f32 / size_in_px.0;
         let pixels_per_point_y = drawable_size.1 as f32 / size_in_px.1;
 

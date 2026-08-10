@@ -41,7 +41,9 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ui: &mut egui::Ui) {
                     }
                     if response.clicked() {
                         editor
-                            .editor_specific_window
+                            .editor_specific_window_surface
+                            .borrow_mut()
+                            .window
                             .set_always_on_top(config.is_editor_always_on_top);
                     }
                 }

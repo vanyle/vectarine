@@ -50,6 +50,7 @@ fn get_project_to_open_from_args() -> Option<PathBuf> {
 fn gui_main() {
     let RenderingBlock {
         sdl,
+        video_subsystem,
         window,
         mut event_pump,
         gl,
@@ -62,7 +63,7 @@ fn gui_main() {
     init_sound_system(&sdl);
 
     let (editor_window, mut editor_interface) =
-        editorextrawindow::create_specific_editor_window(&window.borrow().video_subsystem, &gl);
+        editorextrawindow::create_specific_editor_window(&video_subsystem, &gl);
 
     let (debounce_event_sender, debounce_receiver) = channel();
 
@@ -79,6 +80,7 @@ fn gui_main() {
         gl.clone(),
         editor_window,
         debounce_event_sender,
+        &video_subsystem,
     );
 
     let project_to_open = get_project_to_open_from_args();
@@ -101,18 +103,16 @@ fn gui_main() {
     // Or is it??
     send_window_resize_sync_event(
         &sdl,
-        &window.borrow().video_subsystem,
+        &video_subsystem,
         &window.borrow().window,
         &mut platform,
-        editor_state.game_drawing_surface.borrow().deref(),
         editor_state.window.borrow().deref(),
     );
     send_window_resize_sync_event(
         &sdl,
-        &window.borrow().video_subsystem,
-        &editor_state.editor_specific_window,
+        &video_subsystem,
+        &editor_state.editor_specific_window_surface.borrow().window,
         &mut editor_interface.platform,
-        editor_state.game_drawing_surface.borrow().deref(),
         editor_state.window.borrow().deref(),
     );
 
@@ -232,7 +232,9 @@ fn gui_main() {
                 window.borrow().window.gl_swap_window();
 
                 editor_state
-                    .editor_specific_window
+                    .editor_specific_window_surface
+                    .borrow()
+                    .window
                     .gl_make_current(&gl_context)
                     .expect("Failed to make context current");
                 clear_window(&gl);
@@ -240,16 +242,26 @@ fn gui_main() {
                 game_margin_top = 0.0;
                 editorextrawindow::render_editor_in_extra_window(
                     &sdl,
+                    &video_subsystem,
                     &gl,
                     &gl_context,
                     &mut editor_state,
                     &mut editor_interface,
                     &editor_window_events,
                 );
-                editor_state.editor_specific_window.gl_swap_window();
+                editor_state
+                    .editor_specific_window_surface
+                    .borrow()
+                    .window
+                    .gl_swap_window();
             }
             WindowStyle::GameWithEditor => {
-                editor_state.editor_specific_window.hide();
+                editor_state
+                    .editor_specific_window_surface
+                    .borrow_mut()
+                    .window
+                    .hide();
+
                 window
                     .borrow()
                     .window
@@ -259,6 +271,7 @@ fn gui_main() {
                 game_margin_top = editor_state.draw_editor_interface(
                     &mut platform,
                     &sdl,
+                    &video_subsystem,
                     &game_window_events,
                     &mut painter,
                 );

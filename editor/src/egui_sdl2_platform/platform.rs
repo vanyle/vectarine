@@ -60,7 +60,6 @@ impl Platform {
         events: &[Event],
         sdl: &sdl2::Sdl,
         editor_surface: &dyn DrawingSurface,
-        _game_surface: &dyn DrawingSurface,
         video: &sdl2::VideoSubsystem,
     ) {
         for event in events {
@@ -283,6 +282,7 @@ impl Platform {
 
     pub fn run<F, T>(
         &mut self,
+        video: &sdl2::VideoSubsystem,
         editor_state: &mut EditorState,
         draw_ui: &mut F,
     ) -> anyhow::Result<(egui::FullOutput, T)>
@@ -303,15 +303,9 @@ impl Platform {
         for cmd in &output.platform_output.commands {
             match cmd {
                 egui::OutputCommand::CopyText(text) => {
-                    editor_state
-                        .window
-                        .borrow()
-                        .video_subsystem
-                        .clipboard()
-                        .set_clipboard_text(text)
-                        .map_err(|e| {
-                            anyhow::anyhow!("Failed to assign text to clipboard: {}", e)
-                        })?;
+                    video.clipboard().set_clipboard_text(text).map_err(|e| {
+                        anyhow::anyhow!("Failed to assign text to clipboard: {}", e)
+                    })?;
                 }
                 egui::OutputCommand::CopyImage(_) | egui::OutputCommand::OpenUrl(_) => {
                     // ...
