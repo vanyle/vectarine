@@ -6,7 +6,6 @@ use vectarine_plugin_sdk::sdl2::video::{FullscreenType, Window, WindowPos};
 
 pub struct SdlDrawingSurface {
     pub window: Window,
-    pub video_subsystem: VideoSubsystem,
 
     // On Linux, drawable_size and size are the same which would make the window way to small.
     // We thus compute this scaling factor to increase the size of logical pixels.
@@ -184,20 +183,16 @@ pub fn get_screen_size(_window: &Window) -> (u32, u32) {
 impl SdlDrawingSurface {
     pub fn new(
         window: Window,
-        video_subsystem: VideoSubsystem,
+        video_subsystem: &VideoSubsystem,
         force_scaling: Option<(f32, f32)>,
     ) -> Self {
         // In screen-less environments, it makes sense to force a scaling of 1.0 to reliability.
         let scaling = if let Some(force_scaling) = force_scaling {
             force_scaling
         } else {
-            get_scaling(&video_subsystem, &window)
+            get_scaling(video_subsystem, &window)
         };
-        Self {
-            window,
-            video_subsystem,
-            scaling,
-        }
+        Self { window, scaling }
     }
 }
 

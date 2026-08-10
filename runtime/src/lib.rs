@@ -94,7 +94,7 @@ where
 
     let window = Rc::new(RefCell::new(SdlDrawingSurface::new(
         window,
-        video_subsystem,
+        &video_subsystem,
         None,
     )));
 
@@ -108,6 +108,7 @@ where
         event_pump,
         gl_context,
         gl,
+        video_subsystem,
     }
 }
 

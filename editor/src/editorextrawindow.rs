@@ -60,6 +60,7 @@ impl EditorInterfaceWithGl {
 
 pub fn render_editor_in_extra_window(
     sdl: &runtime::sdl2::Sdl,
+    video: &runtime::sdl2::VideoSubsystem,
     gl: &Arc<glow::Context>,
     gl_context: &GLContext,
     editor_state: &mut EditorState,
@@ -70,13 +71,23 @@ pub fn render_editor_in_extra_window(
         .editor_batch_draw
         .drawing_target
         .enable_multisampling();
-    editor_state.editor_specific_window.show();
+    editor_state
+        .editor_specific_window_surface
+        .borrow_mut()
+        .window
+        .show();
 
     editor_state
-        .editor_specific_window
+        .editor_specific_window_surface
+        .borrow()
+        .window
         .gl_make_current(gl_context)
         .expect("Failed to make context current");
-    let (width, height) = editor_state.editor_specific_window.size();
+    let (width, height) = editor_state
+        .editor_specific_window_surface
+        .borrow()
+        .window
+        .drawable_size();
     let aspect_ratio = width as f32 / height as f32;
     editor_state
         .editor_batch_draw
@@ -100,7 +111,7 @@ pub fn render_editor_in_extra_window(
 
     let platform = &mut editor_interface.platform;
     let painter = &mut editor_interface.painter;
-    editor_state.draw_editor_interface(platform, sdl, editor_window_events, painter);
+    editor_state.draw_editor_interface(platform, sdl, video, editor_window_events, painter);
 }
 
 pub fn draw_info_in_empty_game_window(
@@ -178,7 +189,6 @@ pub fn send_window_resize_sync_event(
     video: &runtime::sdl2::VideoSubsystem,
     window: &Window,
     platform: &mut egui_sdl2_platform::Platform,
-    game_surface: &dyn DrawingSurface,
     editor_surface: &dyn DrawingSurface,
 ) {
     let (width, height) = window.size();
@@ -187,7 +197,7 @@ pub fn send_window_resize_sync_event(
         window_id: window.id(),
         win_event: WindowEvent::Resized(width as i32, height as i32),
     };
-    platform.handle_events(&[event], sdl, editor_surface, game_surface, video);
+    platform.handle_events(&[event], sdl, editor_surface, video);
 }
 
 pub fn draw_centered_text(

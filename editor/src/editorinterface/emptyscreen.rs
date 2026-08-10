@@ -21,15 +21,15 @@ pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
     }
 
     egui::Window::new("No project loaded")
-        .default_width(384.0)
-        .default_height(512.0)
+        .max_width(384.0).min_width(384.0)
+        .max_height(384.0).min_height(384.0)
         .title_bar(false)
         .collapsible(false)
         .resizable(false)
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ui, |ui| {
             StripBuilder::new(ui)
-                .size(Size::remainder().at_most(512.0))
+                .size(Size::remainder().at_most(384.0))
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
                         NEW_GAME_PATH.with_borrow_mut(|new_game_path| {
