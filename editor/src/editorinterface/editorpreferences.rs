@@ -73,7 +73,11 @@ pub fn draw_editor_preferences(editor: &mut EditorState, ui: &mut egui::Ui) {
                     let current_editor = config.text_editor;
 
                     egui::ComboBox::new("editor_selector", "")
-                        .selected_text(format!("{}", current_editor.unwrap_or_default()))
+                        .selected_text(
+                            current_editor
+                                .map(|e| format!("{}", e))
+                                .unwrap_or("None".to_string()),
+                        )
                         .show_ui(ui, |ui| {
                             let editors = [
                                 TextEditor::VSCode,

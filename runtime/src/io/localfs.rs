@@ -4,6 +4,7 @@ use std::cell::Cell;
 use std::cell::RefCell;
 #[cfg(target_os = "emscripten")]
 use std::collections::HashMap;
+use std::path::Path;
 
 use crate::io::fs::FileSystem;
 use crate::io::fs::ReadOnlyFileSystem;
@@ -22,7 +23,7 @@ impl ReadOnlyFileSystem for LocalFileSystem {
         let path = Path::new(filename);
 
         if let Ok(canonical) = path.canonicalize() {
-            let canonical_with_slash = canonical.to_string_lossy().replace("\\", "/");
+            let canonical_with_slash = normalize_path(&canonical);
             let ends_with = canonical_with_slash.ends_with(filename);
 
             if !ends_with {
@@ -61,6 +62,10 @@ impl FileSystem for LocalFileSystem {
             }
         }
     }
+}
+
+pub fn normalize_path(path: &Path) -> String {
+    path.to_string_lossy().replace("\\", "/")
 }
 
 #[cfg(target_os = "emscripten")]
