@@ -15,9 +15,9 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
     let opened_successfully = match prefered_text_editor {
         None => false,
         Some(TextEditor::Antigravity) => {
-            let is_antigravity = which::which("antigravity").is_ok();
-            if is_antigravity {
-                let res = Command::new("antigravity")
+            let path = which::which("antigravity");
+            if let Ok(antigravity_path) = path {
+                let res = Command::new(antigravity_path)
                     .args(["--goto", format!("{}:{}", absolute_path, line).as_str()])
                     .spawn();
                 res.is_ok()
@@ -26,9 +26,9 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
             }
         }
         Some(TextEditor::SublimeText) => {
-            let is_sublime = which::which("subl").is_ok();
-            if is_sublime {
-                let res = Command::new("subl")
+            let path = which::which("subl");
+            if let Ok(subl_path) = path {
+                let res = Command::new(subl_path)
                     .args([format!("{}:{}", absolute_path, line).as_str()])
                     .spawn();
                 res.is_ok()
@@ -37,9 +37,9 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
             }
         }
         Some(TextEditor::Zed) => {
-            let is_zed = which::which("zed").is_ok();
-            if is_zed {
-                let res = Command::new("zed")
+            let path = which::which("zed");
+            if let Ok(zed_path) = path {
+                let res = Command::new(zed_path)
                     .args([format!("{}:{}", absolute_path, line).as_str()])
                     .spawn();
                 res.is_ok()
@@ -48,10 +48,10 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
             }
         }
         Some(TextEditor::VSCode) => {
-            let is_code = which::which("code").is_ok();
-            if is_code {
+            let path = which::which("code");
+            if let Ok(code_path) = path {
                 // code --goto "path/to/file:line"
-                let res = Command::new("code")
+                let res = Command::new(code_path)
                     .args(["--goto", format!("{}:{}", absolute_path, line).as_str()])
                     .spawn();
                 res.is_ok()
@@ -60,9 +60,9 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
             }
         }
         Some(TextEditor::Cursor) => {
-            let is_cursor = which::which("cursor").is_ok();
-            if is_cursor {
-                let res = Command::new("cursor")
+            let path = which::which("cursor");
+            if let Ok(cursor_path) = path {
+                let res = Command::new(cursor_path)
                     .args(["--goto", format!("{}:{}", absolute_path, line).as_str()])
                     .spawn();
                 res.is_ok()
@@ -87,9 +87,9 @@ pub fn open_file_at_line(file: &Path, line: usize, prefered_text_editor: Option<
             }
         }
         Some(TextEditor::Emacs) => {
-            let is_emacs = which::which("emacsclient").is_ok();
-            if is_emacs {
-                let res = Command::new("emacsclient")
+            let path = which::which("emacsclient");
+            if let Ok(emacsclient_path) = path {
+                let res = Command::new(emacsclient_path)
                     .args([format!("+{}", line), absolute_path])
                     .spawn();
                 res.is_ok()
@@ -114,9 +114,9 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
     match prefered_text_editor {
         None => false,
         Some(TextEditor::Antigravity) => {
-            let is_antigravity = which::which("antigravity").is_ok();
-            if is_antigravity {
-                let res = Command::new("antigravity")
+            let path = which::which("antigravity");
+            if let Ok(antigravity_path) = path {
+                let res = Command::new(antigravity_path)
                     .args([absolute_path.as_str()])
                     .spawn();
                 res.is_ok()
@@ -125,18 +125,22 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
             }
         }
         Some(TextEditor::SublimeText) => {
-            let is_sublime = which::which("subl").is_ok();
-            if is_sublime {
-                let res = Command::new("subl").args([absolute_path.as_str()]).spawn();
+            let path = which::which("subl");
+            if let Ok(subl_path) = path {
+                let res = Command::new(subl_path)
+                    .args([absolute_path.as_str()])
+                    .spawn();
                 res.is_ok()
             } else {
                 false
             }
         }
         Some(TextEditor::Zed) => {
-            let is_zed = which::which("zed").is_ok();
-            if is_zed {
-                let res = Command::new("zed").args([absolute_path.as_str()]).spawn();
+            let path = which::which("zed");
+            if let Ok(zed_path) = path {
+                let res = Command::new(zed_path)
+                    .args([absolute_path.as_str()])
+                    .spawn();
                 res.is_ok()
             } else {
                 false
@@ -144,21 +148,19 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
         }
         Some(TextEditor::VSCode) => {
             let path = which::which("code");
-            println!("path: {:?}", path);
             if let Ok(code_path) = path {
                 let res = Command::new(code_path)
                     .args([absolute_path.as_str()])
                     .spawn();
-                println!("res: {:?}", res);
                 res.is_ok()
             } else {
                 false
             }
         }
         Some(TextEditor::Cursor) => {
-            let is_cursor = which::which("cursor").is_ok();
-            if is_cursor {
-                let res = Command::new("cursor")
+            let path = which::which("cursor");
+            if let Ok(cursor_path) = path {
+                let res = Command::new(cursor_path)
                     .args([absolute_path.as_str()])
                     .spawn();
                 res.is_ok()
@@ -183,9 +185,9 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
             }
         }
         Some(TextEditor::Emacs) => {
-            let is_emacs = which::which("emacsclient").is_ok();
-            if is_emacs {
-                let res = Command::new("emacsclient")
+            let path = which::which("emacsclient");
+            if let Ok(emacsclient_path) = path {
+                let res = Command::new(emacsclient_path)
                     .args([absolute_path.as_str()])
                     .spawn();
                 res.is_ok()
