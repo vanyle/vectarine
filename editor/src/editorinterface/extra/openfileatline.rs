@@ -143,9 +143,13 @@ pub fn open_folder(folder_path: &Path, prefered_text_editor: Option<TextEditor>)
             }
         }
         Some(TextEditor::VSCode) => {
-            let is_code = which::which("code").is_ok();
-            if is_code {
-                let res = Command::new("code").args([absolute_path.as_str()]).spawn();
+            let path = which::which("code");
+            println!("path: {:?}", path);
+            if let Ok(code_path) = path {
+                let res = Command::new(code_path)
+                    .args([absolute_path.as_str()])
+                    .spawn();
+                println!("res: {:?}", res);
                 res.is_ok()
             } else {
                 false

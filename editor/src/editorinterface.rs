@@ -19,6 +19,7 @@ use runtime::{
     egui, egui_glow, glow,
     graphics::batchdraw::BatchDraw2d,
     io::{
+        self,
         fs::{FileSystem, ReadOnlyFileSystem},
         localfs::LocalFileSystem,
     },
@@ -89,9 +90,7 @@ impl EditorState {
         }
 
         LocalFileSystem.write_file(
-            config_path
-                .to_str()
-                .expect("The editor path is valid unicode"), // otherwise, your installation / OS is very cursed
+            &io::localfs::normalize_path(&config_path),
             data.as_bytes(),
             Box::new(|_| {}),
         );
@@ -108,9 +107,7 @@ impl EditorState {
         let trusted_plugins = self.get_trusted_plugins();
 
         LocalFileSystem.read_file(
-            geteditorpaths::get_editor_config_path()
-                .to_str()
-                .expect("The editor path is valid unicode"),
+            &io::localfs::normalize_path(&geteditorpaths::get_editor_config_path()),
             Box::new(move |data: Option<Vec<u8>>| {
                 let Some(data) = data else {
                     return; // no config file
@@ -198,7 +195,7 @@ impl EditorState {
 
     fn update_recent_projects(&self, new_recent_project: &Path) {
         let mut config = self.config.borrow_mut();
-        let project_path_str = new_recent_project.to_string_lossy().to_string();
+        let project_path_str = io::localfs::normalize_path(new_recent_project);
 
         config
             .recent_project_paths
@@ -234,9 +231,9 @@ impl EditorState {
                         return;
                     }
                 };
-                // Bad code here: canonicalization issue.
+
                 self.config.borrow_mut().opened_project_path =
-                    Some(project_path.to_string_lossy().to_string());
+                    Some(io::localfs::normalize_path(project_path));
                 if let Some(project_folder) = project_path.parent() {
                     self.update_recent_projects(project_folder);
                 }
