@@ -234,6 +234,7 @@ impl EditorState {
                         return;
                     }
                 };
+                // Bad code here: canonicalization issue.
                 self.config.borrow_mut().opened_project_path =
                     Some(project_path.to_string_lossy().to_string());
                 if let Some(project_folder) = project_path.parent() {
