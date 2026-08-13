@@ -1,0 +1,440 @@
+---
+title: Making a platformer
+description: How to make a platformer game in Vectarine.
+---
+
+import { Aside, Code, TabItem, Tabs } from '@astrojs/starlight/components';
+
+Vectarine has a built-in physics module to make any game with physics.
+In this guide, we'll see how to make a platformer game using Vectarine's physics module.
+
+## Creating a world
+
+In Vectarine, a world is a collection of objects that can interact with one another.
+To create one, you need to provide a gravity vector and a camera to the physics module.
+
+The camera is used for extra debugging features, such as drawing the physics shapes. You can pass a default camera for now.
+
+export const creatingAWorldLuau = `const graphics = require("@vectarine/graphics")
+const persist = require("@vectarine/persist")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const physics = require("@vectarine/physics")
+const camera = require("@vectarine/camera")
+
+local gameCamera = camera.new()
+gameCamera.zoom = 10.0
+
+local world = physics.newWorld2(vec.V2(0, -10), gameCamera)
+
+function Update(deltaTime: number)
+	world:step(deltaTime)
+end`;
+
+<Code lang="luau" code={creatingAWorldLuau} />
+
+Every frame, you need to call the `step` function of the world to update the physics simulation.
+You can adjust the `deltaTime` to make the simulation run faster or slower (at the cost of accuracy if `deltaTime` is too high).
+
+## A ground and a crate
+
+An empty world is not very interesting. The screen is black, because we're drawing nothing!
+Let's add some objects to the world and draw them to the screen!
+
+export const groundAndCrateLuau = `const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const physics = require("@vectarine/physics")
+const camera = require("@vectarine/camera")
+
+const gameCamera = camera.new()
+gameCamera.zoom = 0.1
+const world = physics.newWorld2(vec.V2(0, -10), gameCamera)
+
+-- Create the ground
+const collider = physics.newRectangleCollider(vec.V2(10, 1))
+const _ground = world:createObject(vec.ZERO2, 10, collider, {}, "static")
+
+-- Create a crate
+const crateCollider = physics.newRectangleCollider(vec.V2(1, 1))
+const _crate = world:createObject(vec.V2(0, 10), 1, crateCollider, {}, "dynamic")
+
+function Update(deltaTime: number)
+	world:step(deltaTime)
+
+	-- Apply the transformation of the camera
+	graphics.withTransformation({ scale = vec.V2(gameCamera.zoom, gameCamera.zoom) }, function()
+		for _, obj in pairs(world:getObjects({})) do
+			-- Draw the physics shape of the object
+			local points = obj:getPoints()
+			graphics.drawPolygon(points, vec4.V4(1, 0, 0, 1))
+		end
+	end)
+end`;
+
+<Code lang="luau" code={groundAndCrateLuau} />
+
+When you reload this game, you will see a red rectangle falling from the top of the screen (the crate) onto a wide red rectangle in the middle of the screen (the ground).
+
+**createObject** creates new (rigid body) objects in the world. It takes a position, a mass, a collider, a list of "tags" and a type.
+- The position is pretty straightforward, it's where the object is located.
+- The mass is used for physics. Heavier objects are harder to move and to stop.
+- The collider is used to determine the shape of the object. In this case, we used a rectangle collider. You can use polygonal colliders for complex shapes or voxelColliders for your levels.
+- The tags are used to identify objects.
+- The type can be "static", "dynamic" or "kinematic".
+
+Static objects ever move. They are ideal for ground, walls and other objects that don't move.
+
+Dynamic objects are affected by physics and can move. They are ideal for the player, crates, enemies and other objects that move.
+
+Kinematic objects are not affected by other objects, but can move and have a velocity. They are ideal for moving platforms, sliding doors or elevators. You
+can think of them as objects with infinite mass. Instead of moving because of forces, you explicitly define how they move in your code.
+
+**world:getObjects** retrieves all objects matching the given tags. In this case, we want to get all objects, so we pass an empty list.
+
+**obj:getPoints** returns a drawable representation of the object as it is understood by the physics engine. It is great for prototypes and debugging as it allows you
+to know exactly what the physics engine sees. In your game, you might want to draw a bigger or smaller sprite depending on the game feel you want to achieve. 
+
+Using *obj:getPoints()* is like enabling the rendering of hitboxes in a game.
+
+## Turning the crate into a player
+
+Let's make this crate controllable by changing its speed when the player presses a key.
+
+export const playerLuau = `const io = require("@vectarine/io")
+-- ... initialization stays the same ...
+
+-- We still have a box
+const box = world:createObject(vec.V2(0, 10), 1, boxCollider, {}, "dynamic")
+
+function Update(deltaTime: number)
+	world:step(deltaTime)
+
+	const speed = 20
+	const jumpSpeed = 500
+
+	if io.isKeyDown("Left") then
+		box.speed += vec.V2(-speed, 0):scale(deltaTime)
+	end
+	if io.isKeyDown("Right") then
+		box.speed += vec.V2(speed, 0):scale(deltaTime)
+	end
+	if io.isKeyJustPressed("Up") then
+		box.speed += vec.V2(0, jumpSpeed):scale(deltaTime)
+	end
+	-- ... rendering stays the same ...
+end
+`;
+
+<Code lang="luau" code={playerLuau} />
+
+We change the speed and not the position for smooth movement. We multiply base speed by deltaTime
+to make the acceleration independent of the framerate. This is important to make sure that the game feels the same on all devices.
+
+## Better movement
+
+Currently, this movement has multiple issues:
+- the movement feels floaty
+- there is nothing preventing us from jumping in the air.
+- the player can rotate
+
+Let's fix these issues one by one.
+
+export const betterPlayerLuau = `-- ... initialization stays the same ...
+
+const box = world:createObject(vec.V2(0, 10), 1, boxCollider, {}, "dynamic")
+
+box:setLockRotation(true)
+-- Set friction to 0 so that running on the ground is as fast as in the air.
+box:setFriction(0.0)
+box:setRestitution(0.0)
+
+function Update(deltaTime: number)
+	world:step(deltaTime)
+
+	const speed = 20
+	const maxSpeed = 100
+	const speedDecay = 0.95
+	const jumpSpeed = 500
+
+	-- We can use a single line to compute the speed change based on the keys pressed.
+	const xMovement = (if io.isKeyDown("Left") then -speed else 0) + (if io.isKeyDown("Right") then speed else 0)
+	box.speed += vec.V2(xMovement,0):scale(deltaTime)
+	box.speed = box.speed:min(vec.V2(maxSpeed, maxSpeed)):max(vec.V2(-maxSpeed, -maxSpeed))
+
+	if not io.isKeyDown("Left") and not io.isKeyDown("Right") then
+		-- Make the player faster to stop when no key is pressed.
+		box.speed = box.speed * vec.V2(speedDecay, 1)
+	end
+	
+	-- ... Rest stays the game ...
+end
+`;
+
+<Code lang="luau" code={betterPlayerLuau} />
+
+Changes:
+- We locks the rotation of the player to prevent it from flipping over.
+- We removes friction and restitution for more control on the movement
+- For snappy controls, we apply a decay to the speed when no key is pressed.
+- We limit the maximum speed to make acceleration and deceleration feel more natural.
+
+All these parameters can be tweaked to make the movement feel right for your game. This tutorial
+provides a reasonable starting point, but keep experimenting to improve the feel of your game. Movement
+is very important in a platformer!
+
+Now, to fix the jumping issue, we detect if there is ground below the player before allowing it to jump:
+
+export const groundDetectionLuau = `const camera = require("@vectarine/camera")
+const graphics = require("@vectarine/graphics")
+local io = require("@vectarine/io")
+const physics = require("@vectarine/physics")
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
+
+const gameCamera = camera.new()
+gameCamera.zoom = 0.1
+const world = physics.newWorld2(vec.V2(0, -10), gameCamera)
+
+const collider = physics.newRectangleCollider(vec.V2(10, 1))
+-- We add a "ground" tag to the ground object to identify it later.
+const _ground = world:createObject(vec.ZERO2, 10, collider, { "ground" }, "static")
+
+const boxCollider = physics.newRectangleCollider(vec.V2(1, 1))
+const box = world:createObject(vec.V2(0, 10), 1, boxCollider, {}, "dynamic")
+
+box:setLockRotation(true)
+-- Set friction to 0 so that running on the ground is as fast as in the air.
+box:setFriction(0.0)
+box:setRestitution(0.0)
+
+function Update(deltaTime: number)
+	world:step(deltaTime)
+
+	-- Same movement code as before
+	const speed = 20
+	const maxSpeed = 100
+	const speedDecay = 0.95
+	const jumpSpeed = 500
+
+	box.speed += vec.V2(
+		((if io.isKeyDown("Left") then -speed else 0) + (if io.isKeyDown("Right") then speed else 0)),
+		0
+	)
+		:scale(deltaTime)
+	box.speed = box.speed:min(vec.V2(maxSpeed, maxSpeed)):max(vec.V2(-maxSpeed, -maxSpeed))
+
+	if not io.isKeyDown("Left") and not io.isKeyDown("Right") then
+		-- Make the player faster to stop when no key is pressed.
+		box.speed = box.speed * vec.V2(speedDecay, 1)
+	end
+
+	------- START OF THE NEW CODE FOR GROUND DETECTION -------
+
+	-- Detect if the player is on the ground to allow jumping.
+	const groundDetectWidth = 2
+	const groundDetectYOffset = 1.1
+	local groundDetectHeight = 0.3
+	local onGroundZone = {
+		pos = box.position - vec.V2(groundDetectWidth / 2, groundDetectYOffset),
+		size = vec.V2(groundDetectWidth, groundDetectHeight),
+	}
+	local objectsBelowPlayer = world:getObjectsInArea(onGroundZone.pos, onGroundZone.size)
+
+	local isAboveSolidGround = false
+	for _, o in objectsBelowPlayer do
+		if table.find(o.tags, "ground") then
+			isAboveSolidGround = true
+			break
+		end
+	end
+	if isAboveSolidGround and io.isKeyJustPressed("Up") then
+		box.speed += vec.V2(0, jumpSpeed):scale(deltaTime)
+	end
+
+	graphics.withTransformation({ scale = vec.V2(gameCamera.zoom, gameCamera.zoom) }, function()
+		for _, obj in pairs(world:getObjects({})) do
+			local points = obj:getPoints()
+			graphics.drawPolygon(points, vec4.V4(1, 0, 0, 1))
+		end
+		-- For debugging, we draw the zone to see exactly where it is
+		-- This is useful for tweaking the ground detection parameters.
+		graphics.drawRect(onGroundZone.pos, onGroundZone.size, vec4.BLUE)
+	end)
+end`;
+
+<Code lang="luau" code={groundDetectionLuau} />
+
+We add a zone below the player that detects if there is a ground object inside. If so, we allow the player to jump.
+Tuning this zone to be of the right size is important to make the jump feel right.
+You might want to make this zone bigger for wall jumps or smaller depending on your sprite size and the feel you want to achieve.
+
+You can use the same technique to detect if the player is hitting or getting hit by other objects.
+
+## Loading the world dynamically
+
+We only have a ground and a single object, which is a bit boring. We can load a level from a `.tmx` file and use
+a `voxelCollider` to have a full level! Because such levels can be big, we break them into chunks that we create and destroy as needed based on the camera position.
+
+This is the basic idea, without the full code.
+
+export const loadingWorldDynamicallyLuau = `const loader = require("@vectarine/loader")
+const physics = require("@vectarine/physics")
+
+-- Load the level from a .tmx file. You can create such a file using Tiled Map Editor (https://www.mapeditor.org/).
+-- Alternatively, you can use tile.createGeneratedTilemap to procedurally generate a level.
+local level = loader.loadTilemap("textures/level.tmx")
+
+local CHUNK_RADIUS = 1 -- How many chunks around the player to keep active
+local CHUNK_EXPIRE_TIME = 10 -- Seconds before an out-of-range chunk is removed from the pool
+
+local CHUNK_SIZE = 16 -- Size of a chunk in tiles
+
+const module = loader.init() or {}
+
+-- Create a wrapper around the world which will be in charge of creating and destroying chunks based on the player position.
+export type IWorld = {
+	world: physics.World2,
+	-- Store the ground objects in a dictionary to be able to destroy them later.
+	groundChunks: { [string]: GroundChunk },
+} & typeof(setmetatable({}, { __index = module }))
+
+-- You need to call this function every frame to update the chunks in your world.
+function module.update(world: IWorld, playerPos: vec.Vec2, deltaTime: number)
+	-- Compute the chunk the player is in
+	local playerChunkX = math.floor(playerPos.x / CHUNK_SIZE)
+	local playerChunkY = math.floor(playerPos.y / CHUNK_SIZE)
+
+	-- Create chunks around the player
+	for cx = playerChunkX - CHUNK_RADIUS, playerChunkX + CHUNK_RADIUS do
+		for cy = playerChunkY - CHUNK_RADIUS, playerChunkY + CHUNK_RADIUS do
+			local key = chunkKey(cx, cy)
+			if world.groundChunks[key] then
+				world.groundChunks[key].lastNearTime = 0
+			else
+				-- You need to create a function that builds the chunk at the given chunk coordinates.
+				createGroundChunk(world, cx, cy)
+			end
+		end
+	end
+
+	-- Remove chunks that have been far away for too long
+	for key, chunk in world.groundChunks do
+		local chunkCenter = vec.V2((chunk.cx + 0.5) * CHUNK_SIZE, (chunk.cy + 0.5) * CHUNK_SIZE)
+		local distanceToPlayer = (chunkCenter - playerPos):length()
+		-- We use a timer to avoid destroying and recreating chunks all of the time when the player is moving in and out of the chunk radius.
+		if distanceToPlayer > CHUNK_RADIUS * CHUNK_SIZE * 2 then
+			chunk.lastNearTime = chunk.lastNearTime + deltaTime
+		end
+		if chunk.lastNearTime > CHUNK_EXPIRE_TIME then
+			world.world:removeObject(chunk.object :: physics.Object2)
+			world.groundChunks[key] = nil
+		end
+	end
+end
+
+-- A hash function to identify chunks based on their coordinates.
+local function chunkKey(cx: number, cy: number)
+	return cx .. "," .. cy
+end
+
+local function createGroundChunk(w: IWorld, cx: number, cy: number)
+	local key = chunkKey(cx, cy)
+	-- No need to create the chunk if it already exists
+	if w.groundChunks[key] then
+		return
+	end
+
+	local low = vec.V2(cx * CHUNK_SIZE, cy * CHUNK_SIZE)
+	local high = vec.V2((cx + 1) * CHUNK_SIZE, (cy + 1) * CHUNK_SIZE)
+
+	-- Create the collider for the chunk. Tiles with ID 1 and 3, located on Layer 2 are solid, other are air.
+	-- The size of 1 tile is 1x1.
+	local collider = physics.newVoxelCollider(vec.V2(1, 1), level, 2, low, high, { 1, 3 })
+	local obj = w.world:createObject(vec.V2(0, 0), 1.0, collider, { "ground" }, "static")
+	-- You could customize the object futher here.
+	w.groundChunks[key] = { object = obj, lastNearTime = 0, cx = cx, cy = cy }
+end
+
+function module.create(world: physics.World2)
+	return setmetatable({
+		world = world,
+		groundChunks = {},
+	}, { __index = module })
+end
+
+`;
+
+<Code lang="luau" title="infinite_world.luau" code={loadingWorldDynamicallyLuau} />
+
+How that we have setup our system to load chunks dynamically, we can use it in our game loop:
+
+export const gameLoopLuau = `const loader = require("@vectarine/loader")
+const physics = require("@vectarine/physics")
+const infiniteWorld = require("./infinite_world")
+const camera = require("@vectarine/camera")
+
+const gameCamera = camera.new()
+gameCamera.zoom = 0.1
+const world = physics.newWorld2(vec.V2(0, -10), gameCamera)
+
+const infiniteWorld = infiniteWorld.new(world)
+
+function Update(deltaTime: number)
+	world:step(deltaTime)
+
+	-- Update the world with the player position to load and unload chunks.
+	infiniteWorld.update(world, box.position, deltaTime)
+
+	graphics.withTransformation({ scale = vec.V2(gameCamera.zoom, gameCamera.zoom) }, function()
+		-- Draw your world
+		for _, chunk in w.groundChunks do
+			local groundPoints = chunk.object:getPoints()
+			if #groundPoints > 0 then
+				local basePoints = fastlist.fromTable(groundPoints)
+				local points = basePoints:unweave(4)
+				-- We are drawing the collider as red squares using a fastlist.
+				-- Of course, you can draw a sprite or a more complex shape instead.
+				table.insert(points, fastlist.fromValue(vec.V2(1, 0), #points[1]))
+				table.insert(points, fastlist.fromValue(vec.V2(0, 1), #points[1]))
+				local groundColliderDrawable = fastlist.fromTable({}):weave(points)
+				groundColliderDrawable:drawQuads()
+			end
+		end
+	end)
+end`
+
+<Code lang="luau" title="game.luau" code={gameLoopLuau} />
+
+This is a highly simplified example, we only draw a world as red squares with no player inside.
+
+You can check the [Platformer Example in the Vectarine Gallery](https://github.com/vanyle/vectarine/tree/main/gallery/Platformer/scripts) for the full version
+where you have a player with a sprite, interacting with a world (also with sprites). You'll see the same logic for dynamically loading the world.
+
+## Ideas for going further
+
+Now that you know the basics, would you be able to:
+
+
+<details>
+<summary>Make a double jump?</summary>
+You can store a `jumpsLeft` variable that is reset when the player is on the ground. When the player jumps, you decrease this variable and only allow jumping if it is greater than 0.
+</details>
+
+
+<details>
+<summary>Make a wall jump?</summary>
+You can use a wallDetect zone to check if the player is touching a wall. In that case, you can apply for force in the opposite direction to launch
+the player away.
+</details>
+
+<details>
+<summary>Add slopes 👻?</summary>
+You can use a polygon collider for the ground.
+</details>
+
+<details>
+<summary>Add moving platforms?</summary>
+You can use a kinematic object for the ground.
+You can animate the position of the kinematic object using a formula like `math.sin(time*speed) * amplitude`
+</details>

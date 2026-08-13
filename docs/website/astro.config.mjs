@@ -104,6 +104,10 @@ export default defineConfig({
                             link: "/guides/understanding-hotreloading/",
                         },
                         {
+                            label: "Making a platformer",
+                            link: "/guides/making-a-platformer/",
+                        },
+                        {
                             label: "Optimizing your game",
                             link: "/guides/use-fastlists/",
                         },
@@ -120,7 +124,7 @@ export default defineConfig({
                             link: "/guides/create-a-plugin/",
                         },
                         {
-                            label: "The Design Principles of Vectarine",
+                            label: "Design Principles",
                             link: "/guides/design-principles/",
                         },
                         {
