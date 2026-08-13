@@ -3,6 +3,7 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import expressiveCode from "astro-expressive-code";
 import { defineConfig } from "astro/config";
+import starlightBlog from 'starlight-blog';
 import starlightKbd from "starlight-kbd";
 
 // https://astro.build/config
@@ -30,11 +31,13 @@ export default defineConfig({
                 SocialIcons: "./src/components/SocialIcons.astro",
                 SiteTitle: "./src/components/SiteTitle.astro",
                 Hero: "./src/components/Hero.astro",
+                PageFrame: "./src/components/PageFrame.astro",
             },
             editLink: {
                 baseUrl: 'https://github.com/vanyle/vectarine/edit/main/docs/website',
             },
             plugins: [
+                starlightBlog(),
                 starlightKbd({
                     types: [
                         { id: "mac", label: "macOS", default: true },
@@ -119,6 +122,10 @@ export default defineConfig({
                         {
                             label: "The Design Principles of Vectarine",
                             link: "/guides/design-principles/",
+                        },
+                        {
+                            label: "FAQ",
+                            link: "/guides/faq/",
                         }
                     ],
                 },

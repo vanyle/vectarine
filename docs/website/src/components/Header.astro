@@ -4,6 +4,7 @@ import config from "virtual:starlight/user-config";
 import LanguageSelect from "@astrojs/starlight/components/LanguageSelect.astro";
 import Search from "@astrojs/starlight/components/Search.astro";
 import ThemeSelect from "@astrojs/starlight/components/ThemeSelect.astro";
+import { KbdPicker } from "starlight-kbd/components";
 import SiteTitle from "./SiteTitle.astro";
 import SocialIcons from "./SocialIcons.astro";
 
@@ -22,8 +23,7 @@ const isDocsPath = !isHomePath && !isNewsPath;
     </div>
     <nav class="sl-hidden md:sl-flex print:hidden nav-links" aria-label="Primary">
         <a href="/guides/overview">Overview</a>
-        <a href="/gallery/">Gallery</a>
-        <a href="/faq/">FAQ</a>
+        <a href="/blog/">Blog</a>
     </nav>
     <div class="sl-flex print:hidden">
         {shouldRenderSearch && <Search />}
@@ -34,6 +34,7 @@ const isDocsPath = !isHomePath && !isNewsPath;
         </div>
         <ThemeSelect />
         <LanguageSelect />
+        <KbdPicker />
     </div>
 </div>
 

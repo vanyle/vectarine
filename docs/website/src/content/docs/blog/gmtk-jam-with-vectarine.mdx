@@ -1,0 +1,69 @@
+---
+title: Doing the GMTK Game Jam with the Vectarine engine
+description: How Vectarine performs in a game jam context.
+cover:
+    alt: GMTK Game Jam Logo
+    image: ../../../assets/blog/gmtk-jam-with-vectarine.png
+date: 2026-08-13
+---
+
+Since a few years, I've been participating in the [GMTK Game Jam](https://gmtk.itch.io/), one of the largest game jams in the world.
+
+{/* excerpt */}
+
+import { Aside, Code, TabItem, Tabs } from '@astrojs/starlight/components';
+
+To be honest, this jam was one of the reasons I built Vectarine. I felt like existing engines were not optimized for
+making games in time constraints situations and don't allow you to easily turn your jam prototype into a full game.
+
+I'm quite happy with how Vectarine performed during the jam, we built [5 hours to Y2K](https://vanyle0.itch.io/5-hours-to-y2k), a
+game about organizing the largest party possible in 5 hours.
+
+As always, hot-reloading, exports to HTML and the general API were a joy to work with. As vectarine games are next based,
+we could collaborate using Git and GitHub with no issue to build features together.
+
+However, there were a few improvement areas that we found during the jam and that were addressed in the new [0.6.0 release of Vectarine](https://github.com/vanyle/vectarine/releases/tag/0.6.0).
+
+Most of them are related to the developer experience, something that is very important to the spirit of Vectarine, as outlined in the [Design Principles of Vectarine](/guides/design-principles).
+
+## loadScript
+
+Before 0.6.0, you needed to call `loadScript` and wait for the script to we ready, which was annoying and hindered the creation of libraries
+as you needed for the library to be loaded before you could use it. Now, you can use `require` to load scripts, just like any other
+Lua runtime and it just works.
+
+To do that, internally, Vectarine switched to an async execution model where we pause execution and resume it when the script is ready.
+
+## The `ui` module
+
+The `ui` module was very good, but the way it dealt with text was strange: The size of the text was based on the size of the widget, and
+the text would be as big as it could to fit.
+
+This is was not super convenient, so we switched to having a `fontSize` property to the text widgets. Also, we reworked the API to make it
+as convenient as possible. Now you can write this:
+
+export const textWidgetSnippet = `local ui = require("@vectarine/ui")
+
+local textWidget = ui.text("My text")
+
+local customizedTextWidget = ui.text("My text", {fontSize = 0.1, color = vec.V4(1, 0, 0, 1)})
+
+local dynamicColorAndTextWidget = ui.text(function() return "My text" end, {fontSize = 0.1, color = function() return vec.V4(1, 0, 0, 1) end})
+`;
+
+<Code lang="luau" code={textWidgetSnippet} />
+
+You can create the text widget with one simple line, or provide more options as needed, or even use functions
+to dynamically change the text and color. Previously, you were forced to define a function everytime which was a bit verbose.
+
+## And a lot more
+
+We also made `coord` more convenient to use, made the aspect ratio of the game in the editor more logical (the editor toolbar is no longer
+rendered over the game!), and a lot of other improvements!
+
+These resolved all (not most, ALL) of the issues we found during the jam, meaning that Vectarine is better than ever for making game during jams.
+
+So, for your next game jam, pick Vectarine and have fun making your game!
+
+Update to 0.6.0 and check out the [release notes](https://github.com/vanyle/vectarine/releases/tag/0.6.0) for more details.
+

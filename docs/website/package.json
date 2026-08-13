@@ -20,6 +20,7 @@
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
 		"sharp": "^0.34.2",
+		"starlight-blog": "^0.28.0",
 		"starlight-kbd": "^0.4.0"
 	},
 	"devDependencies": {

@@ -1,4 +1,5 @@
 @import "@fortawesome/fontawesome-free/css/all.min.css";
+@layer starlight;
 
 :root {
     /* Titles are meant to be big */
@@ -15,4 +16,10 @@
 
 .sl-markdown-content img{
     margin: auto;
+}
+
+.posts .preview-link > figure > img {
+    max-height: 300px;
+    object-fit: contain;
+    object-position: center;
 }

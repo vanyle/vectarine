@@ -46,7 +46,9 @@ You can unzip it anywhere you like and run `VectarineEditor` executable to get s
 On MacOS, executables from the internet are quarantined by default. If you install Vectarine manually, you might see this message
 when attempting to run `VectarineEditor.app`: "This app is damaged".
 
-You need to run this command to allow the execution: <pre>xattr -d com.apple.quarantine ./VectarineEditor.app</pre>
+export const macQuarantine = `xattr -d com.apple.quarantine ./VectarineEditor.app`;
+
+You need to run this command to allow the execution: <Code lang="bash" code={macQuarantine} title="Terminal - zsh" />
 </Aside>
 
 You can press *Create a new project* to select the location where you want to create your project.
