@@ -116,7 +116,7 @@
 - [x] Splash screen depending on the loading_animation field in the manifest
 - [x] Investigate special characters in text rendering (like å, ç, ...)
 - [x] In loader add a way to load a text resource
-- [x] Add API to return if we are minimized. Explain that delta_time can be very big when minimized and to not run the physics simulation in that case.
+- [x] Add API to return if we are minimized. Explain that deltaTime can be very big when minimized and to not run the physics simulation in that case.
 - [x] Better errors:
   - [x] Fix bug where only 1 error is printed where there are 2 different errors
   - [x] Show the line that produced the error instead of just the line number. Make the text clickable to open the file

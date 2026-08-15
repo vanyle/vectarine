@@ -669,7 +669,7 @@ You can manually modify the position, velocity, rotation, etc... of objects in t
 
 **Be careful**, when Vectarine is minimized, to save CPU performance (and battery life!), it enters sleep mode where it runs at a maximum of 10 FPS.
 
-This means that `delta_time` can get very big and **break your simulation**! Indeed, when the higher `delta_time` is, the less often `Update` is called and the less
+This means that `deltaTime` can get very big and **break your simulation**! Indeed, the higher `deltaTime` is, the less often `Update` is called and the less
 accurate the physics simulation is! You need to deal with this case in your code.
 
 You can several options.

@@ -677,7 +677,7 @@ You can manually modify the position, velocity, rotation, etc... of objects in t
 
 **Be careful**, when Vectarine is minimized, to save CPU performance (and battery life!), it enters sleep mode where it runs at a maximum of 10 FPS.
 
-This means that `delta_time` can get very big and **break your simulation**! Indeed, when the higher `delta_time` is, the less often `Update` is called and the less
+This means that `deltaTime` can get very big and **break your simulation**! Indeed, the higher `deltaTime` is, the less often `Update` is called and the less
 accurate the physics simulation is! You need to deal with this case in your code.
 
 You can several options.
@@ -797,13 +797,13 @@ end)`;
 While fastlist are fast, they are less readable, so first write your code in a readable way and turn it to a fastlist later.
 A fastlist has the same functions as a `Vec` (`+`, `-`, `scale`, `max`, `dot`, etc...), so you can just change your types in the function signature and it will work.
 
-Moreover, fastlists have special functions to handle conditions, like `filterBetweenX`. Check `luau-api` to see all the available functions and "the optimizing your game" guide. 
+Moreover, fastlists have special functions to handle conditions, like `filterBetweenX`. Check `luau-api` to see all the available functions and [the optimizing your game" guide](/guides/use-fastlists).
 
 ### Using shaders
 
 Call at `graphics.drawRect` at most 20 000 times per frame for 60 fps on all platforms.
 I don't really know why you'd want to draw that many rectangles.
-If you want to draw something on every pixel, use a canvas with a shader instead of called `graphics.drawRect` on a per-pixel basis!
+If you want to draw something on every pixel, use a canvas with a shader instead of calling `graphics.drawRect` on a per-pixel basis!
 See the shader section above for more information on writing shaders.
 
 ### Reducing draw calls and using sprites
@@ -834,15 +834,11 @@ You can distribute the zip as is.
 
 ### Obfuscation
 
-Obfuscation is an optional optimization process that you can toggle when exporting. Obfuscated games run faster and have smaller bundle sizes. The content of a bundled game is not readable
-without the use of specialized reverse engineering tools.
+Obfuscation is an optional process that you can toggle when exporting. When a game is obfuscated,
+its source code is not directly readable without specialized reverse engineering tools.
 
-The obfuscation process is similar to a regular exports, but instead of putting all your assets into a `gamedata` folder, Vectarine puts them inside a `bundle.vecta` zip file with a compression algorithm.
-Moreover, your scripts are compiled to bytecode to make them smaller and run faster.
-
-> ❓ How does Export work and how are exported games structured?
-
-### Under the hood
+<details>
+<summary>How does Export work and how are exported games structured?</summary>
 
 Vectarine first looks at the files in your project folder. It puts all the ones that your game uses (like `game.vecta`, your scripts, your textures, etc...) into a 'gamedata' folder.
 
@@ -855,8 +851,14 @@ Vectarine takes the 'gamedata' folder and zips it with the `runtime` file corres
 Vectarine puts together `index.html`, `runtime.js`, `runtime.wasm` and the `gamedata` folder in a zip.
 You can serve these files with any static file server, for example by doing `python -m http.server` and going to [http://localhost:8000](http://localhost:8000).
 
-If you see: "Error loading runtime", it means that you opened `index.html` directly from the filesystem instead of starting a server.
-It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`.
+**And obfuscation?**
+
+The obfuscation process is similar to a regular exports, but instead of putting all your assets into a `gamedata` folder, Vectarine puts them inside a `bundle.vecta` zip file with a compression algorithm.
+Moreover, your scripts are compiled to bytecode to make them smaller and harder to reverse engineer.
+</details>
+
+On the web, if you see: "Error loading runtime", it means that you opened `index.html` directly from the filesystem instead of starting a server.
+It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`. If you use the export button, this should not happen.
 
 You put these files in a zip and upload it to [itch.io](https://itch.io) if you want.
 

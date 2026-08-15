@@ -35,7 +35,7 @@ end
 
 --- Step the physics simulation forward in time
 --- If you don't call this, nothing will move!
-function World2Impl:step(delta_time: number)
+function World2Impl:step(deltaTime: number)
 	error("Implemented in native code")
 end
 

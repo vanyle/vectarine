@@ -4,16 +4,60 @@ description: Making a simple pong game in vectarine
 ---
 
 import { Aside, Code, TabItem, Tabs } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
 import { Kbd } from 'starlight-kbd/components';
+import pongGame from '../../../assets/pong_game.png';
 
 In this step-by-step guide, we'll see how you can create your first game using Vectarine.
 This will be a *PONG* game, where you control a paddle to bounce a ball and try to score against an AI opponent.
 
+<Image src={pongGame} loading="eager" alt="Pong Game made with Vectarine" style="max-width: min(600px, 100%);" />
+
 This guide is made for *beginners* and doesn't go into the details of Vectarine. If you are **already familiar with programming** and game development, you can take [a guided tour of Vectarine](overview) to see how to use the different features of the engine.
 
-## Installation
+## Installing Visual Studio Code
+
+Vectarine uses [Luau](https://luau.org/) for scripting. Luau is a programming language that is great for beginners as it is easy to learn.
+
+You can use any text or code editor to edit `.luau` files, but for the best experience, I recommend using [Visual Studio Code](https://code.visualstudio.com/).
+
+Feel free to [skip this step](#installing-vectarine) if you already have a code editor installed that you like and that is able to edit Luau.
+
+Visual Studio Code can be extended with extensions using the Crate icon on the left side of the window.
+
+I recommend installing the following extensions to make editing Luau easier, and having access to autocompletion:
+
+- [Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp): Provides autocompletion, type checking and error highlighting for Luau code. This is a must have
+as it shows you available functions and their documentation as you type.
+- [StyLua](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.stylua): A code formatter for Luau. It automatically formats your code when you save the file, making it more readable and consistent. This
+is less important than Luau Language Server, but it can be nice to have.
+
+When both extensions are installed, your code should be colored, errors should be highlighted, and you will see function suggestions when you type a dot after a module name:
+
+import vscodeLuau from '../../../assets/vsluau.png';
+
+<Image alt="VSCode with Luau extensions" src={vscodeLuau} loading="lazy" style="max-width: min(600px, 100%); border: 2px solid black; border-radius: 8px;" />
+
+## Installing Vectarine
 
 To install Vectarine, you can run the following command in a terminal depending on your platform
+
+<details>
+<summary>How do I run a command in a terminal?</summary>
+You need to open a Terminal application.
+- On Windows, you can search for "Powershell" in the start menu.
+- On Linux, you can search for "Terminal" in your applications.
+- On Mac, you can search for "Terminal.app" in your Apps or in Spotlight.
+
+A terminal looks like a black window with white text. You can type text in it and press <Kbd windows="Enter" mac="Enter"/> to run the command.
+
+When a command is running, it can display (a lot of) text in the terminal to tell you what it is doing. It is a good idea to read the text to see if there are any errors or warnings.
+
+Sometimes, a command asks you for input or confirmation. You can type your answer and press <Kbd windows="Enter" mac="Enter"/> to continue.
+
+You can copy and paste the command from this page into the terminal. On Linux, you might need to use <Kbd windows="Ctrl+Shift+V" mac="Ctrl+Shift+V"/> to paste instead of <Kbd windows="Ctrl+V" mac="Cmd+V"/>.
+
+</details>
 
 <Tabs>
 <TabItem label="Windows">
@@ -22,49 +66,85 @@ You need to use `powershell`, not `cmd.exe`
 
 export const installWindows = `irm https://vectarineengine.com/install_win.ps1 | iex`
 
-<Code lang="powershell" code={installWindows} title="Terminal - Powershell" />
+<Code lang="powershell" showLineNumbers={false} code={installWindows} title="Terminal - Powershell" />
 
 </TabItem>
 <TabItem label="Linux">
 
 export const installLinux = `curl -fsSL https://vectarineengine.com/install_linux.sh | sh`;
 
-<Code lang="bash" code={installLinux} title="Terminal - bash" />
+<Code lang="bash" showLineNumbers={false} code={installLinux} title="Terminal - bash" />
 </TabItem>
 <TabItem label="Mac">
 
 export const installMac = `curl -fsSL https://vectarineengine.com/install_mac.sh | sh`;
 
-<Code lang="bash" code={installMac} title="Terminal - zsh" />
+<Code lang="bash" showLineNumbers={false} code={installMac} title="Terminal - zsh" />
 </TabItem>
 </Tabs>
 
 Alternatively, if you prefer, you can download [Vectarine from Github](https://github.com/vanyle/vectarine/releases). In that case, you need to download the zip file for your platform.
 You can unzip it anywhere you like and run `VectarineEditor` executable to get started.
 
+<details>
+<summary>On MacOS, I get the message: "VectarineEditor.app" is damaged and can’t be opened, what should I do?</summary>
 <Aside type='caution'>
-On MacOS, executables from the internet are quarantined by default. If you install Vectarine manually, you might see this message
-when attempting to run `VectarineEditor.app`: "This app is damaged".
 
-export const macQuarantine = `xattr -d com.apple.quarantine ./VectarineEditor.app`;
+If you see this message, press "Cancel" to avoid deleting the app.
 
-You need to run this command to allow the execution: <Code lang="bash" code={macQuarantine} title="Terminal - zsh" />
+On MacOS, executables downloaded from the internet are quarantined by default.
+To allow the execution of Vectarine, you need to run the following commands (there is one command per line) in a terminal:
+
+export const macQuarantine = `cd ~/Downloads/vectarine.macos.arm64
+xattr -d com.apple.quarantine ./VectarineEditor.app
+./VectarineEditor.app
+`;
+
+<Code showLineNumbers={false} lang="bash" code={macQuarantine} title="Terminal - zsh" />
+
 </Aside>
+</details>
 
-You can press *Create a new project* to select the location where you want to create your project.
+Congratulations! You have installed Vectarine! You can run it from the desktop shortcut on Windows, or from the Applications folder on MacOS. On Linux, you can run it from the terminal by typing `./VectarineEditor` in the terminal.
 
-Once you created your project, you will see a black screen with the vectarine logo and the text "Empty Game".
+## Creating a new project
+
+Now that we have installed everything, let's make a game.
+
+import startScreen from '../../../assets/startscreen.png';
+
+<Image src={startScreen} alt="Start screen of vectarine with a create project button and a gallery" style="max-width: min(600px, 100%);" />
+
+First, in the Vectarine editor, press *Create a new project* and select the location where you want to create your project.
+
+Once you created your project, you will see a black screen with the vectarine logo and some (fake) loading text.
+
+Then, you will see this screen:
+
+![The empty game project in vectarine](../../../assets/emptygame.png)
 
 This is normal, as no code has been written yet. You can open the resources tab from the tools menu or with <kbd>Ctrl</kbd>+<kbd>2</kbd> to see the files of your project.
 
-![The empty game project](../../../assets/emptygame.png)
+![The resource window in vectarine](../../../assets/emptygame_resources.png)
 
-Your game has only one resource, the main script, `scripts/game.luau`. `game.luau` is the first file loaded by any Vectarine game. Its job is to set up the game
+The window you opened is the "Resources" window. It shows you all the files in your project. You can use it to:
+
+- Check if a file is missing, corrupted, or fails to load and see why in the "Status" column.
+- Open your game folder in the file explorer
+- Open your resources (images, sounds, scripts, etc...) in external editors (your preferred text editor, image editor, ...) by clicking on the blue link.
+
+<details>
+<summary>How can I change my preferred text/image/sound editor program?</summary>
+You can click on "Preferences" in the menu bar to open the preferences window. There, you can set your preferred text editor from the list.
+
+For your preferred image or sound editor, you need to configure your OS to open the file type with your preferred program. This
+depends on your OS. On windows for example, you can right-click on a file, select "Open with" and then "Choose another app" to select your preferred program and set it as default.
+</details>
+
+By default, an empty project has only one resource, the main script, `scripts/game.luau`. `game.luau` is the first file loaded by any Vectarine game. Its job is to set up the game
 and load all of the other files needed.
 
 You can press on the blue link to open the script in your default `luau` editor. You can also open the game folder to open the `.luau` file manually.
-
-For convenience, in Vectarine, in the preferences menu, you can set your preferred text editor. This editor will be used by Vectarine to open `.luau` files.
 
 <Aside type='tip'>
 You can use the `Resources` tab to see all the files in your project.
@@ -84,61 +164,36 @@ const vec = require('@vectarine/vec')
 
 debug.print(\"Loaded.\")
 
+-- ... extra code to draw the message here ...
+
 function Update(deltaTime: number)
-    graphics.clear(vec4.WHITE)
-    if graphics.drawSplashScreenIfNeeded({
-        -- Put the resources that need to be loaded here.
-    }, \"Loading\") then
-        return
-    end
-    graphics.drawSplashScreen(\"Empty game\", 0.0)
-    debug.fprint(\"Rendered in \", deltaTime, \"sec\")
+	debug.fprint("Rendered in ", deltaTime, "sec")
+
+	if
+		graphics.drawSplashScreenIfNeeded({
+			-- Put the resources that need to be loaded here.
+		}, "Loading")
+	then
+		return
+	end
+
+	fakeLoadingTimer.value = fakeLoadingTimer.value + deltaTime
+	if fakeLoadingTimer.value < 4.0 then
+		graphics.drawSplashScreen("Pretending to load...", fakeLoadingTimer.value / 4.0)
+		return
+	end
+
+	gettingStartedUi:draw({})
 end`;
 
-<Code lang="luau" code={startedEmptyGame} showLineNumbers mark={["graphics.drawSplashScreen(\"Empty game\", 0.0)"]} />
+<Code lang="luau" code={startedEmptyGame} showLineNumbers mark={["gettingStartedUi:draw({})"]} />
 
-Before explaining what all the code does, try to replace "Empty game" at line 19 with "Hello Vectarine!" and save the file.
+
+Before explaining what all the code does, try to replace "gettingStartedUi:draw({})" at line 31 with `graphics.drawSplashScreen(\"Empty game\", 0.0)"` and save the file.
 You should see the change in the editor immediately without needing to restart the game.
 
-## Editing Luau code
 
-You can use any text or code editor to edit `.luau` files, but for the best experience, I recommend using [Visual Studio Code](https://code.visualstudio.com/) with
-the following extensions:
-
-[Luau Language Server](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp): Provides autocompletion, type checking and error highlighting for Luau code. This is a must have
-as it shows you available functions and their documentation as you type.
-
-[StyLua](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.stylua): A code formatter for Luau. It automatically formats your code when you save the file, making it more readable and consistent. This
-is less important than Luau Language Server, but it can be nice to have.
-
-If both extensions are installed, your code should be colored, errors should be highlighted, and you should see function suggestions when you type a dot after a module name:
-
-Additionally, you can use the following VSCode settings:
-
-export const vscodeSettings = `{
-	"[luau]": {
-		// Use stylua to format luau code on save
-		"editor.defaultFormatter": "JohnnyMorganz.stylua",
-		"editor.formatOnSave": true,
-	},
-	// Use standard Luau and not the Roblox Luau variant
-	"luau-lsp.platform.type": "standard",
-	// Disable Rojo sourcemap parsing (once again, we are not in the Roblox ecosystem)
-	"luau-lsp.sourcemap.enabled": false,
-	// Don't run rojo sourcemap
-	"luau-lsp.sourcemap.autogenerate": false
-}`;
-
-<Code lang="jsonc" code={vscodeSettings} title="settings.json" />
-
-![VSCode with Luau extensions](../../../assets/vsluau.png)
-
-Pressing <Kbd windows="Ctrl" mac="Command" /> while clicking on a Vectarine function should take you to its definition with documentation.
-Hovering over a function should also show you its documentation and parameters.
-
-## The basics
-
-Vectarine uses [Luau](https://luau.org/) for scripting. Luau is a programming language that is great for beginners as it is easy to learn.
+## The basics of Luau
 
 When your game is first loaded, the `game.luau` file is executed. Files ending with `.luau` contain Luau code that is executed to make your game work.
 
@@ -245,7 +300,10 @@ The `Vec4` module contains a few default colors like `Vec4.WHITE` and `Vec4.RED`
 
 You can import a module using `require`:
 
-export const startedDrawBasic = `-- Import the graphics and vec modules
+Try to replace the code inside your project with this one, and save the file. You should see a red circle and a blue rectangle on a white background.
+
+export const startedDrawBasic = `-- Import the graphics, vec and vec4 modules
+-- modules that start with @vectarine/ are built-in modules provided by Vectarine
 const graphics = require("@vectarine/graphics")
 const vec = require("@vectarine/vec")
 const vec4 = require('@vectarine/vec4')
@@ -284,7 +342,7 @@ export const gettingStartedScoreDef = `local score = mysteryFunction()`;
 
 <Code lang="luau" code={gettingStartedScoreDef} />
 
-To understand your program, it is useful to know the content of your variable. To do so, you can use the `Debug` module to print the content of your variable to the console:
+To understand your program, it is useful to know the content of your variable. To do so, you can use the `debug` module to print the content of your variable to the console:
 
 export const startedDebugPrint = `const debug = require("@vectarine/debug")
 
@@ -293,10 +351,10 @@ debug.print("The score is: ", score)`;
 
 <Code lang="luau" code={startedDebugPrint} />
 
-Debug will display the content of the variable in the console, which you can open from the tools menu or with <kbd>Ctrl</kbd>+<kbd>1</kbd>.
+debug will display the content of the variable in the console, which you can open from the tools menu or with <kbd>Ctrl</kbd>+<kbd>1</kbd>.
 
 If you display something inside the `Update` function, it will be displayed every frame, which can be a lot of values and flood the console.
-To avoid this, you can use `Debug.fprint` (like frame print), which prints the value, but overwrite the previous value displayed by `Debug.fprint` which
+To avoid this, you can use `debug.fprint` (like frame print), which prints the value, but overwrite the previous value displayed by `debug.fprint` which
 allows you to see values that change every frame.
 
 ## Global values and the watcher
