@@ -3,13 +3,13 @@ title: Vectarine
 head:
   - tag: title
     content: Vectarine - Luau Game Engine
-description: The cross-platform game engine focusing on ultra fast prototyping and having fun.
+description: The cross-platform Luau game engine focusing on ultra fast prototyping and having fun.
 tableOfContents: false
 template: splash
 banner:
   content: 'You want to learn how to make video games? <a href="guides/getting-started">Read our getting started guide</a>'
 hero:
-    tagline: The cross-platform game engine focusing on ultra fast prototyping and having fun.
+    tagline: The cross-platform Luau game engine focusing on ultra fast prototyping and having fun.
     image:
         file: ../../assets/vectarine.svg
     actions:
@@ -23,7 +23,7 @@ hero:
 ---
 
 
-import { LinkCard } from "@astrojs/starlight/components";
+import { Code, LinkCard } from "@astrojs/starlight/components";
 import Box from "../../components/Box.astro";
 import CommunityButton from "../../components/CommunityButton.astro";
 import FeatureBox from "../../components/FeatureBox.astro";
@@ -35,47 +35,46 @@ import GalleryImage from "../../components/GalleryImage.astro";
 
 <FeatureGrid>
 <FeatureBox title="User Friendly" icon="fa-solid fa-heart">
-    Make games and prototypes quickly.
-    Vectarine is snappy, launches instantly, exports instantly and doesn't get in the way of your ideas.
+    Make games and prototypes quickly with a friendly API.
+    Vectarine is snappy, launches instantly and doesn't get in the way of your ideas.
 </FeatureBox>
 
-<FeatureBox title="Hot Reloading" icon="fa-solid fa-bolt">
+<FeatureBox title="True Hot Reloading" icon="fa-solid fa-bolt">
     Edit the code and assets while the game is running and see your changes as soon as you save.
+    Persist the game state across code changes.
 </FeatureBox>
 
 <FeatureBox title="Luau Scripting" icon="fa-solid fa-code">
-    Write scripts in Luau, a language identical to Lua, but with optional types to get autocompletion and catch errors when refactoring.
+    Use Luau, a language similar to Lua, with optional types for autocompletion and to catch bugs when refactoring.
 </FeatureBox>
 
 <FeatureBox title="Cross-platform" icon="fa-solid fa-globe">
     Vectarine games work on Windows, Linux, macOS and the browser. The export is instant. It's the perfect choice for itch.io game jams!
 </FeatureBox>
 
-<FeatureBox title="Performant" icon="fa-solid fa-rocket">
-    Vectarine is written in Rust and features highly optimized APIs inspired by numpy that can render hundreds of thousands of entities at 60 fps.
-</FeatureBox>
-
 <FeatureBox title="Free and Open Source" icon="fa-solid fa-gavel">
-    Vectarine is MIT licensed, allowing you to contribute, and customize the engine to fit your needs while
-    still being able to use it for commercial projects without any restrictions.
+    Vectarine is MIT licensed, meaning it's free and you can use it for commercial projects without any restrictions.
 </FeatureBox>
 
 <FeatureBox title="Tons of built-in APIs" icon="fa-solid fa-cubes">
-    Vectarine has built-in support for physics, shaders, (potentially infinite) levels, everything you need to make a game
-    without hindering your creativity.
-</FeatureBox>
-
-<FeatureBox title="Extendable" icon="fa-solid fa-plug">
-    Vectarine can be extended with Rust plugins to add even more features.
-</FeatureBox>
-
-<FeatureBox title="Collaborative" icon="fa-solid fa-users">
-    Vectarine projects are made of text files that can be synced with Git, Dropbox, Syncthing or Google Drive allowing for easy collaboration.
+    Vectarine has built-in support for physics, UI, sound, shaders, (potentially infinite) levels, and more.
 </FeatureBox>
 
 </FeatureGrid>
 
 ## [Get started](/guides/overview)
+
+A minimal example of a Vectarine game:
+
+export const minimalExample = `const graphics = require("@vectarine/graphics")
+const coord = require("@vectarine/coord")
+const vec4 = require("@vectarine/vec4")
+
+function Update(deltaTime: number)
+	graphics.drawCircle(coord.CENTER, 0.5, vec4.RED)
+end`;
+
+<Code lang="luau" code={minimalExample} title="Draw a red circle at the center of the screen" showLineNumbers={false} />
 
 <div class="not-content" style="display:flex; justify-content: center; margin: 2rem 0;">
     <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/KwckT9mbj10?si=Z4LaV0F2sxYG5Lpd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

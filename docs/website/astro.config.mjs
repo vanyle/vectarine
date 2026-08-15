@@ -19,7 +19,7 @@ export default defineConfig({
         starlight({
             title: "Vectarine",
             titleDelimiter: " | ",
-            tagline: "The cross-platform game engine focusing on ultra fast prototyping and having fun.",
+            tagline: "The cross-platform Luau game engine focusing on ultra fast prototyping and having fun.",
             favicon: "vectarine.png",
             customCss: ["./src/styles/custom.css"],
             logo: {
