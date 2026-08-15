@@ -334,7 +334,7 @@ impl BatchDraw2d {
         self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, BatchShader::Texture);
     }
 
-    /// List draw_image_part, but draws lots of images with the same texture and shader. Ideal for efficiently drawing many tiles.
+    /// Like draw_image_part, but draws lots of images with the same texture and shader. Ideal for efficiently drawing many tiles.
     /// All draw calls already are batched by default, but this reduces allocation a bit by reducing append that can grow the array and cause reallocations.
     pub fn draw_images_part(
         &mut self,
@@ -368,6 +368,15 @@ impl BatchDraw2d {
                 vertices
             })
             .collect::<Box<[f32]>>();
+
+        let quad_count = quads.len().min(uv_pos_size.len());
+        let indices: Vec<u32> = (0..quad_count as u32)
+            .flat_map(|q| {
+                let base = q * 4;
+                INDICES_FOR_QUAD.iter().map(move |i| i + base)
+            })
+            .collect();
+
         let mut uniforms = Uniforms::new();
 
         uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
@@ -376,12 +385,7 @@ impl BatchDraw2d {
             UniformValue::Vec4([color[0], color[1], color[2], color[3]]),
         );
 
-        self.add_to_batch_by_trying_to_merge(
-            &vertices,
-            &INDICES_FOR_QUAD,
-            uniforms,
-            BatchShader::Texture,
-        );
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, BatchShader::Texture);
     }
 
     pub fn draw_canvas(
