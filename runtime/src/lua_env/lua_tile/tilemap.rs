@@ -113,9 +113,8 @@ impl GeneratedTilemap {
         let chunk: Vec<u32> = (1..=size)
             .map(|i| result.get::<u32>(i).unwrap_or(0))
             .collect();
-        self.cache
-            .borrow_mut()
-            .insert((layer, chunk_x, chunk_y), chunk);
+        let mut mut_ref_cache = self.cache.try_borrow_mut().ok()?;
+        mut_ref_cache.insert((layer, chunk_x, chunk_y), chunk);
         Some(())
     }
 
