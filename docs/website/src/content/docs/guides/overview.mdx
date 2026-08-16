@@ -265,7 +265,8 @@ const debug = require("@vectarine/debug")
 
 -- Notice that we subscribe to the event only once, not on every frame!
 local counter = 0
-event.getKeyDownEvent():on(function(key: string)
+local keydownEvent = event.getKeyDownEvent()
+keydownEvent:on("increaseCounter", function(key: string)
     -- This is called once per press.
 	debug.print("Key down: ", key)
     counter = counter + 1
@@ -284,6 +285,42 @@ You can also create your own events using `event.newEvent("name")` if you need t
 > This can be spawning a specific enemy, teleporting to a location or resetting the state to some value.
 > You can use the `event.getConsoleCommandEvent()` event to listen to what you are typing inside the console
 > and trigger specific helpful behavior.
+
+Events allow you to naturally structure your code and have multiple systems that communicate with one another.
+Let's imagine that your game has monsters with special behavior when they are hit. You can create a `hitEvent` and
+have monsters subscribe to it to perform their special behavior.
+
+export const eventFileHit = `const loader = require("@vectarine/loader")
+const event = require("@vectarine/event")
+const module = loader.init() or {}
+
+-- Put the event in the module so other scripts can access it
+module.hitEvent = event.newEvent("hitEvent")
+
+function module.update()
+    -- This is just an example, you'll probably want more efficient code in your game.
+    for entity in entities do
+        for entity2 in entities do
+            if entity:isHitting(entity2) then
+                hitEvent:dispatch({hitter = entity, target = entity2})
+            end
+        end
+    end
+end`;
+
+<Code lang="luau" title="scripts/hit_manager.luau" code={eventFileHit} />
+
+export const eventFileHydra = `const hitManager = require("./hit_manager")
+
+hitManager.hitEvent:on("spawnHydra", function(hitInfo)
+    -- When a hydra is hit, spawn another one at the same position
+    if hitInfo.hitter.type == "player" and hitInfo.target.type == "hydra" then
+        spawnHydra(hitInfo.target.position)
+    end
+end)`;
+
+<Code lang="luau" title="scripts/hydra.luau" code={eventFileHydra} />
+
 
 ## 🗺️ Global and Local variables
 

@@ -266,7 +266,8 @@ const debug = require("@vectarine/debug")
 
 -- Notice that we subscribe to the event only once, not on every frame!
 local counter = 0
-event.getKeyDownEvent():on(function(key: string)
+local keydownEvent = event.getKeyDownEvent()
+keydownEvent:on("increaseCounter", function(key: string)
     -- This is called once per press.
 	debug.print("Key down: ", key)
     counter = counter + 1

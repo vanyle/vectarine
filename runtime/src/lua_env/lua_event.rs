@@ -34,6 +34,7 @@ pub struct EventSubscriptions {
     next_id: usize,
     name: String,
     subscriptions: HashMap<SubscriptionId, vectarine_plugin_sdk::mlua::Function>,
+    subscription_names: HashMap<String, SubscriptionId>,
 }
 
 // Global event manager that all events can access to find who subscribed to them, and to perform unsubscribed properly.
@@ -116,10 +117,6 @@ pub fn create_event(
     {
         let entry = em.registered_events.get(&name).cloned();
         if let Some(event_type) = entry {
-            if let Some(subs) = em.event_map.get_mut(event_type.0) {
-                subs.subscriptions.clear();
-                subs.next_id = 0;
-            }
             return Ok(event_type);
         }
     }
@@ -130,6 +127,7 @@ pub fn create_event(
         next_id: 0,
         name,
         subscriptions: HashMap::new(),
+        subscription_names: HashMap::new(),
     });
     Ok(event_type)
 }
@@ -152,10 +150,7 @@ pub fn create_event_constant_in_event_module(
         constant_name,
         lua.create_function({
             let event_type = event_type.clone();
-            move |_lua, ()| {
-                event_type.clear_subscription()?;
-                Ok(event_type.clone())
-            }
+            move |_lua, ()| Ok(event_type.clone())
         })?,
     )?;
     Ok(event_type)
@@ -208,7 +203,7 @@ pub fn setup_event_api(
         });
         registry.add_method("on", {
             let event_manager = event_manager.clone();
-            move |_lua, event_type, callback: vectarine_plugin_sdk::mlua::Function| {
+            move |_lua, event_type, (subscription_name, callback): (String, vectarine_plugin_sdk::mlua::Function)| {
                 // We can access the outside using lua.globals()
                 let Ok(mut subscriptions) = event_manager.0.try_borrow_mut() else {
                     return Err(vectarine_plugin_sdk::mlua::Error::external(
@@ -219,10 +214,14 @@ pub fn setup_event_api(
                 let entry = subscriptions
                     .get_mut(event_type.0)
                     .expect("Event type should exist");
-                let id = SubscriptionId(entry.next_id, event_type.clone());
-                entry.next_id += 1;
+                
+                let id = entry.subscription_names.entry(subscription_name).or_insert_with(||{
+                    let id = SubscriptionId(entry.next_id, event_type.clone());
+                    entry.next_id += 1;
+                    id
+                });
                 entry.subscriptions.insert(id.clone(), callback);
-                Ok(id)
+                Ok(id.clone())
             }
         });
     })?;
@@ -230,7 +229,6 @@ pub fn setup_event_api(
     lua.register_userdata_type::<SubscriptionId>(|registry| {
         let event_manager = event_manager.clone();
         registry.add_method("unsubscribe", move |_lua, id, ()| {
-            // What if they already unsubscribed?
             let Ok(mut em) = event_manager.0.try_borrow_mut() else {
                 return Err(vectarine_plugin_sdk::mlua::Error::external(
                     "Failed to access the global event manager, this is a bug, please report it.",

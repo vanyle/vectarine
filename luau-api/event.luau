@@ -7,12 +7,11 @@ export type Event<T> = typeof(setmetatable({}, EventTypeImpl)) & { __data_type: 
 
 --- Create a new event type, for example `newEvent("hit")`
 --- The name should be unique and is used for debugging purposes.
---- If you try to create newEvent with the same name, you will get the same event type, but
---- all its subscriptions will be cleared.
+--- If you try to create newEvent with the same name, you will get the same underlying event object.
 --- You can pass any type when triggering the event and it will be forwarded to its subscribers. For example:
 --- ```
 --- local hitEvent: event.Event<number> = event.newEvent("hit")
---- hitEvent:on(function(damage: number)
+--- hitEvent:on("print", function(damage: number)
 ---     print("Hit with damage: " .. damage)
 --- end)
 --- hitEvent:dispatch(10) -- This will print "Hit with damage: 10"
@@ -41,10 +40,11 @@ SubIDImpl.__index = SubIDImpl
 export type SubID = typeof(setmetatable({}, SubIDImpl))
 
 --- Subscribe to an event type. When that event is triggered, the callback function will be called.
+--- If you resubscribe using the same subscription name, the previous subscription will be removed and replaced with the new one.
 --- @param event EventType<T> The type of event
 --- @param callback fun(data: T) A function that will be called when the event is sent. The callback function will receive the event data as arguments.
 --- @return SubID A subscription ID that can be used to unsubscribe
-function EventTypeImpl.on<T>(event: Event<T>, callback: (data: T) -> ()): SubID
+function EventTypeImpl.on<T>(event: Event<T>, subscriptionName: string, callback: (data: T) -> ()): SubID
 	error("Implemented in native code")
 end
 
@@ -55,6 +55,7 @@ function EventTypeImpl.clear<T>(event: Event<T>)
 end
 
 --- Stop receiving events for a given subscription ID
+--- Does nothing if you have already unsubscribed.
 --- @param id SubID The subscription ID returned by `event:on(...)`
 function SubIDImpl.unsubscribe(id: SubID)
 	error("Implemented in native code")
@@ -74,7 +75,7 @@ function module.getResourceLoadedEvent(): Event<number>
 	error("Implemented in native code")
 end
 
---- Clear all previous subscriptions to the text input event and return it.
+--- Returns the text input event
 --- This event is triggered when a key is pressed and the key is a printable character.
 --- The string is the character that was pressed, with modifiers like shift or option.
 --- You can use this function to implement text input.
@@ -82,22 +83,22 @@ function module.getTextInputEvent(): Event<string>
 	error("Implemented in native code")
 end
 
---- Clear all previous subscriptions to the key up event and return it.
+--- Returns the key up event
 function module.getKeyUpEvent(): Event<string>
 	error("Implemented in native code")
 end
 
---- Clear all previous subscriptions to the key press event and return it.
+--- Returns the key press event
 function module.getKeyDownEvent(): Event<string>
 	error("Implemented in native code")
 end
 
---- Clear all previous subscriptions to the key press event and return it.
+--- Returns the mouse down event
 function module.getMouseDownEvent(): Event<string>
 	error("Implemented in native code")
 end
 
---- Clear all previous subscriptions to the key press event and return it.
+--- Returns the mouse up event
 function module.getMouseUpEvent(): Event<string>
 	error("Implemented in native code")
 end
