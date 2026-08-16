@@ -123,7 +123,9 @@ Then, you will see this screen:
 
 ![The empty game project in vectarine](../../../assets/emptygame.png)
 
-This is normal, as no code has been written yet. You can open the resources tab from the tools menu or with <kbd>Ctrl</kbd>+<kbd>2</kbd> to see the files of your project.
+### The Resources window
+
+This is normal, as no code has been written yet. You can open the resources window from the tools menu or with <kbd>Ctrl</kbd>+<kbd>2</kbd> to see the files of your project.
 
 ![The resource window in vectarine](../../../assets/emptygame_resources.png)
 
@@ -150,6 +152,8 @@ You can press on the blue link to open the script in your default `luau` editor.
 You can use the `Resources` tab to see all the files in your project.
 If a file is missing, corrupted, or fails to load, the error will be shown inside this window.
 </Aside>
+
+### Editing the code
 
 An empty game script looks like this:
 
@@ -189,7 +193,7 @@ end`;
 <Code lang="luau" code={startedEmptyGame} showLineNumbers mark={["gettingStartedUi:draw({})"]} />
 
 
-Before explaining what all the code does, try to replace "gettingStartedUi:draw({})" at line 31 with `graphics.drawSplashScreen(\"Empty game\", 0.0)"` and save the file.
+Before explaining what all the code does, try to replace "gettingStartedUi:draw({})" at line 31 with `graphics.drawSplashScreen("Empty game", 0.0)` and save the file.
 You should see the change in the editor immediately without needing to restart the game.
 
 
@@ -203,7 +207,7 @@ Code is organized into functions. Functions are reusable pieces of code that do 
 
 export const gettingStartedFuncDef = `function functionName()
 
-	put content of the function here
+-- put content of the function here
 
 end`;
 
@@ -215,7 +219,7 @@ export const gettingStartedFuncCall = `functionName()`;
 
 <Code lang="luau" code={gettingStartedFuncCall} />
 
-This will run the content of functionName. While you can write and call you own functions, Vectarine and Luau have a lot of functions to do all kinds of things useful for making games like drawing to the screen, playing sound, etc.
+This will run the content of functionName. While you can write and call your own functions, Vectarine and Luau have a lot of functions to do all kinds of things useful for making games like drawing to the screen, playing sound, etc.
 A simple example is the `math.abs` function which removes the sign of a number so `math.abs(-3)` is 3 and `math.abs(1.2)` is 1.2.
 
 Inside code, you can add explanations that do nothing for the computer but are useful for you to understand and remember what the code does.
@@ -225,7 +229,8 @@ export const gettingStartedComment = `-- Hello, I'm explaining the code below.`;
 
 <Code lang="luau" code={gettingStartedComment} />
 
-As this is a tutorial, I will use a lot of comments to explain what is going on all of the time.
+As this is a tutorial, I will use a lot of comments to explain what is going on all of the time. To help
+you distinguish between comments and code, the comments are grayed out.
 
 The `Update` function is then called every frame. This is where you put the code that needs to be executed continuously, like drawing your game.
 
@@ -233,17 +238,21 @@ Code outside of the `Update` function is executed once at the start of the game 
 
 When you save, Vectarine will reexecute your `game.luau` file to provide hot-reload.
 
-export const gettingStartedUpdateDef = `function Update(deltaTime: number)
+export const gettingStartedUpdateDef = `
+-- We define a function named Update. Vectarine tries to call the function named Update every frame.
+function Update(deltaTime: number)
 	-- This code is executed every frame
 end`;
 
 <Code lang="luau" code={gettingStartedUpdateDef} />
 
+This is the minimal vectarine game. It does nothing, but you can add code inside `Update` to draw things.
+
 `deltaTime` is the time in seconds since the last frame. You can use it to make objects move at a consistent speed regardless of how fast the code is executed.
 
 ## Modules
 
-Modules are packages of related functions. To get access to a module, you need to import it using the `require` function, like so:
+Modules are packages of related functions. To get access to a module, you need to *import* it using the `require` function, like so:
 
 export const importingModules = `
 const myModule = require("moduleName")
@@ -255,17 +264,104 @@ myModule.functionWithArguments(1, 4, 5)
 
 <Code lang="luau" code={importingModules} />
 
-Vectarine has many modules to do many things. The first modules we'll see are the `Graphics`, `Vec` and `Vec4` modules.
+Vectarine has many modules to do many things. The first modules we'll see are the `debug`, `graphics`, `vec` and `vec4` modules.
 
-- `Graphics` provides function to draw on the screen.
-- `Vec` provides 2d vector types and function to do math with them.
-- `Vec4` provides a 4d vector type that is used to represent colors.
+- `debug` provides functions for debugging your game.
+- `graphics` provides function to draw on the screen.
+- `vec` provides functions to make and modify 2d vectors
+- `vec4` provides functions to make and modify 4d vectors, which are used to represent colors.
 
-As the screen is 2D, a lot of Graphics function take `Vec2` as parameters to represent screen locations.
+As the screen is 2D, a lot of *graphics* functions take 2d vectors called `Vec2` as arguments to represent screen locations.
+
+<Aside type='note'>
+Variables contain values which have a type.
+For example 3 is of type `number`, `"Hello"` is of type `string`, `vec.V2(1, 2)` is of type `Vec2` (2d vector) and `true` and `false` are of type `boolean`.
+
+When we write:
+
+<Code lang="luau" code={gettingStartedUpdateDef} />
+
+We say that the `Update` function takes one argument named `deltaTime` of type number.
+Specifying the type of function arguments is optional, but is very helpful to remember what functions want as inputs.
+
+Functions, like `math.abs` can also *return* values. You can think of functions that return values like factories that take some input product
+and output a new product. You can also specify the return type like so:
+
+export const addFunction = `
+-- We create a function named addPlusTwo that takes 2 numbers as arguments and returns (outputs) a number.
+function addPlusTwo(firstInputValue: number, secondInputValue: number): number
+	-- Inside the function, we write code that explains how the output is produced using the input arguments.
+	-- We write 'return' followed by the value we want to output.
+	-- 'return' stops the execution of the function: once the function produced its output, it finished.
+	return firstInputValue + secondInputValue + 2
+end`;
+
+<Code lang="luau" code={addFunction} />
+
+</Aside>
+
+To be able to use a vectarine function, you first need to *import* the module that contains it using `require("@vectarine/modulename")`,
+for example `const debug = require("@vectarine/debug")` to import the `debug` module.
+
+However, to use a built-in Luau module, you don't need to import anything. For example the `math` module is built-in and is thus always available. We
+say that the `math` module is part of the *Luau Standard Library*. Other modules of the standard library include `table`, `string` or `bit32`.
+`require` is another example of a function from the standard library, as it is always available without needing to import anything.
+
+You can find the list of all built-in modules in the [Luau Standard Library Reference](https://luau.org/library/).
+
+The vectarine modules are not part of the standard library, so you need to import them using `require` to use them.
+You can find the list of all vectarine modules and the functions they provide inside the `luau-api` folder of your project.
+
+Reading the list of available functions and their documentation is a good way to learn what you can do with vectarine.
+
+### Using the debug module
+
+This is a lot of theory, let's how it works in practice. You can copy and paste the following code in your `game.luau` file and save it to see what it does:
+
+export const usingDebugModule = `-- We require the debug module to get access to its functions
+const debug = require("@vectarine/debug")
+
+-- We call the print function from the debug module to display a message in the console.
+-- We give the message as an argument to the print function, which is a string.
+debug.print("Hello, vectarine!")
+
+-- We define the Update function that is called every frame.
+function Update(deltaTime: number)
+	-- We call the fprint function from the debug module to display a message in the console that is updated every frame.
+	debug.fprint("This message is updated every frame. The deltaTime is: ", deltaTime)
+	-- The print and fprint function can take as many arguments as you want and will display them. 
+end`;
+
+<Code lang="luau" code={usingDebugModule} />
+
+You can open the console from the tools menu or with <kbd>Ctrl</kbd>+<kbd>1</kbd> to see the output of the debug module.
+You should see a black screen (as nothing is drawn yet) and this in the console:
+
+import consoleOutput from '../../../assets/console_output.png';
+
+<Image src={consoleOutput} alt="Console output of the debug module" style="max-width: min(600px, 100%);" />
+
+### Using the graphics module
+
+How, let's see how to draw a circle on the screen using the `graphics` module. You can copy and paste the following code in your `game.luau` file and save it to see what it does:
+
+export const usingGraphicsModule = `-- We require the graphics, vec and vec4 modules to get access to their functions
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
+
+function Update(deltaTime: number)
+	-- We call the clear function from the graphics module to set the background color to white.
+	graphics.clear(vec4.WHITE)
+	-- We call the drawCircle function from the graphics module to draw a red circle at the center of the screen with a radius of 0.5 units.
+	graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.RED)
+end`;
+
+<Code lang="luau" code={usingGraphicsModule} />
 
 ### An aside on variables
 
-You can make a vector using the `Vec2.V2` function like so:
+You can make a vector using the `vec.V2` function like so:
 
 export const startedVecCreate = `-- Import the vec module to get access to the vec2 type
 const vec = require("@vectarine/vec")
@@ -275,7 +371,7 @@ local v = vec.V2(1, 2)`;
 
 <Code lang="luau" code={startedVecCreate} />
 
-There we use the `local` keyword to create a variable named `v` that contains the vector `(1, 2)`. Variables are like boxes that contain values.
+We are using the `local` keyword to create a variable named `v` that contains the vector `(1, 2)`. Variables are like boxes that contain values.
 The `local` keyword and the `const` keywords are similar, but `const` variables cannot be changed after they are created, while `local` variables can be changed.
 
 export const localKeyword=`
@@ -293,12 +389,10 @@ var = var + 1
 
 <Code lang="luau" code={localKeyword} />
 
-When requiring a module, we put it into a variable to use all of its functions later which is why we also use the `local` keyword there.
+When requiring a module, we put it into a variable to use all of its functions later which is why we also use the `const` keyword there.
 
-Colors are represented as `Vec4` because they are made of a mix of red, green, blue and alpha (opacity).
-The `Vec4` module contains a few default colors like `Vec4.WHITE` and `Vec4.RED` but you can also create your own colors with `Vec4.createColor(r, g, b, a)` where r, g, b and a are numbers between 0 and 1.
-
-You can import a module using `require`:
+Colors are represented as `vec4` because they are made of a mix of red, green, blue and alpha (opacity).
+The `vec4` module contains a few default colors like `vec4.WHITE` and `vec4.RED` but you can also create your own colors with `vec4.createColor(r, g, b, a)` where r, g, b and a are numbers between 0 and 1.
 
 Try to replace the code inside your project with this one, and save the file. You should see a red circle and a blue rectangle on a white background.
 
@@ -351,12 +445,6 @@ debug.print("The score is: ", score)`;
 
 <Code lang="luau" code={startedDebugPrint} />
 
-debug will display the content of the variable in the console, which you can open from the tools menu or with <kbd>Ctrl</kbd>+<kbd>1</kbd>.
-
-If you display something inside the `Update` function, it will be displayed every frame, which can be a lot of values and flood the console.
-To avoid this, you can use `debug.fprint` (like frame print), which prints the value, but overwrite the previous value displayed by `debug.fprint` which
-allows you to see values that change every frame.
-
 ## Global values and the watcher
 
 You can create variables without using the `local` keyword. These variables are called global and can be accessed from any file in your project.
@@ -364,9 +452,31 @@ You can see the content of a global variable in the watcher tool, which you can 
 
 You can search the variable to watch-for by name in the search bar and its value will be shown and updated in real-time.
 
+Alternatively, you can use the `persist` module to create global variables.
+
+export const usingPersist = `const persist = require("@vectarine/persist")
+const debug = require("@vectarine/debug")
+
+-- persist.onReload creates a global variable named "global_persisted".
+-- You can inspect it in the watcher tool by searching for "global_persisted".
+-- Global variables are persisted between hot-reloads and can be inspected in the watcher tool
+local persisted = persist.onReload({
+	value = 0,
+}, "global_persisted")
+
+-- Every time you edit the file and save, the time since the game was loaded will be displayed.
+-- You can hit Ctrl+R to perform a hard reload and reset this value to 0.
+debug.print(persisted.value)
+
+function Update(deltaTime: number)
+	persisted.value += deltaTime
+end`;
+
+<Code lang="luau" code={usingPersist} />
+
 ## Reading input from the player
 
-We'd like to react to player input to make our game interactive. The `Io` module provides functions to read input from the player.
+We'd like to react to player input to make our game interactive. The `io` module provides functions to read input from the player.
 
 export const startedIoInput = `const io = require("@vectarine/io")
 const graphics = require("@vectarine/graphics")
@@ -416,6 +526,17 @@ function Update(deltaTime: number)
 end`;
 
 <Code lang="luau" code={startedDrawBall} />
+
+<Aside type='note'>
+
+`Ball` is an *object*, a collection of values. You can create objects using `{}` and put the values they store inside.
+You can put as many values as you want inside an object, and you can access them using the `.` operator.
+
+An object is a way to group related values together to make your code more organized.
+We could have used 2 separate variables for the position and velocity, but it is more organized to group them together in a `Ball` object.
+
+</Aside>
+
 </TabItem>
 
 <TabItem label="Moving the ball">
@@ -465,6 +586,17 @@ function Update(deltaTime: number)
 end`;
 
 <Code lang="luau" code={startedMoveBall} />
+
+<Aside type='note'>
+
+`if` is a conditional statement. The code inside the `if` block is executed only if the condition is true.
+In general, you write `if [condition] then [code to execute] end`.
+
+The condition is usually a boolean, so `if false then [code] end` will never execute the code.
+
+We can use operators like `<` or `==` to compare values and produce a boolean. For example, `1 < 2` is true, while `1 == 2` is false.
+</Aside>
+
 </TabItem>
 
 <TabItem label="Persisting ball position">
