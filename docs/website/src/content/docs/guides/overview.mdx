@@ -369,7 +369,7 @@ local playerPos = persist.onReload(vec.V2(0, 0), "playerPos")
 
 <Code lang="luau" code={tourPersistApi} />
 
-Internally, `Persist.onReload` looks like this:
+Internally, `persist.onReload` looks like this:
 
 export const tourPersistInternal = `local function onReload(initialValue, name)
     if _G[name] == nil then

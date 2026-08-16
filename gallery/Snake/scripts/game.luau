@@ -29,12 +29,6 @@ const gameCanvas = canvas.createCanvas(1200, 800)
 gameCanvas:setShader(shaderResource)
 
 io.setResizeable(true)
--- Io.setWindowSize(800, 600)
--- Io.centerWindow()
-
---- Game state
-local screenSize = io.getWindowSize()
-local aspectRatio = screenSize.x / screenSize.y
 
 -- Make this persistent across script reloads
 local state = persist.onReload({
@@ -46,7 +40,7 @@ local score = 0
 local Direction = V2(0, -1)
 local shouldGrow = false
 
-local scalingFactor = 0.2
+const scalingFactor = 0.2
 local timer = 0 -- 1 second timer
 
 local function isclose(v1: vec.Vec2, v2: vec.Vec2, threshold: number)
@@ -54,11 +48,6 @@ local function isclose(v1: vec.Vec2, v2: vec.Vec2, threshold: number)
 end
 
 local applyShaderEffectForFrames = 0
-
-function Load()
-	screenSize = io.getWindowSize()
-	aspectRatio = screenSize.x / screenSize.y
-end
 
 local function resetSnake()
 	_G.Snake = {
@@ -101,27 +90,16 @@ if not _G.Cherry then
 	placeCherry()
 end
 
-local function gamePosToScreen(pos: vec.Vec2)
-	-- (0-10) -> (-1 - 1)
-	return vec.V2((pos.x - 3) * scalingFactor / aspectRatio, (pos.y - 3) * scalingFactor)
-end
-
 local function drawSnake(pos: vec.Vec2, tileId: number)
 	local tileSize = 1 / 16
-	local size = V2(scalingFactor / aspectRatio, scalingFactor)
-
-	local p1 = gamePosToScreen(pos)
-	local p2 = V2(p1.x + size.x, p1.y)
-	local p3 = V2(p1.x + size.x, p1.y + size.y)
-	local p4 = V2(p1.x, p1.y + size.y)
-
-	snakeImage:drawPart(p1, p2, p3, p4, V2(tileSize * tileId + 0.001, 0), V2(tileSize - 0.002, 1))
+	local p2 = V2(pos.x + 1, pos.y)
+	local p3 = V2(pos.x + 1, pos.y + 1)
+	local p4 = V2(pos.x, pos.y + 1)
+	snakeImage:drawPart(pos, p2, p3, p4, V2(tileSize * tileId + 0.001, 0), V2(tileSize - 0.002, 1))
 end
 
 local function drawEnvironment()
-	local p1 = gamePosToScreen(V2(-1, -1))
-	local size = vec.V2(scalingFactor / aspectRatio, scalingFactor):scale(8)
-	environmentImage:draw(p1, size)
+	environmentImage:draw(V2(-1, -1), V2(8, 8))
 end
 
 local function mod4(x: number)
@@ -129,7 +107,7 @@ local function mod4(x: number)
 end
 
 local keyEvent = event.getKeyDownEvent()
-keyEvent:on(function(key: string)
+keyEvent:on("resetGame", function(key: string)
 	debug.print("Key pressed: ", key)
 	if key == "Space" then
 		if state.gameover and state.paused then
@@ -153,85 +131,101 @@ function Update(timeDelta: number)
 		gameCanvas:setShader(nil)
 	end
 
+	local Snake: { vec.Vec2 } = _G.Snake
+	local head = Snake[1]
+	local cherry: vec.Vec2 = _G.Cherry
+
+	local windowSize = io.getWindowSize()
+	local aspectRatio = windowSize.x / windowSize.y
+
 	gameCanvas:paint(function()
-		graphics.clear(_G.BG_COLOR)
+		graphics.withTransformation(
+			{ translation = V2(-3, -3), scale = V2(scalingFactor / aspectRatio, scalingFactor) },
+			function()
+				graphics.clear(_G.BG_COLOR)
 
-		drawEnvironment()
+				drawEnvironment()
 
-		-- Draw Snake
-		local Snake = _G.Snake
-		for i, segment in ipairs(Snake) do
-			if i == 1 then
-				local diff = segment - Snake[2]
-				local segmentType = HEAD_SNAKE_SEGMENT[1]
-				if diff.x == 1 then
-					segmentType = HEAD_SNAKE_SEGMENT[4]
-				elseif diff.x == -1 then
-					segmentType = HEAD_SNAKE_SEGMENT[2]
-				elseif diff.y == 1 then
-					segmentType = HEAD_SNAKE_SEGMENT[1]
-				elseif diff.y == -1 then
-					segmentType = HEAD_SNAKE_SEGMENT[3]
+				-- Draw Snake
+				for i, segment in ipairs(Snake) do
+					if i == 1 then
+						local diff = segment - Snake[2]
+						local segmentType = HEAD_SNAKE_SEGMENT[1]
+						if diff.x == 1 then
+							segmentType = HEAD_SNAKE_SEGMENT[4]
+						elseif diff.x == -1 then
+							segmentType = HEAD_SNAKE_SEGMENT[2]
+						elseif diff.y == 1 then
+							segmentType = HEAD_SNAKE_SEGMENT[1]
+						elseif diff.y == -1 then
+							segmentType = HEAD_SNAKE_SEGMENT[3]
+						end
+						drawSnake(vec.V2(segment.x, segment.y), segmentType)
+						continue
+					end
+
+					if i == #Snake then
+						local diff = segment - Snake[i - 1]
+						local segmentType = TAIL_SNAKE_SEGMENT[1]
+						if diff.x == 1 then
+							segmentType = TAIL_SNAKE_SEGMENT[2]
+						elseif diff.x == -1 then
+							segmentType = TAIL_SNAKE_SEGMENT[3]
+						elseif diff.y == 1 then
+							segmentType = TAIL_SNAKE_SEGMENT[4]
+						elseif diff.y == -1 then
+							segmentType = TAIL_SNAKE_SEGMENT[1]
+						end
+						drawSnake(vec.V2(segment.x, segment.y), segmentType)
+						continue
+					end
+
+					local prev = Snake[i - 1]
+					local next = Snake[i + 1]
+					local diff = next - prev
+					local is_straight = false
+					if diff.x == 0 or diff.y == 0 then
+						is_straight = true
+					end
+
+					local segmentType = 0
+					if is_straight then
+						if diff.x == 0 then
+							segmentType = STRAIGHT_SNAKE_SEGMENT[1]
+						else
+							segmentType = STRAIGHT_SNAKE_SEGMENT[2]
+						end
+					else
+						if
+							(prev.x < segment.x and next.y < segment.y) or (next.x < segment.x and prev.y < segment.y)
+						then
+							segmentType = CORNER_SNAKE_SEGMENT[2]
+						elseif
+							(prev.x < segment.x and next.y > segment.y) or (next.x < segment.x and prev.y > segment.y)
+						then
+							segmentType = CORNER_SNAKE_SEGMENT[1]
+						elseif
+							(prev.x > segment.x and next.y > segment.y) or (next.x > segment.x and prev.y > segment.y)
+						then
+							segmentType = CORNER_SNAKE_SEGMENT[3]
+						elseif
+							(prev.x > segment.x and next.y < segment.y) or (next.x > segment.x and prev.y < segment.y)
+						then
+							segmentType = CORNER_SNAKE_SEGMENT[4]
+						end
+					end
+
+					drawSnake(vec.V2(segment.x, segment.y), segmentType)
 				end
-				drawSnake(vec.V2(segment.x, segment.y), segmentType)
-				continue
+
+				-- Draw the next direction
+				local nextPos = head + Direction
+				drawSnake(nextPos, 15)
+
+				-- Draw Cherry
+				drawSnake(cherry, 0)
 			end
-
-			if i == #Snake then
-				local diff = segment - Snake[i - 1]
-				local segmentType = TAIL_SNAKE_SEGMENT[1]
-				if diff.x == 1 then
-					segmentType = TAIL_SNAKE_SEGMENT[2]
-				elseif diff.x == -1 then
-					segmentType = TAIL_SNAKE_SEGMENT[3]
-				elseif diff.y == 1 then
-					segmentType = TAIL_SNAKE_SEGMENT[4]
-				elseif diff.y == -1 then
-					segmentType = TAIL_SNAKE_SEGMENT[1]
-				end
-				drawSnake(vec.V2(segment.x, segment.y), segmentType)
-				continue
-			end
-
-			local prev = Snake[i - 1]
-			local next = Snake[i + 1]
-			local diff = next - prev
-			local is_straight = false
-			if diff.x == 0 or diff.y == 0 then
-				is_straight = true
-			end
-
-			local segmentType = 0
-			if is_straight then
-				if diff.x == 0 then
-					segmentType = STRAIGHT_SNAKE_SEGMENT[1]
-				else
-					segmentType = STRAIGHT_SNAKE_SEGMENT[2]
-				end
-			else
-				if (prev.x < segment.x and next.y < segment.y) or (next.x < segment.x and prev.y < segment.y) then
-					segmentType = CORNER_SNAKE_SEGMENT[2]
-				elseif (prev.x < segment.x and next.y > segment.y) or (next.x < segment.x and prev.y > segment.y) then
-					segmentType = CORNER_SNAKE_SEGMENT[1]
-				elseif (prev.x > segment.x and next.y > segment.y) or (next.x > segment.x and prev.y > segment.y) then
-					segmentType = CORNER_SNAKE_SEGMENT[3]
-				elseif (prev.x > segment.x and next.y < segment.y) or (next.x > segment.x and prev.y < segment.y) then
-					segmentType = CORNER_SNAKE_SEGMENT[4]
-				end
-			end
-
-			drawSnake(vec.V2(segment.x, segment.y), segmentType)
-		end
-
-		-- Draw the next direction
-		local head = Snake[1]
-		local nextPos = head + Direction
-		drawSnake(nextPos, 15)
-
-		-- Draw Cherry
-		local cherry = _G.Cherry
-		drawSnake(cherry, 0)
-
+		)
 		-- End of rendering --
 		-- Start of logic --
 

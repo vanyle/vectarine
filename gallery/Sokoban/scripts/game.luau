@@ -54,7 +54,7 @@ if areResourcesLoaded.loaded then
 	Init()
 end
 
-event.getConsoleCommandEvent():on(function(command: string)
+event.getConsoleCommandEvent():on("debugCommands", function(command: string)
 	if command == "entities" then
 		worldManager.reloadEntities(world, level, tiles)
 	else

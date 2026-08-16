@@ -20,7 +20,7 @@ print("You can enter commands in the console. Try typing 'zoom' or 'shrink' and 
 local textSize = 0.1
 
 local CONSOLE_COMMAND = event.getConsoleCommandEvent()
-CONSOLE_COMMAND:on(function(command: string)
+CONSOLE_COMMAND:on("debugCommands", function(command: string)
 	print("Console command received: " .. command)
 	if command == "zoom" then
 		textSize = textSize * 1.2

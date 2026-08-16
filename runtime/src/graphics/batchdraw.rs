@@ -296,11 +296,14 @@ impl BatchDraw2d {
     ) {
         let uv_pos = Vec2::new(0.0, 0.0);
         let uv_size = Vec2::new(1.0, 1.0);
-        let q = self
-            .affine_transform
-            .apply_quad(&make_rect(x, y, width, height));
 
-        self.draw_image_part(q, texture, uv_pos, uv_size, color);
+        self.draw_image_part(
+            make_rect(x, y, width, height),
+            texture,
+            uv_pos,
+            uv_size,
+            color,
+        );
     }
 
     #[rustfmt::skip]

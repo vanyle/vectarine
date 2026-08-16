@@ -15,7 +15,7 @@ local battleMusic = loader.loadAudio("audio/battle_music.wav")
 local ambiantIsNotPlaying = true
 
 -- Set up background music to play when resource loads (must be immediate, not delayed)
-event.getResourceLoadedEvent():on(function(r)
+event.getResourceLoadedEvent():on("startAmbiantMusic", function(r)
 	if ambiantMusic:isReady() and ambiantIsNotPlaying then
 		ambiantMusic:play(true)
 		ambiantMusic:setVolume(0.2)

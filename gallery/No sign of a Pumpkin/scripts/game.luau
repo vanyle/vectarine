@@ -851,7 +851,7 @@ function Load()
 	Debug.print("Game started")
 end
 
-event.getConsoleCommandEvent():on(function(command)
+event.getConsoleCommandEvent():on("debugCommands", function(command)
 	if command == "spawn" then
 		local random_offset = V2(1, -1):scale(PUMPKIN_CREATE_OFFSET)
 		levelDesign.create_pumpkin(V2(player.position.x, player.position.y) + random_offset, levelDesign.list_pumpkin)
