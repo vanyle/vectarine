@@ -1,11 +1,13 @@
 use std::{
     cell::RefCell,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use egui_extras::{Size, StripBuilder};
-use runtime::egui;
+use runtime::egui::{self, Button};
 use runtime::egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
+use vectarine_cli::project::createproject::ProjectCreationOptions;
+use vectarine_cli::{directories::UserDirs, project::createproject::StartingProjectTemplate};
 use runtime::{
     io::localfs::LocalFileSystem,
     projectinfo::{ProjectInfo, get_project_info},
@@ -13,7 +15,7 @@ use runtime::{
 use vectarine_cli::{project::createproject::create_game_and_get_path, regex::Regex};
 
 use crate::editorinterface::EditorState;
-use vectarine_cli::project::geteditorpaths::{get_end_of_path, get_gallery_path};
+use vectarine_cli::project::geteditorpaths::get_gallery_path;
 
 pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
     thread_local! {
@@ -34,7 +36,7 @@ pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
                     strip.cell(|ui| {
                         NEW_GAME_PATH.with_borrow_mut(|new_game_path| {
                             let mut reset_path = false;
-                            if let Some(new_game_path) = new_game_path.as_ref() {
+                            if let Some(new_game_path) = new_game_path.as_mut() {
                                 reset_path = draw_new_game_window_content(state, ui, new_game_path);
                             } else {
                                 draw_empty_screen_window_content(state, ui, new_game_path);
@@ -64,7 +66,11 @@ pub fn draw_empty_screen_window_content(
                 .button(RichText::new("Create new Project").size(18.0))
                 .clicked()
             {
-                *new_game_path = open_folder_dialog_and_create_project(state);
+                if let Some(user_dirs) = UserDirs::new() && let Some(document_dir) = user_dirs.document_dir() {
+                    *new_game_path = Some(document_dir.to_path_buf());
+                } else {
+                    *new_game_path = std::env::home_dir();
+                }
             }
             ui.add_space(8.0);
             if ui
@@ -128,34 +134,68 @@ pub fn draw_empty_screen_window_content(
     });
 }
 
+fn middle_elide(text: &str, max_chars: usize) -> String {
+    if text.chars().count() <= max_chars {
+        return text.to_string();
+    }
+    
+    let target_len = max_chars.saturating_sub(3);
+    let front_len = target_len / 2;
+    let back_len = target_len - front_len;
+    
+    let front: String = text.chars().take(front_len).collect();
+    let back: String = text.chars().rev().take(back_len).collect::<String>().chars().rev().collect();
+    
+    format!("{}...{}", front, back)
+}
+
 pub fn draw_new_game_window_content(
     state: &mut EditorState,
     ui: &mut egui::Ui,
-    new_game_path: &Path,
+    new_game_path: &mut PathBuf,
 ) -> bool {
     ui.label(RichText::new("Create a new project").size(24.0));
     ui.add_space(8.0);
+    
     {
-        let end_of_path = get_end_of_path(new_game_path);
-        let label =
-            egui::Label::new(RichText::new(end_of_path)).wrap_mode(egui::TextWrapMode::Truncate);
-        ui.label(RichText::new("Game folder created in").strong());
-        ui.add(label);
+        ui.label(RichText::new("Project Location").strong()).on_hover_text("The folder inside which the project will be created.");
+        ui.horizontal(|ui|{
+            if ui.button("Browse...").clicked() && let Some(new_path) = ask_to_pick_new_project_folder(state) {
+                *new_game_path = new_path;
+            }
+            // Add truncate the middle of the path ourselves.
+            let max_length = 80;
+            let truncated_path = middle_elide(&new_game_path.display().to_string(), max_length);
+            let label = egui::Label::new(RichText::new(truncated_path)).wrap_mode(egui::TextWrapMode::Extend);
+            ui.add(label);
+        });
     }
 
     thread_local! {
-        static GAME_NAME: RefCell<String> = const {RefCell::new(String::new())}
+        static GAME_NAME: RefCell<String> = const {RefCell::new(String::new())};
+        // We cache this to avoid doing filesystem operations every frame.
+        static FOLDER_ALREADY_EXISTS_ERROR: RefCell<bool> = const {RefCell::new(false)};
     }
 
-    const ERRORS: [&str; 2] = [
+    const ERRORS: [&str; 3] = [
         "The name cannot be empty",
         "The name must only contain spaces, letters, numbers, dashes and underscores",
+        "This folder already exists",
     ];
     let mut error_idx: Option<usize> = None;
 
-    ui.label(RichText::new("Name of the game").strong());
+    ui.add_space(8.0);
+    ui.label(RichText::new("Project Name").strong());
     GAME_NAME.with_borrow_mut(|game_name| {
-        ui.text_edit_singleline(game_name);
+        if ui.text_edit_singleline(game_name).changed() {
+            let project_folder = new_game_path.join(game_name.clone());
+            FOLDER_ALREADY_EXISTS_ERROR.with_borrow_mut(|folder_already_exists_error| {
+                *folder_already_exists_error = project_folder.exists();
+            });
+        }
+        if FOLDER_ALREADY_EXISTS_ERROR.with_borrow(|f| *f){
+            error_idx = Some(2);
+        }
         if game_name.is_empty() {
             error_idx = Some(0);
         } else {
@@ -171,12 +211,70 @@ pub fn draw_new_game_window_content(
                 .color(egui::Color32::DARK_RED)
                 .size(12.0),
         );
+    } else {
+        ui.label(
+            RichText::new("A new project folder will be created inside the selected location")
+                .color(egui::Color32::GREEN)
+                .size(12.0),
+        );
+    } 
+
+    ui.add_space(8.0);
+    ui.label(RichText::new("Starting template").strong());
+    thread_local! {
+        static STARTING_TEMPLATE: RefCell<StartingProjectTemplate> = const {RefCell::new(StartingProjectTemplate::FromScratch)};
     }
+    STARTING_TEMPLATE.with_borrow_mut(|starting_template|{
+        egui::ComboBox::new("project_starting_template", "")
+        .selected_text(
+            starting_template.to_string()
+        )
+        .show_ui(ui, |ui| {
+            for template in StartingProjectTemplate::all_templates().iter() {
+                ui.selectable_value(
+                    starting_template,
+                    *template,
+                    template.to_string(),
+                ).on_hover_text(template.description());
+            }
+        }).response.on_hover_text(starting_template.description());
+    });
+
+    ui.add_space(8.0);
+    ui.label(RichText::new("Extra options").strong());
+    
+    thread_local! {
+        static INITIALIZE_GIT_REPO: RefCell<bool> = const {RefCell::new(true)};
+    }
+    INITIALIZE_GIT_REPO.with_borrow_mut(|initialize_git_repo| {
+        ui.checkbox(&mut *initialize_git_repo, "Initialize a Git repository");
+    });
+
     let mut exit_new_game_window = false;
+    // Push the action buttons down to the bottom of the fixed-height window.
+    let button_row_height = 40.0;
+    let remaining = ui.available_height();
+    if remaining > button_row_height {
+        ui.add_space(remaining - button_row_height);
+    }
     ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-        if ui.button("Create the game and open it!").clicked() {
+        ui.style_mut().spacing.button_padding = egui::vec2(10.0, 6.0);
+        let button = Button::new(RichText::new("Create the game and open it!").size(16.0));
+        if ui
+            .add_enabled(error_idx.is_none(), button)
+            .clicked()
+        {
             GAME_NAME.with_borrow(|game_name| {
-                let result_path = create_game_and_get_path(game_name, new_game_path);
+                let options = ProjectCreationOptions {
+                    template: STARTING_TEMPLATE.with_borrow(|starting_template| *starting_template),
+                    init_git_repo: INITIALIZE_GIT_REPO.with_borrow(|initialize_git_repo| *initialize_git_repo),
+                    // This is so useful, but hard to communicate to the user that we always set it to true,
+                    // to avoid people disabling it and shooting themselves in the foot.
+                    init_vs_settings: true,
+                    name: game_name.clone(),
+                    project_location: new_game_path.clone(),
+                };
+                let result_path = create_game_and_get_path(&options);
                 match result_path {
                     Ok(project_file_path) => {
                         state.load_project(
@@ -197,14 +295,14 @@ pub fn draw_new_game_window_content(
             });
             exit_new_game_window = true;
         }
-        if ui.button(RichText::new("Cancel")).clicked() {
+        if ui.button(RichText::new("Cancel").size(16.0)).clicked() {
             exit_new_game_window = true;
         }
     });
     exit_new_game_window
 }
 
-pub fn open_folder_dialog_and_create_project(state: &mut EditorState) -> Option<PathBuf> {
+pub fn ask_to_pick_new_project_folder(state: &mut EditorState) -> Option<PathBuf> {
     state.window.borrow_mut().window.set_always_on_top(false); // prevent editor from being over the file picker.
     let path = rfd::FileDialog::new()
         .set_title("Select a location where the Vectarine project folder will be created")
