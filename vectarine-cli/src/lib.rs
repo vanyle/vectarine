@@ -7,6 +7,7 @@ pub mod headless;
 pub mod project;
 
 // Re-export libs consumed by the editor
+pub use directories;
 pub use regex;
 pub use zip;
 

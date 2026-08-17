@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::path::PathBuf;
 use std::{fs, path::Path};
 
@@ -7,6 +8,64 @@ use runtime::{projectinfo::ProjectInfo, toml};
 use crate::buildinfo;
 use crate::project::copydirall::copy_dir_all;
 use crate::project::geteditorpaths::get_luau_api_path;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StartingProjectTemplate {
+    FromScratch,
+    Platformer,
+    TopDownRPG,
+    Sokoban,
+    AlienShooter,
+}
+
+impl StartingProjectTemplate {
+    pub fn all_templates() -> Vec<StartingProjectTemplate> {
+        vec![
+            StartingProjectTemplate::FromScratch,
+            StartingProjectTemplate::Platformer,
+            StartingProjectTemplate::TopDownRPG,
+            StartingProjectTemplate::Sokoban,
+            StartingProjectTemplate::AlienShooter,
+        ]
+    }
+    pub fn description(&self) -> &'static str {
+        match self {
+            StartingProjectTemplate::FromScratch => "A blank project",
+            StartingProjectTemplate::Platformer => {
+                "A platformer side-scroller with a player character, physics and a world loaded on demand."
+            }
+            StartingProjectTemplate::TopDownRPG => {
+                "A top-down RPG with health, enemies and a tilemap-based world loaded on demand."
+            }
+            StartingProjectTemplate::Sokoban => {
+                "A top-down Sokoban-style puzzle with undo/redo, pushable boxes and special items."
+            }
+            StartingProjectTemplate::AlienShooter => {
+                "A shooter side-scroller with a ship, enemies, and projectiles."
+            }
+        }
+    }
+}
+
+pub struct ProjectCreationOptions {
+    pub template: StartingProjectTemplate,
+    pub init_git_repo: bool,
+    pub init_vs_settings: bool,
+    pub name: String,
+    pub project_location: PathBuf,
+}
+
+impl Display for StartingProjectTemplate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StartingProjectTemplate::FromScratch => write!(f, "From Scratch"),
+            StartingProjectTemplate::Platformer => write!(f, "Platformer"),
+            StartingProjectTemplate::TopDownRPG => write!(f, "Top-down RPG"),
+            StartingProjectTemplate::Sokoban => write!(f, "Sokoban"),
+            StartingProjectTemplate::AlienShooter => write!(f, "Alien Shooter"),
+        }
+    }
+}
 
 static DEFAULT_CODE: &str = "const debug = require(\"@vectarine/debug\")
 const graphics = require(\"@vectarine/graphics\")
@@ -88,13 +147,13 @@ fn copy_default_luau_api(project_folder: &Path) -> Result<(), std::io::Error> {
     copy_dir_all(reference_luau_api_path, luau_api_path)
 }
 
-pub fn create_game_and_get_path(game_name: &str, game_path: &Path) -> anyhow::Result<PathBuf> {
-    let project_folder = game_path.join(game_name);
+pub fn create_game_and_get_path(options: &ProjectCreationOptions) -> anyhow::Result<PathBuf> {
+    let project_folder = options.project_location.join(options.name.clone());
     let project_file_path = project_folder.join("game.vecta");
     let vscode_settings_path = project_folder.join(".vscode/settings.json");
     let script_folder = project_folder.join("scripts");
     let project_info = ProjectInfo {
-        title: game_name.to_string(),
+        title: options.name.to_string(),
         vectarine_version: Some(buildinfo::get_version().to_string()),
         ..ProjectInfo::default()
     };
