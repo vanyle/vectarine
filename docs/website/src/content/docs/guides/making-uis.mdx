@@ -392,7 +392,7 @@ local baseWidget = ui.stack({ alignX = "center", alignY = "center" }, {
 	ui.widget(V2(0.6, 0.1), function()
 		graphics.drawRect(V2(-1, -1), V2(0.6, 0.1), vec4.RED)
 	end),
-	ui.text(V2(0.5, 0.1), {}, { text = "Hover me!", color = vec4.WHITE }),
+    ui.text("Hover me!", { color = vec4.WHITE, fontSize = 0.1 }),
 })
 
 -- In a real project, this will probably be part of a larger game state.
@@ -460,10 +460,10 @@ local slider = ui.slider(V2(0.5, 0.1), {
 	end,
 }, coloredSquareWidget(V2(0.5, 0.1), vec4.BLUE), coloredSquareWidget(V2(0.1, 0.1), vec4.RED))
 
-local firstLine = ui.text(V2(0.4, 0.1), {}, { text = "Hello, Vectarine!", color = vec4.WHITE })
-local secondLine = ui.text(V2(0.4, 0.1), {}, function()
-	return { text = "Slider = " .. tostring(math.round(sliderValue * 100) / 100), color = vec4.WHITE }
-end)
+local firstLine = ui.text("Hello, Vectarine!", { color = vec4.WHITE })
+local secondLine = ui.text(function()
+	return "Slider = " .. tostring(math.round(sliderValue * 100) / 100)
+end, { color = vec4.WHITE })
 
 local column = ui.column({ padding = 0.1 }, { firstLine, secondLine, slider })
 
