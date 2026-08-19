@@ -9,8 +9,10 @@ import starlightKbd from "starlight-kbd";
 // https://astro.build/config
 export default defineConfig({
     srcDir: "./src",
+    // Cloudflare prefers trailing slashes it seems, but setting it to always breaks RSS, so we set it to ignore.
+    trailingSlash: "ignore",
     build: {
-        format: "file",
+        format: "directory",
     },
     base: "/",
     site: "https://vectarineengine.com",

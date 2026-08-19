@@ -37,13 +37,14 @@ if (image) {
             <Image
                 src={darkImage}
                 {...imageAttrs}
+                alt="the logo of the vectarine game engine"
                 class:list={{ "light:sl-hidden": Boolean(lightImage) }}
             />
         )
     }
     {
         lightImage && (
-            <Image src={lightImage} {...imageAttrs} class="dark:sl-hidden" />
+            <Image src={lightImage} {...imageAttrs} alt="the logo of the vectarine game engine" class="dark:sl-hidden" />
         )
     }
     {rawHtml && <div class="hero-html sl-flex" set:html={rawHtml} />}

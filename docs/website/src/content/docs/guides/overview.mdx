@@ -19,7 +19,7 @@ Vectarine uses the [Lua](https://www.lua.org/pil/contents.html#P1) programming l
 To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with better performance and autocompletion than regular Lua but the same syntax.
 
 This manual is an unopiniated guide to making games using Vectarine. If you already have a bit of game making experience and want to integrate Vectarine into your workflow,
-this guide is for you. If you are new to making games, you can still read this guide, but consider reading [Create your first game](./getting-started) first.
+this guide is for you. If you are new to making games, you can still read this guide, but consider reading [Create your first game](/guides/getting-started/) first.
 We assume you have some experience with programming and game making. You know the concept of functions, variables, loops, etc.
 
 
@@ -578,8 +578,8 @@ end`;
 
 <Code lang="luau" code={tourWidgetTabs} />
 
-You can have one main widget per file to split logic and rendering code. There is
-more information about using widgets to make complex interfaces [in the dedicated page](./making-uis).
+You can have one main widget per file to split logic and rendering code. 
+[Learn more about using widgets to make complex interfaces](/guides/making-uis).
 
 
 ## 🌁 Using Shaders
@@ -886,7 +886,8 @@ Vectarine takes the 'gamedata' folder and zips it with the `runtime` file corres
 **On the Web**
 
 Vectarine puts together `index.html`, `runtime.js`, `runtime.wasm` and the `gamedata` folder in a zip.
-You can serve these files with any static file server, for example by doing `python -m http.server` and going to [http://localhost:8000](http://localhost:8000).
+You can serve these files with any static file server, for example by doing `python -m http.server` and going to 
+<a href="http://localhost:8000" rel="nofollow">http://localhost:8000</a>.
 
 **And obfuscation?**
 
