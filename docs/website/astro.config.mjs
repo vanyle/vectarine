@@ -9,8 +9,9 @@ import starlightKbd from "starlight-kbd";
 // https://astro.build/config
 export default defineConfig({
     srcDir: "./src",
+    trailingSlash: "never",
     build: {
-        format: "file",
+        format: "directory",
     },
     base: "/",
     site: "https://vectarineengine.com",
@@ -84,11 +85,11 @@ export default defineConfig({
                     items: [
                         {
                             label: "Create your first game",
-                            link: "/guides/getting-started/",
+                            link: "/guides/getting-started",
                         },
                         {
                             label: "Overview",
-                            link: "/guides/overview/",
+                            link: "/guides/overview",
                         },
                     ],
                 },
@@ -97,39 +98,39 @@ export default defineConfig({
                     items: [
                         {
                             label: "Drawing images and levels with tilesets",
-                            link: "/guides/tilemaps-and-tilesets/",
+                            link: "/guides/tilemaps-and-tilesets",
                         },
                         {
                             label: "Understanding hot-reloading",
-                            link: "/guides/understanding-hotreloading/",
+                            link: "/guides/understanding-hotreloading",
                         },
                         {
                             label: "Making a platformer",
-                            link: "/guides/making-a-platformer/",
+                            link: "/guides/making-a-platformer",
                         },
                         {
                             label: "Optimizing your game",
-                            link: "/guides/use-fastlists/",
+                            link: "/guides/use-fastlists",
                         },
                         {
                             label: "Making user interfaces",
-                            link: "/guides/making-uis/",
+                            link: "/guides/making-uis",
                         },
                         {
                             label: "Testing games automatically",
-                            link: "/guides/testing-games-automatically/",
+                            link: "/guides/testing-games-automatically",
                         },
                         {
                             label: "Create a native plugin",
-                            link: "/guides/create-a-plugin/",
+                            link: "/guides/create-a-plugin",
                         },
                         {
                             label: "Design Principles",
-                            link: "/guides/design-principles/",
+                            link: "/guides/design-principles",
                         },
                         {
                             label: "FAQ",
-                            link: "/guides/faq/",
+                            link: "/guides/faq",
                         }
                     ],
                 },
