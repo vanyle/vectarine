@@ -18,7 +18,7 @@ Vectarine is a game engine to make games super quickly with the best possible ex
 Vectarine uses the [Lua](https://www.lua.org/pil/contents.html#P1) programming language.
 To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with better performance and autocompletion than regular Lua but the same syntax.
 
-This manual is an unopiniated guide to making games using Vectarine.
+This manual is an unopinionated guide to making games using Vectarine.
 
 # 🆕 Getting started
 
