@@ -3,7 +3,7 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import expressiveCode from "astro-expressive-code";
 import { defineConfig } from "astro/config";
-import starlightBlog from 'starlight-blog';
+import starlightBlog from "starlight-blog";
 import starlightKbd from "starlight-kbd";
 
 // https://astro.build/config
@@ -21,8 +21,19 @@ export default defineConfig({
         starlight({
             title: "Vectarine",
             titleDelimiter: " | ",
-            tagline: "The cross-platform Luau game engine focusing on ultra fast prototyping and having fun.",
-            favicon: "vectarine.png",
+            tagline:
+                "The cross-platform Luau game engine focusing on ultra fast prototyping and having fun.",
+            favicon: "favicon.ico",
+            head: [
+                {
+                    tag: "link",
+                    attrs: {
+                        rel: "icon",
+                        href: "/favicon.ico",
+                        sizes: "128x128 32x32",
+                    },
+                },
+            ],
             customCss: ["./src/styles/custom.css"],
             logo: {
                 src: "./src/assets/vectarine.png",
@@ -36,7 +47,8 @@ export default defineConfig({
                 PageFrame: "./src/components/PageFrame.astro",
             },
             editLink: {
-                baseUrl: 'https://github.com/vanyle/vectarine/edit/main/docs/website',
+                baseUrl:
+                    "https://github.com/vanyle/vectarine/edit/main/docs/website",
             },
             plugins: [
                 starlightBlog(),
@@ -132,7 +144,7 @@ export default defineConfig({
                         {
                             label: "FAQ",
                             link: "/guides/faq/",
-                        }
+                        },
                     ],
                 },
             ],
