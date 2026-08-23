@@ -6,7 +6,7 @@ use std::{
 use egui_extras::{Size, StripBuilder};
 use runtime::egui::{self, Button};
 use runtime::egui::{Align, Frame, Layout, RichText, Sense, Stroke, UiBuilder};
-use vectarine_cli::project::createproject::ProjectCreationOptions;
+use vectarine_cli::project::createproject::{ProjectCreationOptions, is_template_available_for_project_creation};
 use vectarine_cli::{directories::UserDirs, project::createproject::StartingProjectTemplate};
 use runtime::{
     io::localfs::LocalFileSystem,
@@ -17,13 +17,15 @@ use vectarine_cli::{project::createproject::create_game_and_get_path, regex::Reg
 use crate::editorinterface::EditorState;
 use vectarine_cli::project::geteditorpaths::get_gallery_path;
 
+const WINDOW_WIDTH: f32 = 384.0;
+
 pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
     thread_local! {
         static NEW_GAME_PATH: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
     }
 
     egui::Window::new("No project loaded")
-        .max_width(384.0).min_width(384.0)
+        .max_width(WINDOW_WIDTH).min_width(WINDOW_WIDTH)
         .max_height(384.0).min_height(384.0)
         .title_bar(false)
         .collapsible(false)
@@ -31,7 +33,7 @@ pub fn draw_empty_screen(state: &mut EditorState, ui: &mut egui::Ui) {
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .show(ui, |ui| {
             StripBuilder::new(ui)
-                .size(Size::remainder().at_most(384.0))
+                .size(Size::remainder().at_most(WINDOW_WIDTH))
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
                         NEW_GAME_PATH.with_borrow_mut(|new_game_path| {
@@ -223,20 +225,35 @@ pub fn draw_new_game_window_content(
     ui.label(RichText::new("Starting template").strong());
     thread_local! {
         static STARTING_TEMPLATE: RefCell<StartingProjectTemplate> = const {RefCell::new(StartingProjectTemplate::FromScratch)};
+        static AVAILABLE_TEMPLATES: RefCell<Option<Vec<StartingProjectTemplate>>> = const {RefCell::new(None)};
     }
+
+    AVAILABLE_TEMPLATES.with_borrow_mut(|available_templates| {
+        if available_templates.is_none() {
+            *available_templates = Some(StartingProjectTemplate::all_templates().iter().filter(|template|{
+                is_template_available_for_project_creation(**template)
+            }).cloned().collect());
+        }
+    });
+
     STARTING_TEMPLATE.with_borrow_mut(|starting_template|{
         egui::ComboBox::new("project_starting_template", "")
         .selected_text(
             starting_template.to_string()
         )
         .show_ui(ui, |ui| {
-            for template in StartingProjectTemplate::all_templates().iter() {
-                ui.selectable_value(
-                    starting_template,
-                    *template,
-                    template.to_string(),
-                ).on_hover_text(template.description());
-            }
+            AVAILABLE_TEMPLATES.with_borrow(|templates|{
+                let Some(available_templates) = templates else {
+                    return;
+                };
+                for template in available_templates.iter() {
+                    ui.selectable_value(
+                        starting_template,
+                        *template,
+                        template.to_string(),
+                    ).on_hover_text(template.description());
+                }
+            })
         }).response.on_hover_text(starting_template.description());
     });
 
@@ -440,7 +457,8 @@ pub fn draw_project_list(state: &mut EditorState, ui: &mut egui::Ui, project_inf
                                     .fill(bg_fill.gamma_multiply(0.3))
                                     .stroke(stroke)
                                     .show(ui, |ui| {
-                                        ui.set_min_width(500.0);
+                                        ui.set_min_width(WINDOW_WIDTH - 4.0);
+                                        ui.set_max_width(WINDOW_WIDTH - 4.0);
                                         ui.with_layout(
                                             Layout::left_to_right(Align::Center),
                                             |ui| {
