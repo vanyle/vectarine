@@ -4,7 +4,7 @@ local module = {}
 
 -- This list of scancodes comes from here: https://github.com/libsdl-org/SDL/blob/main/src/events/SDL_keymap.c#L749
 --- List of all available scancodes. A scancode is a location on the keyboard, independent of keyboard layout.
-type Scancode =
+export type Scancode =
 	"A"
 	| "B"
 	| "C"
@@ -228,14 +228,14 @@ type Scancode =
 --- Checks if a key is pressed
 --- For example, `IsKeyDown("Space")`. If the name is invalid, always return false.
 --- You can use 'GetKeysDown' to find the name of keys
-function module.isKeyDown(keycode: Scancode): boolean
+function module.isKeyDown(keycode: Scancode | string): boolean
 	error("Implemented in native code")
 end
 
 --- Get the name of a key. For example getKeyName("Z") returns "W" on AZERTY but "Z" on QWERTY.
 --- This is the name you should show the player when telling them to press a key.
 --- Returns nil if the scancode is invalid.
-function module.getKeyName(keycode: Scancode): string
+function module.getKeyName(keycode: Scancode | string): string
 	error("Implemented in native code")
 end
 
@@ -249,7 +249,7 @@ end
 --- This is the function you need to map button presses to actions, but not for typing text.
 --- For example, `IsKeyJustPressed("space")`. If the name is invalid, always return false.
 --- You can use 'GetKeysDown' to find the name of keys
-function module.isKeyJustPressed(keycode: Scancode): boolean
+function module.isKeyJustPressed(keycode: Scancode | string): boolean
 	error("Implemented in native code")
 end
 

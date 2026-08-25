@@ -1,3 +1,5 @@
+const io = require("./io")
+
 --- A module for creating and subscribing to events. See `newEvent` for how to create and use events.
 local module = {}
 
@@ -84,12 +86,12 @@ function module.getTextInputEvent(): Event<string>
 end
 
 --- Returns the key up event
-function module.getKeyUpEvent(): Event<string>
+function module.getKeyUpEvent(): Event<io.Scancode>
 	error("Implemented in native code")
 end
 
 --- Returns the key press event
-function module.getKeyDownEvent(): Event<string>
+function module.getKeyDownEvent(): Event<io.Scancode>
 	error("Implemented in native code")
 end
 
