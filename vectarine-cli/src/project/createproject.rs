@@ -36,7 +36,7 @@ impl StartingProjectTemplate {
         match self {
             StartingProjectTemplate::FromScratch => None,
             StartingProjectTemplate::Platformer => Some("Platformer"),
-            StartingProjectTemplate::TopDownRPG => Some("Snake"), // Does not exist yet :'(
+            StartingProjectTemplate::TopDownRPG => Some("TopDownRPG"),
             StartingProjectTemplate::Sokoban => Some("Sokoban"),
             StartingProjectTemplate::AlienShooter => Some("AlienShooter"),
         }
