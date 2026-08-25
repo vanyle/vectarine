@@ -3,7 +3,7 @@ title: Understanding hot-reloading
 description: Learn how hot reloading works and build projects that take advantage of it.
 ---
 
-import { Code } from "@astrojs/starlight/components";
+import { Aside, Code } from "@astrojs/starlight/components";
 import { Kbd } from 'starlight-kbd/components';
 
 As you program your game, you want to see changes live. While Vectarine supports hot-reloading, it's important to structure your code
@@ -58,13 +58,12 @@ In this example:
 - If we edit `other.luau` to replace the `3` by a `6`, main won't be reloaded, so `3` will still be printed.
 - If we edit `main.luau` again, `other.getPopulation` will be called once again `6` will be printed in the console.
 
-Now let's say we update `other.luau` to the following and reload the whole project.
+Now let's say we update `other.luau` to the following and reload the whole project (with <Kbd mac="Control+R" windows="Control+R" />).
 
 export const otherLuau2 = `const loader = require("@vectarine/loader")
 const module = loader.init() or {}
 
-const population = {}
-population.count = function(self)
+local function count(self)
     return self.humans + self.aliens
 end
 
@@ -72,17 +71,17 @@ function module.getPopulation()
     local data = {
         humans = 3,
         aliens = 5,
+        count = count
     }
-    setmetatable(data, { __index = population })
     return data
 end
 return module`;
 
 <Code lang="luau" title="other.luau" code={otherLuau2} />
 
-After hot-reloading `main.luau`, it will display `{human = 3, aliens = 5}`.
+After hot-reloading `main.luau`, it will display `{human = 3, aliens = 5, count = function}`.
 
-Now, let's say we edit the count function in `other.luau`. Nothing will change. This is because the count function is located on the `Population` table.
+Now, let's say we edit the count function in `getPopulation` in `other.luau`. Nothing will change. This is because the count function is located in the `data` table.
 When `other.luau` is hot-reloaded, the `value` variable in `main.luau` stays the same and still uses the reference to the old `count` function.
 
 This design where we initialize an object with functions in its properties in `other.luau` and keep it in `main.luau` is not hot-reloading friendly.
@@ -99,7 +98,9 @@ end`;
 
 <Code lang="luau" title="main.luau" code={mainLuau2} />
 
-This will work, but we are creating a new population object every frame which is not ideal.
+How, when changing `count` in `other.luau`, the behavior is instantly reflect in `main.luau`.
+
+However, we are creating a new population object every frame which is not ideal.
 
 ## An object-oriented approach
 
@@ -122,13 +123,18 @@ function module.makePopulation(): Population
 		aliens = 5,
 	}
 	-- The metatable is set to the module itself, so that population:count() will always use the latest version of the count function, even after hot-reloading.
-	return setmetatable(data, { __index = module }) :: Population
+	return setmetatable(data, { __index = module })
 end
 
-export type Population = {
-	humans: number,
-	aliens: number,
-} & typeof(setmetatable({}, { __index = module }))
+-- Our type Population has 2 fields: humans and aliens,
+-- as well as all the methods defined in the module (like count).
+export type Population = typeof(setmetatable(
+	{} :: {
+		humans: number,
+		aliens: number,
+	},
+	{ __index = module }
+))
 
 return module
 `;
@@ -148,9 +154,33 @@ end`;
 
 With this design, when you edit the count function in `other.luau`, `main.luau` calls the latest version without you needing to reload it or create a new population object.
 
-What is happening here is that when you hot-reload `other.luau`, module is not recreated. The same table is kept and its old content is merged with the new one.
+What is happening here is that when you hot-reload `other.luau`, `module` is not recreated. The same table is kept and its old content is merged with the new one.
 This content is what gets returned by `module.init()`
 This means that `main.luau` has a reference to the newest version of the `count` function through the metatable of `population` and hot-reloading works as expected!
+
+<Aside type="note">
+    This code uses metatables. You can read more about them in the [Lua book chapter on metamethods](https://www.lua.org/pil/13.4.1.html), or the [related Luau article on object-oriented programming](https://luau.org/types/object-oriented-programs/).
+    Basically, `setmetatable(data, { __index = module})` sets the *metatable* of `data`, such that if `data.xxx` is not found, it will look for it in `module`.
+    This is how `population:count()` refers to the `count` function in `module`, which is always the latest version after hot-reloading.
+</Aside>
+
+Using `loader.init()` has other benefits, for example you can now store the state of your game in the module and it will be preserved across hot-reloads.
+
+export const otherLuau4 = `const loader = require("@vectarine/loader")
+const module = loader.init() or {}
+
+module.reloadCount = (module.reloadCount or 0) + 1
+
+-- Do not reset the enemies table if it already exists!
+module.enemies = module.enemies or {}
+
+return module
+`
+
+<Code lang="luau" title="other.luau" code={otherLuau4} />
+
+Here, `module.reloadCount` will be incremented every time `other.luau` is hot-reloaded, and the `enemies` table will be initialized once and preserved across hot-reloads.
+This is because `loader.init()` returns the same table across hot-reloads, so we can use it to store state that we want to persist.
 
 ## Lessons for organizing code
 
@@ -195,8 +225,3 @@ end`;
 
 Because `Update` is the entry point of your game, all code that gets called from it will access resources that are already loaded.
 Inside `drawSplashScreenIfNeeded`, you can put images, sound, fonts and even scripts resources (coming from the `loadScript` function)!
-
-`
-
-
-
