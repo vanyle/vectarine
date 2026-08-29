@@ -254,6 +254,7 @@ impl EditorState {
 
     pub fn reload_project(&mut self) {
         if let Some(proj) = &mut *self.project.borrow_mut() {
+            self.config.borrow_mut().debug_resource_shown = None; // We cannot hold a reference to a resource after reloading the project.
             proj.reload();
         }
     }
