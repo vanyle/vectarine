@@ -57,17 +57,24 @@ impl AudioQueue {
         let mut output = vec![0.0; bytes_to_advance * size_of::<f32>()];
 
         for buffer in self.audio_buffers.values_mut() {
-            if buffer.is_playing {
-                if !buffer.buffer.is_empty() {
-                    buffer.progress =
-                        (buffer.progress + bytes_to_advance).rem_euclid(buffer.buffer.len());
+            if buffer.progress >= buffer.buffer.len() {
+                if buffer.is_looped {
+                    buffer.progress = 0;
+                } else {
+                    buffer.is_playing = false;
                 }
+            }
+
+            if buffer.is_playing {
                 for output_sample in output.iter_mut() {
-                    let sample = buffer.buffer.pop_front().unwrap_or(0.0);
-                    if buffer.is_looped {
-                        buffer.buffer.push_back(sample);
-                    }
+                    let sample = buffer.buffer.get(buffer.progress).unwrap_or(&0.0);
                     *output_sample += sample * buffer.volume;
+                    if buffer.is_looped {
+                        // branch prediction makes this basically free.
+                        buffer.progress = (buffer.progress + 1).rem_euclid(buffer.buffer.len());
+                    } else {
+                        buffer.progress = std::cmp::min(buffer.progress + 1, buffer.buffer.len());
+                    }
                 }
             }
         }
@@ -175,6 +182,7 @@ pub fn set_sound_data_to_channel(
 
         audio_buffer.buffer.extend(sample_copy);
         audio_buffer.is_looped = looped;
+        audio_buffer.progress = 0;
         audio_buffer.is_playing = true;
     });
 }

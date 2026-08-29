@@ -242,6 +242,16 @@ impl AudioResource {
         });
         progress_ratio * self.duration()
     }
+
+    pub fn is_finished(&self) -> bool {
+        let Some(channel) = self.get_channel() else {
+            return true;
+        };
+        sound::get_audio_buffer(channel, |buffer| {
+            (buffer.progress as f32) >= buffer.buffer.len() as f32
+        })
+    }
+
     /// Get the duration of the audio in seconds.
     /// Returns 0.0 if no audio is loaded or if the audio failed to load.
     pub fn duration(&self) -> f32 {

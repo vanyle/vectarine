@@ -31,7 +31,11 @@ pub fn setup_audio_api(
                     return Ok(());
                 };
                 let is_loop = is_loop.unwrap_or(false);
-                audio_res.play(is_loop, fade_in.map(|f| f as i32));
+                if audio_res.is_finished() {
+                    audio_res.play(is_loop, fade_in.map(|f| f as i32));
+                } else {
+                    audio_res.resume();
+                }
                 Ok(())
             }
         });
