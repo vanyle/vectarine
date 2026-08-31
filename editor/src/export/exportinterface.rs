@@ -45,6 +45,8 @@ fn draw_editor_export_window(ui: &mut egui::Ui, editor: &mut EditorState) {
     thread_local! {
         static OBFUSCATE_GAME_DATA: RefCell<bool> = const { RefCell::new(true) };
         static TARGET_PLATFORM: RefCell<ExportPlatform> = const { RefCell::new(ExportPlatform::Web) };
+        static IS_GAME_ALREADY_SUBMITTED: RefCell<bool> = const { RefCell::new(false) };
+        static IS_PARTICIPATING_IN_GAME_JAM: RefCell<bool> = const { RefCell::new(true) };
     }
 
     ui_title(ui, "Optimization");
@@ -97,6 +99,7 @@ Read the manual section about obfuscation for more details.
 
     lazy_static! {
         static ref EXPORT_LOG_BUFFER: Mutex<String> = Mutex::new(String::new());
+        static ref IS_EXPORT_SUCCESSFULL: Mutex<bool> = Mutex::new(false);
     }
 
     if export_button.ui(ui).clicked() {
@@ -117,9 +120,17 @@ Read the manual section about obfuscation for more details.
                 target_platform,
             );
             if let Err(err_msg) = result {
+                let mut is_export_successfull = IS_EXPORT_SUCCESSFULL
+                    .lock()
+                    .expect("Failed to lock export success state");
+                *is_export_successfull = false;
                 let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
                 *log_buffer = format!("Export failed: {}\n", err_msg);
             } else {
+                let mut is_export_successfull = IS_EXPORT_SUCCESSFULL
+                    .lock()
+                    .expect("Failed to lock export success state");
+                *is_export_successfull = true;
                 let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
                 *log_buffer = "Export completed successfully.\n".into();
             }
@@ -128,9 +139,51 @@ Read the manual section about obfuscation for more details.
     {
         if let Ok(log_buffer) = EXPORT_LOG_BUFFER.try_lock()
             && !log_buffer.is_empty()
+            && let Ok(is_export_successfull) = IS_EXPORT_SUCCESSFULL.try_lock()
         {
             ui.add_space(8.0);
             ui.label(RichText::new(&*log_buffer).monospace());
+
+            if *is_export_successfull {
+                let is_participating_in_game_jam = IS_PARTICIPATING_IN_GAME_JAM.with_borrow(|p| *p);
+                if is_participating_in_game_jam {
+                    ui_title(ui, "Game Jam");
+                }
+                IS_PARTICIPATING_IN_GAME_JAM.with_borrow_mut(|is_participating_in_game_jam| {
+                    ui.checkbox(
+                        is_participating_in_game_jam,
+                        "I participate in a game jam with this game",
+                    );
+                });
+                if is_participating_in_game_jam {
+                    IS_GAME_ALREADY_SUBMITTED.with_borrow_mut(|is_game_already_submitted| {
+                        const IS_GAME_ALREADY_SUBMITTED_INFO: &str = "After uploading don't forget to submit your game to the jam, and to double check your game is really submitted";
+                        ui.checkbox(is_game_already_submitted, "I have already submitted my game")
+                            .on_hover_text(IS_GAME_ALREADY_SUBMITTED_INFO);
+                    });
+                    let is_game_already_submitted = IS_GAME_ALREADY_SUBMITTED.with_borrow(|p| *p);
+                    if is_game_already_submitted {
+                        ui.label(
+                            RichText::new("Game submitted :)")
+                                .monospace()
+                                .color(Color32::GREEN),
+                        );
+                    } else {
+                        ui.label(
+                            RichText::new(
+                                "\
+                                /--------------------------------------\\\n\
+                                |        AFTER UPLOADING THE GAME      |\n\
+                                | DON'T FORGET TO SUBMIT IT TO THE JAM |\n\
+                                \\--------------------------------------/",
+                            )
+                            .monospace()
+                            .color(Color32::WHITE)
+                            .background_color(Color32::from_rgb(0x88, 0x00, 0x00)),
+                        );
+                    }
+                }
+            }
         }
     }
 }
