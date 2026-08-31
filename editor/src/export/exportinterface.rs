@@ -99,7 +99,7 @@ Read the manual section about obfuscation for more details.
 
     lazy_static! {
         static ref EXPORT_LOG_BUFFER: Mutex<String> = Mutex::new(String::new());
-        static ref IS_EXPORT_SUCCESSFULL: Mutex<bool> = Mutex::new(false);
+        static ref IS_EXPORT_SUCCESSFUL: Mutex<bool> = Mutex::new(false);
     }
 
     if export_button.ui(ui).clicked() {
@@ -120,31 +120,31 @@ Read the manual section about obfuscation for more details.
                 target_platform,
             );
             if let Err(err_msg) = result {
-                let mut is_export_successfull = IS_EXPORT_SUCCESSFULL
+                let mut is_export_successful = IS_EXPORT_SUCCESSFUL
                     .lock()
                     .expect("Failed to lock export success state");
-                *is_export_successfull = false;
+                *is_export_successful = false;
                 let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
                 *log_buffer = format!("Export failed: {}\n", err_msg);
             } else {
-                let mut is_export_successfull = IS_EXPORT_SUCCESSFULL
+                let mut is_export_successful = IS_EXPORT_SUCCESSFUL
                     .lock()
                     .expect("Failed to lock export success state");
-                *is_export_successfull = true;
+                *is_export_successful = true;
                 let mut log_buffer = EXPORT_LOG_BUFFER.lock().expect("Failed to lock log buffer");
-                *log_buffer = "Export completed successfully.\n".into();
+                *log_buffer = "Export completed successfuly.\n".into();
             }
         });
     }
     {
         if let Ok(log_buffer) = EXPORT_LOG_BUFFER.try_lock()
             && !log_buffer.is_empty()
-            && let Ok(is_export_successfull) = IS_EXPORT_SUCCESSFULL.try_lock()
+            && let Ok(is_export_successful) = IS_EXPORT_SUCCESSFUL.try_lock()
         {
             ui.add_space(8.0);
             ui.label(RichText::new(&*log_buffer).monospace());
 
-            if *is_export_successfull {
+            if *is_export_successful {
                 let is_participating_in_game_jam = IS_PARTICIPATING_IN_GAME_JAM.with_borrow(|p| *p);
                 if is_participating_in_game_jam {
                     ui_title(ui, "Game Jam");
