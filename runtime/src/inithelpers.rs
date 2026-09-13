@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use sdl2::video::gl_attr::GLAttr;
 use sdl2::{EventPump, Sdl};
-use vectarine_plugin_sdk::{glow, sdl2};
+use vectarine_plugin_sdk::{egui_glow::glow, sdl2};
 
 use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 

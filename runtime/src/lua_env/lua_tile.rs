@@ -82,14 +82,9 @@ pub fn setup_tile_api(
                     let y = ((tile_id / columns) * tileset_content.tiled.tile_height) as f32
                         / image.height as f32;
 
-                    let user_type = tile
-                        .user_type
-                        .clone()
-                        .and_then(|s| {
-                            lua.create_string(s)
-                                .ok()
-                                .map(vectarine_plugin_sdk::mlua::Value::String)
-                        })
+                    let user_type = lua
+                        .create_string(tile.user_type.clone())
+                        .map(vectarine_plugin_sdk::mlua::Value::String)
                         .unwrap_or(vectarine_plugin_sdk::mlua::Nil);
 
                     let result = lua.create_table().ok()?;

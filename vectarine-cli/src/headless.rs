@@ -18,7 +18,7 @@ use runtime::glow::PixelPackData;
 use runtime::inithelpers::RenderingBlock;
 use runtime::io::localfs::LocalFileSystem;
 use runtime::projectinfo::get_project_info;
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::sdl2;
 use vectarine_plugin_sdk::sdl2::video::{SwapInterval, Window};
 

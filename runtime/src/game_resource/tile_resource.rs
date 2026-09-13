@@ -6,7 +6,7 @@ use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 // MARK: Tileset
 
@@ -19,11 +19,7 @@ impl TilesetContent {
     pub fn from_tiled_tileset(tileset: tiled::Tileset) -> Self {
         let type_mapping = tileset
             .tiles()
-            .filter_map(|(id, tile)| {
-                tile.user_type
-                    .as_ref()
-                    .map(|t| (t.clone().into_bytes(), id))
-            })
+            .map(|(id, tile)| (tile.user_type.clone().into_bytes(), id))
             .collect::<HashMap<_, _>>();
         Self {
             tiled: Arc::new(tileset),

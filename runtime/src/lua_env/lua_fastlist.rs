@@ -630,7 +630,7 @@ pub fn setup_fastlist_api(
             let batch = batch.clone();
             move |_, this: &FastList, ()| {
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks_exact(4) {
+                for chunk in this.data.as_chunks::<4>().0.iter() {
                     let pos = chunk[0];
                     let size = chunk[1];
                     let c1 = chunk[2];
@@ -646,7 +646,7 @@ pub fn setup_fastlist_api(
             let batch = batch.clone();
             move |_, this: &FastList, ()| {
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks_exact(6) {
+                for chunk in this.data.as_chunks::<6>().0.iter() {
                     let p1 = chunk[0];
                     let p2 = chunk[1];
                     let p3 = chunk[2];
@@ -674,7 +674,7 @@ pub fn setup_fastlist_api(
                 };
 
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks_exact(2) {
+                for chunk in this.data.as_chunks::<2>().0.iter() {
                     let pos = chunk[0];
                     let size = chunk[1];
                     batch.draw_image(
@@ -704,7 +704,7 @@ pub fn setup_fastlist_api(
                 };
 
                 let mut batch = batch.borrow_mut();
-                for chunk in this.data.chunks_exact(6) {
+                for chunk in this.data.as_chunks::<6>().0.iter() {
                     let p1 = chunk[0];
                     let p2 = chunk[1];
                     let p3 = chunk[2];
@@ -726,7 +726,9 @@ pub fn setup_fastlist_api(
                   (image_with_tileset, color): (ImageWithTileset, Option<Vec4>)| {
                 let data: Vec<(f32, Quad)> = this
                     .data
-                    .chunks_exact(3)
+                    .as_chunks::<3>()
+                    .0
+                    .iter()
                     .map(|chunk| {
                         (
                             chunk[0].x(),
@@ -759,7 +761,9 @@ pub fn setup_fastlist_api(
                   (image_with_tileset, color): (ImageWithTileset, Option<Vec4>)| {
                 let data: Vec<(i64, Quad)> = this
                     .data
-                    .chunks_exact(5)
+                    .as_chunks::<5>()
+                    .0
+                    .iter()
                     .map(|chunk| {
                         (
                             chunk[0].x() as i64,

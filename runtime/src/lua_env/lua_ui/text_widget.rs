@@ -7,7 +7,7 @@ use crate::io::IoEnvState;
 use crate::lua_env::lua_text::FontResourceId;
 use crate::lua_env::lua_vec2::Vec2;
 use crate::lua_env::lua_vec4::Vec4;
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::mlua;
 
 use super::{Alignment, EventState, VectarineWidget};

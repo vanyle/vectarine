@@ -5,7 +5,7 @@ use crate::{
     graphics::gltexture::{self, ImageAntialiasing, Texture},
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 pub struct ImageResource {
     pub texture: RefCell<Option<Arc<gltexture::Texture>>>,

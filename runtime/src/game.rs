@@ -1,7 +1,7 @@
 use std::{cell::RefCell, ops::DerefMut, path::Path, rc::Rc, sync::Arc};
 
-use vectarine_plugin_sdk::glow;
-use vectarine_plugin_sdk::glow::HasContext;
+use vectarine_plugin_sdk::egui_glow::glow;
+use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
 use vectarine_plugin_sdk::sdl2;
 

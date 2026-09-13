@@ -1,5 +1,5 @@
 use crate::drawing_surface::{DrawingSurface, SurfaceMargins};
-use vectarine_plugin_sdk::glow::{self, HasContext};
+use vectarine_plugin_sdk::egui_glow::glow::{self, HasContext};
 use vectarine_plugin_sdk::sdl2::VideoSubsystem;
 use vectarine_plugin_sdk::sdl2::sys::SDL_WindowFlags;
 use vectarine_plugin_sdk::sdl2::video::{FullscreenType, Window, WindowPos};

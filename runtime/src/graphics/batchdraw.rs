@@ -23,7 +23,7 @@ use crate::{
     io::IoEnvState,
     lua_env::lua_vec2::Vec2,
 };
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum BatchShader {

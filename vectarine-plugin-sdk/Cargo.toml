@@ -8,31 +8,29 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow = "1.0.100"
-egui = "0.34.1"
-egui_glow = "0.34.1"
-glow = "0.17.0"
+egui = "0.36.2"
+egui_glow = "0.36.2"
 toml = "0.9.8"
-rapier2d = "0.31.0"
+rapier2d = "0.35.3"
 lazy_static = "1.5.0"
 serde = { version = "1.0.221", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
-# Jun 1, 2026 commit, needed for Rust 1.94 compatibility, >0.11.6
-# Targets Luau 0.714
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.0", features = ["luau-jit", "serde", "vendored", "async"] }
+# Targets Luau 0.736
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(any(target_os = "macos"))'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.0", features = ["luau-jit", "serde", "vendored", "async"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled"] }
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.0", features = ["luau-jit", "serde", "vendored", "async"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = [] }
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.0", features = ["luau", "serde", "vendored", "async"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau", "serde", "vendored", "async"] }
 
 [package.metadata.vcpkg]
 dependencies = ["sdl2"]

@@ -1,14 +1,14 @@
 use std::{
     cell::RefCell,
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     path::{Path, PathBuf},
     rc::{Rc, Weak},
     sync::Arc,
 };
 
+use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::mlua::IntoLua;
 use vectarine_plugin_sdk::serde::{Deserialize, Serialize};
-use vectarine_plugin_sdk::{egui::ahash::HashMap, glow};
 
 use crate::{
     game_resource::script_resource::ScriptResource,

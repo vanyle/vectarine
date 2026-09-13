@@ -6,15 +6,15 @@ use runtime::{
     anyhow,
     drawing_surface::DrawingSurface,
     egui_glow,
+    egui_glow::glow,
     game_resource::{ResourceManager, font_resource},
-    glow,
     graphics::batchdraw::BatchDraw2d,
     sdl2::{
         event::{Event, WindowEvent},
         video::{GLContext, Window},
     },
 };
-use vectarine_plugin_sdk::glow::HasContext;
+use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 
 use crate::{editorinterface::EditorState, egui_sdl2_platform};
 
@@ -44,7 +44,7 @@ pub fn create_specific_editor_window(
 }
 
 impl EditorInterfaceWithGl {
-    pub fn new(window: &Window, gl: &Arc<glow::Context>) -> anyhow::Result<Self> {
+    pub fn new(window: &Window, gl: &Arc<egui_glow::glow::Context>) -> anyhow::Result<Self> {
         let painter =
             egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
         let platform =

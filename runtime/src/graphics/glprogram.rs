@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use vectarine_plugin_sdk::glow;
-use vectarine_plugin_sdk::glow::HasContext;
+use vectarine_plugin_sdk::egui_glow::glow;
+use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 
 use crate::{
     get_shader_version,

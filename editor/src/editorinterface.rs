@@ -16,7 +16,8 @@ use runtime::{
     anyhow::{self},
     console,
     drawing_surface::{DrawingSurface, sdl_drawing_surface::SdlDrawingSurface},
-    egui, egui_glow, glow,
+    egui, egui_glow,
+    egui_glow::glow,
     graphics::batchdraw::BatchDraw2d,
     io::{
         self,
@@ -25,7 +26,7 @@ use runtime::{
     },
     toml,
 };
-use vectarine_plugin_sdk::glow::HasContext;
+use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 
 use crate::{
     editorconfig::{EditorConfig, WindowStyle},
@@ -338,7 +339,7 @@ impl EditorState {
         // Stop drawing the egui frame and get the full output
         // let full_output = platform.end_frame(&self.video);
         match full_output {
-            Ok((full_output, m_height)) => {
+            Ok((mut full_output, m_height)) => {
                 menu_height = m_height * pixels_per_point_y; // Convert from egui points to true framebuffer pixels
                 // Get the paint jobs
                 let paint_jobs = platform.tessellate(&full_output);
@@ -359,7 +360,7 @@ impl EditorState {
                     [drawable_size.0, drawable_size.1],
                     pixels_per_point_x,
                     pj,
-                    &full_output.textures_delta,
+                    &mut full_output.textures_delta,
                 );
             }
             Err(e) => println!("Failed to render debug ui: {e:?}"),
@@ -422,7 +423,9 @@ pub fn filter_events(
     })
 }
 
-pub fn make_gl_context(video_subsystem: &runtime::sdl2::VideoSubsystem) -> glow::Context {
+pub fn make_gl_context(
+    video_subsystem: &runtime::sdl2::VideoSubsystem,
+) -> egui_glow::glow::Context {
     unsafe {
         egui_glow::painter::Context::from_loader_function(|name| {
             video_subsystem.gl_get_proc_address(name) as *const _

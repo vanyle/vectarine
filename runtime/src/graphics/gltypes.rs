@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::graphics::gluniforms::UniformValue;
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 /// Internal representation for OpenGL types used in shaders
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

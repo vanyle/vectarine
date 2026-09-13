@@ -6,7 +6,7 @@ description = "The Vectarine Editor, used to create and edit vectarine projects.
 homepage = "https://github.com/vanyle/vectarine"
 
 [dependencies]
-egui_extras = "0.34.1"
+egui_extras = "0.36.2"
 lazy_static = "1.5.0"
 notify-debouncer-full = "0.6.0"
 open = "5.3.2"

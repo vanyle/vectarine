@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::{ops, sync::Arc};
 
-use vectarine_plugin_sdk::glow::Context;
+use vectarine_plugin_sdk::egui_glow::glow::Context;
 use vectarine_plugin_sdk::mlua::{self, AnyUserData, FromLua, IntoLua, UserDataMethods};
 
 use crate::lua_env::lua_fastlist::value_to_f32;

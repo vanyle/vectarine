@@ -5,7 +5,7 @@ use crate::graphics::batchdraw;
 use crate::graphics::glstencil::draw_with_mask;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_vec2::Vec2;
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::mlua;
 
 use super::{EventState, VectarineWidget, WidgetBox};

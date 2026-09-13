@@ -7,7 +7,7 @@ use crate::{
     lua_env::LuaHandle,
     sound::{self, ChannelId},
 };
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 // do not use this, the sample frequency should not be hardcoded (or we need to perform a resampling step)
 pub static AUDIO_SAMPLE_FREQUENCY: i32 = 48000; // in Hz

@@ -4,7 +4,7 @@ use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 /// The most simple resource, a .txt file with some content.
 pub struct TextResource {

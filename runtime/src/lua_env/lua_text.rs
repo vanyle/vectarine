@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use vectarine_plugin_sdk::{
-    glow::Context,
+    egui_glow::glow::Context,
     mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value},
 };
 

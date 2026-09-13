@@ -4,16 +4,15 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use nalgebra::Isometry2;
-use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataFields, UserDataMethods};
-use vectarine_plugin_sdk::rapier2d::{
-    math::Vector,
-    prelude::{
-        CCDSolver, Collider, ColliderBuilder, ColliderSet, DefaultBroadPhase, ImpulseJointHandle,
-        ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet, NarrowPhase,
-        PhysicsPipeline, QueryFilter, RevoluteJointBuilder, RigidBody, RigidBodyBuilder,
-        RigidBodyHandle, RigidBodySet,
-    },
+use vectarine_plugin_sdk::rapier2d::prelude::{
+    CCDSolver, Collider, ColliderBuilder, ColliderSet, DefaultBroadPhase, ImpulseJointHandle,
+    ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet, NarrowPhase,
+    PhysicsPipeline, QueryFilter, RevoluteJointBuilder, RigidBody, RigidBodyBuilder,
+    RigidBodyHandle, RigidBodySet,
+};
+use vectarine_plugin_sdk::{
+    mlua::{AnyUserData, FromLua, IntoLua, UserDataFields, UserDataMethods},
+    rapier2d,
 };
 
 use crate::{
@@ -144,7 +143,7 @@ impl Object2 {
         let mut world = world.borrow_mut();
         let world = &mut *world;
         let rigid_body = world.rigid_body_set.get_mut(self.rigid_body_handle)?;
-        rigid_body.set_translation(nalgebra::vector![position.x(), position.y()], true);
+        rigid_body.set_translation(rapier2d::math::Vec2::new(position.x(), position.y()), true);
         Some(())
     }
     pub fn set_velocity(&self, velocity: Vec2) -> Option<()> {
@@ -152,7 +151,7 @@ impl Object2 {
         let mut world = world.borrow_mut();
         let world = &mut *world;
         let rigid_body = world.rigid_body_set.get_mut(self.rigid_body_handle)?;
-        rigid_body.set_linvel(nalgebra::vector![velocity.x(), velocity.y()], true);
+        rigid_body.set_linvel(rapier2d::math::Vec2::new(velocity.x(), velocity.y()), true);
         Some(())
     }
 }
@@ -208,11 +207,11 @@ pub fn setup_physics_api(
             let physics_hooks = ();
             let event_handler = ();
 
-            let rapier_gravity = vectarine_plugin_sdk::rapier2d::prelude::vector![world.gravity.x(), world.gravity.y()];
+            let rapier_gravity = rapier2d::math::Vec2::new(world.gravity.x(), world.gravity.y());
             world.integration_parameters.dt = dt;
 
             world.physics_pipeline.step(
-                &rapier_gravity,
+                rapier_gravity,
                 &world.integration_parameters,
                 &mut world.island_manager,
                 &mut world.broad_phase,
@@ -257,8 +256,9 @@ pub fn setup_physics_api(
                         });
                     }
                 };
+                let pose = rapier2d::math::Pose2::translation(position.x(), position.y());
                 let body = body_builder
-                    .pose(Isometry2::translation(position.x(), position.y()))
+                    .pose(pose)
                     .additional_mass(mass)
                     .build();
                 let body_handle = world.rigid_body_set.insert(body);
@@ -339,7 +339,7 @@ pub fn setup_physics_api(
                     filter,
                 );
                 let matches =
-                    query_pipeline.intersect_point(vectarine_plugin_sdk::rapier2d::prelude::point![point.x(), point.y()]);
+                    query_pipeline.intersect_point(rapier2d::math::Vec2::new(point.x(), point.y()));
                 Ok(matches
                     .filter_map(|m| m.1.parent())
                     .map(|parent| Object2 {
@@ -352,8 +352,8 @@ pub fn setup_physics_api(
 
         registry.add_method_mut("getObjectsInArea", {
             move |_, lua_world, (position, size): (Vec2, Vec2)| {
-                use vectarine_plugin_sdk::rapier2d::prelude;
-                use vectarine_plugin_sdk::rapier2d::parry;
+                use rapier2d::math;
+                use rapier2d::parry;
 
                 let world = lua_world.0.borrow();
                 let world = &*world;
@@ -364,9 +364,9 @@ pub fn setup_physics_api(
                     &world.collider_set,
                     filter,
                 );
-                let cuboid_size = prelude::vector![size.x() / 2.0, size.y() / 2.0];
+                let cuboid_size = math::Vec2::new(size.x() / 2.0, size.y() / 2.0);
                 let shape = parry::shape::Cuboid::new(cuboid_size);
-                let shape_pos = prelude::Isometry::translation(
+                let shape_pos = math::Pose2::translation(
                     position.x() + size.x() / 2.0,
                     position.y() + size.y() / 2.0
                 );
@@ -393,9 +393,9 @@ pub fn setup_physics_api(
                     &world.collider_set,
                     filter,
                 );
-                let position = vectarine_plugin_sdk::rapier2d::prelude::point![position.x(), position.y()];
-                let direction = vectarine_plugin_sdk::rapier2d::prelude::vector![direction.x(), direction.y()];
-                let ray = vectarine_plugin_sdk::rapier2d::prelude::Ray::new(position, direction);
+                let position = rapier2d::math::Vec2::new(position.x(), position.y());
+                let direction = rapier2d::math::Vec2::new(direction.x(), direction.y());
+                let ray = rapier2d::parry::query::Ray::new(position, direction);
                 let matches =
                     query_pipeline.intersect_ray(ray, max_length.unwrap_or(10000.0), true);
                 Ok(matches
@@ -438,8 +438,8 @@ pub fn setup_physics_api(
                 let mut world = lua_world.0.borrow_mut();
                 let world = &mut *world;
                 let joint = RevoluteJointBuilder::new()
-                    .local_anchor1(nalgebra::point![0.0, 1.0])
-                    .local_anchor2(nalgebra::point![0.0, -3.0])
+                    .local_anchor1(rapier2d::math::Vec2::new(0.0, 0.0))
+                    .local_anchor2(rapier2d::math::Vec2::new(0.0, 0.0))
                     .build();
                 let join_handle = world.impulse_joint_set.insert(
                     object1.rigid_body_handle,
@@ -480,7 +480,7 @@ pub fn setup_physics_api(
                 ));
             };
             Ok(Object2 {
-                rigid_body_handle: j.body1,
+                rigid_body_handle: j.body1(),
                 world: joint.world.clone(),
             })
         });
@@ -498,7 +498,7 @@ pub fn setup_physics_api(
                 ));
             };
             Ok(Object2 {
-                rigid_body_handle: j.body2,
+                rigid_body_handle: j.body2(),
                 world: joint.world.clone(),
             })
         });
@@ -523,7 +523,7 @@ pub fn setup_physics_api(
         move |_, points: Vec<Vec2>| {
             let mut converted_points = points // We could probably transmute here, but we won't.
                 .iter()
-                .map(|p| nalgebra::Point::from(nalgebra::vector![p.x(), p.y()]))
+                .map(|p| rapier2d::math::Vec2::new(p.x(), p.y()))
                 .collect::<Vec<_>>();
             converted_points.push(converted_points[0]);
             let indices = (0..(points.len() as u32)).map(|i| [i, i + 1]).collect();
@@ -553,11 +553,11 @@ pub fn setup_physics_api(
                 hx: i32,
                 hy: i32,
                 filled_tile_ids: &[i32],
-                voxel_data: &mut Vec<nalgebra::Point<i32, 2>>,
+                voxel_data: &mut Vec<rapier2d::math::IVector>,
             ) -> vectarine_plugin_sdk::mlua::Result<()> {
                 tilemap.get_tile_part(resources, layer, lx, ly, hx, hy, |id, x, y| {
                     if filled_tile_ids.contains(&(id as i32)) {
-                        voxel_data.push(vectarine_plugin_sdk::rapier2d::prelude::point![x, y]);
+                        voxel_data.push(rapier2d::math::IVector::new(x, y));
                     }
                     Ok(())
                 })
@@ -567,8 +567,8 @@ pub fn setup_physics_api(
             let ly = low.y().floor() as i32;
             let hx = high.x().ceil() as i32;
             let hy = high.y().ceil() as i32;
-            let voxel_size = nalgebra::vector![voxel_size.x(), voxel_size.y()];
-            let mut voxel_data: Vec<nalgebra::Point<i32, 2>> = Vec::new();
+            let voxel_size = rapier2d::math::Vec2::new(voxel_size.x(), voxel_size.y());
+            let mut voxel_data: Vec<rapier2d::math::IVector> = Vec::new();
 
             let tilemap_id = tilemap_ud.borrow::<TilemapResourceId>();
             if let Ok(tilemap_id) = tilemap_id {
@@ -619,25 +619,26 @@ pub fn setup_physics_api(
     // MARK: Object2 fn
     lua.register_userdata_type::<Object2>(|registry| {
         registry.add_field_method_get("position", |_, object| {
-            let translation: Vector<f32> =
-                access_rigid_body_mut(object, |_, rigid_body| *rigid_body.translation())?;
+            let translation: rapier2d::math::Vec2 =
+                access_rigid_body_mut(object, |_, rigid_body| rigid_body.translation())?;
             let result = Vec2::new(translation.x, translation.y);
             Ok(result)
         });
         registry.add_field_method_set("position", |_, object, position: Vec2| {
             access_rigid_body_mut(object, |_, rigid_body| {
-                rigid_body.set_translation(nalgebra::vector![position.x(), position.y()], true);
+                rigid_body
+                    .set_translation(rapier2d::math::Vec2::new(position.x(), position.y()), true);
             })?;
             Ok(())
         });
         registry.add_field_method_get("speed", |_, object| {
-            let speed = access_rigid_body_mut(object, |_, rigid_body| *rigid_body.linvel())?;
+            let speed = access_rigid_body_mut(object, |_, rigid_body| rigid_body.linvel())?;
             let result = Vec2::new(speed.x, speed.y);
             Ok(result)
         });
         registry.add_field_method_set("speed", |_, object, speed: Vec2| {
             access_rigid_body_mut(object, |_, rigid_body| {
-                rigid_body.set_linvel(nalgebra::vector![speed.x(), speed.y()], true);
+                rigid_body.set_linvel(rapier2d::math::Vec2::new(speed.x(), speed.y()), true);
             })?;
             Ok(())
         });
@@ -646,10 +647,7 @@ pub fn setup_physics_api(
         });
         registry.add_field_method_set("rotation", |_, object, rotation: f32| {
             access_rigid_body_mut(object, |_, rigid_body| {
-                rigid_body.set_rotation(
-                    vectarine_plugin_sdk::rapier2d::math::Rotation::new(rotation),
-                    true,
-                );
+                rigid_body.set_rotation(rapier2d::math::Rotation::new(rotation), true);
             })
         });
         registry.add_field_method_get("rotationSpeed", |_, object| {
@@ -823,42 +821,45 @@ fn get_points_of_collider(collider: &Collider) -> Vec<Vec2> {
         shape
             .to_polyline()
             .iter()
-            .map(|p| collider.position() * p)
+            .map(|p| collider.position() * *p)
             .map(|p| Vec2::new(p.x, p.y))
             .collect()
     } else if let Some(shape) = shape.as_ball() {
         shape
             .to_polyline(32)
             .iter()
-            .map(|p| collider.position() * p)
+            .map(|p| collider.position() * *p)
             .map(|p| Vec2::new(p.x, p.y))
             .collect()
     } else if let Some(shape) = shape.as_polyline() {
         shape
             .vertices()
             .iter()
-            .map(|p| collider.position() * p)
+            .map(|p| collider.position() * *p)
             .map(|p| Vec2::new(p.x, p.y))
             .collect()
     } else if let Some(shape) = shape.as_convex_polygon() {
         shape
             .points()
             .iter()
-            .map(|p| collider.position() * p)
+            .map(|p| collider.position() * *p)
             .map(|p| Vec2::new(p.x, p.y))
             .collect()
     } else if let Some(shape) = shape.as_voxels() {
         let size = shape.voxel_size();
-        let half = nalgebra::point![size.x, size.y] / 2.0;
         let collider_pos = collider.position();
         shape
             .voxels()
             .flat_map(|p| {
                 let center = p.center;
-                let p1 = nalgebra::point![p.center.x - half.x, p.center.y - half.y];
-                let p2 = nalgebra::point![center.x + half.x, center.y - half.y];
-                let p3 = nalgebra::point![p.center.x + half.x, p.center.y + half.y];
-                let p4 = nalgebra::point![center.x - half.x, center.y + half.y];
+                let p1 =
+                    rapier2d::math::Vec2::new(p.center.x - size.x / 2.0, p.center.y - size.y / 2.0);
+                let p2 =
+                    rapier2d::math::Vec2::new(center.x + size.x / 2.0, center.y - size.y / 2.0);
+                let p3 =
+                    rapier2d::math::Vec2::new(p.center.x + size.x / 2.0, p.center.y + size.y / 2.0);
+                let p4 =
+                    rapier2d::math::Vec2::new(center.x - size.x / 2.0, center.y + size.y / 2.0);
                 vec![
                     collider_pos * p1,
                     collider_pos * p2,

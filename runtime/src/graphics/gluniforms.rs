@@ -1,4 +1,4 @@
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 #[derive(Debug, Clone)]
 pub enum UniformValue {

@@ -206,7 +206,6 @@ impl Platform {
                                 mac_cmd,
                                 command,
                             };
-                            self.raw_input.modifiers = self.modifiers;
                             // Push the event
                             self.raw_input.events.push(egui::Event::Key {
                                 key,
@@ -246,7 +245,6 @@ impl Platform {
                                 mac_cmd,
                                 command,
                             };
-                            self.raw_input.modifiers = self.modifiers;
                             // Push the event
                             self.raw_input.events.push(egui::Event::Key {
                                 key,

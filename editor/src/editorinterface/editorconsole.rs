@@ -53,7 +53,7 @@ pub fn draw_editor_console(editor: &mut EditorState, ui: &egui::Ui) {
 
                 egui::Panel::bottom("bottom_panel")
                     .resizable(true)
-                    .show_inside(ui, |ui| {
+                    .show(ui, |ui| {
                         ui.label(
                             RichText::new("Frame messages")
                                 .size(14.0)
@@ -73,7 +73,7 @@ pub fn draw_editor_console(editor: &mut EditorState, ui: &egui::Ui) {
                             });
                     });
 
-                egui::CentralPanel::default().show_inside(ui, |ui| {
+                egui::CentralPanel::default().show(ui, |ui| {
                     let prefered_text_editor = editor.config.borrow().text_editor;
                     draw_console_content(ui, project_dir.as_deref(), prefered_text_editor);
                 });

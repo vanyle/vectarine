@@ -8,7 +8,7 @@ use crate::{
     },
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::glow;
+use vectarine_plugin_sdk::egui_glow::glow;
 
 pub struct Shader {
     pub shader: glprogram::GLProgram,

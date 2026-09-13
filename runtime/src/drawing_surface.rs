@@ -1,4 +1,4 @@
-use vectarine_plugin_sdk::{glow, sdl2::video::FullscreenType};
+use vectarine_plugin_sdk::{egui_glow::glow, sdl2::video::FullscreenType};
 
 pub mod sdl_drawing_surface;
 
