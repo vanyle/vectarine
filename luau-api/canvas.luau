@@ -1,9 +1,10 @@
-local Coord = require("@vectarine/coord")
-local Resource = require("@vectarine/resource")
-local Vec = require("@vectarine/vec")
+local coord = require("@vectarine/coord")
+local resource = require("@vectarine/resource")
+local vec = require("@vectarine/vec")
+local vec4 = require("@vectarine/vec4")
 
-type Pos = Coord.ScreenPosition | Vec.Vec2
-type Direction = Coord.ScreenVec | Vec.Vec2
+type Pos = coord.ScreenPosition | vec.Vec2
+type Direction = coord.ScreenVec | vec.Vec2
 
 --- Functions to create canvas and shaders
 --- A canvas is a drawing surface and a shader is a program that changes how a canvas is drawn to another drawing surface.
@@ -11,7 +12,7 @@ local module = {}
 
 local ShaderResourceImpl = { type = "shader" }
 ShaderResourceImpl.__index = ShaderResourceImpl
-export type ShaderResource = typeof(setmetatable({}, ShaderResourceImpl)) & Resource.Resource
+export type ShaderResource = typeof(setmetatable({}, ShaderResourceImpl)) & resource.Resource
 
 local Canvas = {}
 Canvas.__index = Canvas
@@ -45,17 +46,17 @@ function Canvas.setShader(self: Canvas, shader: ShaderResource?): ()
 end
 
 --- Sets a uniform float value for the shader used when drawing this canvas.
-function Canvas.setUniform(self: Canvas, name: string, value: number): ()
+function Canvas.setUniform(self: Canvas, name: string, value: number | vec.Vec2 | vec4.Vec4): ()
 	error("Implemented in native code")
 end
 
 --- Gets the size of the canvas or image in pixels
-function Canvas.getSize(self: Canvas): Vec.Vec2
+function Canvas.getSize(self: Canvas): vec.Vec2
 	error("Implemented in native code")
 end
 
 --- Draws a canvas at given position and size
-function Canvas.draw(self: Canvas, pos: Vec.Vec2, size: Direction): ()
+function Canvas.draw(self: Canvas, pos: vec.Vec2, size: Direction): ()
 	error("Implemented in native code")
 end
 
@@ -67,8 +68,8 @@ function Canvas.drawPart(
 	dest_p2: Pos,
 	dest_p3: Pos,
 	dest_p4: Pos,
-	src_pos: Vec.Vec2,
-	src_size: Vec.Vec2
+	src_pos: vec.Vec2,
+	src_size: vec.Vec2
 ): ()
 	error("Implemented in native code")
 end
