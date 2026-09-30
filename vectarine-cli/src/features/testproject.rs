@@ -292,8 +292,8 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
             }
             TestStep::ActionKeyRelease(key_names) => {
                 for key_name in key_names {
+                    let scancode = sdl2::keyboard::Scancode::from_name(&key_name);
                     let keycode = sdl2::keyboard::Keycode::from_name(&key_name);
-                    let scancode = keycode.and_then(sdl2::keyboard::Scancode::from_keycode);
                     if keycode.is_none() {
                         println!(
                             "Warning: Key name '{}' not recognized. Check https://wiki.libsdl.org/SDL2/SDL_KeyCode for valid key names.",
