@@ -1,4 +1,3 @@
-use std::f32;
 use std::{cell::RefCell, rc::Rc};
 
 use noise::{NoiseFn, Simplex, Worley};

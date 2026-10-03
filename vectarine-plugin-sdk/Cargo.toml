@@ -17,20 +17,20 @@ serde = { version = "1.0.221", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
-# Targets Luau 0.736
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau-jit", "serde", "vendored", "async"] }
+# Targets Luau 0.740
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(any(target_os = "macos"))'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau-jit", "serde", "vendored", "async"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled"] }
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau-jit", "serde", "vendored", "async"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = [] }
-mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.1", features = ["luau", "serde", "vendored", "async"] }
+mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau", "serde", "vendored", "async"] }
 
 [package.metadata.vcpkg]
 dependencies = ["sdl2"]
