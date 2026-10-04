@@ -49,6 +49,8 @@ mod testfileparsing {
         ActionKeyPress(Vec<String>),
         #[serde(rename = "release_keys")]
         ActionKeyRelease(Vec<String>),
+        #[serde(rename = "tap_keys")]
+        ActionKeyTap(Vec<String>),
         #[serde(rename = "press_mouse_at")]
         ActionMousePress(i32, i32),
         #[serde(rename = "release_mouse_at")]
@@ -73,6 +75,44 @@ fn make_path_absolute(relative_file_path: &Path, anchor_file_path: &Path) -> Pat
     }
 
     relative_file_path.to_path_buf()
+}
+
+fn push_key_events(
+    event_buffer: &mut Vec<Event>,
+    key_names: &[String],
+    down: bool,
+    window_id: u32,
+) {
+    for key_name in key_names {
+        let scancode = sdl2::keyboard::Scancode::from_name(key_name);
+        let keycode = sdl2::keyboard::Keycode::from_name(key_name);
+        if keycode.is_none() {
+            println!(
+                "Warning: Key name '{}' not recognized. Check https://wiki.libsdl.org/SDL2/SDL_KeyCode for valid key names.",
+                key_name
+            );
+        }
+        let event = if down {
+            Event::KeyDown {
+                timestamp: 0,
+                window_id,
+                keycode,
+                scancode,
+                keymod: sdl2::keyboard::Mod::empty(),
+                repeat: false,
+            }
+        } else {
+            Event::KeyUp {
+                timestamp: 0,
+                window_id,
+                keycode,
+                scancode,
+                keymod: sdl2::keyboard::Mod::empty(),
+                repeat: false,
+            }
+        };
+        event_buffer.push(event);
+    }
 }
 
 pub fn test_project(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u32) -> Result<()> {
@@ -277,38 +317,28 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
                 }
             }
             TestStep::ActionKeyPress(key_names) => {
-                for key_name in key_names {
-                    let scancode = sdl2::keyboard::Scancode::from_name(&key_name);
-                    let keycode = sdl2::keyboard::Keycode::from_name(&key_name);
-                    event_buffer.push(Event::KeyDown {
-                        timestamp: 0,
-                        window_id: game_runner.window_id(),
-                        keycode,
-                        scancode,
-                        keymod: sdl2::keyboard::Mod::empty(),
-                        repeat: false,
-                    });
-                }
+                push_key_events(&mut event_buffer, &key_names, true, game_runner.window_id());
             }
             TestStep::ActionKeyRelease(key_names) => {
-                for key_name in key_names {
-                    let scancode = sdl2::keyboard::Scancode::from_name(&key_name);
-                    let keycode = sdl2::keyboard::Keycode::from_name(&key_name);
-                    if keycode.is_none() {
-                        println!(
-                            "Warning: Key name '{}' not recognized. Check https://wiki.libsdl.org/SDL2/SDL_KeyCode for valid key names.",
-                            key_name
-                        );
-                    }
-                    event_buffer.push(Event::KeyUp {
-                        timestamp: 0,
-                        window_id: game_runner.window_id(),
-                        keycode,
-                        scancode,
-                        keymod: sdl2::keyboard::Mod::empty(),
-                        repeat: false,
-                    });
-                }
+                push_key_events(
+                    &mut event_buffer,
+                    &key_names,
+                    false,
+                    game_runner.window_id(),
+                );
+            }
+            TestStep::ActionKeyTap(key_names) => {
+                push_key_events(&mut event_buffer, &key_names, true, game_runner.window_id());
+                let result = game_runner.step(Duration::from_secs_f32(1.0 / 60.0), &event_buffer);
+                logs.extend(result.logs);
+                event_buffer.clear();
+                // The keys are released on the next frame, like a release_keys step.
+                push_key_events(
+                    &mut event_buffer,
+                    &key_names,
+                    false,
+                    game_runner.window_id(),
+                );
             }
             TestStep::ActionMousePress(x, y) => {
                 event_buffer.push(Event::MouseButtonDown {
