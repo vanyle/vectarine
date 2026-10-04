@@ -3,25 +3,21 @@ const graphics = require("@vectarine/graphics")
 const loader = require("@vectarine/loader")
 
 --[[
-A template for a top-down puzzle RPG, in the style of the first Zelda game.
-
-The clock of Plouneuc stopped at midnight, and time with it: nothing moves unless the player does.
-Every step is a turn. Find the 10 gears hidden in the old mine to start the clock again.
-Each level is a single-screen puzzle with monsters, spikes, bombs, arrows, potions, plates and gates.
+Explorium: a top-down RPG template. An explorer falls into the Explorium, a huge cave system full of the ruins
+of the sea people, and tries to find a way out. See GAME_DESIGN_DOC.md for the design.
 
 Where to look:
-- data/: the content of the game (rooms, levels, terrain, monsters, characters, story). Mostly text!
-- rules.luau: what happens during a turn (moving, monsters, bombs, arrows, gates, deaths)
-- monster_ai.luau: where monsters want to go
-- game_state.luau: the state of the game, levels, undo and restart
-- world.luau: how the rooms are turned into a tilemap
-- world_view.luau, effects.luau, postfx.luau: how everything is drawn (with lots of juice)
-- game_screen.luau: keyboard controls and the flow between levels
-- dialog.luau, hud.luau, prompts.luau: the interface
+- data/: the content of the game (levels, terrain, props, items, creatures, characters, lore). Mostly text!
+- game_logic.luau: the rules, updated every frame (moving, combat, pickups, exits, needs)
+- player.luau, combat.luau, monster_ai.luau, inventory.luau, interactions.luau: the parts of the rules
+- level.luau: how the text maps become levels (tilemaps, heights, collisions)
+- game_state.luau, progress.luau: new games, entering levels, resting, saving
+- world_view.luau, lighting.luau, effects.luau, postfx.luau: how everything is drawn
+- game_screen.luau, hud.luau, menus.luau, dialog.luau, prompts.luau: the interface
 - title_screen.luau, settings_screen.luau, credits_screen.luau: the menus
+- tools/art/: the script that draws the sprites (python3 tools/art/make_art.py)
 
-Automated tests are in testdata/TopDownRPG at the root of the Vectarine repository.
-In the editor console, try "level 3", "solve" or "finish 9".
+In the editor console, try "warp colonnade", "give bronze_spear" or "heal".
 ]]
 
 const mainScriptResource, mainModule = loader.loadScript("scripts/main.luau")

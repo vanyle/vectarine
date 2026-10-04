@@ -1,6 +1,7 @@
 const game_screen = require("./game_screen")
 const loader = require("@vectarine/loader")
 const menu_backdrop = require("./menu_backdrop")
+const progress = require("./progress")
 const theme = require("./theme")
 const ui = require("@vectarine/ui")
 const ui_components = require("./ui_components")
@@ -33,10 +34,19 @@ end
 local menu = ui_components.menu({
 	{
 		label = function()
-			return if game_screen.game then "Continue" else "Play"
+			return if game_screen.game or progress.load() then "Continue" else "Play"
 		end,
 		icon = "icons/play",
 		action = function(extra: any)
+			extra.currentScreen = "game"
+		end,
+	},
+	{
+		label = "New game",
+		icon = "icons/restart",
+		action = function(extra: any)
+			progress.clear()
+			game_screen.game = nil
 			extra.currentScreen = "game"
 		end,
 	},
@@ -61,8 +71,8 @@ module.titleScreenWidget = ui.stack({ alignX = "center", alignY = "center" }, {
 		menu_backdrop.draw()
 	end),
 	ui.column({ align = "center" }, {
-		shadowedText("TOP DOWN RPG", 0.3, theme.colors.gold),
-		ui.text("~ The Stopped Clock ~", { fontSize = 0.085, font = theme.font, color = theme.colors.text }),
+		shadowedText("EXPLORIUM", 0.3, theme.colors.gold),
+		ui.text("~ Escape the depths ~", { fontSize = 0.085, font = theme.font, color = theme.colors.text }),
 		ui.spacer(vec.V2(0, 0.14)),
 		menu,
 		ui.spacer(vec.V2(0, 0.2)),

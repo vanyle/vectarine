@@ -1,4 +1,3 @@
-const game_screen = require("./game_screen")
 const loader = require("@vectarine/loader")
 const menu_backdrop = require("./menu_backdrop")
 const settings = require("./settings")
@@ -64,13 +63,6 @@ local menu = ui_components.menu({
 		end,
 		action = function()
 			settings.toggleFullscreen()
-		end,
-	},
-	{
-		label = "Restart the game",
-		action = function(extra: any)
-			game_screen.game = nil
-			extra.currentScreen = "game"
 		end,
 	},
 	{

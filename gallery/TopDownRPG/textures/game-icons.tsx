@@ -3,6 +3,7 @@
  <image source="game-icons.png" width="1024" height="512"/>
  <tile id="1" type="back"/>
  <tile id="9" type="check"/>
+ <tile id="24" type="restart"/>
  <tile id="27" type="gear"/>
  <tile id="147" type="play"/>
  <tile id="168" type="cross"/>

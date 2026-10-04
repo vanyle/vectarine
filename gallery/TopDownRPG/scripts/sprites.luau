@@ -1,13 +1,19 @@
 --[[
 Sprites are drawn from spritesheets (an image + a tileset).
 
-A sprite is named "sheet/tile_type", for example "town/tree_green" or "dungeon/hero".
-The tile types are defined inside the .tsx files of the textures/ folder. You can edit them with Tiled
-(select a tile and set its "Class") or with a text editor: `<tile id="16" type="tree_green"/>`.
+A sprite is named "sheet/tile_type", for example "world/bush" or "characters/player_down_0".
+The tile types are defined inside the .tsx files of the textures/ folder. They are generated, with the images,
+by tools/art/make_art.py: change the drawings there and run the script again.
 
-To add a new sprite, add a `<tile id="..." type="my_name"/>` line in the corresponding .tsx file
-and use "sheet/my_name" in your code or data files.
+Sheets:
+- world: terrain and props (16x16)
+- autotile: quarters of the autotiled terrains (8x8), see world_view.luau
+- characters: the player, creatures, friendly characters and combat effects (16x16)
+- items: item icons (16x16)
+- bosses: big creatures (32x32)
+- icons: menu icons
 ]]
+const event = require("@vectarine/event")
 const image = require("@vectarine/image")
 const loader = require("@vectarine/loader")
 const resource = require("@vectarine/resource")
@@ -33,11 +39,11 @@ local function loadSheet(name: string, antialiasing: boolean): Sheet
 end
 
 local sheets: { [string]: Sheet } = {}
-sheets.town = loadSheet("town-tileset", false)
-sheets.dungeon = loadSheet("dungeon-tileset", false)
-sheets.farm = loadSheet("farm-tileset", false)
--- Sprites drawn for this game in the same style (spikes, plates, gears, ...)
-sheets.extra = loadSheet("extra-tileset", false)
+sheets.world = loadSheet("world", false)
+sheets.autotile = loadSheet("autotile", false)
+sheets.characters = loadSheet("characters", false)
+sheets.items = loadSheet("items", false)
+sheets.bosses = loadSheet("bosses", false)
 sheets.icons = loadSheet("game-icons", true)
 module.sheets = sheets
 
@@ -70,56 +76,133 @@ local function resolve(name: SpriteName): Resolved
 	return result
 end
 
---- Draw the sprite into a quad. `corners` are where the bottom-left, bottom-right, top-right and top-left
---- corners of the image go (the order expected by drawTileQuad).
---- Rotating the sprite is just shifting which corner of the image goes to which corner of the quad.
-local function drawInQuad(r: Resolved, corners: { vec.Vec2 }, quarterTurns: number?, tint: vec4.Vec4?)
-	local turns = (quarterTurns or 0) % 4
-	local function corner(i: number): vec.Vec2
-		return corners[((i - 1 - turns) % 4) + 1]
+--- Tile ids of each sheet by tile type, read from the tilesets once they are loaded
+local tileIds: { [string]: { [string]: number } } = {}
+
+--- Increases every time a tileset is (re)loaded: tile ids may have changed, so anything that kept them
+--- (the terrain of terrain_view.luau) must be computed again.
+module.tilesetVersion = module.tilesetVersion or 0
+
+event.getResourceLoadedEvent():on("spritesTilesets", function(id: number)
+	for name, sheet in module.sheets do
+		if sheet.tileset:getId() == id then
+			tileIds[name] = nil
+			module.tilesetVersion += 1
+		end
 	end
-	r.tiles:drawTileQuad(r.tile, corner(1), corner(2), corner(3), corner(4), tint)
+end)
+
+--- The sheet of a sprite and the id of its tile, to draw many sprites at once with fastlists.
+function module.tileOf(name: SpriteName): (image.ImageWithTileset, number)
+	local separator = string.find(name, "/", 1, true) :: number
+	local sheetName = string.sub(name, 1, separator - 1)
+	local sheet = module.sheets[sheetName]
+	local ids = tileIds[sheetName]
+	if not ids then
+		ids = {}
+		for _, id in sheet.tileset:getTiles() do
+			local info = sheet.tileset:getTile(id)
+			if info then
+				ids[info.type] = id
+			end
+		end
+		tileIds[sheetName] = ids
+	end
+	local id = ids[string.sub(name, separator + 1)]
+	assert(id, `Unknown sprite '{name}'`)
+	return sheet.tiles, id
 end
 
 --- Draw a sprite in screen space (OpenGL coordinates), with `pos` as the bottom-left corner.
---- `quarterTurns` rotates the sprite clockwise.
-function module.draw(name: SpriteName, pos: vec.Vec2, size: vec.Vec2, tint: vec4.Vec4?, quarterTurns: number?)
+function module.draw(name: SpriteName, pos: vec.Vec2, size: vec.Vec2, tint: vec4.Vec4?)
 	local r = resolve(name)
-	if not quarterTurns or quarterTurns % 4 == 0 then
-		r.tiles:drawTile(r.tile, pos, size, tint)
-		return
-	end
-	drawInQuad(r, { pos, pos + vec.V2(size.x, 0), pos + size, pos + vec.V2(0, size.y) }, quarterTurns, tint)
+	r.tiles:drawTile(r.tile, pos, size, tint)
 end
 
 export type WorldDrawOptions = {
 	tint: vec4.Vec4?,
 	flipX: boolean?,
-	--- Number of clockwise quarter turns (0 to 3).
-	quarterTurns: number?,
-	--- Scale around the center of the tile. Defaults to 1.
-	scale: number?,
+	--- Size in tiles (1 for 16x16 sprites, 2 for 32x32 sprites). Defaults to 1.
+	size: number?,
+	--- Rotation in radians, around the center of the sprite
+	angle: number?,
+	--- The part of the sprite drawn, from its top: 1 draws all of it (the default), 0.5 its upper half.
+	--- Something sinking in mud is cut at the mud line. Not combined with `angle`.
+	visible: number?,
 }
 
---- Draw a sprite in world space, where 1 unit is 1 tile and the y axis points down (like the rows of a level).
---- `pos` is the top-left corner of the tile (it can be fractional for smooth movement).
+--- Draw a sprite in world space, where 1 unit is 1 tile and the y axis points down.
+--- `pos` is the top-left corner of the sprite (it can be fractional for smooth movement).
 function module.drawInWorld(name: SpriteName, pos: vec.Vec2, options: WorldDrawOptions?)
 	local r = resolve(name)
 	local opts: WorldDrawOptions = options or {}
-	local half = (opts.scale or 1) * 0.5
-	local center = pos + vec.V2(0.5, 0.5)
-	-- drawTileQuad takes where the bottom-left, bottom-right, top-right and top-left corners of the image go.
-	-- In world space, y points down, so "bottom" is +y.
-	local corners = {
-		center + vec.V2(-half, half),
-		center + vec.V2(half, half),
-		center + vec.V2(half, -half),
-		center + vec.V2(-half, -half),
-	}
-	if opts.flipX then
-		corners = { corners[2], corners[1], corners[4], corners[3] }
+	local size = opts.size or 1
+	local half = size / 2
+	local center = pos + vec.V2(half, half)
+	-- Corners of the image, before rotation: bottom-left, bottom-right, top-right, top-left.
+	-- In world space y points down, so "bottom" is +y.
+	local offsets = { vec.V2(-half, half), vec.V2(half, half), vec.V2(half, -half), vec.V2(-half, -half) }
+	local visible = opts.visible
+	if visible and visible < 1 then
+		-- Only the upper part of the tile, on the upper part of the destination
+		local bottom = -half + size * math.max(0, visible)
+		offsets[1] = vec.V2(-half, bottom)
+		offsets[2] = vec.V2(half, bottom)
+		if opts.flipX then
+			offsets = { offsets[2], offsets[1], offsets[4], offsets[3] }
+		end
+		local _, id = module.tileOf(name)
+		local separator = string.find(name, "/", 1, true) :: number
+		local sheet = module.sheets[string.sub(name, 1, separator - 1)]
+		local info = sheet.tileset:getTile(id)
+		if not info then
+			return
+		end
+		-- The size of a tile as a ratio of the image (getTileRatio gives the number of tiles per row and column)
+		local tiles = sheet.tileset:getTileRatio()
+		local ratio = vec.V2(1 / tiles.x, 1 / tiles.y)
+		sheet.image:drawPart(
+			center + offsets[1],
+			center + offsets[2],
+			center + offsets[3],
+			center + offsets[4],
+			info.pos,
+			vec.V2(ratio.x, ratio.y * math.max(0, visible)),
+			opts.tint
+		)
+		return
 	end
-	drawInQuad(r, corners, opts.quarterTurns, opts.tint)
+	if opts.flipX then
+		offsets = { offsets[2], offsets[1], offsets[4], offsets[3] }
+	end
+	local angle = opts.angle
+	if angle and angle ~= 0 then
+		local c, s = math.cos(angle), math.sin(angle)
+		for i, o in offsets do
+			offsets[i] = vec.V2(o.x * c - o.y * s, o.x * s + o.y * c)
+		end
+	end
+	r.tiles:drawTileQuad(
+		r.tile,
+		center + offsets[1],
+		center + offsets[2],
+		center + offsets[3],
+		center + offsets[4],
+		opts.tint
+	)
+end
+
+--- Draw a quarter of a tile (an 8x8 sprite of the autotile sheet) in world space.
+function module.drawQuarter(name: SpriteName, pos: vec.Vec2)
+	local r = resolve(name)
+	r.tiles:drawTileQuad(
+		r.tile,
+		pos + vec.V2(0, 0.5),
+		pos + vec.V2(0.5, 0.5),
+		pos + vec.V2(0.5, 0),
+		pos,
+		nil
+	)
 end
 
 return module

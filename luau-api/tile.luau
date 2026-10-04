@@ -16,8 +16,8 @@ function TilesetResourceImpl:getTileSize(): vec.Vec2
 	error("Implemented in native code")
 end
 
---- Get the size of a tile, as the ratio of the full image.
---- For example, if you have 8 tiles per row and column, this will return V2(1/8, 1/8)
+--- Get the number of tiles that fit in the full image, along each axis (the image size divided by the tile size).
+--- For example, if you have 8 tiles per row and 4 per column, this will return V2(8, 4).
 function TilesetResourceImpl:getTileRatio(): vec.Vec2
 	error("Implemented in native code")
 end

@@ -1,6 +1,7 @@
 --[[
 Post-processing: the whole frame is drawn into a canvas, which is then drawn on the screen through
-a shader (shaders/postfx.glsl). The shader adds flashes, color splits and transitions.
+a shader (shaders/postfx.glsl). The shader adds flashes, color splits, transitions, and colors the edges of the screen
+when the player is in danger.
 
 Usage (see main.luau):
 	postfx.render(function()
@@ -16,6 +17,7 @@ const graphics = require("@vectarine/graphics")
 const io = require("@vectarine/io")
 const loader = require("@vectarine/loader")
 const settings = require("./settings")
+const theme = require("./theme")
 const vec = require("@vectarine/vec")
 const vec4 = require("@vectarine/vec4")
 
@@ -33,7 +35,21 @@ module.state = module.state
 		aberration = 0,
 		--- 0 = colors, 1 = black and white
 		desaturate = 0,
+		--- Strength of the red edges (low health) and the yellow edges (low water), from 0 to 1
+		danger = 0,
+		thirst = 0,
+		cold = 0,
 	}
+-- The state kept from before a reload may come from an older version of this file
+module.state.danger = module.state.danger or 0
+module.state.thirst = module.state.thirst or 0
+module.state.cold = module.state.cold or 0
+
+--- Tints multiplied with the colors of the edges of the screen: red keeps the reds, yellow removes the blues
+const DANGER_TINT = vec4.createColor(1.5, 0.35, 0.3, 1)
+const THIRST_TINT = vec4.createColor(1.35, 1.1, 0.3, 1)
+--- The color of the frost on the edges when the player is cold
+const COLD_TINT = vec4.createColor(0.78, 0.86, 0.95, 1)
 
 --- The canvas is recreated when the window size changes (creating a canvas is expensive).
 local current: { canvas: canvas.Canvas, size: vec.Vec2 }? = nil
@@ -79,6 +95,9 @@ function module.render(draw: () -> ())
 	local flash = effects.flashColor
 	target:setUniform("flash", vec4.createColor(flash.r, flash.g, flash.b, effects.flashAmount * 0.6))
 	target:setUniform("desaturate", state.desaturate)
+	target:setUniform("danger", theme.withAlpha(DANGER_TINT, state.danger * 0.9))
+	target:setUniform("thirst", theme.withAlpha(THIRST_TINT, state.thirst * 0.8))
+	target:setUniform("cold", theme.withAlpha(COLD_TINT, state.cold * 0.75))
 	target:setUniform("iris", state.iris)
 	-- The iris center is in OpenGL coordinates (-1 to 1), the shader works with uv coordinates (0 to 1)
 	target:setUniform("irisPos", state.irisCenter:scale(0.5) + vec.V2(0.5, 0.5))

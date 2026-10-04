@@ -2,92 +2,100 @@
 The game screen: reads the keyboard, runs the game logic and draws everything.
 
 Controls:
-- arrows: move. [Space]: talk, read, or use the selected item (it waits a turn when there is nothing to do)
-- [X]: switch item. [Z]: undo. [R]: restart the level. [Escape]: leave the level / pause
+- arrows (or WASD): move. [Space]: attack with the equipped weapon (hold to keep attacking)
+- [E]: interact (talk, open, rest, pick, read...). [Q] (A on AZERTY keyboards): notebook. [Escape]: pause
 
-It also handles the flow of the game: entering and leaving levels with a transition,
-the "gear found" celebration, restarting after dying, story beats and the ending.
+It also handles the flow of the game: transitions between levels, title cards, announcements, fainting,
+dialogs and menus. The rules themselves are in game_logic.luau: this screen turns the keyboard into an `Input`
+and turns `game.events` into things to show.
 ]]
 const debug_tools = require("./debug_tools")
 const dialog = require("./dialog")
 const effects = require("./effects")
+const game_logic = require("./game_logic")
 const game_state = require("./game_state")
+const hints = require("./hints")
 const graphics = require("@vectarine/graphics")
 const hud = require("./hud")
+const interactions = require("./interactions")
+const inventory = require("./inventory")
 const io = require("@vectarine/io")
 const items = require("./data/items")
 const levels = require("./data/levels")
 const loader = require("@vectarine/loader")
-const npcs = require("./data/npcs")
+const menus = require("./menus")
+const monsters = require("./data/monsters")
 const overlays = require("./overlays")
 const persist = require("@vectarine/persist")
+const player_rules = require("./player")
 const postfx = require("./postfx")
+const progress = require("./progress")
 const prompts = require("./prompts")
-const rooms = require("./data/rooms")
-const rules = require("./rules")
 const settings = require("./settings")
-const story = require("./data/story")
 const theme = require("./theme")
 const types = require("./types")
 const ui = require("@vectarine/ui")
 const ui_components = require("./ui_components")
 const vec = require("@vectarine/vec")
-const world = require("./world")
 const world_view = require("./world_view")
 
 const module = loader.init() or {}
 
---- The running game. It is kept when scripts are hot-reloaded. Set it to nil to start a new game.
+--- The running game. It is kept when scripts are hot-reloaded. Set it to nil to start again from the save.
 module.game = module.game :: types.Game?
 
 --- What the screen is doing. Transitions close the screen, run `onMiddle`, then open it again.
 type Flow =
 	{ kind: "play" }
 	| { kind: "transition", t: number, onMiddle: () -> (), done: boolean }
-	| { kind: "levelClear", t: number }
-	| { kind: "ending", t: number }
+	| { kind: "fainted", t: number }
+	| { kind: "floorEnd", t: number }
 
 module.flow = module.flow or { kind = "play" } :: Flow
+--- Seconds of play since the last autosave (see progress.luau)
+module.sinceAutosave = module.sinceAutosave or 0
 
---- State of the screen that is not part of the game rules. It can be inspected in the Watcher.
+--- State of the screen that is not part of the game. It can be inspected in the Watcher.
 const uiState = persist.onReload({
-	--- Time since entering the current room, to show its name
-	roomTime = 0,
-	shownRoom = "",
-	--- Time before a held key does its action again
-	repeatTimer = 0,
-	--- An action requested while an animation was playing, done when the animation ends
-	bufferedAction = nil :: string?,
-	deathTime = 0,
-}, "ui_state")
+	title = nil :: { name: string, subtitle: string, t: number }?,
+	message = nil :: { text: string, t: number }?,
+	--- Banners shown one after the other (an artefact, then the level up it gave), never over a dialog, a menu or a title card
+	banners = {} :: { { title: string, subtitle: string, icon: string?, t: number } },
+	--- A menu to open once the dialog is closed (a shop opened by talking to a trader)
+	pendingMenu = nil :: { kind: string, [string]: any }?,
+}, "explorium_ui_state")
+-- The state kept from before a reload may come from an older version of this file
+uiState.banners = uiState.banners or {}
 
-const MOVE_KEYS: { { key: string, action: rules.Action } } = {
-	{ key = "Up", action = "up" },
-	{ key = "Down", action = "down" },
-	{ key = "Left", action = "left" },
-	{ key = "Right", action = "right" },
-}
---- Delay before a held key starts repeating, then delay between repeats (in seconds)
-const FIRST_REPEAT_DELAY = 0.22
-const REPEAT_DELAY = 0.12
 --- Duration of each half of a transition (closing, then opening)
-const TRANSITION_HALF = 0.35
---- Time before the level restarts after dying
-const DEATH_DELAY = 1.0
-const LEVEL_CLEAR_DURATION = 1.6
+const TRANSITION_HALF = 0.3
+const FAINTED_DURATION = 2.6
+const MESSAGE_DURATION = 2.8
+const BANNER_DURATION = 3
 
-function module.startNewGame()
-	local game = game_state.new()
+const INTRO: { types.DialogStep } = {
+	"You fell. Far.",
+	"A bush broke your fall... and most of its branches.",
+	"High above, the hole you fell through is a small circle of daylight. Far too high to climb.",
+	"There must be another way out of here.",
+}
+
+--- Start the game from the save, or a new game if there is none.
+function module.startGame()
+	local saved = progress.load()
+	local game = if saved then progress.restore(saved) else game_state.new()
 	module.game = game
 	module.flow = { kind = "play" }
 	dialog.close()
+	menus.close()
 	effects.clear()
-	world_view.resetCamera(game)
-	uiState.shownRoom = ""
-	uiState.bufferedAction = nil
-	-- The story starts with the fairy talking to the player
-	local fairy = npcs.npcs.fairy
-	game:startDialog({ name = fairy.name, sprite = fairy.sprite }, fairy.talk(game))
+	uiState.title = nil
+	uiState.message = nil
+	uiState.banners = {}
+	uiState.pendingMenu = nil
+	if not saved then
+		dialog.open(game, nil, INTRO)
+	end
 end
 
 -- MARK: Layout
@@ -96,30 +104,32 @@ type Layout = {
 	world: world_view.Viewport,
 	hudPos: vec.Vec2,
 	hudSize: vec.Vec2,
-	--- The bar below the map, where the keyboard prompts are
+	--- The bar below the world, where the keyboard prompts are
 	barPos: vec.Vec2,
 	barSize: vec.Vec2,
+	--- Where menus are drawn
+	menuPos: vec.Vec2,
+	menuSize: vec.Vec2,
 }
 
---- The screen is split in 3: the HUD at the top, the room, and the prompts at the bottom.
---- When possible, tiles are a multiple of 16 pixels (the size of the sprites) so that the pixel art stays crisp.
-local function computeLayout(): Layout
+--- The screen is split in 3: the HUD at the top, the world, and the prompts at the bottom.
+--- Tiles are a multiple of 16 pixels (the size of the sprites) so that the pixel art stays crisp.
+function module.layout(): Layout
 	local window = io.getWindowSize()
-	local tilePx = math.min(window.x / rooms.ROOM_WIDTH, (window.y - 72) / rooms.ROOM_HEIGHT)
-	local crispTilePx = math.floor(tilePx / 16) * 16
-	if crispTilePx >= tilePx * 0.9 then
-		tilePx = crispTilePx
-	end
+	local hudHeight = 0.18
+	local barHeight = 0.13
+	local tilePx = 16 * math.max(1, math.floor(window.y / 200))
 	local tileSize = vec.V2(tilePx * 2 / window.x, tilePx * 2 / window.y)
-	local mapSize = tileSize * vec.V2(rooms.ROOM_WIDTH, rooms.ROOM_HEIGHT)
-	local free = 2 - mapSize.y
-	local barHeight = free * 0.42
+	local worldPos = vec.V2(-1, -1 + barHeight)
+	local worldSize = vec.V2(2, 2 - hudHeight - barHeight)
 	return {
-		world = { pos = vec.V2(-mapSize.x / 2, -1 + barHeight), size = mapSize, tileSize = tileSize },
-		hudPos = vec.V2(-1, -1 + barHeight + mapSize.y),
-		hudSize = vec.V2(2, free - barHeight),
+		world = { pos = worldPos, size = worldSize, tileSize = tileSize },
+		hudPos = vec.V2(-1, 1 - hudHeight),
+		hudSize = vec.V2(2, hudHeight),
 		barPos = vec.V2(-1, -1),
 		barSize = vec.V2(2, barHeight),
+		menuPos = vec.V2(-0.86, -0.78),
+		menuSize = vec.V2(1.72, 1.42),
 	}
 end
 
@@ -129,39 +139,82 @@ local function startTransition(onMiddle: () -> ())
 	module.flow = { kind = "transition", t = 0, onMiddle = onMiddle, done = false }
 end
 
-local function enterLevel(game: types.Game, index: number)
-	if not levels.levels[index] then
-		game:say(game.player.pos, "This ladder is broken", theme.colors.textDim)
-		return
+local function showMessage(text: string)
+	uiState.message = { text = text, t = 0 }
+end
+
+local function showBanner(title: string, subtitle: string, icon: string?)
+	table.insert(uiState.banners, { title = title, subtitle = subtitle, icon = icon, t = 0 })
+end
+
+local function openMenu(menu: { kind: string, [string]: any })
+	if dialog.isOpen() then
+		uiState.pendingMenu = menu
+	else
+		menus.open(menu)
 	end
-	startTransition(function()
-		game_state.enterLevel(game, index)
-		world_view.resetCamera(game)
-	end)
 end
 
-local function leaveLevel(game: types.Game, showStory: boolean)
-	local beat = if game.level then story.afterLevel[game.level.index] else nil
-	startTransition(function()
-		game_state.leaveLevel(game)
-		world_view.resetCamera(game)
-		if showStory and beat then
-			game:startDialog(beat(game))
+local function handleEvents(game: types.Game)
+	local events = game.events
+	game.events = {}
+	for _, event in events do
+		local kind = event.kind
+		if kind == "message" then
+			showMessage(event.text)
+		elseif kind == "dialog" then
+			dialog.open(game, event.speaker, event.steps)
+		elseif kind == "shop" then
+			openMenu({ kind = "shop", npc = event.npc })
+		elseif kind == "storage" then
+			openMenu({ kind = "storage", chest = event.chest })
+		elseif kind == "teleport" then
+			openMenu({ kind = "teleport", from = event.from })
+		elseif kind == "enteredLevel" then
+			local lvl = game.level
+			uiState.title = { name = lvl.name, subtitle = lvl.subtitle, t = 0 }
+			world_view.resetCamera(game, module.layout().world)
+			-- The first time on a new floor of the Explorium
+			if lvl.depth > (game.flags.deepestFloor or 1) then
+				game.flags.deepestFloor = lvl.depth
+				showBanner(levels.floorNames[lvl.depth] or lvl.subtitle, `Floor {lvl.depth} of the Explorium`, nil)
+			end
+			progress.save(game)
+		elseif kind == "travel" then
+			if not levels.levels[event.level] then
+				showMessage("This way is blocked by fallen rocks.")
+			elseif module.flow.kind == "play" then
+				startTransition(function()
+					game_state.enterLevel(game, event.level, event.entry, nil, event.index)
+				end)
+			end
+		elseif kind == "fainted" and module.flow.kind ~= "fainted" then
+			module.flow = { kind = "fainted", t = 0 }
+			dialog.close()
+			menus.close()
+		elseif kind == "levelUp" then
+			showBanner("Level up!", `Level {event.level}: spend your point in the notebook [{prompts.keyName(prompts.NOTEBOOK_KEY)}]`, nil)
+		elseif kind == "artefact" then
+			local item = items.items[event.item]
+			showBanner(item.name, item.description, item.icon)
+			progress.save(game)
+		elseif kind == "rested" then
+			showMessage("You rest by the fire. Your progress is saved.")
+			progress.save(game)
+		elseif kind == "killed" and event.boss then
+			showBanner("Victory!", monsters.species[event.monster].victory or "", nil)
+			progress.save(game)
+		elseif kind == "pumpRestored" then
+			-- The water flows again: the level is built again, with its canals full of water
+			effects.shake(0.8)
+			showBanner("The Great Pump wakes up!", "Water flows again in the canals and the cisterns of the desert.", "world/cistern_full")
+			local pos = game.player.pos
+			startTransition(function()
+				game_state.enterLevel(game, game.levelId, nil, pos)
+			end)
+		elseif kind == "stairs" then
+			module.flow = { kind = "floorEnd", t = 0 }
 		end
-	end)
-end
-
-local function restartLevel(game: types.Game)
-	game_state.restartLevel(game)
-	postfx.state.aberration = 0.8
-	effects.clear()
-	uiState.deathTime = 0
-end
-
-local function undo(game: types.Game)
-	if game_state.undo(game) then
-		postfx.state.aberration = 0.5
-		uiState.deathTime = 0
 	end
 end
 
@@ -169,199 +222,213 @@ local function updateFlow(game: types.Game, dt: number)
 	local flow = module.flow
 	if flow.kind == "transition" then
 		flow.t += dt
+		postfx.state.iris = math.abs(flow.t - TRANSITION_HALF) / TRANSITION_HALF
 		if not flow.done and flow.t >= TRANSITION_HALF then
 			flow.done = true
 			flow.onMiddle()
 		end
 		if flow.t >= TRANSITION_HALF * 2 then
+			postfx.state.iris = 1
 			module.flow = { kind = "play" }
 		end
-	elseif flow.kind == "levelClear" then
+	elseif flow.kind == "fainted" then
 		flow.t += dt
-		if flow.t >= LEVEL_CLEAR_DURATION then
-			local firstTime = not game.finished[game.level and game.level.index or 0]
-			game_state.finishLevel(game)
+		postfx.state.desaturate = math.min(1, flow.t)
+		if flow.t >= FAINTED_DURATION then
+			postfx.state.desaturate = 0
+			game_state.wakeUp(game)
 			module.flow = { kind = "play" }
-			leaveLevel(game, firstTime)
 		end
-	elseif flow.kind == "ending" then
+	elseif flow.kind == "floorEnd" then
 		flow.t += dt
-	elseif game.level and game.level.won then
-		module.flow = { kind = "levelClear", t = 0 }
-		effects.shake(0.2)
-		effects.flash(theme.colors.gold, 0.4)
-	elseif game.enteringLevel then
-		local index = game.enteringLevel
-		game.enteringLevel = nil
-		enterLevel(game, index)
-	elseif game.status == "ending" and not dialog.isOpen() then
-		module.flow = { kind = "ending", t = 0 }
-	elseif game.player.dead then
-		uiState.deathTime += dt
-		if uiState.deathTime >= DEATH_DELAY then
-			startTransition(function()
-				restartLevel(game)
-			end)
-		end
 	end
 end
 
 -- MARK: Input
 
---- Returns true once when the key is pressed, then repeatedly while it is held down.
-local function isKeyRepeated(key: string, dt: number): boolean
-	if io.isKeyJustPressed(key) then
-		uiState.repeatTimer = FIRST_REPEAT_DELAY
-		return true
-	elseif io.isKeyDown(key) then
-		uiState.repeatTimer -= dt
-		if uiState.repeatTimer <= 0 then
-			uiState.repeatTimer = REPEAT_DELAY
-			return true
-		end
-	end
-	return false
-end
-
-local function readAction(dt: number): rules.Action?
-	for _, move in MOVE_KEYS do
-		if isKeyRepeated(move.key, dt) then
-			return move.action
-		end
-	end
-	if io.isKeyJustPressed("Space") or io.isKeyJustPressed("Return") then
-		return "use"
-	end
-	return nil
+local function readInput(): game_logic.Input
+	local x = (if io.isKeyDown("Right") or io.isKeyDown("D") then 1 else 0) - (if io.isKeyDown("Left") or io.isKeyDown("A") then 1 else 0)
+	local y = (if io.isKeyDown("Down") or io.isKeyDown("S") then 1 else 0) - (if io.isKeyDown("Up") or io.isKeyDown("W") then 1 else 0)
+	return {
+		move = vec.V2(x, y),
+		attack = io.isKeyDown("Space"),
+		interact = io.isKeyJustPressed("E"),
+	}
 end
 
 local function handleInput(game: types.Game, dt: number, extra: any)
-	local flow = module.flow
-	local confirm = io.isKeyJustPressed("Space") or io.isKeyJustPressed("Return")
-	if flow.kind == "ending" then
-		if flow.t > 1.5 and confirm then
-			module.game = nil
-			extra.currentScreen = ""
+	if module.flow.kind == "floorEnd" then
+		if module.flow.t > 2 and (io.isKeyJustPressed("Space") or io.isKeyJustPressed("Return")) then
+			-- Back to the game: the player can keep exploring the oasis
+			module.flow = { kind = "play" }
 		end
 		return
-	elseif flow.kind ~= "play" then
+	end
+	if module.flow.kind ~= "play" then
 		return
-	elseif dialog.isOpen() then
-		if confirm then
+	end
+	if dialog.isOpen() then
+		if io.isKeyJustPressed("Space") or io.isKeyJustPressed("Return") or io.isKeyJustPressed("E") then
 			dialog.advance()
 		end
 		return
-	elseif io.isKeyJustPressed("Escape") then
-		if game.level then
-			leaveLevel(game, false)
-		else
+	end
+	if menus.isOpen() then
+		local action = menus.update(game)
+		if action and action.kind == "travel" then
+			startTransition(function()
+				interactions.teleport(game, action.key)
+			end)
+		elseif action and action.kind == "quit" then
+			progress.save(game)
+			module.game = nil
+			postfx.state.danger = 0
+			postfx.state.thirst = 0
 			extra.currentScreen = ""
 		end
 		return
 	end
-	if game.level then
-		if isKeyRepeated("Z", dt) then
-			undo(game)
-			return
-		elseif io.isKeyJustPressed("R") then
-			restartLevel(game)
-			return
-		end
-	end
-	if game.player.dead then
+	if io.isKeyJustPressed(prompts.NOTEBOOK_KEY) then
+		menus.open({ kind = "notebook" })
+		return
+	elseif io.isKeyJustPressed("Escape") then
+		menus.open({ kind = "pause" })
 		return
 	end
-
-	local action = readAction(dt)
-	if world_view.isAnimating(game) then
-		if action then
-			uiState.bufferedAction = action
-		end
-		return
-	end
-	action = action or uiState.bufferedAction :: rules.Action?
-	uiState.bufferedAction = nil
-	if action then
-		rules.act(game, action :: rules.Action)
+	game_logic.update(game, readInput(), dt)
+	module.sinceAutosave += dt
+	if module.sinceAutosave >= progress.AUTOSAVE_INTERVAL and progress.canAutosave(game) then
+		module.sinceAutosave = 0
+		progress.save(game)
 	end
 end
 
 -- MARK: Drawing
 
---- What [Space] does right now
-local function actionLabel(game: types.Game): string?
-	local entity = game:entityAt(game.player.pos + types.directions[game.player.facing])
-	if entity and entity.kind == "npc" then
-		return "Talk"
-	elseif entity and entity.kind == "sign" then
-		return "Read"
-	elseif game.level then
-		local item = game_state.itemForSpace(game)
-		return if item then items.items[item].verb else "Wait"
-	end
-	return nil
-end
-
---- Draw a widget with its bottom-left corner at `pos`
 local function drawWidgetAt(widget: ui.Widget<any>, pos: vec.Vec2, extra: any)
 	graphics.withTransformation({ translation = pos - vec.V2(-1, -1) }, function()
 		widget:draw(extra)
 	end)
 end
 
+local function currentPrompts(game: types.Game): { prompts.Prompt }
+	if module.flow.kind == "floorEnd" then
+		return { { key = "space", label = "Keep exploring" } }
+	elseif module.flow.kind ~= "play" then
+		return {}
+	elseif dialog.isOpen() then
+		return { { key = "space", label = "Next" } }
+	elseif menus.isOpen() then
+		return menus.prompts(game)
+	end
+	local weapon = items.items[inventory.weapon(game.player)]
+	local interaction = interactions.find(game)
+	return prompts.forPlay(if weapon.shot then "Shoot" else "Attack", if interaction then interaction.label else nil)
+end
+
 local function drawPrompts(game: types.Game, layout: Layout, extra: any)
 	graphics.drawRect(layout.barPos, layout.barSize, theme.colors.background)
 	graphics.drawRect(layout.barPos + vec.V2(0, layout.barSize.y - 0.006), vec.V2(2, 0.006), theme.colors.goldDark)
-	if not settings.values.showPrompts or dialog.isOpen() or module.flow.kind ~= "play" then
+	if not settings.values.showPrompts then
 		return
 	end
-	local bar = prompts.widget(prompts.forContext({
-		mode = if game.player.dead then "dead" elseif game.level then "level" else "explore",
-		actionLabel = actionLabel(game),
-	}))
+	local bar = prompts.widget(currentPrompts(game))
 	drawWidgetAt(bar, layout.barPos + (layout.barSize - bar:size({})):scale(0.5), extra)
 end
 
-local function drawScreen(game: types.Game, layout: Layout, extra: any)
-	local viewport = layout.world
+--- Draw the whole level in the world view, without darkness: a tool to review levels (`explorium.debug.overview`)
+local function drawOverview(game: types.Game, layout: Layout)
+	local window = io.getWindowSize()
+	local area = layout.world
+	local areaPx = vec.V2(area.size.x * window.x / 2, area.size.y * window.y / 2)
+	local tilePx = math.min(areaPx.x / game.level.width, areaPx.y / game.level.height)
+	local saved = world_view.camera
+	world_view.camera = vec.V2(0, 0)
+	world_view.drawWorld(game, {
+		pos = area.pos,
+		size = area.size,
+		tileSize = vec.V2(tilePx * 2 / window.x, tilePx * 2 / window.y),
+	}, { time = ui_components.time, darkness = false })
+	world_view.camera = saved
+end
+
+local function drawScreen(game: types.Game, layout: Layout, extra: any, dt: number)
 	graphics.clear(theme.colors.background)
-	world_view.drawWorld(game, viewport, world_view.camera.pos, { time = ui_components.time, showPlayer = true })
-	hud.draw(game, layout.hudPos, layout.hudSize)
-
-	local room = world.roomData(game.currentRoom)
-	local subtitle = if game.level then `Level {game.level.index}` else room.subtitle
-	overlays.drawRoomName(room.name, subtitle, viewport.pos + viewport.size * vec.V2(0.5, 0.62), uiState.roomTime)
-
-	local flow = module.flow
-	if flow.kind == "levelClear" then
-		overlays.drawLevelClear(flow.t, LEVEL_CLEAR_DURATION)
+	local debugHelpers = (module :: any).debug
+	if debugHelpers and debugHelpers.overview then
+		drawOverview(game, layout)
+	else
+		world_view.drawWorld(game, layout.world, { time = ui_components.time })
 	end
+
+	local title = uiState.title
+	if title then
+		title.t += dt
+		overlays.drawTitleCard(title.name, title.subtitle, vec.V2(0, layout.world.pos.y + layout.world.size.y - 0.22), title.t)
+		if title.t > overlays.TITLE_DURATION then
+			uiState.title = nil
+		end
+	end
+	local banner = uiState.banners[1]
+	if banner and not dialog.isOpen() and not menus.isOpen() and not uiState.title then
+		banner.t += dt
+		overlays.drawBanner(banner.title, banner.subtitle, banner.icon, banner.t, BANNER_DURATION)
+		if banner.t > BANNER_DURATION then
+			table.remove(uiState.banners, 1)
+		end
+	end
+	-- The health bar of a boss is at the bottom of the world: messages go above it
+	local bossBar = hud.drawBossBar(game, layout.world.pos.y)
+	local message = uiState.message
+	local messageBottom = layout.world.pos.y + (if bossBar then 0.13 else 0)
+	if message then
+		message.t += dt
+		overlays.drawMessage(message.text, messageBottom, message.t, MESSAGE_DURATION)
+		if message.t > MESSAGE_DURATION then
+			uiState.message = nil
+		end
+	elseif not dialog.isOpen() and not menus.isOpen() then
+		-- A hint about what blocks the way stays while the player is next to it
+		local hint = hints.current(game)
+		if hint then
+			overlays.drawMessage(hint, messageBottom, 1, math.huge)
+		end
+	end
+
+	hud.draw(game, layout.hudPos, layout.hudSize)
+	hud.drawGallery(layout.world.pos.y + layout.world.size.y)
 	drawPrompts(game, layout, extra)
 
 	if dialog.isOpen() then
-		local size = dialog.widget:size({})
-		drawWidgetAt(dialog.widget, vec.V2(-size.x / 2, viewport.pos.y + 0.05), extra)
+		local size = dialog.BOX_SIZE
+		drawWidgetAt(dialog.widget, vec.V2(-size.x / 2, layout.world.pos.y + 0.03), extra)
+	end
+	if menus.isOpen() then
+		menus.draw(game, { pos = layout.menuPos, size = layout.menuSize })
 	end
 
-	if flow.kind == "ending" then
-		overlays.drawEnding(game.turn, flow.t)
-		if flow.t > 1.5 then
-			local bar = prompts.widget(prompts.forContext({ mode = "ending" }))
-			drawWidgetAt(bar, vec.V2(-bar:size({}).x / 2, -0.8), extra)
-		end
+	local flow = module.flow
+	if flow.kind == "fainted" then
+		overlays.drawFainted(flow.t)
+	elseif flow.kind == "floorEnd" then
+		overlays.drawFloorEnd(flow.t)
 	end
 end
 
---- Transitions and deaths are shown with the post-processing shader.
-local function updatePostfx(game: types.Game, layout: Layout, dt: number)
-	local state = postfx.state
-	local flow = module.flow
-	state.iris = if flow.kind == "transition"
-		then math.clamp(math.abs(flow.t - TRANSITION_HALF) / TRANSITION_HALF, 0, 1)
-		else 1
-	state.irisCenter = world_view.toScreen(layout.world, world_view.camera.pos, game.player.drawPos + vec.V2(0.5, 0.5))
-	local targetDesaturate = if game.player.dead then 0.85 else 0
-	state.desaturate += (targetDesaturate - state.desaturate) * (1 - math.exp(-dt * 8))
+-- Low sanity blurs the mind: colors start to split
+local function updatePostfx(game: types.Game, dt: number)
+	local player = game.player
+	local fraction = player.sanity / player_rules.maxSanity(player)
+	if fraction < 0.3 then
+		postfx.state.aberration = math.max(postfx.state.aberration, (0.3 - fraction) * 2 + math.sin(game.time * 3) * 0.1)
+	end
+	-- Red edges below 35% of health, beating like a heart. Yellow edges below 25% of water.
+	local health = player.hp / player_rules.maxHp(player)
+	local heartbeat = 0.75 + 0.25 * math.sin(game.time * 6)
+	postfx.state.danger = math.clamp((0.35 - health) / 0.35, 0, 1) * heartbeat
+	postfx.state.thirst = math.clamp((25 - player.water) / 25, 0, 1)
+	-- Frost on the edges below 35% of warmth
+	postfx.state.cold = math.clamp((35 - player.warmth) / 35, 0, 1)
 	postfx.update(dt)
 end
 
@@ -370,38 +437,35 @@ debug_tools.install(module)
 module.gameScreenWidget = ui.widget(vec.V2(2, 2), function(_events, extra)
 	if not module.game then
 		if extra.currentScreen ~= "game" then
-			-- The screen is sliding away after the end of a game: don't start a new one yet.
+			-- The screen is sliding away after quitting: don't start a new game yet.
 			graphics.clear(theme.colors.background)
 			return
 		end
-		module.startNewGame()
+		module.startGame()
 	end
 	local game = module.game :: types.Game
 	local dt: number = extra.dt or 1 / 60
+	local layout = module.layout()
 
-	if world.isOutdated(game.world) then
-		game_state.rebuildWorld(game)
-		world_view.resetCamera(game)
-	end
 	handleInput(game, dt, extra)
 	if module.game ~= game then
-		return -- The game ended this frame
+		return -- The player quit this frame
+	end
+	handleEvents(game)
+	-- A menu waiting for the end of a dialog (the shop of a trader)
+	if uiState.pendingMenu and not dialog.isOpen() then
+		menus.open(uiState.pendingMenu :: any)
+		uiState.pendingMenu = nil
 	end
 	updateFlow(game, dt)
-
-	uiState.roomTime += dt
-	if uiState.shownRoom ~= game.currentRoom then
-		uiState.shownRoom = game.currentRoom
-		uiState.roomTime = 0
-	end
-	world_view.updateCamera(game, dt)
-	world_view.animate(game, dt)
-	effects.update(dt)
 	dialog.update(dt)
-
-	local layout = computeLayout()
-	updatePostfx(game, layout, dt)
-	drawScreen(game, layout, extra)
+	if not menus.isOpen() then
+		effects.update(dt)
+	end
+	effects.updateScreen(dt)
+	world_view.updateCamera(game, layout.world, dt)
+	updatePostfx(game, dt)
+	drawScreen(game, layout, extra, dt)
 end)
 
 return module

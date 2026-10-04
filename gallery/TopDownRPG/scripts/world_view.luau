@@ -1,525 +1,661 @@
 --[[
-Draws the world: the tilemap, the entities, the player, the particles and the other effects.
+Draws the world: terrain, props, characters, effects and darkness.
 
-Drawing happens in "world space": 1 unit is 1 tile and y points down, like in the room maps.
-`withWorldTransform` sets up a graphics transformation from world space to the screen, so the rest of
-the code never has to think about screen coordinates.
+The camera is slightly tilted (like Stardew Valley): walls show their front face, and things lower on the screen
+are drawn in front of things higher up. So the world is drawn in passes:
+1. the terrain: ground, walls and their shadows (see terrain_view.luau)
+2. flat things on the ground (ferns, teleporters), the shadows of everything standing, items to pick up
+3. everything that stands up (props, characters, creatures, projectiles), sorted from top to bottom
+4. effects, then darkness (a shader, see lighting.luau), then what shines through it (mending beams, sand)
 
-Everything here is visual only: positions are smoothed (`drawPos`) and moves hop a little so that the
-turn-based movements feel alive, but the game logic only knows about whole tiles.
+World coordinates: 1 unit = 1 tile, y points down. `Viewport` says where the world is drawn on the screen.
 ]]
+const blocks = require("./blocks")
+const dream = require("./dream")
 const effects = require("./effects")
-const game_state = require("./game_state")
+const frost = require("./frost")
 const graphics = require("@vectarine/graphics")
+const interactions = require("./interactions")
+const inventory = require("./inventory")
+const items = require("./data/items")
+const keyboard_icons = require("./keyboard_icons")
+const level = require("./level")
+const levels = require("./data/levels")
+const lighting = require("./lighting")
 const loader = require("@vectarine/loader")
 const monsters = require("./data/monsters")
-const rooms = require("./data/rooms")
-const rules = require("./rules")
+const npcs = require("./npcs")
+const prompts = require("./prompts")
+const props = require("./data/props")
 const sprites = require("./sprites")
-const terrain = require("./data/terrain")
+const monster_ai = require("./monster_ai")
+const storm = require("./storm")
+const swamp = require("./swamp")
+const terrain_view = require("./terrain_view")
 const theme = require("./theme")
 const types = require("./types")
 const vec = require("@vectarine/vec")
 const vec4 = require("@vectarine/vec4")
-const world = require("./world")
 
 const module = loader.init() or {}
 
-const ROOM_SIZE = vec.V2(rooms.ROOM_WIDTH, rooms.ROOM_HEIGHT)
---- How long the camera takes to scroll to the next room, in seconds
-const SCROLL_DURATION = 0.45
---- How fast things slide to their new tile. Higher is faster.
-const MOVE_SPEED = 16
-
---- A rectangle of the screen where the world is drawn, in OpenGL coordinates.
 export type Viewport = {
+	--- Bottom-left corner of the area, in OpenGL coordinates
 	pos: vec.Vec2,
 	size: vec.Vec2,
-	--- Size of one tile on screen
+	--- Size of a tile, in OpenGL units
 	tileSize: vec.Vec2,
 }
 
---- Colors used to tell gates apart: plate gates are plain, target gates are red.
-const GATE_TINTS: { [string]: vec4.Vec4 } = {
-	plates = vec4.WHITE,
-	targets = vec4.createColor(1, 0.55, 0.5, 1),
-	monsters = vec4.WHITE,
-	levels = vec4.createColor(1, 0.85, 0.5, 1),
-}
-const EFFECT_COLORS: { [string]: vec4.Vec4 } = {
-	leap = vec4.createColor(1, 0.4, 0.35, 1),
-	slant = vec4.createColor(0.35, 0.65, 1, 1),
-}
+--- Top-left corner of the visible part of the world, in tiles
+module.camera = module.camera or vec.V2(0, 0)
 
--- MARK: Coordinates
+const WHITE_FLASH = vec4.createColor(3, 3, 3, 1)
+--- Duration of the weapon swing animation, in seconds
+const SWING_DURATION = 0.16
+const FACING_ANGLES: { [types.Direction]: number } = { right = 0, down = math.pi / 2, left = math.pi, up = -math.pi / 2 }
+const SHADOW = theme.withAlpha(theme.colors.darkness, 0.35)
+const MUD = theme.hex("323230")
+--- Things of the dream (phantoms, dream bridges) are pale and see-through
+const DREAM_TINT = vec4.createColor(0.85, 0.95, 1.15, 0.72)
 
---- Run `draw` with a transformation where 1 unit = 1 tile, y points down and `camera` is the top-left of the viewport.
-local function withWorldTransform(viewport: Viewport, camera: vec.Vec2, draw: () -> ())
-	local top = viewport.pos.y + viewport.size.y
-	-- The transformation computes: scale * (p + translation)
-	graphics.withTransformation({
-		scale = vec.V2(viewport.tileSize.x, -viewport.tileSize.y),
-		translation = vec.V2(viewport.pos.x / viewport.tileSize.x - camera.x, -top / viewport.tileSize.y - camera.y),
-	}, draw)
+-- MARK: Camera
+
+function module.visibleTiles(viewport: Viewport): vec.Vec2
+	return vec.V2(viewport.size.x / viewport.tileSize.x, viewport.size.y / viewport.tileSize.y)
 end
 
---- Convert a world position to the screen. Useful to draw text, which should not be flipped.
-function module.toScreen(viewport: Viewport, camera: vec.Vec2, pos: vec.Vec2): vec.Vec2
-	local top = viewport.pos.y + viewport.size.y
-	return vec.V2(
-		viewport.pos.x + (pos.x - camera.x) * viewport.tileSize.x,
-		top - (pos.y - camera.y) * viewport.tileSize.y
-	)
-end
-
---- Fill a rectangle in world space. The y axis is flipped, so the rectangle starts from its bottom.
-local function fillRect(pos: vec.Vec2, size: vec.Vec2, color: vec4.Vec4)
-	graphics.drawRect(pos + vec.V2(0, size.y), vec.V2(size.x, -size.y), color)
-end
-
--- MARK: Terrain
-
---- A number that looks random but is always the same for a given tile, to pick sprite variants.
-local function tileHash(x: number, y: number): number
-	local h = bit32.bxor(x * 374761393, y * 668265263)
-	h = bit32.bxor(h, bit32.rshift(h, 13))
-	return h
-end
-
---- The terrain ids that count as "the same" as `t` for autotiling (itself and the ones it `connects` to).
---- Keyed by terrain so that editing terrain.luau doesn't keep stale ids.
-local connectedIds: { [types.Terrain]: { [number]: boolean } } = {}
-local function connectedTo(t: types.Terrain): { [number]: boolean }
-	local ids = connectedIds[t]
-	if not ids then
-		ids = { [t.id] = true }
-		for _, name in (t.autotile and t.autotile.connects) or {} do
-			ids[terrain.byName[name].id] = true
+--- Where the camera wants to be: centered on the player, without showing outside of the level.
+local function cameraTarget(game: types.Game, viewport: Viewport): vec.Vec2
+	local visible = module.visibleTiles(viewport)
+	local lvl = game.level
+	local function axis(center: number, size: number, worldSize: number): number
+		if worldSize <= size then
+			return (worldSize - size) / 2
 		end
-		connectedIds[t] = ids
+		return math.clamp(center - size / 2, 0, worldSize - size)
 	end
-	return ids
+	local focus = game.player.pos + vec.V2(0, -0.5)
+	return vec.V2(axis(focus.x, visible.x, lvl.width), axis(focus.y, visible.y, lvl.height))
 end
 
---- Pick the sprite of a terrain tile, looking at its neighbors when the terrain is autotiled.
-local function terrainSprite(level: types.World, layer: number, t: types.Terrain, x: number, y: number): string?
-	local autotile = t.autotile
-	if not autotile then
-		return if t.variants then t.variants[tileHash(x, y) % #t.variants + 1] else t.sprite
+function module.resetCamera(game: types.Game, viewport: Viewport)
+	module.camera = cameraTarget(game, viewport)
+end
+
+function module.updateCamera(game: types.Game, viewport: Viewport, dt: number)
+	module.camera = module.camera:lerp(cameraTarget(game, viewport), math.min(1, dt * 8))
+end
+
+--- Convert a world position to the screen (OpenGL coordinates)
+function module.toScreen(viewport: Viewport, pos: vec.Vec2): vec.Vec2
+	local relative = pos - module.camera
+	return vec.V2(viewport.pos.x + relative.x * viewport.tileSize.x, viewport.pos.y + viewport.size.y - relative.y * viewport.tileSize.y)
+end
+
+-- MARK: Things
+
+type Drawable = { y: number, draw: () -> () }
+
+local function propSprite(game: types.Game, prop: types.Prop, kind: props.PropKind, time: number): string?
+	local name: string = prop.kind
+	if name == "chest" and interactions.isChestOpen(game, prop) then
+		return "world/chest_open"
+	elseif kind.fruit and not interactions.hasFruit(game, prop) then
+		return kind.fruit.empty
+	elseif name == "cistern" and interactions.isCisternFull(game, prop) then
+		return "world/cistern_full"
+	elseif name == "teleporter" and interactions.isTeleporterOn(game, prop) then
+		return `world/teleporter_on_{math.floor(time * 4) % 2}`
+	elseif name == "npc" then
+		local npc = npcs.npcs[prop.data.npc]
+		return `characters/{npc.sprite}_{math.floor(time * 1.6 + prop.cell.x) % 2}`
+	elseif kind.frames then
+		return kind.frames[math.floor(time * (kind.fps or 4)) % #kind.frames + 1]
 	end
-	local ids = connectedTo(t)
-	local function same(dx: number, dy: number): boolean
-		return ids[level.tilemap:getTile(layer, x + dx, y + dy)] == true
-	end
-	local up, right, down, left = same(0, -1), same(1, 0), same(0, 1), same(-1, 0)
-	if autotile.row then
-		local index = if left and right then 3 elseif right then 2 elseif left then 4 else 1
-		return autotile.row[index]
-	elseif autotile.nine then
-		local inner = autotile.inner
-		if inner and up and down and left and right then
-			-- Inside corner: all 4 neighbors are the same, but a diagonal one isn't
-			if not same(-1, -1) then
-				return inner[1]
-			elseif not same(1, -1) then
-				return inner[2]
-			elseif not same(1, 1) then
-				return inner[3]
-			elseif not same(-1, 1) then
-				return inner[4]
+	return kind.sprite
+end
+
+--- The shadow of something standing at `pos`, `width` tiles wide
+type Shadow = { pos: vec.Vec2, width: number, alpha: number? }
+
+local function drawShadow(shadow: Shadow)
+	local color = if shadow.alpha then theme.withAlpha(theme.colors.darkness, shadow.alpha) else SHADOW
+	graphics.drawEllipse(shadow.pos, vec.V2(shadow.width, shadow.width * 0.35), color)
+end
+
+const MENDING = theme.hex("73804b")
+const MENDING_CORE = theme.hex("e3ddd1")
+
+--- The beams of the menders to the creatures they mend: a pulsing green glow with a bright core, and crosses
+--- flowing along it. Drawn above the darkness: the mending is a light of its own, seen from afar.
+local function drawMendingBeams(game: types.Game, time: number)
+	for _, monster in game.monsters do
+		local patient = (monster :: any).patient :: types.Monster?
+		if monster.state == "heal" and patient and not patient.dead and monsters.species[monster.kind].behavior == "mender" then
+			local from, to = monster.pos + vec.V2(0, -0.6), patient.pos + vec.V2(0, -0.5)
+			local pulse = 0.75 + math.sin(time * 12) * 0.25
+			graphics.drawLine(from, to, theme.withAlpha(MENDING, 0.35 * pulse), 0.3)
+			graphics.drawLine(from, to, theme.withAlpha(MENDING, 0.8), 0.1)
+			graphics.drawLine(from, to, theme.withAlpha(MENDING_CORE, pulse), 0.035)
+			for i = 0, 3 do
+				local t = (time * 1.4 + i / 4) % 1
+				sprites.drawInWorld("characters/heal_plus", from:lerp(to, t) - vec.V2(0.35, 0.35), { size = 0.7 })
 			end
 		end
-		local row = if not up then 0 elseif not down then 2 else 1
-		local column = if not left then 0 elseif not right then 2 else 1
-		return autotile.nine[row * 3 + column + 1]
 	end
-	local mask = (if up then 1 else 0) + (if right then 2 else 0) + (if down then 4 else 0) + (if left then 8 else 0)
-	return (autotile.mask or {})[mask] or autotile.fallback
 end
 
-local function drawTerrainLayer(game: types.Game, layer: number, low: vec.Vec2, high: vec.Vec2)
-	local level = game.world
-	level.tilemap:getTilemapPart(layer, low.x, low.y, high.x, high.y, function(tileId: number, x: number, y: number)
-		local t = terrain.byId[tileId]
-		if not t then
-			return
-		end
-		local sprite = terrainSprite(level, layer, t, x, y)
-		if t.plate and game_state.isPressed(game, vec.V2(x, y)) then
-			sprite = "extra/plate_down"
-		end
-		if sprite then
-			sprites.drawInWorld(sprite, vec.V2(x, y), { tint = t.tint })
-		end
-	end)
-end
-
--- MARK: Animation
-
---- Visual state that is only needed for drawing, stored aside so that it never ends up in saved levels.
-type Animation = { lastPos: vec.Vec2, moveLength: number, open: number }
-module.animations = setmetatable({} :: { [any]: Animation }, { __mode = "k" })
-
---- The turn clock, smoothed. Ambient particles use it so that the world drifts a bit after each step.
-module.displayedTurn = module.displayedTurn or 0
-
-local function animationOf(thing: any): Animation
-	local animation = module.animations[thing]
-	if not animation then
-		animation = { lastPos = thing.pos, moveLength = 1, open = -1 }
-		module.animations[thing] = animation
-	end
-	return animation
-end
-
---- Smoothly move the drawn position towards the logical position and decay the bumps.
-local function animate(thing: { pos: vec.Vec2, drawPos: vec.Vec2, bump: vec.Vec2 }, dt: number)
-	local animation = animationOf(thing)
-	if animation.lastPos.x ~= thing.pos.x or animation.lastPos.y ~= thing.pos.y then
-		animation.lastPos = thing.pos
-		animation.moveLength = math.max(0.01, (thing.pos - thing.drawPos):length())
-	end
-	if (thing.pos - thing.drawPos):length() > 4 then
-		thing.drawPos = thing.pos -- Teleported: no need to animate
-	else
-		thing.drawPos = thing.drawPos:lerp(thing.pos, 1 - math.exp(-dt * MOVE_SPEED))
-	end
-	thing.bump = thing.bump:scale(math.exp(-dt * 14))
-end
-
---- How high something hops while moving between two tiles (0 when not moving)
-local function hopHeight(thing: { pos: vec.Vec2, drawPos: vec.Vec2 }): number
-	local animation = animationOf(thing)
-	local remaining = math.clamp((thing.pos - thing.drawPos):length() / animation.moveLength, 0, 1)
-	return math.sin(remaining * math.pi) * 0.22 * math.min(animation.moveLength, 2)
-end
-
---- Returns true while the player is moving on screen. Player input waits for animations to finish.
-function module.isAnimating(game: types.Game): boolean
-	return (game.player.pos - game.player.drawPos):length() > 0.15 or module.camera.scroll ~= nil
-end
-
---- Update the smooth positions of everything that moves.
-function module.animate(game: types.Game, dt: number)
-	animate(game.player, dt)
-	for _, entity in game.entities[game.currentRoom] do
-		animate(entity, dt)
-		if entity.kind == "gate" then
-			local animation = animationOf(entity)
-			local target = if game_state.isGateOpen(game, entity) then 1 else 0
-			if animation.open < 0 then
-				animation.open = target
-			end
-			animation.open += (target - animation.open) * (1 - math.exp(-dt * 14))
-		end
-	end
-	module.displayedTurn += (effects.turnClock - module.displayedTurn) * (1 - math.exp(-dt * 10))
-end
-
--- MARK: Entities
-
-export type Label = { pos: vec.Vec2, text: string, color: vec4.Vec4, size: number }
-
-local function drawGate(game: types.Game, gate: types.Entity)
-	local open = math.clamp(animationOf(gate).open, 0, 1)
-	if gate.spikes then
-		sprites.drawInWorld("extra/spikes_down", gate.pos)
-		if open < 0.99 then
-			-- Spikes rise from the floor
-			sprites.drawInWorld("extra/spikes", gate.pos + vec.V2(0, open * 0.5), { scale = 1 - open * 0.6 })
-		end
+--- The tongue of the Frog King: pieces from its mouth to the tip
+local function drawTongue(base: vec.Vec2, tip: vec.Vec2)
+	local delta = tip - base
+	local length = delta:length()
+	if length < 0.05 then
 		return
 	end
-	sprites.drawInWorld("extra/gate_open", gate.pos)
-	if open < 0.99 then
-		local tint = GATE_TINTS[gate.condition or "plates"]
-		sprites.drawInWorld(gate.sprite, gate.pos + vec.V2(0, open * 0.45), { tint = tint, scale = 1 - open * 0.8 })
+	local angle = delta:angle()
+	local pieces = math.ceil(length / 0.8)
+	for i = 1, pieces do
+		local center = base + delta:scale((i - 0.5) / pieces)
+		local sprite = if i == pieces then "characters/tongue_tip" else "characters/tongue"
+		sprites.drawInWorld(sprite, center - vec.V2(0.5, 0.5), { angle = angle })
 	end
 end
 
-local function drawMonster(entity: types.Entity, time: number)
-	local definition = monsters.monsters[entity.monster or ""]
-	local pos = entity.drawPos + entity.bump - vec.V2(0, hopHeight(entity))
-	if definition.flying then
-		pos += vec.V2(0, math.sin(time * 8 + entity.pos.x) * 0.06 - 0.08)
+--- Hazards of the marsh: a drop of ooze that grows on the wall and falls (its shadow grows on the ground), then its
+--- splash; a puddle of poison
+local function drawHazard(monster: types.Monster, species: monsters.Species, flat: { any }, shadows: { Shadow })
+	local t = monster.stateTime
+	local state = monster.state
+	if species.behavior == "puddle" then
+		table.insert(flat, { y = monster.pos.y, draw = function()
+			sprites.drawInWorld("characters/ooze_1", monster.pos - vec.V2(0.7, 0.9), { size = 1.4 })
+		end })
+		return
 	end
-	local tint = if entity.effect then EFFECT_COLORS[entity.effect]:lerp(vec4.WHITE, 0.45) else nil
-	sprites.drawInWorld(entity.sprite, pos, { flipX = entity.facingLeft, tint = tint })
-	if entity.effect then
-		-- A small potion above the monster shows that it moves differently now
-		local potion = if entity.effect == "leap" then "dungeon/potion_red" else "dungeon/potion_blue"
-		sprites.drawInWorld(potion, pos + vec.V2(0.3, -0.45), { scale = 0.45 })
+	if state == "form" or state == "fall" then
+		local grow = if state == "form" then math.min(1, t / 1.4) else 1
+		table.insert(shadows, { pos = monster.pos, width = 0.12 + 0.25 * grow, alpha = 0.25 + 0.3 * grow })
+		local height = if state == "fall" then 1.4 * (1 - math.min(1, t / 0.3)) else 1.4
+		table.insert(flat, { y = monster.pos.y, draw = function()
+			sprites.drawInWorld("characters/ooze_0", monster.pos + vec.V2(-0.5 * grow, -0.4 - height - 0.5 * grow), { size = grow })
+		end })
+	elseif state == "splash" then
+		table.insert(flat, { y = monster.pos.y, draw = function()
+			sprites.drawInWorld("characters/ooze_1", monster.pos - vec.V2(0.5, 0.75))
+		end })
 	end
 end
 
-local function drawEntity(game: types.Game, entity: types.Entity, time: number, labels: { Label })
-	local kind = entity.kind
-	local pos = entity.drawPos + entity.bump
-	if kind == "monster" then
-		drawMonster(entity, time)
-	elseif kind == "gate" then
-		drawGate(game, entity)
-	elseif kind == "pickup" then
-		local bob = math.sin(time * 3 + entity.pos.x * 1.7) * 0.06
-		if entity.pickup == "gear" then
-			-- The gear is the goal of the level: make it pulse
-			local pulse = 1 + math.sin(time * 4) * 0.08
-			sprites.drawInWorld("extra/gear", pos + vec.V2(0, bob - 0.05), { scale = pulse * 0.9 })
-		else
-			sprites.drawInWorld(entity.sprite, pos + vec.V2(0, bob - 0.05), { scale = 0.8 })
+local function playerSprite(player: types.Player): (string, boolean)
+	local view = if player.facing == "up" then "up" elseif player.facing == "down" then "down" else "side"
+	local frame = 0
+	if player.moving then
+		frame = 1 + math.floor(player.walkTime * 7) % 2
+	end
+	return `characters/player_{view}_{frame}`, player.facing == "left"
+end
+
+local function monsterSprite(monster: types.Monster, species: monsters.Species, time: number): string
+	local state = monster.state
+	if species.behavior == "burrower" and (state == "hidden" or state == "rising") then
+		return `characters/{species.mound or "mound"}_0`
+	end
+	if species.boss then
+		local special = species.stateSprites and species.stateSprites[state]
+		if special then
+			return `bosses/{special}`
 		end
-	elseif kind == "bomb" then
-		local fuse = entity.fuse or 0
-		local wobble = math.sin(time * (10 + (4 - fuse) * 6)) * 0.04
-		local blink = math.floor(time * (3 + (4 - fuse) * 3)) % 2 == 0
-		local tint = if blink then vec4.createColor(1, 0.55, 0.5, 1) else nil
-		sprites.drawInWorld(entity.sprite, pos + vec.V2(wobble, 0), { tint = tint, scale = 0.9 + (3 - fuse) * 0.05 })
-		table.insert(labels, { pos = pos + vec.V2(0.75, 0.1), text = `{fuse}`, color = theme.colors.danger, size = 0.55 })
-	elseif kind == "target" then
-		sprites.drawInWorld(entity.sprite, pos)
-		if entity.hit then
-			sprites.drawInWorld("extra/arrow_fly", pos + vec.V2(0.1, -0.1), { quarterTurns = 1, scale = 0.8 })
+		return `bosses/{species.sprite}_{math.floor(time * 3) % 2}`
+	end
+	-- Sentinels: their lens glows when they aim. Menders glow while they mend. Frogs stretch in the air.
+	if species.behavior == "turret" then
+		return `characters/{species.sprite}_{if state == "aim" then 1 else 0}`
+	elseif species.behavior == "mender" then
+		return `characters/{species.sprite}_{if state == "heal" or state == "aim" then 1 else 0}`
+	elseif species.behavior == "hopper" then
+		return `characters/{species.sprite}_{if state == "jump" then 2 elseif state == "crouch" then 1 else 0}`
+	elseif species.behavior == "drip" or species.behavior == "puddle" then
+		return `characters/{species.sprite}_{if state == "form" or state == "fall" then 0 else 1}`
+	end
+	local speed = if state == "coil" or state == "aim" or state == "crouch" then 12 else 5
+	return `characters/{species.sprite}_{math.floor(time * speed + monster.id) % 2}`
+end
+
+--- What to draw, by pass: things flat on the ground, shadows, items to pick up, then everything standing.
+--- Shadows are drawn together, so that drawing them doesn't break the batches of sprites.
+type Drawables = { flat: { Drawable }, shadows: { Shadow }, pickups: { Drawable }, standing: { Drawable } }
+
+local function collectDrawables(game: types.Game, low: vec.Vec2, high: vec.Vec2, time: number): Drawables
+	local flat: { Drawable } = {}
+	local standing: { Drawable } = {}
+	local pickups: { Drawable } = {}
+	local shadows: { Shadow } = {}
+	local function visible(pos: vec.Vec2, margin: number): boolean
+		return pos.x >= low.x - margin and pos.x <= high.x + margin and pos.y >= low.y - margin and pos.y <= high.y + margin
+	end
+
+	for _, prop in game.level.props do
+		if visible(prop.cell, 2) and not game.flags[`broken:{prop.key}`] and interactions.isThere(game, prop) then
+			local kind = props.kinds[prop.kind]
+			local sprite = propSprite(game, prop, kind, time)
+			if sprite then
+				-- Ice blocks slide between two cells
+				local cell = if kind.pushable then blocks.drawCell(prop) else prop.cell
+				local tint = if kind.dream or (prop.kind == "npc" and npcs.npcs[prop.data.npc].dream) then DREAM_TINT else nil
+				local entry: Drawable = {
+					-- A snowdrift hides whoever walks behind it
+					y = cell.y + (if kind.hides then 1.6 else 0.9),
+					draw = function()
+						sprites.drawInWorld(sprite, cell, { tint = tint })
+						if kind.tall then
+							sprites.drawInWorld(kind.tall, cell + vec.V2(0, -1))
+						end
+						if kind.wide then
+							sprites.drawInWorld(kind.wide, cell + vec.V2(1, 0))
+						end
+					end,
+				}
+				table.insert(if kind.flat then flat else standing, entry)
+			end
 		end
-	elseif kind == "ladder" then
-		local finished = entity.level and game.finished[entity.level]
-		sprites.drawInWorld(entity.sprite, pos, { tint = if finished then theme.colors.gold else nil })
-		table.insert(labels, {
-			pos = pos + vec.V2(0.5, -0.1),
-			text = `{entity.level}`,
-			color = if finished then theme.colors.gold else theme.colors.text,
-			size = 0.45,
+	end
+
+	for _, pickup in game.pickups do
+		local bob = math.sin(time * 4 + pickup.pos.x * 2) * 0.06
+		local icon = items.items[pickup.item].icon
+		table.insert(shadows, { pos = pickup.pos + vec.V2(0, -0.05), width = 0.25 })
+		table.insert(pickups, {
+			y = pickup.pos.y,
+			draw = function()
+				sprites.drawInWorld(icon, pickup.pos + vec.V2(-0.35, -0.75 + bob), { size = 0.7 })
+			end,
 		})
-	elseif kind == "npc" then
-		local breathe = math.sin(time * 2 + entity.pos.x) * 0.02
-		sprites.drawInWorld(entity.sprite, pos + vec.V2(0, -breathe), { scale = 1 + breathe })
-	else
-		sprites.drawInWorld(entity.sprite, pos)
 	end
-end
 
-local function drawPlayer(game: types.Game, time: number)
-	local player = game.player
-	if player.dead then
-		return
-	end
-	if player.facing == "left" then
-		module.playerFacingLeft = true
-	elseif player.facing == "right" then
-		module.playerFacingLeft = false
-	end
-	local hop = hopHeight(player)
-	-- Squash and stretch: bigger in the air, and a slow "breathing" when idle
-	local scale = 1 + hop * 0.25 + math.sin(time * 2.5) * 0.015
-	local pos = player.drawPos + player.bump - vec.V2(0, hop)
-	local tint = if player.effect then EFFECT_COLORS[player.effect]:lerp(vec4.WHITE, 0.55) else nil
-	sprites.drawInWorld("dungeon/hero", pos, { flipX = module.playerFacingLeft, scale = scale, tint = tint })
-end
-
---- Brackets on the tile in front of the player: they show where items will be used.
---- With a potion, colored markers show where each arrow key would take the player.
-local function drawCursor(game: types.Game, time: number)
-	local player = game.player
-	if player.dead then
-		return
-	end
-	local facing = player.pos + types.directions[player.facing]
-	sprites.drawInWorld("dungeon/cursor", facing, { tint = theme.withAlpha(vec4.WHITE, 0.22) })
-	if player.effect then
-		local color = EFFECT_COLORS[player.effect]
-		for _, dir in types.directionList do
-			local offset = rules.moveFor(player.effect, dir)
-			local alpha = 0.35 + math.sin(time * 5) * 0.1
-			sprites.drawInWorld("dungeon/cursor", player.pos + offset, { tint = theme.withAlpha(color, alpha), scale = 0.7 })
+	local dreaming = dream.isDreaming(game)
+	for _, monster in game.monsters do
+		local species = monsters.species[monster.kind]
+		-- Phantoms are only there for dreamers. Targets of the gallery are behind their wall, or knocked down.
+		local hiddenTarget = species.prize ~= nil and (monster.state == "hidden" or monster.state == "down")
+		if (species.dream and not dreaming) or hiddenTarget then
+			continue
+		end
+		if visible(monster.pos, 3) and (species.behavior == "drip" or species.behavior == "puddle") then
+			drawHazard(monster, species, flat, shadows)
+		elseif visible(monster.pos, 3) then
+			local size = species.size or 1
+			local sprite = monsterSprite(monster, species, time)
+			local telegraph = monster.state == "rising" or monster.state == "coil" or monster.state == "aim" or monster.state == "crouch"
+				or monster.state == "raise" or monster.state == "charge" or monster.state == "drain" or monster.state == "flooded"
+			local shake = if telegraph then math.sin(time * 60) * 0.04 else 0
+			local tint = if monster.hitTime < 0.12 then WHITE_FLASH elseif species.dream then DREAM_TINT else nil
+			-- Snowmen of the gallery rise from behind their wall
+			local shown: number? = nil
+			if species.behavior == "popup" then
+				local t = math.min(1, monster.stateTime / 0.25)
+				shown = if monster.state == "rise" then t elseif monster.state == "sink" then 1 - t else nil
+			end
+			local lift = (if species.flying then 0.35 + math.sin(time * 6 + monster.id) * 0.08 else 0) + monster_ai.lift(monster, species)
+			-- The shadow of a leaping frog stays on the ground: it shows where it will land
+			local shadow: Shadow = { pos = monster.pos + vec.V2(0, -0.02), width = species.radius }
+			if lift > 3 then
+				local landing = monster.state == "lock" or monster.state == "fall"
+				shadow.width = species.radius * (if landing then 1.6 + math.sin(time * 20) * 0.1 else 1.2)
+				shadow.alpha = if landing then 0.7 else 0.45
+			end
+			table.insert(shadows, shadow)
+			local base, tip = monster_ai.tongue(monster)
+			if base and tip then
+				table.insert(standing, { y = monster.pos.y + 0.02, draw = function()
+					drawTongue(base, tip)
+				end })
+			end
+			if lift < 7 then
+				table.insert(standing, {
+					y = monster.pos.y,
+					draw = function()
+						local sunk = if shown then (1 - shown) * size else 0
+						sprites.drawInWorld(
+							sprite,
+							monster.pos + vec.V2(-size / 2 + shake, 0.08 - size - lift + sunk),
+							{ size = size, flipX = monster.facing == "left", tint = tint, visible = shown }
+						)
+					end,
+				})
+			end
 		end
 	end
+
+	local player = game.player
+	local blink = player.invincible > 0 and math.floor(player.invincible * 14) % 2 == 0
+	if not blink then
+		local sprite, flip = playerSprite(player)
+		local sailing = swamp.isSailing(game)
+		-- Sinking in a bog: the player goes down into the mud
+		local sink = swamp.sinking() * 0.45
+		if not sailing then
+			table.insert(shadows, { pos = player.pos + vec.V2(0, -0.02), width = 0.32 })
+		end
+		table.insert(standing, {
+			y = player.pos.y,
+			draw = function()
+				if sailing then
+					sprites.drawInWorld("characters/boat_0", player.pos + vec.V2(-0.5, -0.75))
+				end
+				-- In the mud, the legs disappear below its surface
+				local visible = if sink > 0 then 1 - sink else nil
+				sprites.drawInWorld(sprite, player.pos + vec.V2(-0.5, 0.08 - 1 + sink - (if sailing then 0.15 else 0)), { flipX = flip, visible = visible })
+				if sink > 0.05 then
+					graphics.drawEllipse(player.pos + vec.V2(0, 0.02), vec.V2(0.42, 0.16), MUD)
+				end
+			end,
+		})
+		-- The weapon sweeps in front of the player during a melee attack
+		local weaponId = inventory.weapon(player)
+		local weapon = items.items[weaponId]
+		local swing = player.swingTime / SWING_DURATION
+		if swing < 1 and not weapon.shot and not weapon.bomb and weaponId ~= "fist" then
+			local angle = FACING_ANGLES[player.facing] - 1.1 + swing * 2.2
+			local center = player.pos + vec.V2(0, -0.4) + vec.fromAngle(angle, 0.55)
+			table.insert(standing, {
+				-- In front of the player, except when attacking upwards
+				y = player.pos.y + (if player.facing == "up" then -0.01 else 0.01),
+				draw = function()
+					sprites.drawInWorld(weapon.icon, center - vec.V2(0.35, 0.35), { size = 0.7, angle = angle + math.pi / 4 })
+				end,
+			})
+		end
+	end
+
+	-- Lit bombs: the fuse sparks faster as it burns
+	for _, bomb in game.bombs do
+		local frame = math.floor(time * (if bomb.fuse < 0.6 then 16 else 6)) % 2
+		table.insert(standing, {
+			y = bomb.pos.y,
+			draw = function()
+				sprites.drawInWorld(`world/bomb_{frame}`, bomb.pos + vec.V2(-0.5, -0.85))
+			end,
+		})
+	end
+
+	for _, projectile in game.projectiles do
+		local angle = projectile.velocity:angle()
+		table.insert(standing, {
+			y = projectile.pos.y + 0.35,
+			draw = function()
+				sprites.drawInWorld(projectile.sprite, projectile.pos + vec.V2(-0.5, -0.5), { angle = angle })
+			end,
+		})
+	end
+	return { flat = flat, shadows = shadows, pickups = pickups, standing = standing }
 end
 
 -- MARK: Effects
 
-local function drawParticles()
+const SUNLIGHT = theme.hex("e3ddd1")
+
+--- A beam of daylight falling from the ceiling, with dust floating in it
+local function drawSunbeam(game: types.Game, time: number)
+	local data = levels.levels[game.level.id]
+	local beam = data.sunbeam
+	if not beam then
+		return
+	end
+	local center = vec.V2(beam[1] + 0.5, beam[2] + 0.5)
+	-- The beam: vertical bands, brighter in the middle, fading towards the ceiling
+	for i = 0, 11 do
+		local y = center.y - i
+		local alpha = 0.07 * (1 - i / 12)
+		for _, band in { { width = 3.2, alpha = 0.6 }, { width = 2, alpha = 1 } } do
+			graphics.drawRect(vec.V2(center.x - band.width / 2, y - 1), vec.V2(band.width, 1), theme.withAlpha(SUNLIGHT, alpha * band.alpha))
+		end
+	end
+	graphics.drawEllipse(center + vec.V2(0, 0.3), vec.V2(2.4, 1.1), theme.withAlpha(SUNLIGHT, 0.08))
+	-- Dust: specks drifting slowly down through the light
+	for i = 1, 18 do
+		local seed = i * 12.9898
+		local x = center.x + (math.sin(seed) * 1.4) + math.sin(time * 0.7 + seed) * 0.15
+		local fall = (time * 0.25 + (seed % 1)) % 1
+		local y = center.y - 9 + fall * 9.5
+		local alpha = 0.5 * math.sin(fall * math.pi)
+		graphics.drawRect(vec.V2(x, y), vec.V2(0.06, 0.06), theme.withAlpha(SUNLIGHT, alpha))
+	end
+end
+
+local function drawEffects()
+	for _, effect in effects.list do
+		local t = effect.age / effect.duration
+		if effect.kind == "sprite" and effect.frames then
+			local frame = effect.frames[math.min(#effect.frames, math.floor(t * #effect.frames) + 1)]
+			local size = effect.size or 1
+			sprites.drawInWorld(frame, effect.pos - vec.V2(size / 2, size / 2), { angle = effect.angle, size = size })
+		elseif effect.kind == "dying" and effect.frames then
+			local size = (effect.size or 1) * (1 - t * 0.7)
+			sprites.drawInWorld(effect.frames[1], effect.pos - vec.V2(size / 2, size / 2), {
+				size = size,
+				angle = t * 6,
+				flipX = effect.flipX,
+				tint = vec4.createColor(1, 1, 1, 1 - t),
+			})
+		end
+	end
 	for _, p in effects.particles do
 		local alpha = 1 - p.age / p.duration
-		local half = p.size * 0.5
-		fillRect(p.pos - vec.V2(half, half), vec.V2(p.size, p.size), theme.withAlpha(p.color, alpha))
+		graphics.drawRect(p.pos - vec.V2(p.size / 2, p.size / 2), vec.V2(p.size, p.size), theme.withAlpha(p.color, alpha))
 	end
 end
 
-local function drawEffects(labels: { Label })
-	for _, effect in effects.list do
-		local progress = effect.age / effect.duration
-		if effect.kind == "sprite" and effect.sprite then
-			sprites.drawInWorld(effect.sprite, effect.pos, {
-				quarterTurns = effect.quarterTurns,
-				tint = theme.withAlpha(vec4.WHITE, 1 - progress * progress),
-				scale = 0.8 + progress * 0.2,
-			})
-		elseif effect.kind == "arrow" and effect.to then
-			local pos = effect.pos:lerp(effect.to, math.min(1, progress * 1.1))
-			sprites.drawInWorld("extra/arrow_fly", pos, { quarterTurns = effect.quarterTurns })
-		elseif effect.kind == "dying" and effect.sprite then
-			-- Jump up, spin and shrink
-			local lift = math.sin(progress * math.pi) * 0.4
-			sprites.drawInWorld(effect.sprite, effect.pos - vec.V2(0, lift), {
-				scale = 1 - progress,
-				quarterTurns = math.floor(progress * 8) % 4,
-				flipX = effect.flipX,
-				tint = vec4.createColor(1, 1 - progress, 1 - progress, 1),
-			})
-		elseif effect.kind == "ring" then
-			-- Explosion shockwave: an expanding square outline
-			local size = 1 + progress * 2.5
-			local center = effect.pos + vec.V2(0.5, 0.5)
-			local color = vec4.createColor(1, 0.9, 0.6, (1 - progress) * 0.8)
-			local thickness = 0.12 * (1 - progress) + 0.02
-			local corner = center - vec.V2(size / 2, size / 2)
-			fillRect(corner, vec.V2(size, thickness), color)
-			fillRect(corner + vec.V2(0, size - thickness), vec.V2(size, thickness), color)
-			fillRect(corner, vec.V2(thickness, size), color)
-			fillRect(corner + vec.V2(size - thickness, 0), vec.V2(thickness, size), color)
-		elseif effect.kind == "text" and effect.text then
-			table.insert(labels, {
-				pos = effect.pos + vec.V2(0.5, -0.1 - progress * 0.9),
-				text = effect.text,
-				color = theme.withAlpha(effect.color or vec4.WHITE, math.min(1, (1 - progress) * 2.5)),
-				size = 0.5,
-			})
+-- MARK: Miasma
+
+const MIASMA_TINT = vec4.createColor(1, 1, 1, 0.4)
+
+--- Clouds of miasma drifting over their cells, over everything that stands
+local function drawMiasma(game: types.Game, low: vec.Vec2, high: vec.Vec2, time: number)
+	local lvl = game.level :: level.Level
+	for y = low.y, high.y do
+		for x = low.x, high.x do
+			local ground = level.groundAt(lvl, x, y)
+			if ground and ground.miasma then
+				-- Two puffs per cell, drifting at their own pace, so that the clouds don't look like tiles
+				for puff = 0, 1 do
+					local phase = time * (0.5 + puff * 0.3) + x * 1.3 + y * 0.7 + puff * 2.1
+					local frame = (math.floor(phase) + puff) % 2
+					local offset = vec.V2((((x * 7 + y * 3 + puff * 5) % 5) - 2) * 0.15, (((x * 3 + y * 5 + puff) % 3) - 1) * 0.2)
+					local sway = vec.V2(math.sin(phase) * 0.2, math.cos(phase * 0.8) * 0.12 - 0.45)
+					sprites.drawInWorld(`world/miasma_{frame}`, vec.V2(x, y) + offset + sway, { size = 1.1 - puff * 0.25, tint = MIASMA_TINT })
+				end
+			end
 		end
 	end
 end
 
---- Leaves (outside) or dust (in the mine) floating in the air. They only drift when turns pass,
---- which shows that the world moves only when the player does.
-local function drawAmbient(game: types.Game, low: vec.Vec2, high: vec.Vec2)
-	local outdoors = world.roomData(game.currentRoom).floor == "grass"
-	local turn = module.displayedTurn
-	local span = high - low
-	for i = 1, 14 do
-		local seedX = (i * 0.6180339) % 1
-		local seedY = (i * 0.4142135) % 1
-		local x = low.x + ((seedX * span.x + turn * (0.13 + seedY * 0.1)) % span.x)
-		local y = low.y + ((seedY * span.y + turn * (0.07 + seedX * 0.05) + math.sin(turn * 0.5 + i) * 0.3) % span.y)
-		if outdoors then
-			sprites.drawInWorld("extra/leaf", vec.V2(x, y), {
-				scale = 0.55,
-				quarterTurns = math.floor(turn * 0.5 + i) % 4,
-				tint = theme.withAlpha(vec4.WHITE, 0.8),
-			})
-		else
-			fillRect(vec.V2(x, y), vec.V2(0.06, 0.06), vec4.createColor(1, 0.9, 0.7, 0.35))
+-- MARK: Veils
+
+--- The veils: mist drifting over their cells. Thick for the waking, thin for dreamers (they walk through it).
+local function drawVeils(game: types.Game, low: vec.Vec2, high: vec.Vec2, time: number)
+	local lvl = game.level :: level.Level
+	local tint = vec4.createColor(1, 1, 1, if dream.isDreaming(game) then 0.18 else 0.7)
+	for y = low.y, high.y do
+		for x = low.x, high.x do
+			local ground = level.groundAt(lvl, x, y)
+			if ground and ground.veil then
+				for puff = 0, 1 do
+					local phase = time * (0.35 + puff * 0.2) + x * 1.1 + y * 0.9 + puff * 1.7
+					local frame = (math.floor(phase) + puff) % 2
+					local sway = vec.V2(math.sin(phase) * 0.12, math.cos(phase * 0.7) * 0.1 - 0.35 - puff * 0.3)
+					sprites.drawInWorld(`world/veil_{frame}`, vec.V2(x, y) + sway, { size = 1.05, tint = tint })
+				end
+			end
 		end
 	end
 end
 
-local function drawLabels(viewport: Viewport, camera: vec.Vec2, labels: { Label })
-	for _, label in labels do
-		local size = label.size * viewport.tileSize.y
-		local width = theme.font:measureText(label.text, size).width
-		local center = module.toScreen(viewport, camera, label.pos)
-		-- Keep labels inside the viewport so that they can always be read
-		local minX = viewport.pos.x + 0.01
-		local maxX = viewport.pos.x + viewport.size.x - width - 0.01
-		local bottomLeft = vec.V2(
-			math.clamp(center.x - width / 2, minX, math.max(minX, maxX)),
-			math.clamp(center.y - size / 2, viewport.pos.y + 0.01, viewport.pos.y + viewport.size.y - size)
-		)
-		theme.font:drawText(label.text, bottomLeft + vec.V2(0.004, -0.006), size, theme.withAlpha(vec4.BLACK, label.color.a))
-		theme.font:drawText(label.text, bottomLeft, size, label.color)
+-- MARK: Snow
+
+const SNOW = theme.hex("e3ddd1")
+const FLAKES = 110
+
+--- Snow falling over the level (and the blizzard of the Last Watchman), over everything
+local function drawSnow(game: types.Game, low: vec.Vec2, high: vec.Vec2, time: number)
+	local amount = if frost.isBlizzard(game) then 1 else game.level.snowfall
+	if amount <= 0.01 then
+		return
+	end
+	local size = high - low + vec.V2(2, 2)
+	local wind = if amount > 0.6 then 2.5 else 0.6
+	for i = 1, math.floor(FLAKES * amount) do
+		local seed = i * 7.31
+		local fall = 1.2 + (i % 4) * 0.4
+		local start = vec.V2((seed * 0.618) % 1, (seed * 0.377) % 1)
+		local x = low.x - 1 + ((start.x * size.x + time * wind + math.sin(time + seed) * 0.3) % size.x)
+		local y = low.y - 1 + ((start.y * size.y + time * fall) % size.y)
+		local flake = if i % 3 == 0 then 0.09 else 0.06
+		graphics.drawRect(vec.V2(x, y), vec.V2(flake * (1 + wind * 0.4), flake), theme.withAlpha(SNOW, 0.75))
 	end
 end
 
--- MARK: Main drawing function
+-- MARK: Sandstorms
+
+const SAND = theme.hex("a29f7e")
+const STREAKS = 90
+
+--- Streaks of sand blowing with the wind, over everything (the haze itself is drawn by the darkness shader)
+local function drawStorm(game: types.Game, low: vec.Vec2, high: vec.Vec2, time: number)
+	local stormData = game.level.storm
+	local intensity = storm.intensity(game)
+	-- Blizzards (snow, see drawSnow) have no sand
+	if not stormData or intensity <= 0.01 or game.level.snowfall > 0 then
+		return
+	end
+	local alpha = intensity * (if storm.isCalmed(game) then 0.25 else 0.6)
+	local size = high - low + vec.V2(2, 2)
+	local wind = stormData.wind
+	for i = 1, STREAKS do
+		local seed = i * 7.31
+		local speed = 8 + (i % 5)
+		local start = vec.V2((seed * 0.618) % 1, (seed * 0.377) % 1)
+		local travel = wind:scale(time * speed)
+		local x = low.x - 1 + ((start.x * size.x + travel.x) % size.x)
+		local y = low.y - 1 + ((start.y * size.y + travel.y) % size.y)
+		local length = 0.4 + (i % 3) * 0.2
+		graphics.drawRect(vec.V2(x, y), vec.V2(length, 0.06), theme.withAlpha(SAND, alpha))
+	end
+end
+
+-- MARK: Key prompts
+
+--- Distance (in tiles) at which things the player can use show the key to press above them
+const PROMPT_RANGE = 3
+
+--- The key to press above everything the player can use nearby, so that they don't look like decoration.
+--- The thing [E] would use right now has a larger, bobbing key. Drawn in screen space, above the darkness.
+local function drawKeyPrompts(game: types.Game, viewport: Viewport, time: number)
+	local target = interactions.find(game)
+	local targetProp = if target then target.prop else nil
+	local key = prompts.keyIcon("E")
+	for _, prop in game.level.props do
+		local center = prop.cell + vec.V2(0.5, 0.5)
+		if (center - game.player.pos):length() < PROMPT_RANGE and interactions.canInteract(game, prop) then
+			local kind = props.kinds[prop.kind]
+			local isTarget = prop == targetProp
+			-- Square on the screen: OpenGL units are not square, but tiles are
+			local scale = if isTarget then 0.62 else 0.45
+			local size = vec.V2(viewport.tileSize.x * scale, viewport.tileSize.y * scale)
+			-- Above the sprite: tall props (with a top sprite) are 2 tiles high, flat ones lie on the ground
+			local top = prop.cell.y + (if kind.tall then -1.05 elseif kind.flat then 0.35 else -0.05)
+			local bob = if isTarget then math.sin(time * 5) * 0.06 else 0
+			local bottom = module.toScreen(viewport, vec.V2(center.x, top + bob))
+			local pos = vec.V2(bottom.x - size.x / 2, bottom.y)
+			local tint = if isTarget then nil else vec4.createColor(1, 1, 1, 0.55)
+			keyboard_icons.keyboardInputIcons:drawTileQuad(
+				key,
+				pos,
+				pos + vec.V2(size.x, 0),
+				pos + size,
+				pos + vec.V2(0, size.y),
+				tint
+			)
+		end
+	end
+end
+
+-- MARK: Drawing
 
 export type DrawOptions = {
 	time: number,
-	showPlayer: boolean,
+	--- Draw the darkness (the menus show the world without it)
+	darkness: boolean?,
 }
 
---- Draw the world as seen from `camera` (the world position of the top-left corner of the viewport).
-function module.drawWorld(game: types.Game, viewport: Viewport, camera: vec.Vec2, options: DrawOptions)
-	local labels: { Label } = {}
-	local visibleTiles = viewport.size / viewport.tileSize
-	local low = camera:floor()
-	local high = (camera + visibleTiles):ceil()
+--- Draw the world in the viewport. Texts (floating damage numbers) are drawn after, in screen space.
+function module.drawWorld(game: types.Game, viewport: Viewport, options: DrawOptions)
+	local time = options.time
+	local visible = module.visibleTiles(viewport)
+	local low = module.camera:floor()
+	local high = (module.camera + visible):ceil()
+	local lvl = game.level :: level.Level
+	local origin = viewport.pos + vec.V2(0, viewport.size.y)
 
-	-- The rooms on screen: the current one, and the next one while the camera scrolls
-	local visibleRooms = { game.currentRoom }
-	for _, corner in { low, high - vec.V2(1, 1) } do
-		local room = world.roomAt(game.world, corner)
-		if room and not table.find(visibleRooms, room.id) then
-			table.insert(visibleRooms, room.id)
-		end
-	end
-
-	-- Everything is clipped to the viewport, so that rooms don't spill over the HUD while scrolling.
-	graphics.drawWithMask(function()
-		withWorldTransform(viewport, camera, function()
-			drawTerrainLayer(game, world.GROUND, low, high)
-			drawTerrainLayer(game, world.OBJECTS, low, high)
-			-- Gates and ladders are on the floor, so they are drawn first
-			for pass = 1, 2 do
-				for _, roomId in visibleRooms do
-					for _, entity in game.entities[roomId] do
-						local isFloor = entity.kind == "gate" or entity.kind == "ladder"
-						if (pass == 1) == isFloor and game_state.isPresent(game, entity) then
-							drawEntity(game, entity, options.time, labels)
-						end
-					end
-				end
+	graphics.withTransformation({ translation = origin }, function()
+		graphics.withTransformation({
+			translation = module.camera:scale(-1),
+			scale = vec.V2(viewport.tileSize.x, -viewport.tileSize.y),
+		}, function()
+			terrain_view.draw(lvl, low, high, time)
+			local drawables = collectDrawables(game, low, high, time)
+			local function byY(a: Drawable, b: Drawable): boolean
+				return a.y < b.y
 			end
-			if options.showPlayer then
-				drawCursor(game, options.time)
-				drawPlayer(game, options.time)
+			table.sort(drawables.flat, byY)
+			table.sort(drawables.standing, byY)
+			for _, entry in drawables.flat do
+				entry.draw()
 			end
-			drawEffects(labels)
-			drawParticles()
-			drawAmbient(game, low, high)
+			for _, shadow in drawables.shadows do
+				drawShadow(shadow)
+			end
+			for _, entry in drawables.pickups do
+				entry.draw()
+			end
+			for _, entry in drawables.standing do
+				entry.draw()
+			end
+			drawMiasma(game, low, high, time)
+			drawVeils(game, low, high, time)
+			drawEffects()
+			drawSunbeam(game, time)
 		end)
-		drawLabels(viewport, camera, labels)
-	end, function()
-		graphics.drawRect(viewport.pos, viewport.size)
 	end)
-end
-
--- MARK: Camera
-
---- The camera shows one room at a time and scrolls when the player walks to another room.
-module.camera = module.camera
-	or {
-		pos = vec.V2(0, 0),
-		room = "",
-		scroll = nil :: { from: vec.Vec2, to: vec.Vec2, t: number }?,
-	}
-
---- Place the camera on the current room without scrolling.
-function module.resetCamera(game: types.Game)
-	module.camera.pos = game.world.rooms[game.currentRoom].origin
-	module.camera.room = game.currentRoom
-	module.camera.scroll = nil
-end
-
-function module.updateCamera(game: types.Game, dt: number)
-	local camera = module.camera
-	if camera.room ~= game.currentRoom then
-		local target = game.world.rooms[game.currentRoom].origin
-		local distance = target - camera.pos
-		-- Scroll to neighboring rooms, but jump directly when changing to a far away room (a level)
-		local isNeighbor = math.abs(distance.x) <= ROOM_SIZE.x and math.abs(distance.y) <= ROOM_SIZE.y
-		if isNeighbor then
-			camera.scroll = { from = camera.pos, to = target, t = 0 }
-		else
-			camera.pos = target
-			camera.scroll = nil
-		end
-		camera.room = game.currentRoom
+	if options.darkness ~= false then
+		lighting.drawDarkness(game, viewport.pos, viewport.size, module.camera, visible, time)
+	end
+	-- What shines through the darkness
+	graphics.withTransformation({ translation = origin }, function()
+		graphics.withTransformation({
+			translation = module.camera:scale(-1),
+			scale = vec.V2(viewport.tileSize.x, -viewport.tileSize.y),
+		}, function()
+			drawMendingBeams(game, time)
+			if options.darkness ~= false then
+				drawStorm(game, low, high, time)
+				drawSnow(game, low, high, time)
+			end
+		end)
+	end)
+	if options.darkness ~= false then
+		drawKeyPrompts(game, viewport, time)
 	end
 
-	local scroll = camera.scroll
-	if scroll then
-		scroll.t = math.min(1, scroll.t + dt / SCROLL_DURATION)
-		local eased = scroll.t * scroll.t * (3 - 2 * scroll.t) -- smoothstep
-		camera.pos = scroll.from:lerp(scroll.to, eased)
-		if scroll.t >= 1 then
-			camera.scroll = nil
+	-- Floating texts, in screen space so that they are not drawn upside down
+	for _, effect in effects.list do
+		if effect.kind == "text" and effect.text then
+			local alpha = 1 - math.max(0, effect.age / effect.duration - 0.6) / 0.4
+			local size = viewport.tileSize.y * 0.45
+			local width = theme.font:measureText(effect.text, size).width
+			local pos = module.toScreen(viewport, effect.pos) - vec.V2(width / 2, 0)
+			theme.font:drawText(effect.text, pos + vec.V2(0.004, -0.006), size, theme.withAlpha(theme.colors.darkness, alpha))
+			theme.font:drawText(effect.text, pos, size, theme.withAlpha(effect.color or theme.colors.text, alpha))
 		end
 	end
 end

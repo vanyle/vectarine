@@ -31,6 +31,8 @@ type DialogState = {
 	--- Who says the current line. nil for narration lines (returned by function steps).
 	lineSpeaker: types.Speaker?,
 	text: string,
+	--- Number of characters of `text` (not bytes: the writing of the sea people uses Greek letters)
+	length: number,
 	--- Number of characters of `text` currently visible (typewriter effect)
 	shownChars: number,
 	time: number,
@@ -53,6 +55,7 @@ local function goToNextLine(state: DialogState): boolean
 		end
 		if text then
 			state.text = text
+			state.length = utf8.len(text) or #text
 			state.lineSpeaker = speaker
 			state.shownChars = 0
 			return true
@@ -68,6 +71,7 @@ function module.open(game: types.Game, speaker: types.Speaker?, steps: { types.D
 		steps = steps,
 		nextStep = 1,
 		text = "",
+		length = 0,
 		shownChars = 0,
 		time = 0,
 	}
@@ -83,7 +87,7 @@ end
 --- Is the current line still being typed?
 function module.isTyping(): boolean
 	local state = module.current
-	return state ~= nil and state.shownChars < #state.text
+	return state ~= nil and state.shownChars < state.length
 end
 
 --- Show the full line if it is being typed, otherwise go to the next line (or close the dialog).
@@ -93,7 +97,7 @@ function module.advance()
 		return
 	end
 	if module.isTyping() then
-		state.shownChars = #state.text
+		state.shownChars = state.length
 	elseif not goToNextLine(state) then
 		module.current = nil
 	end
@@ -107,7 +111,7 @@ function module.update(dt: number)
 	local state = module.current
 	if state then
 		state.time += dt
-		state.shownChars = math.min(#state.text, state.shownChars + dt * settings.values.textSpeed)
+		state.shownChars = math.min(state.length, state.shownChars + dt * settings.values.textSpeed)
 	end
 end
 
@@ -132,7 +136,7 @@ module.widget = ui.widget(module.BOX_SIZE, function(_events, extra)
 			fontSize = 0.075,
 			color = theme.colors.gold,
 		}),
-		ui.text(string.sub(state.text, 1, math.floor(state.shownChars)), {
+		ui.text(string.sub(state.text, 1, (utf8.offset(state.text, math.floor(state.shownChars) + 1) or #state.text + 1) - 1), {
 			align = "left",
 			font = theme.font,
 			fontSize = 0.07,

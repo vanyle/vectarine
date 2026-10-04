@@ -115,16 +115,14 @@ function module.menu<T>(items: { MenuItem<T> }, buttonSize: vec.Vec2): ui.Widget
 					if selected then theme.colors.gold else theme.colors.text
 				)
 
-				-- A small sword points at the selected button
+				-- A small knife points at the selected button
 				if selected then
-					local swordSize = module.square(buttonSize.y * 0.7)
+					local pointerSize = module.square(buttonSize.y * 0.8)
 					local bob = math.sin(module.time * 6) * 0.008
 					sprites.draw(
-						"dungeon/sword",
-						origin + vec.V2(-swordSize.x - 0.03 + bob, (buttonSize.y - swordSize.y) / 2),
-						swordSize,
-						nil,
-						3
+						"items/rusty_knife",
+						origin + vec.V2(-pointerSize.x - 0.03 + bob, (buttonSize.y - pointerSize.y) / 2),
+						pointerSize
 					)
 				end
 			end)

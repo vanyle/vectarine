@@ -1,204 +1,217 @@
 --[[
-Types shared by the gameplay modules.
+Types shared by the whole game.
 
-They live in their own file so that data files (npcs, story, ...) can use the Game type
-without creating a circular require with game_state.luau, which implements it.
+The state of the game (`Game`) is split in two:
+- what is saved: the player, the flags of the story, the content of chests, the notebook...
+- what is rebuilt when entering a level (`Game.level` and the `LevelRuntime`): monsters, projectiles, pickups.
+
+World coordinates are in tiles, with y pointing down. Positions of characters are the center of their feet.
 ]]
-const legend = require("./data/legend")
-const loader = require("@vectarine/loader")
-const terrain = require("./data/terrain")
-const tile = require("@vectarine/tile")
 const vec = require("@vectarine/vec")
-const vec4 = require("@vectarine/vec4")
 
-const module = loader.init() or {}
+export type Vec2 = vec.Vec2
 
-export type Direction = legend.Direction
-export type Terrain = terrain.Terrain
-export type GateCondition = legend.GateCondition
+export type Direction = "up" | "down" | "left" | "right"
+--- `cold` freezes (it also chills: see frost.luau), `dream` comes from the dream (phantoms, dream weapons)
+export type DamageType = "blunt" | "slash" | "pierce" | "fire" | "electric" | "acid" | "cold" | "dream"
+export type StatName = "health" | "sanity" | "strength" | "agility" | "intelligence"
+export type Slot = "weapon" | "armor" | "charm"
 
---- Potions change how their drinker moves: "leap" jumps 2 tiles, "slant" moves diagonally
-export type Effect = "leap" | "slant"
-
-export type EntityKind =
-	"monster"
-	| "npc"
-	| "sign"
-	| "pickup"
-	| "bomb"
-	| "barrel"
-	| "target"
-	| "gate"
-	| "door"
-	| "ladder"
-
---- Anything that lives on a tile and is not part of the level: monsters, items, gates, ...
---- Most fields only make sense for one kind of entity.
-export type Entity = {
-	kind: EntityKind,
-	sprite: string,
-	--- Id of the room the entity belongs to. Entities never leave their room.
-	room: string,
-	--- Position in tiles. Always integers.
-	pos: vec.Vec2,
-	--- Removed entities (dead monsters, collected items) are kept in the list but ignored.
-	removed: boolean,
-
-	-- Visual state, only used by world_view.luau
-	drawPos: vec.Vec2,
-	--- Offset used to animate attacks and bumps. Decays to zero.
-	bump: vec.Vec2,
-	facingLeft: boolean,
-
-	-- Monsters
-	monster: string?,
-	dir: Direction?,
-	effect: Effect?,
-	-- NPCs and signs
-	npc: string?,
-	lines: { string }?,
-	-- Pickups
-	pickup: legend.PickupKind?,
-	amount: number?,
-	potion: legend.Potion?,
-	-- Bombs: turns before exploding
-	fuse: number?,
-	-- Targets
-	hit: boolean?,
-	-- Gates
-	condition: GateCondition?,
-	count: number?,
-	spikes: boolean?,
-	-- Ladders: the level they lead to
-	level: number?,
+export type Stats = {
+	health: number,
+	sanity: number,
+	strength: number,
+	agility: number,
+	intelligence: number,
 }
+
+export type ItemStack = { id: string, count: number }
 
 export type Player = {
-	pos: vec.Vec2,
-	drawPos: vec.Vec2,
-	bump: vec.Vec2,
+	pos: Vec2,
+	--- The height layer the player stands on (see level.luau)
+	height: number,
 	facing: Direction,
-	--- The potion effect on the player, if any
-	effect: Effect?,
-	--- The direction the player moved in this turn, if they moved. Spiders use it.
-	lastIntent: Direction?,
+	hp: number,
+	sanity: number,
+	--- 0 = dying of thirst, 100 = not thirsty at all
+	water: number,
+	--- 0 = freezing, 100 = warm (see frost.luau)
+	warmth: number,
+	--- Sips left in the water bottle
+	sips: number,
+	stats: Stats,
+	level: number,
+	xp: number,
+	--- Points to spend on stats, earned when leveling up
+	statPoints: number,
+	inventory: { ItemStack },
+	--- Two charms can be worn at the same time (`charm` and `charm2`)
+	equipment: { weapon: string?, armor: string?, charm: string?, charm2: string? },
+	--- Artefacts found, by item id. They are permanent abilities and don't take space in the bag.
+	artefacts: { [string]: boolean },
+	--- Seconds left before the next attack is possible
+	attackTimer: number,
+	--- Time since the last attack started, to draw the swing
+	swingTime: number,
+	--- Seconds of invincibility left after being hit
+	invincible: number,
+	--- Seconds of poison left
+	poison: number,
+	--- How many sips the water bottle holds (nil: the default, see player.luau)
+	bottle: number?,
+	knockback: Vec2,
+	--- Speed kept from the last frame: on ice, the player slides (see frost.luau)
+	velocity: Vec2,
+	--- Time spent walking, to animate the steps
+	walkTime: number,
+	moving: boolean,
+}
+
+export type Monster = {
+	--- Unique in the level, to find a monster again
+	id: number,
+	--- Key of data/monsters.luau
+	kind: string,
+	pos: Vec2,
+	height: number,
+	spawn: Vec2,
+	hp: number,
+	--- What the monster is doing, see monster_ai.luau
+	state: string,
+	stateTime: number,
+	facing: Direction,
+	--- A point the monster is moving towards
+	target: Vec2?,
+	cooldown: number,
+	--- Time since the monster was last hit (to flash it)
+	hitTime: number,
+	knockback: Vec2,
+	--- Key of the flag set when a unique monster (a boss) is killed
+	uniqueKey: string?,
+	--- The guards of a chest have a group: the chest is sealed while they are alive
+	group: string?,
+	--- Bosses have phases, see monster_ai.luau
+	phase: number,
+	--- Seconds left of being slowed down by the cold (cold weapons)
+	chill: number?,
 	dead: boolean,
-	--- What killed the player: "spikes", "fall", "monster", "explosion" or "crushed"
-	deathCause: string?,
 }
 
---- What the player carries. The pickaxe is kept forever, the rest only lasts for the current level.
-export type Inventory = {
-	hasPickaxe: boolean,
-	arrows: number,
-	bombs: number,
-	keys: number,
-	--- The item used by [Space]
-	selected: string?,
+export type Projectile = {
+	pos: Vec2,
+	velocity: Vec2,
+	damage: number,
+	damageType: DamageType,
+	fromPlayer: boolean,
+	sprite: string,
+	life: number,
+	poison: number?,
+	--- Shot by a boss: it hits softer when the player is low (see combat.bossFactor)
+	boss: boolean?,
+	dead: boolean,
 }
 
---- State of the level being played
-export type LevelState = {
-	index: number,
-	roomId: string,
-	startPos: vec.Vec2,
-	--- The state of the level when it started, used to restart it
-	initialState: string,
-	--- Previous states of the level, used to undo
-	undoStack: { string },
-	--- Set when the gear is collected
-	won: boolean,
-	moves: number,
+--- A lit bomb, about to blow up
+export type Bomb = { pos: Vec2, fuse: number, damage: number }
+
+export type Pickup = {
+	pos: Vec2,
+	item: string,
+	count: number,
+	--- Flag set when picked up, for items placed in the level (dropped items have none)
+	key: string?,
+	--- Time since it appeared, to animate it
+	age: number,
+	dead: boolean,
 }
 
-export type RoomInfo = {
+--- Something placed in a level: plants, rocks, chests, characters...
+export type Prop = {
+	--- Key of data/props.luau
+	kind: string,
+	--- Cell of the prop
+	cell: Vec2,
+	--- Unique key for props whose state is saved (chests, fruit bushes, teleporters...)
+	key: string,
+	--- Extra data from the level: the content of a chest, the text of a sign, the id of a character...
+	data: { [string]: any },
+}
+
+export type Link = { level: string, entry: string }
+
+--- Sandstorms of a level: `calm` seconds of calm, then a storm of `duration` seconds (or `always`).
+--- `wind` is the direction the wind blows to, `strength` how fast it pushes, in tiles per second.
+export type Storm = { calm: number?, duration: number?, always: boolean?, wind: Vec2, strength: number }
+
+--- A level, once loaded (see level.luau). Only bombs change it while it is played (they open cracked walls).
+export type LevelRuntime = {
 	id: string,
-	kind: "overworld" | "level",
-	--- Position of the top-left tile of the room in the world.
-	origin: vec.Vec2,
-	--- Positions of the pressure plates of the room (they never change)
-	plates: { vec.Vec2 },
-}
-
-export type World = {
-	--- Size of the world in tiles
+	name: string,
+	subtitle: string,
 	width: number,
 	height: number,
-	--- The level. Layer 0 is the ground, layer 1 are the objects.
-	tilemap: tile.GeneratedTilemap,
-	--- Source data of the tilemap, indexed by `1 + x + y * width`. Change it with world.setTerrain.
-	layers: { [number]: { number } },
-	--- Copy of the layers when the world was built, used to reset levels.
-	initialLayers: { [number]: { number } },
-	rooms: { [string]: RoomInfo },
-	--- Which room is at each position of the room grid ("x,y" -> room id)
-	grid: { [string]: string },
-	--- The data tables the world was built from (see world.isOutdated)
-	sources: { any },
+	--- How dark the level is: 0 = full light, 1 = pitch black
+	darkness: number,
+	--- The floor of the Explorium the level is on (1 = the oasis, 2 = the desert)
+	depth: number,
+	--- How fast the player gets thirsty, compared to the oasis
+	heat: number,
+	storm: Storm?,
+	--- Snow falling over the level, from 0 to 1 (drawn only)
+	snowfall: number,
+	--- Parts of the level without light: x1, y1, x2, y2 (cells, included) and their darkness
+	darkAreas: { { number } },
+	--- Increases every time the terrain changes (a bomb opened a wall), so that it is drawn again
+	version: number,
+	props: { Prop },
+	--- Cells of each entry point, by name ("1", "2"...)
+	entries: { [string]: { Vec2 } },
+	links: { [string]: Link },
+	start: Vec2?,
+	--- Monsters to create when entering the level
+	spawns: { { kind: string, cell: Vec2, uniqueKey: string?, group: string? } },
+	pickups: { { item: string, count: number, cell: Vec2, key: string } },
 }
 
 export type Speaker = { name: string, sprite: string? }
 
---- A dialog is a list of steps. A string is a line said by the speaker.
---- A function is run when the dialog reaches it. If it returns a string, it is shown as a narration line.
-export type DialogStep = string | (game: Game) -> string?
+--- Something that happened, for the screen to show. `kind` says what ("message", "dialog", "levelUp"...).
+export type GameEvent = { [string]: any }
 
---- Conditions of the gates of the current room, updated during each turn by rules.luau
-export type Conditions = { plates: boolean, targets: boolean, monsters: boolean }
+--- A step of a dialog: a line of text, or a function that does something (give an item, start a quest...)
+--- and optionally returns a line of narration to show.
+export type DialogStep = string | (game: any) -> string?
 
 export type Game = {
-	world: World,
+	levelId: string,
 	player: Player,
-	--- Entities of each room
-	entities: { [string]: { Entity } },
-	--- What each room map creates, used to reset levels
-	spawns: { [string]: { any } },
-	inventory: Inventory,
-	currentRoom: string,
-	--- Set while playing a level
-	level: LevelState?,
-	--- Levels that were finished, by level number
-	finished: { [number]: boolean },
-	--- Free-form storage for story progress, for example flags.metFairy = true
+	--- Story progress and everything that must be remembered: opened chests, killed bosses, quests...
 	flags: { [string]: any },
-	conditions: Conditions,
-	--- Total number of turns played
-	turn: number,
-	--- Set by rules.luau when the player steps on a ladder. game_screen.luau then starts the level.
-	enteringLevel: number?,
-	--- "playing", or "ending" once the last level is finished
-	status: "playing" | "ending",
-	--- Where the player is sent back in the overworld after a level
-	overworldReturn: vec.Vec2?,
+	--- Items in chests, by chest key. The quantum chest is the key "quantum".
+	chests: { [string]: { ItemStack } },
+	notebook: {
+		--- Creatures killed, by kind (a creature is in the bestiary once seen, even with 0 kills)
+		creatures: { [string]: number },
+		--- Lore texts read, by id
+		lore: { [string]: boolean },
+		--- Explored cells of each level, as rows of "0"/"1" (see notebook.luau)
+		explored: { [string]: { string } },
+	},
+	--- Where to wake up after fainting
+	respawn: { level: string, pos: Vec2 },
+	--- Total play time, in seconds
+	time: number,
 
-	-- MARK: Methods (implemented in game_state.luau)
-	startDialog: (self: Game, speaker: Speaker?, steps: { DialogStep }) -> (),
-	--- Show a short floating text in the world
-	say: (self: Game, pos: vec.Vec2, text: string, color: vec4.Vec4?) -> (),
-	entityAt: (self: Game, pos: vec.Vec2) -> Entity?,
-	objectAt: (self: Game, pos: vec.Vec2) -> Terrain?,
-	groundAt: (self: Game, pos: vec.Vec2) -> Terrain?,
-	finishedCount: (self: Game) -> number,
+	-- Not saved: rebuilt when entering a level
+	level: LevelRuntime,
+	monsters: { Monster },
+	projectiles: { Projectile },
+	pickups: { Pickup },
+	bombs: { Bomb },
+	nextMonsterId: number,
+	--- Something the screen must do: enter a level, show a title card, the death screen...
+	events: { GameEvent },
 }
 
---- Unit vectors for each direction. y points down, like the rows of the room maps.
-module.directions = {
-	up = vec.V2(0, -1),
-	down = vec.V2(0, 1),
-	left = vec.V2(-1, 0),
-	right = vec.V2(1, 0),
-} :: { [Direction]: vec.Vec2 }
-
-local opposite: { [Direction]: Direction } = {
-	up = "down",
-	down = "up",
-	left = "right",
-	right = "left",
-}
-module.opposite = opposite
-
---- Directions in a fixed order, to encode them as numbers
-local directionList: { Direction } = { "up", "right", "down", "left" }
-module.directionList = directionList
-
-return module
+return {}
