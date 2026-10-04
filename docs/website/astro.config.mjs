@@ -138,6 +138,10 @@ export default defineConfig({
                             link: "/guides/create-a-plugin/",
                         },
                         {
+                            label: "Working with agents",
+                            link: "/guides/working-with-agents/"
+                        },
+                        {
                             label: "Design Principles",
                             link: "/guides/design-principles/",
                         },

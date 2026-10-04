@@ -1,0 +1,308 @@
+---
+title: Working with agents
+description: Using agents to help you make your game!
+---
+
+import { Aside, Code } from "@astrojs/starlight/components";
+
+This guide is intended both for you and your favorite AI agent (but mainly for them). Vectarine is a great
+choice for agents to make games because of its automatic screenshotting and testing
+capabilities which allow agents to play your game and iterate on it without needing your feedback.
+
+<Aside type="note">
+Vectarine is written without the help of agents, but you should feel free to use them for your game,
+I won't stop you!
+</Aside>
+
+An agent can't watch the game running from the vectarine editor like you, but it can use the test runner to play the game without a
+window, takes screenshots, simulates the keyboard and runs Luau code inside the game. With that and a
+type checker, an agent can build a whole game and check that it works, that it looks good and is fun.
+
+## Verifying that the code works
+
+An agent should use the following loop to iterate on a game.
+
+1. Change the code.
+2. Type-check it
+3. Run a scratch test that puts the game in the situation you care about, checks it with `assert`, and takes
+   screenshots
+4. Look at the screenshots
+5. When it works, keep the useful parts of the scratch test as a real test and delete the scratch files.
+
+You might want the agent to commit tests that matter. It gives you regression tests and allows you to review the progress
+of the agent.
+
+## Type checking (for agents)
+
+Use [Lute](https://github.com/luau-lang/lute). It reads the project's `.luaurc` and understands Luau syntax.
+
+From the game folder:
+
+export const typeCheck = `
+lute check $(find scripts -name '*.luau') 2>&1 | grep -v '^\\./' | sort -u
+`;
+
+<Code lang="bash" code={typeCheck} title="Terminal" />
+
+- Each problem is printed twice ("scripts/x.luau" and "./scripts/x.luau"), hence the filter.
+- Annotate tables of string literals where they are declared (`local opposite: { [Dir]: Dir } = {...}`), and
+  pull optional fields into a local before testing them.
+
+## Writing tests and playtests
+
+A test is a TOML file whose name ends with `vecta-test.toml`. Relative paths in it are relative to the test file
+(absolute paths work too). Steps run in order; the game advances only during `wait_for_frames`.
+
+export const startTest = `
+[project]
+path = "../game.vecta"
+description = "The player can start a game from the title screen"
+
+# Depending on your game, loading could take some time. Start small and increase as needed.
+[[step]]
+wait_for_frames = 10
+
+# Created the first time (or when running with -r), compared to the game afterwards.
+# The PNG is the same size as the game window
+[[step]]
+compare_screenshot_to = "./title.png"
+
+# Keys use SDL names: "Up", "Down", "Left", "Right", "Space", "Return", "Escape", "Z"...
+# A key stays down until released. Holding Right for half a second (frames are exactly 1/60 s):
+[[step]]
+press_keys = ["Right"]
+[[step]]
+wait_for_frames = 30
+[[step]]
+release_keys = ["Right"]
+
+# A short press: tap_keys presses the keys, lets one frame pass, then releases them.
+# Then wait for the screen transition before checking anything.
+[[step]]
+tap_keys = ["Space"]
+[[step]]
+wait_for_frames = 30
+
+# Run Luau inside the game, between two frames. An error or a failing assert fails the test with your message.
+# print() output shows in the terminal. Globals you set stay available in the next steps.
+[[step]]
+run_lua_code = "assert(mygame.state.status == 'playing', 'Space should start the game')"
+
+# Multi-line code works with TOML's triple quotes.
+[[step]]
+run_lua_code = """
+local player = mygame.state.player
+print('player at', player.x, player.y, 'health', player.health)
+assert(player.health == 3, 'The player should start with 3 hearts')
+_G.startX = player.x
+"""
+
+# Mouse: press and release at a position in pixels.
+[[step]]
+press_mouse_at = [400, 300]
+[[step]]
+wait_for_frames = 2
+[[step]]
+release_mouse_at = [400, 300]
+
+# Fails if the game logged an error since the start (or since the last clear_logs).
+# Errors inside the game don't fail the test by themselves: end every test with this step.
+[[step]]
+expect_no_errors = {}
+`;
+
+<Code lang="toml" code={startTest} title="tests/start-vecta-test.toml" />
+
+Two more steps: `clear_logs = {}`, then later `compare_logs_to = "./events.txt"`, records what the game printed in
+between and compares it next time (a cheap regression test: print a score or a list of events).
+
+Running tests:
+
+export const runTests = `
+vecta-ci test --path tests/my-vecta-test.toml -r   # one test; -r overwrites its reference screenshots and logs
+vecta-ci test --path tests                         # every *vecta-test.toml file of the folder (and subfolders)
+vecta-ci test --path tests -d 10                   # tolerate 10% of different pixels (the default is 5%)
+`;
+
+<Code lang="bash" code={runTests} title="Terminal" />
+
+You can download the vecta-ci binary for Linux from the [GitHub release page of Vectarine](https://github.com/vanyle/vectarine/releases).
+It is also included in the ZIP file of every vectarine release for other OS (MacOS and Windows) (available at the same link).
+
+- Only use `-r` on the tests you are working on. Then run them again without `-r`: they must report 0% of
+  different pixels. If not, something in the game is not deterministic.
+- The runner advances time by exactly 1/60 s per frame and seeds `math.random`, so both are deterministic.
+  There is no `os` library at all (`os.clock()` is an error): measure time by adding up the `dt` of `Update`.
+- A key press can be seen by two screens: if Space starts the game, make sure the game screen doesn't also read
+  that same press as "jump" on its first frame. Tests are a good place to catch it.
+- Name scratch tests `scratch-vecta-test.toml` and delete them (and their screenshots) when done.
+
+## Expose the game to tests
+
+`run_lua_code` can `require` the game's modules: `local game = require("scripts/game")` returns the same table
+the game uses.
+
+A global is also convenient for short test code and for the editor console, so the snippets below use one.
+
+`const` is Luau syntax to declare a variable that is never reassigned (use it for `require`s and module tables), `local` one that is.
+
+`loader.init()` returns the table the module had before the file was hot-reloaded (or an empty table the first time). Keeping state in it (`module.state = module.state or ...`) when you edit and save a file.
+
+export const gameLuau = `
+-- Owns the game state
+const debug_tools = require("./debug_tools")
+const game_logic = require("./game_logic")
+const loader = require("@vectarine/loader")
+
+const module = loader.init() or {}
+module.state = module.state or game_logic.newGame()
+
+-- Tests and the editor console reach the game through this global.
+module.debug = debug_tools.helpers(module)
+_G.mygame = module
+
+return module
+`;
+
+<Code lang="luau" code={gameLuau} title="scripts/game.luau" />
+
+Tests then read `mygame.state` and call `mygame.debug.something(...)`. Pick a name for the global that fits the
+game. The same helpers make handy commands for the editor console.
+
+## Make experiments cheap: helpers inside the game
+
+Launching a test costs seconds (building, starting, loading frames). An update of the game logic costs
+microseconds. So never pay one launch per experiment: write helpers that run many updates, or many experiments,
+in a single `run_lua_code` step, and print a compact result.
+
+This needs one thing from the architecture: the game core logic must not read the keyboard or the clock itself.
+Read the input once per frame, pass it to an update function, and always read the state through the module
+(never keep your own reference to the state table, helpers may replace it):
+
+export const mainLuau = `
+const game = require("./game")
+const game_logic = require("./game_logic")
+const io = require("@vectarine/io")
+const render = require("./render")
+
+function Update(dt: number)
+	local input = {
+		left = io.isKeyDown("Left"),
+		right = io.isKeyDown("Right"),
+		jump = io.isKeyJustPressed("Space"),
+	}
+	game_logic.update(game.state, input, dt)
+	render.draw(game.state)
+end
+`;
+
+<Code lang="luau" code={mainLuau} title="scripts/main.luau" />
+
+Then helpers can drive the logic without the keyboard.
+Feel free to create your own helpers when you need to. Here are some examples.
+
+export const debugToolsLuau = `
+const game_logic = require("./game_logic")
+const loader = require("@vectarine/loader")
+
+const module = loader.init() or {}
+
+local function deepCopy<T>(value: T): T
+	if type(value) ~= "table" then
+		return value
+	end
+	local copy = {}
+	for key, item in value :: any do
+		copy[key] = deepCopy(item)
+	end
+	return copy :: any
+end
+
+function module.helpers(game)
+	local helpers = {}
+
+	function helpers.step(input: { [string]: boolean }?)
+		game_logic.update(game.state, input or {}, 1 / 60)
+	end
+
+	function helpers.hold(frames: number, input: { [string]: boolean }?)
+		for _ = 1, frames do
+			helpers.step(input)
+		end
+	end
+
+	--- A short text description of what matters, to check a situation with print instead of pixels.
+	--- For a grid game, print the grid with one character per tile.
+	function helpers.describe(): string
+		local s = game.state
+		return \`player {s.player.x},{s.player.y} hp {s.player.health} enemies {#s.enemies} {s.status}\`
+	end
+
+	--- From the current state, try several "attempts" and print what happened after each one,
+	--- then put the game back exactly as it was. An attempt is a function that plays inputs with step/hold.
+	function helpers.tryAll(attempts: { () -> () })
+		local original = game.state
+		local start = deepCopy(original)
+		for index, attempt in attempts do
+			game.state = deepCopy(start)
+			attempt()
+			print(index, helpers.describe())
+		end
+		game.state = original
+	end
+
+	return helpers
+end
+
+return module
+`;
+
+<Code lang="luau" code={debugToolsLuau} title="scripts/debug_tools.luau" />
+
+export const jumpTest = `
+# Try jumping after 10, 20, 30 and 40 frames of running right, in one step.
+[[step]]
+run_lua_code = """
+local attempts = {}
+for _, delay in { 10, 20, 30, 40 } do
+	table.insert(attempts, function()
+		mygame.debug.hold(delay, { right = true })
+		mygame.debug.step({ right = true, jump = true })
+		mygame.debug.hold(60, { right = true })
+	end)
+end
+mygame.debug.tryAll(attempts)
+"""
+`;
+
+<Code lang="toml" code={jumpTest} title="tests/jump-vecta-test.toml" />
+
+Keep the game state plain data (tables, numbers, strings, no cycles) so it can be copied, saved and restored.Saving and loading the state also gives you undo, restart and save files for free. Keep resources (images,
+tilemaps) outside of it.
+
+`step()` only runs the game logic. Anything `Update` does besides it (screen transitions, timers kept outside the state) doesn't happen in experiments: keep what matters to the rules inside `game_logic.update`.
+
+## Looking at the screenshots
+
+Open the PNG files written by `compare_screenshot_to` and look at them. Many can be reviewed once at using:
+
+export const reviewScreenshots = `
+magick \\( a.png b.png +append \\) \\( c.png d.png +append \\) -append -resize 60% review.png
+`;
+
+<Code lang="bash" code={reviewScreenshots} title="Terminal" />
+
+## Playtesting with a fresh agent
+
+Your agent can spawn a subagent with no context, only: the controls, a description of the game or the level, and a script
+that plays a list of actions and prints the state before and after.
+
+Ask, for each part of the game or situation:
+
+- did it succeed
+- how many attempts it took
+- the key idea in its own words, an "aha" rating from 1 to 5
+- what was trivial, unfair or confusing. "Trivial" is a useful answer.
+
+Don't change the game while the subagent plays.
+
