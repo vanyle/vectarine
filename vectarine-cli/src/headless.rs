@@ -1,10 +1,12 @@
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::fs;
+use std::future::Future;
 use std::mem::ManuallyDrop;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
+use std::task::{Context, Poll, Waker};
 
 use runtime::anyhow;
 use runtime::console;
@@ -186,11 +188,38 @@ impl GameHeadlessRunner {
         &mut self,
         code: &str,
     ) -> vectarine_plugin_sdk::anyhow::Result<vectarine_plugin_sdk::mlua::Value> {
-        let lua_chunk = self.game.lua_env.lua_handle.lua.load(code);
-        lua_chunk
+        /// After this many attempts, the code is probably waiting for something that never happens.
+        const MAX_POLLS: usize = 1000;
+
+        let function = self
+            .game
+            .lua_env
+            .lua_handle
+            .lua
+            .load(code)
             .set_name("test_code")
-            .eval::<vectarine_plugin_sdk::mlua::Value>()
-            .map_err(|e| anyhow::anyhow!("Failed to run Lua code: {}", e))
+            .into_function()
+            .map_err(|e| anyhow::anyhow!("Failed to run Lua code: {}", e))?;
+        let mut future = Box::pin(function.call_async::<vectarine_plugin_sdk::mlua::Value>(()));
+        let mut context = Context::from_waker(Waker::noop());
+
+        for _ in 0..MAX_POLLS {
+            match future.as_mut().poll(&mut context) {
+                Poll::Ready(result) => {
+                    return result.map_err(|e| anyhow::anyhow!("Failed to run Lua code: {}", e));
+                }
+                Poll::Pending => {
+                    // Same as at the start of a frame: load the requested resources, then advance the futures
+                    // of the scripts being executed (a required script can require other scripts).
+                    self.game.load_resource_as_needed();
+                    self.game.lua_env.lua_handle.poll_pending_futures();
+                }
+            }
+        }
+        Err(anyhow::anyhow!(
+            "Failed to run Lua code: it was still waiting for an asynchronous function (like require) after {} attempts",
+            MAX_POLLS
+        ))
     }
 
     /// Steps the game forward by the given duration. You can pass a fake duration to see how the game behaves on slow hardware.
@@ -212,6 +241,13 @@ impl GameHeadlessRunner {
             SurfaceMargins::default(),
         );
 
+        let result = self.take_logs();
+        self.drawing_surface.borrow().window.gl_swap_window();
+        result
+    }
+
+    /// Returns what the game logged since the last call (or the last step), and clears it.
+    pub fn take_logs(&mut self) -> FrameResult {
         let mut logs: Vec<ConsoleMessage> = Vec::new();
         let mut frame_logs: Vec<String> = Vec::new();
         console::consume_logs(|log| {
@@ -221,9 +257,6 @@ impl GameHeadlessRunner {
             frame_logs.push(log);
         });
         console::clear_all_logs();
-
-        self.drawing_surface.borrow().window.gl_swap_window();
-
         FrameResult { logs, frame_logs }
     }
 

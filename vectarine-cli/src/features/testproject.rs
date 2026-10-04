@@ -242,6 +242,7 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
             }
             TestStep::RunLuaCode(code) => {
                 game_runner.run_lua_code(&code)?;
+                logs.extend(game_runner.take_logs().logs);
             }
             TestStep::CompareLogs(path) => {
                 let log_strings: Vec<String> = logs

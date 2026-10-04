@@ -92,6 +92,20 @@ export const testCommand2 = `vecta test --path ./test/basic-vecta-test.toml -r`;
 
 To regenerate the reference screenshots.
 
+# A deterministic environment
+
+The testing harness is deterministic: running the same test twice gives the same result, down to the pixels of the screenshots.
+
+- Time advances by exactly 1/60 of a second per frame, whatever the speed of your computer. The `deltaTime` given to `Update` is always the same.
+- `math.random` is seeded, so it returns the same numbers on every run.
+- The game runs in a hidden window and doesn't play sounds.
+
+The `os` module is not available, both in tests and in Vectarine for security reasons.
+Games can't run commands or read the clock of the computer. To measure time, you can add up the `deltaTime` given to `Update`.
+
+If a test passes with `-r` but fails when you run it again without it, something in your game is not deterministic.
+Maybe you persisted some data between your runs for example.
+
 # More steps
 
 Tests can take screenshots and check for errors, but they can do much more:
@@ -152,6 +166,26 @@ expect_no_errors = {}
 `;
 
 <Code lang="toml" title="test/lava-vecta-test.toml" code={testExample2}/>
+
+## Running Lua code
+
+`run_lua_code` runs Luau code inside your game, between two frames. If the code raises an error, for example with a failing `assert`, the test fails with that error.
+What it prints is shown in the terminal, and the global variables it sets are still there in the next steps.
+
+The code can use `require` to reach the modules of your game. `require` gives the same table your game uses, and the step waits for the module to be loaded before continuing.
+
+export const testExample4 = `
+[[step]]
+run_lua_code = """
+local player = require("scripts/player")
+assert(player.health == 3, "The player should start with 3 hearts")
+print("The player is at", player.x, player.y)
+"""
+`;
+
+<Code lang="toml" code={testExample4} />
+
+If a script loaded this way has an error, it is logged and an `expect_no_errors` step will fail.
 
 You can also simulate mouse inputs, and check that the console output of your game matches a reference log file.
 
