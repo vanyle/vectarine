@@ -51,6 +51,10 @@ wait_for_frames = 2
 [[step]]
 release_keys = ["up"]
 
+# tap_keys is a shortcut for a short press: it presses the keys, lets one frame pass, then releases them.
+[[step]]
+tap_keys = ["space"]
+
 # You can also simulate mouse presses
 
 # [[step]]

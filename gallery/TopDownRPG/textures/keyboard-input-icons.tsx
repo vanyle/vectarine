@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tileset version="1.10" tiledversion="1.10.2" name="keyboard-input-icons.xml" tilewidth="64" tileheight="64" tilecount="272" columns="17">
+ <image source="keyboard-input-icons.png" width="1088" height="1024"/>
+ <tile id="34" type="v"/>
+ <tile id="36" type="w"/>
+ <tile id="40" type="x"/>
+ <tile id="42" type="y"/>
+ <tile id="44" type="z"/>
+ <tile id="54" type="t"/>
+ <tile id="56" type="tab"/>
+ <tile id="64" type="u"/>
+ <tile id="70" type="s"/>
+ <tile id="84" type="space"/>
+ <tile id="94" type="q"/>
+ <tile id="100" type="r"/>
+ <tile id="103" type="enter"/>
+ <tile id="112" type="p"/>
+ <tile id="119" type="i"/>
+ <tile id="123" type="j"/>
+ <tile id="125" type="k"/>
+ <tile id="127" type="l"/>
+ <tile id="129" type="m"/>
+ <tile id="133" type="n"/>
+ <tile id="147" type="g"/>
+ <tile id="149" type="h"/>
+ <tile id="153" type="f"/>
+ <tile id="171" type="d"/>
+ <tile id="175" type="e"/>
+ <tile id="183" type="esc"/>
+ <tile id="189" type="c"/>
+ <tile id="207" type="b"/>
+ <tile id="222" type="up"/>
+ <tile id="224" type="arrows"/>
+ <tile id="226" type="arrows_up_down"/>
+ <tile id="242" type="a"/>
+ <tile id="250" type="down"/>
+ <tile id="252" type="right"/>
+ <tile id="254" type="left"/>
+</tileset>

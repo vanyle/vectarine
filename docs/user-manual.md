@@ -927,6 +927,10 @@ wait_for_frames = 2
 [[step]]
 release_keys = ["up"]
 
+# tap_keys is a shortcut for a short press: it presses the keys, lets one frame pass, then releases them.
+[[step]]
+tap_keys = ["space"]
+
 # You can run "clear" logs to get only the logs related to a specific section of your game.
 # If you clear the logs, any errors inside them will be cleared and "expect_no_errors" will always succeed.
 [[step]]

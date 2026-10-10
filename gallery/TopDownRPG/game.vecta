@@ -1,0 +1,9 @@
+title = "Explorium"
+main_script_path = "scripts/game.luau"
+logo_path = ""
+description = "A top-down RPG template: escape the Explorium, a cave system full of ancient ruins"
+tags = []
+loading_animation = "pixel"
+default_screen_width = 800
+default_screen_height = 600
+plugins = []

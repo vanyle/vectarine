@@ -18,6 +18,7 @@ use crate::{
         lua_coord::{get_pos_as_vec2, get_size_as_vec2},
         lua_resource::{ResourceIdWrapper, register_resource_id_methods_on_type},
         lua_vec2::Vec2,
+        lua_vec4::Vec4,
     },
     make_resource_lua_compatible,
 };
@@ -97,7 +98,7 @@ pub fn setup_canvas_api(
 
         registry.add_method("setUniform", {
             let resources = resources.clone();
-            move |_lua, canvas, (name, value): (String, f32)| {
+            move |_lua, canvas, (name, value): (String, vectarine_plugin_sdk::mlua::Value)| {
                 let shader_id = canvas.current_shader();
                 let Some(shader_id) = shader_id else {
                     return Ok(()); // no op if no shader is set
@@ -113,7 +114,34 @@ pub fn setup_canvas_api(
                 };
                 shader.shader.use_program();
                 let mut uniforms = Uniforms::new();
-                uniforms.add(&name, UniformValue::Float(value));
+                match value {
+                    vectarine_plugin_sdk::mlua::Value::Number(n) => {
+                        uniforms.add(&name, UniformValue::Float(n as f32));
+                    }
+                    // In Lua code, integers and float are confused, so we treat them the same.
+                    vectarine_plugin_sdk::mlua::Value::Integer(n) => {
+                        uniforms.add(&name, UniformValue::Float(n as f32));
+                    }
+                    vectarine_plugin_sdk::mlua::Value::UserData(ud) => {
+                        if let Ok(vec2) = ud.borrow::<Vec2>() {
+                            uniforms.add(&name, UniformValue::Vec2([vec2.x(), vec2.y()]));
+                        } else if let Ok(vec4) = ud.borrow::<Vec4>() {
+                            uniforms.add(
+                                &name,
+                                UniformValue::Vec4([vec4.x(), vec4.y(), vec4.z(), vec4.w()]),
+                            );
+                        } else {
+                            return Err(vectarine_plugin_sdk::mlua::Error::external(
+                                "Unable to set a uniform value to a value of this type",
+                            ));
+                        }
+                    }
+                    _ => {
+                        return Err(vectarine_plugin_sdk::mlua::Error::external(
+                            "Unable to set a uniform value to a value of this type",
+                        ));
+                    }
+                }
                 let warnings = shader.shader.set_uniforms(&uniforms);
                 for warning in warnings {
                     print_warn(format!(

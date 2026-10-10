@@ -1,5 +1,5 @@
 local ResourceTypes = require("@vectarine/resource")
-local Vec = require("@vectarine/vec")
+local vec = require("@vectarine/vec")
 local module = {}
 
 --MARK: Tileset
@@ -12,20 +12,20 @@ TilesetResourceImpl.__index = TilesetResourceImpl
 export type TilesetResource = typeof(setmetatable({}, TilesetResourceImpl)) & ResourceTypes.Resource
 
 --- Get the size of a tile in pixels
-function TilesetResourceImpl:getTileSize(): Vec.Vec2
+function TilesetResourceImpl:getTileSize(): vec.Vec2
 	error("Implemented in native code")
 end
 
---- Get the size of a tile, as the ratio of the full image.
---- For example, if you have 8 tiles per row and column, this will return V2(1/8, 1/8)
-function TilesetResourceImpl:getTileRatio(): Vec.Vec2
+--- Get the number of tiles that fit in the full image, along each axis (the image size divided by the tile size).
+--- For example, if you have 8 tiles per row and 4 per column, this will return V2(8, 4).
+function TilesetResourceImpl:getTileRatio(): vec.Vec2
 	error("Implemented in native code")
 end
 
 --- Get the position of a tile in the image.
 --- The position is returned as a ratio of the full image.
 function TilesetResourceImpl:getTile(tileId: number): {
-	pos: Vec.Vec2,
+	pos: vec.Vec2,
 	probability: number,
 	type: string,
 }?
@@ -84,6 +84,17 @@ end
 ---
 --- Returns 0 if the tilemap is not defined at the provided location, the layer does not exist or if the layer is not a tile layer.
 function TilemapResourceImpl:getTile(layer: number, x: number, y: number): number
+	error("Implemented in native code")
+end
+
+type ObjectLayer = {
+	name: string,
+	text: string?,
+	position: vec.Vec2,
+	extra: unknown,
+}
+
+function TilemapResourceImpl:getObjectLayer(layer: number): ObjectLayer
 	error("Implemented in native code")
 end
 
