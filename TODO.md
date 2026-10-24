@@ -1,5 +1,6 @@
 # TO-DO
 
+- [ ] Fix the camera/vector reference bug thing
 - [ ] Android support
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Better heap info

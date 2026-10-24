@@ -818,39 +818,52 @@ You can see the total number of draw calls performed in the profiler. Try to kee
 
 # 📦 Release and distribute your game
 
-## Using the 'Export' menu
+## Exporting
 
-Go to `File > Export...`, choose a platform to export to and Press `Export`.
-The exported zip will be created in the folder of your project. You can press the `Open Folder` button to open it.
-You can distribute the zip as is.
+Go to `File > Export...`, choose a platform and press `Export`. The zip is created in your project folder (`Open export folder` opens it).
+From a terminal: `vecta export --project game.vecta --target web` (or `windows`, `linux`, `mac-os`).
+
+On Windows and macOS, the icon of the game is the image at `logo_path` in `game.vecta` (use a square image).
+
+> ❓ What is inside the exported zip?
+
+| Platform | Content                                             |
+| -------- | --------------------------------------------------- |
+| Windows  | `<title>.exe`                                       |
+| Linux    | `<title>`                                           |
+| macOS    | `<title>.app`                                       |
+| Web      | `index.html`, `runtime.js`, `runtime.wasm` and data |
 
 ## Obfuscation
 
-Obfuscation is an optional optimization process that you can toggle when exporting. Obfuscated games run faster and have smaller bundle sizes. The content of a bundled game is not readable
-without the use of specialized reverse engineering tools.
+Obfuscation is on by default: it makes your game smaller and its code harder to read.
 
-The obfuscation process is similar to a regular exports, but instead of putting all your assets into a `gamedata` folder, Vectarine puts them inside a `bundle.vecta` zip file with a compression algorithm.
-Moreover, your scripts are compiled to bytecode to make them smaller and run faster.
+> ❓ How does obfuscation work?
 
-> ❓ How does Export work and how are exported games structured?
+Scripts are compiled to bytecode and the game data is packed into one compressed bundle, stored inside the executable (in `Contents/Resources` on macOS).
+Without obfuscation, your files are exported as is in a `gamedata` folder.
 
-## Under the hood
+## Running the web version
 
-Vectarine first looks at the files in your project folder. It puts all the ones that your game uses (like `game.vecta`, your scripts, your textures, etc...) into a 'gamedata' folder.
+Browsers can't run `index.html` from your disk ("Error loading runtime"). Serve the folder instead, for example with `python -m http.server`, and open [http://localhost:8000](http://localhost:8000).
 
-**On Desktop**
+## Publishing to itch.io
 
-Vectarine takes the 'gamedata' folder and zips it with the `runtime` file corresponding to the export platform. So `runtime.exe` on Windows, `runtime-macos` on Mac, etc...
+Upload the web zip, set "Kind of project" to HTML, check "This file will be played in the browser" and set the viewport to your game's size (`default_screen_width` and `default_screen_height`).
+Desktop zips can be uploaded next to it, each marked with its platform.
 
-**On the Web**
+## Security warnings
 
-Vectarine puts together `index.html`, `runtime.js`, `runtime.wasm` and the `gamedata` folder in a zip.
-You can serve these files with any static file server, for example by doing `python -m http.server` and going to [http://localhost:8000](http://localhost:8000).
+Exported games are not signed, so players who download them might get a warning.
 
-If you see: "Error loading runtime", it means that you opened `index.html` directly from the filesystem instead of starting a server.
-It can also mean that you forgot to put `runtime.js` and `runtime.wasm` in the same folder as `index.html`.
+> ❓ macOS: "is damaged and can't be opened"
 
-You put these files in a zip and upload it to [itch.io](https://itch.io) if you want.
+Players can run `xattr -cr <title>.app` to open the game anyway.
+To avoid the warning, [sign and notarize](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution) the app with an Apple Developer account.
+
+> ❓ Windows: "Windows protected your PC"
+
+Players can click "More info" then "Run anyway".
 
 # 🧩 Extending Vectarine with Plugins
 
