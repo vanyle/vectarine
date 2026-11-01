@@ -888,6 +888,15 @@ On Windows and macOS, the icon of the game is the image at `logo_path` in `game.
 | macOS    | `<title>.app`                                       |
 | Web      | `index.html`, `runtime.js`, `runtime.wasm` and data |
 
+The export puts inside the bundle all of the files of inside your project folder, as Vectarine doesn't know if a file is needed or not for your game. There are however
+a few exceptions:
+
+- `.zip` files are never put inside to bundle to avoid puting exported zips inside other exports.
+- Folders and files starting with `.` don't have their content included (so `.git` or `.DS_Store` is not added to your bundle)
+- Folders with the following names are not included: `private`, `release`, `test`, `output`, `build`, `debug`, `export`, `luau-api`.
+
+This is what you usually want. I recommend you put all game-adjacent files (like game design documents, trailer, etc. inside the `private` folder)
+
 </details>
 
 ### Obfuscation

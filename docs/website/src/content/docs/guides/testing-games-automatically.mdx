@@ -3,7 +3,7 @@ title: Testing games automatically
 description: How to set up automated tests for your Vectarine games.
 ---
 
-import { Code } from "@astrojs/starlight/components";
+import { Code, Aside } from "@astrojs/starlight/components";
 
 When working on larger projects for longer, or with a team, it can be useful to have automated tests for your game.
 
@@ -26,6 +26,12 @@ to go back in time and see differences between versions (and screenshots generat
 To get started testing, you need to create a file ending with `vecta-test.toml` in your project. Let's put it in a `test` folder which will contain everything
 related to testing.
 
+<Aside type='caution'>
+
+The `test` folder is not added to the game bundle when you export your game, which is what you want.
+This is why you should name this folder `test` and not `tests`.
+
+</Aside>
 
 Here is a basic example of a test file:
 
