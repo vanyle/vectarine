@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use vectarine_plugin_sdk::mlua::{Result, Table};
-use vectarine_plugin_sdk::sdl2;
 use vectarine_plugin_sdk::sdl2::keyboard::Scancode;
+use vectarine_plugin_sdk::sdl2::{self, keyboard};
 
 use crate::{
     io::IoEnvState,
@@ -217,6 +217,30 @@ pub fn setup_io_api(
             }
 
             Ok(())
+        }
+    });
+
+    add_fn_to_table(lua, &io_module, "getPlatform", {
+        move |_, (): ()| {
+            let platform = {
+                #[cfg(target_os = "windows")]
+                {
+                    "windows"
+                }
+                #[cfg(target_os = "macos")]
+                {
+                    "macos"
+                }
+                #[cfg(target_os = "linux")]
+                {
+                    "linux"
+                }
+                #[cfg(target_os = "emscripten")]
+                {
+                    "web"
+                }
+            };
+            Ok(platform)
         }
     });
 
