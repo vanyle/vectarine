@@ -226,20 +226,20 @@ export type Scancode =
 	| "Sleep"
 
 --- Checks if a key is pressed
---- For example, `IsKeyDown("Space")`. If the name is invalid, always return false.
+--- For example, `io.isKeyDown("Space")`. If the name is invalid, always return false.
 --- You can use 'GetKeysDown' to find the name of keys
 function module.isKeyDown(keycode: Scancode | string): boolean
 	error("Implemented in native code")
 end
 
---- Get the name of a key. For example getKeyName("Z") returns "W" on AZERTY but "Z" on QWERTY.
+--- Get the name of a key. For example `io.getKeyName("Z")` returns "W" on AZERTY but "Z" on QWERTY.
 --- This is the name you should show the player when telling them to press a key.
 --- Returns nil if the scancode is invalid.
 function module.getKeyName(keycode: Scancode | string): string
 	error("Implemented in native code")
 end
 
---- Get the text inputed since the last frame. This should be used for typing text, while `IsKeyDown` should be used for checking if a key is pressed for actions.
+--- Get the text inputed since the last frame. This should be used for typing text, while `isKeyDown` should be used for checking if a key is pressed for actions.
 function module.getTextInput(): string
 	error("Implemented in native code")
 end
@@ -337,6 +337,11 @@ end
 --- On the web, the game is usually embedded in an iframe / player which already provides a fullscreen button, so this
 --- function does nothing.
 function module.setFullscreen(fullscreen: true | false | "fullscreen" | "windowed" | "desktop"): ()
+	error("Implemented in native code")
+end
+
+--- Returns the current platform
+function module.getPlatform(): "windows" | "macos" | "linux" | "web"
 	error("Implemented in native code")
 end
 
