@@ -57,7 +57,7 @@ local current: { canvas: canvas.Canvas, size: vec.Vec2 }? = nil
 local function getCanvas(): canvas.Canvas
 	local size = io.getWindowSize()
 	if not current or current.size.x ~= size.x or current.size.y ~= size.y then
-		current = { canvas = canvas.createCanvas(size.x, size.y), size = size }
+		current = { canvas = canvas.createCanvas(math.round(size.x), math.round(size.y)), size = size }
 	end
 	return (current :: any).canvas
 end
