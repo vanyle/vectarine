@@ -1,4 +1,4 @@
-const io = require("./io")
+const io = require("@vectarine/io")
 
 --- A module for creating and subscribing to events. See `newEvent` for how to create and use events.
 local module = {}

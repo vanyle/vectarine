@@ -30,23 +30,42 @@ An agent should use the following loop to iterate on a game.
 5. When it works, keep the useful parts of the scratch test as a real test and delete the scratch files.
 
 You might want the agent to commit tests that matter. It gives you regression tests and allows you to review the progress
-of the agent.
 
 ## Type checking (for agents)
 
-Use [Lute](https://github.com/luau-lang/lute). It reads the project's `.luaurc` and understands Luau syntax.
+While having the [Luau LSP](https://github.com/JohnnyMorganz/luau-lsp) in your editor is most convenient for people, agents need a CLI tool for this.
 
-From the game folder:
+The best one I could find is [Lute](https://github.com/luau-lang/lute). It reads the project's `.luaurc` and understands Luau syntax, types and imports.
+
+From the game folder, you can call:
 
 export const typeCheck = `
-lute check $(find scripts -name '*.luau') 2>&1 | grep -v '^\\./' | sort -u
+lute check $(find scripts -name '*.luau')
 `;
 
 <Code lang="bash" code={typeCheck} title="Terminal" />
 
-- Each problem is printed twice ("scripts/x.luau" and "./scripts/x.luau"), hence the filter.
-- Annotate tables of string literals where they are declared (`local opposite: { [Dir]: Dir } = {...}`), and
-  pull optional fields into a local before testing them.
+Lute reports **accurately** all typing problems in the project, as well as unused variables. It is a very useful tool, so you and your agent
+should strive to have `lute` report no issues.
+
+Agents might claim that `lute` reports false issues. This is because they are trained on Lua code which is very dynamic and looks a lot like Luau. It is always
+possible to refactor and annotate correct Luau to fix issues reported by `lute`.
+
+export const typeCheckExample = `
+-- As _G is a global object, we have no information type about t.
+local t = _G.deps.x
+local t_2 = t + 1 -- typing error!
+
+-- We can fix it by adding an annotation:
+local t: number = _G.deps.x
+local my_module = require("./my_module") -- all types are properly imported!
+
+-- All vectarine functions are properly typed and annotated. Your code should follow this example!
+`;
+
+<Code lang="lua" code={typeCheckExample} title="example.luau" />
+
+You can simplify type checking by minimizing the use of globals, importing files using `require("./filename")` and annotating when declaring new variables.
 
 ## Writing tests and playtests
 
@@ -113,8 +132,8 @@ expect_no_errors = {}
 
 <Code lang="toml" code={startTest} title="tests/start-vecta-test.toml" />
 
-Two more steps: `clear_logs = {}`, then later `compare_logs_to = "./events.txt"`, records what the game printed in
-between and compares it next time (a cheap regression test: print a score or a list of events).
+You can also use `clear_logs = {}`, then later `compare_logs_to = "./events.txt"` to records what the game printed in
+between and compares it between runs. (This acts as a cheap regression test, cheaper and more robust than comparing screenshots).
 
 Running tests:
 
@@ -132,9 +151,7 @@ It is also included in the ZIP file of every vectarine release for other OS (Mac
 - Only use `-r` on the tests you are working on. Then run them again without `-r`: they must report 0% of
   different pixels. If not, something in the game is not deterministic.
 - The runner advances time by exactly 1/60 s per frame and seeds `math.random`, so both are deterministic.
-  There is no `os` library at all (`os.clock()` is an error): measure time by adding up the `dt` of `Update`.
-- A key press can be seen by two screens: if Space starts the game, make sure the game screen doesn't also read
-  that same press as "jump" on its first frame. Tests are a good place to catch it.
+  There is no `os` library at all (`os.clock()` is an error). You can measure time by adding up the `dt` of `Update`.
 - Name scratch tests `scratch-vecta-test.toml` and delete them (and their screenshots) when done.
 
 ## Expose the game to tests
@@ -171,13 +188,12 @@ game. The same helpers make handy commands for the editor console.
 
 ## Make experiments cheap: helpers inside the game
 
-Launching a test costs seconds (building, starting, loading frames). An update of the game logic costs
-microseconds. So never pay one launch per experiment: write helpers that run many updates, or many experiments,
+Launching a test can cost seconds (building, starting, loading frames). An update of the game logic costs
+microseconds. To avoid this, your agent can write helpers that run many updates or experiments,
 in a single `run_lua_code` step, and print a compact result.
 
-This needs one thing from the architecture: the game core logic must not read the keyboard or the clock itself.
-Read the input once per frame, pass it to an update function, and always read the state through the module
-(never keep your own reference to the state table, helpers may replace it):
+To do so, the game core logic must not read the keyboard or the clock itself.
+Instead, the game can read the input once per frame, pass it to an update function, and always read the state through the module.
 
 export const mainLuau = `
 const game = require("./game")
@@ -277,32 +293,27 @@ mygame.debug.tryAll(attempts)
 
 <Code lang="toml" code={jumpTest} title="tests/jump-vecta-test.toml" />
 
-Keep the game state plain data (tables, numbers, strings, no cycles) so it can be copied, saved and restored.Saving and loading the state also gives you undo, restart and save files for free. Keep resources (images,
-tilemaps) outside of it.
-
-`step()` only runs the game logic. Anything `Update` does besides it (screen transitions, timers kept outside the state) doesn't happen in experiments: keep what matters to the rules inside `game_logic.update`.
+You agent should keep the game state plain data (tables, numbers, boolean, strings, no cycles) so it can be copied, saved and restored.
+Saving and loading the state makes gives undo, restart and save files easy to implement.
 
 ## Looking at the screenshots
 
-Open the PNG files written by `compare_screenshot_to` and look at them. Many can be reviewed once at using:
-
-export const reviewScreenshots = `
-magick \\( a.png b.png +append \\) \\( c.png d.png +append \\) -append -resize 60% review.png
-`;
-
-<Code lang="bash" code={reviewScreenshots} title="Terminal" />
+You can open the PNG files written by `compare_screenshot_to` and look at them to make sure they look as you expected.
+This give the agent the ability to "see" the game as they can browse many screenshots.
 
 ## Playtesting with a fresh agent
 
-Your agent can spawn a subagent with no context, only: the controls, a description of the game or the level, and a script
-that plays a list of actions and prints the state before and after.
+Your agent can spawn a subagent with no context, only: the controls, a description of the game or the level and a goal (review, suggest
+improvement, rate the art), etc. This can help your agent see the game with a fresh eye and find graphics or gameplay issues that it
+overlooked due to its context.
 
-Ask, for each part of the game or situation:
+Your agent can then ask the sub-agent a few questions like:
 
-- did it succeed
-- how many attempts it took
-- the key idea in its own words, an "aha" rating from 1 to 5
-- what was trivial, unfair or confusing. "Trivial" is a useful answer.
+- Did it succeed to beat something
+- How many attempts it took
+- Provide a fun or difficulty rating  
+- Provide an opinion on the art style
+etc.
 
-Don't change the game while the subagent plays.
+You agent should avoid changing the game while the subagent plays, or work on separate folders in the meantime.
 
