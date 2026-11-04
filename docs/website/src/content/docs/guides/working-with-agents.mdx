@@ -15,7 +15,7 @@ I won't stop you!
 </Aside>
 
 An agent can't watch the game running from the vectarine editor like you, but it can use the test runner to play the game without a
-window, takes screenshots, simulates the keyboard and runs Luau code inside the game. With that and a
+window, take screenshots, simulate the keyboard and run Luau code inside the game. With that and a
 type checker, an agent can build a whole game and check that it works, that it looks good and is fun.
 
 ## Verifying that the code works
@@ -52,7 +52,7 @@ Agents might claim that `lute` reports false issues. This is because they are tr
 possible to refactor and annotate correct Luau to fix issues reported by `lute`.
 
 export const typeCheckExample = `
--- As _G is a global object, we have no information type about t.
+-- As _G is a global object, we have no type information about t.
 local t = _G.deps.x
 local t_2 = t + 1 -- typing error!
 
@@ -63,7 +63,7 @@ local my_module = require("./my_module") -- all types are properly imported!
 -- All vectarine functions are properly typed and annotated. Your code should follow this example!
 `;
 
-<Code lang="lua" code={typeCheckExample} title="example.luau" />
+<Code lang="luau" code={typeCheckExample} title="example.luau" />
 
 You can simplify type checking by minimizing the use of globals, importing files using `require("./filename")` and annotating when declaring new variables.
 
@@ -132,8 +132,8 @@ expect_no_errors = {}
 
 <Code lang="toml" code={startTest} title="tests/start-vecta-test.toml" />
 
-You can also use `clear_logs = {}`, then later `compare_logs_to = "./events.txt"` to records what the game printed in
-between and compares it between runs. (This acts as a cheap regression test, cheaper and more robust than comparing screenshots).
+You can also use `clear_logs = {}`, then later `compare_logs_to = "./events.txt"` to record what the game printed in
+between and compare it between runs. This acts as a cheap regression test, cheaper and more robust than comparing screenshots.
 
 Running tests:
 
@@ -161,7 +161,10 @@ the game uses.
 
 A global is also convenient for short test code and for the editor console, so the snippets below use one.
 
-`const` is Luau syntax to declare a variable that is never reassigned (use it for `require`s and module tables), `local` one that is.
+<Aside type="note">
+`const` is Luau syntax to declare a variable that is never reassigned.
+It can be used for assigning `require`s to module tables. `const` is generally more readable than `local`.
+</Aside>
 
 `loader.init()` returns the table the module had before the file was hot-reloaded (or an empty table the first time). Keeping state in it (`module.state = module.state or ...`) when you edit and save a file.
 
@@ -293,13 +296,13 @@ mygame.debug.tryAll(attempts)
 
 <Code lang="toml" code={jumpTest} title="tests/jump-vecta-test.toml" />
 
-You agent should keep the game state plain data (tables, numbers, boolean, strings, no cycles) so it can be copied, saved and restored.
-Saving and loading the state makes gives undo, restart and save files easy to implement.
+Your agent should keep the game state plain data (tables, numbers, boolean, strings, no cycles) so it can be copied, saved and restored.
+Saving and loading the state makes undo, restart and save files easy to implement.
 
 ## Looking at the screenshots
 
 You can open the PNG files written by `compare_screenshot_to` and look at them to make sure they look as you expected.
-This give the agent the ability to "see" the game as they can browse many screenshots.
+This gives the agent the ability to "see" the game as they can browse many screenshots.
 
 ## Playtesting with a fresh agent
 
@@ -315,5 +318,5 @@ Your agent can then ask the sub-agent a few questions like:
 - Provide an opinion on the art style
 etc.
 
-You agent should avoid changing the game while the subagent plays, or work on separate folders in the meantime.
+Your agent should avoid changing the game while the subagent plays, or work on separate folders in the meantime.
 
