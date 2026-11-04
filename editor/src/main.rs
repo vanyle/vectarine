@@ -55,6 +55,7 @@ fn gui_main() {
         mut event_pump,
         gl,
         gl_context,
+        gamepad_system,
     } = init_sdl(|video_subsystem| unsafe {
         egui_glow::painter::Context::from_loader_function(|name| {
             video_subsystem.gl_get_proc_address(name) as *const _
@@ -81,6 +82,7 @@ fn gui_main() {
         editor_window,
         debounce_event_sender,
         &video_subsystem,
+        gamepad_system,
     );
 
     let project_to_open = get_project_to_open_from_args();
@@ -119,6 +121,7 @@ fn gui_main() {
     // The main loop
     let mut start_of_frame = now_ms();
     let mut game_margin_top = 0.0;
+
     loop {
         let latest_events = event_pump.poll_iter().collect::<Vec<_>>();
         let (game_window_events, editor_window_events): (Vec<_>, Vec<_>) = latest_events

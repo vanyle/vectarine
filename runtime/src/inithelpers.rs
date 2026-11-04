@@ -8,6 +8,7 @@ use sdl2::{EventPump, Sdl};
 use vectarine_plugin_sdk::{egui_glow::glow, sdl2};
 
 use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
+use crate::gamepad::GamepadSystem;
 
 #[cfg(target_os = "macos")]
 pub fn set_opengl_attributes(gl_attr: GLAttr) {
@@ -37,4 +38,5 @@ pub struct RenderingBlock {
     pub gl: Arc<glow::Context>,
     pub gl_context: ManuallyDrop<sdl2::video::GLContext>,
     pub video_subsystem: sdl2::VideoSubsystem,
+    pub gamepad_system: Rc<dyn GamepadSystem>,
 }

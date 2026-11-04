@@ -16,8 +16,9 @@ use runtime::{
     anyhow::{self},
     console,
     drawing_surface::{DrawingSurface, sdl_drawing_surface::SdlDrawingSurface},
-    egui, egui_glow,
-    egui_glow::glow,
+    egui,
+    egui_glow::{self, glow},
+    gamepad::GamepadSystem,
     graphics::batchdraw::BatchDraw2d,
     io::{
         self,
@@ -66,6 +67,7 @@ pub struct EditorState {
 
     pub start_time: std::time::Instant,
     pub window: Rc<RefCell<SdlDrawingSurface>>,
+    pub gamepad_system: Rc<dyn GamepadSystem>,
     pub game_drawing_surface: Rc<RefCell<GameDrawingSurface>>,
     pub gl: Arc<glow::Context>,
 
@@ -106,6 +108,7 @@ impl EditorState {
         let window = self.window.clone();
         let debouncer = self.debouncer.clone();
         let trusted_plugins = self.get_trusted_plugins();
+        let gamepad_system = self.gamepad_system.clone();
 
         LocalFileSystem.read_file(
             &io::localfs::normalize_path(&geteditorpaths::get_editor_config_path()),
@@ -140,6 +143,7 @@ impl EditorState {
                             Box::new(LocalFileSystem),
                             gl,
                             window,
+                            gamepad_system,
                             &trusted_plugins,
                             |loaded_project| {
                                 if let Ok(loaded_project) = loaded_project {
@@ -159,6 +163,7 @@ impl EditorState {
         editor_window: sdl2::video::Window,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
         video: &runtime::sdl2::VideoSubsystem,
+        gamepad_system: Rc<dyn GamepadSystem>,
     ) -> Self {
         let editor_batch_draw = BatchDraw2d::new(&gl).expect("Failed to create editor batch draw");
         Self {
@@ -170,6 +175,7 @@ impl EditorState {
             game_drawing_surface: Rc::new(RefCell::new(GameDrawingSurface::new(window.clone()))),
             window,
             gl,
+            gamepad_system,
             editor_specific_window_surface: Rc::new(RefCell::new(SdlDrawingSurface::new(
                 editor_window,
                 video,
@@ -221,6 +227,7 @@ impl EditorState {
             file_system,
             self.gl.clone(),
             self.game_drawing_surface.clone(),
+            self.gamepad_system.clone(),
             &self.get_trusted_plugins(),
             |project| {
                 match project {

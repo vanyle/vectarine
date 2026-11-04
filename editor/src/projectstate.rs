@@ -7,7 +7,6 @@ use std::{
     sync::Arc,
 };
 
-use runtime::io::localfs::LocalFileSystem;
 use runtime::{
     anyhow::{self},
     console,
@@ -18,6 +17,7 @@ use runtime::{
     lua_env::BUILT_IN_MODULES,
     projectinfo::{ProjectInfo, get_project_info},
 };
+use runtime::{gamepad::GamepadSystem, io::localfs::LocalFileSystem};
 
 use crate::{
     luau::{self, HookError, HookTiming},
@@ -37,6 +37,7 @@ pub struct ProjectState {
     pub project_info: ProjectInfo,
     pub game: Game,
     pub window: Rc<RefCell<dyn DrawingSurface>>,
+    pub gamepad_system: Rc<dyn GamepadSystem>,
     pub hook_timing: HookTiming,
     pub hook_error: HookError,
     pub plugins: Rc<RefCell<Vec<GamePlugin>>>,
@@ -53,6 +54,7 @@ impl ProjectState {
             Box::new(LocalFileSystem),
             gl,
             &drawable_surface,
+            self.gamepad_system.clone(),
             |result| {
                 let Ok(game) = result else {
                     return;
@@ -72,6 +74,7 @@ impl ProjectState {
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
         window: Rc<RefCell<dyn DrawingSurface>>,
+        gamepad_system: Rc<dyn GamepadSystem>,
         trusted_plugins: &[TrustedPlugin],
         callback: F,
     ) where
@@ -101,6 +104,7 @@ impl ProjectState {
             file_system,
             gl,
             &drawing_surface,
+            gamepad_system.clone(),
             move |result| {
                 let Ok(game) = result else {
                     callback(Err(anyhow::anyhow!(
@@ -118,6 +122,7 @@ impl ProjectState {
                     window,
                     hook_timing,
                     hook_error,
+                    gamepad_system,
                     plugins: Rc::new(RefCell::new(Vec::new())),
                 };
                 result.refresh_plugin_list(trusted_plugins);

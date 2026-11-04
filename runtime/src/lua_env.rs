@@ -11,6 +11,7 @@ pub mod lua_coord;
 pub mod lua_debug;
 pub mod lua_event;
 pub mod lua_fastlist;
+pub mod lua_gamepad;
 pub mod lua_graphics;
 pub mod lua_image;
 pub mod lua_io;
@@ -29,6 +30,7 @@ use crate::async_handler::{AsyncLuaHandle, make_resource_future};
 use crate::console::{print_lua_error, print_warn};
 use crate::game_resource::ResourceManager;
 use crate::game_resource::script_resource::ScriptResource;
+use crate::gamepad::GamepadSystem;
 use crate::graphics::batchdraw::BatchDraw2d;
 use crate::io::IoEnvState;
 use crate::projectinfo::ProjectInfo;
@@ -37,7 +39,8 @@ use crate::metrics::MetricsHolder;
 
 pub const BUILT_IN_MODULES: &[&str] = &[
     "vec", "vec4", "event", "fastlist", "camera", "audio", "tile", "loader", "image", "text",
-    "graphics", "io", "debug", "persist", "resource", "physics", "color", "coord", "canvas", "ui",
+    "graphics", "gamepad", "io", "debug", "persist", "resource", "physics", "color", "coord",
+    "canvas", "ui",
 ];
 
 pub const DEPRECATED_MODULES: &[(&str, &str)] = &[];
@@ -180,6 +183,7 @@ impl LuaEnvironment {
         batch: BatchDraw2d,
         metrics: Rc<RefCell<MetricsHolder>>,
         resources: Rc<ResourceManager>,
+        gamepad_system: Rc<dyn GamepadSystem>,
         project_info: &ProjectInfo,
     ) -> Self {
         let batch = Rc::new(RefCell::new(batch));
@@ -282,6 +286,10 @@ impl LuaEnvironment {
 
         let io_module = lua_io::setup_io_api(&lua_handle.lua, &env_state).unwrap();
         register_vectarine_module(&lua_handle.lua, "io", io_module);
+
+        let gamepad_module =
+            lua_gamepad::setup_gamepad_api(&lua_handle.lua, &env_state, &gamepad_system).unwrap();
+        register_vectarine_module(&lua_handle.lua, "gamepad", gamepad_module);
 
         let camera_module = lua_camera::setup_camera_api(&lua_handle.lua, &env_state).unwrap();
         register_vectarine_module(&lua_handle.lua, "camera", camera_module);

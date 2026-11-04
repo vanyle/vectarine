@@ -1,7 +1,8 @@
 # TO-DO
 
+- [ ] Recent games shown in the wrong order
+- [ ] Windows size in game.vecta is ignored on first launch.
 - [ ] Screenshot API
-  - [ ] Lua function to screenshot (probably just turn a canvas into a PNG)
   - [ ] Button to screenshot in the editor
   - [ ] Button to record a short gif in the editor
 - [ ] Android support
@@ -9,7 +10,6 @@
 - [ ] Better heap info
   In the profiler, we show the total heap size. We could in addition to that show the heap size taken by different types. This is possible
   thanks to the mlua::luau::HeapDump object
-- [ ] Joystick/gamepad support
 - [ ] Animation system from multiple PNG files
 - [ ] Support creating tilesets from shoebox files (xml with TextureAtlas and SubTexture)
 - [ ] Aseprite support
@@ -31,6 +31,7 @@
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
 - [ ] The 3D API!!
+  - [ ] Migrate to wgpu as a rendering backend
   - [ ] Use https://kiss3d.dimforge.com/
   - [ ] Camera
   - [ ] Scene
@@ -43,6 +44,7 @@
 
 # Done
 
+- [x] Joystick/gamepad support
 - [x] Fix the camera/vector reference bug thing
 - [x] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.
   -> This allows users to distribute games as a single file (which self-decompresses)
