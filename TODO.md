@@ -1,6 +1,6 @@
 # TO-DO
 
-- [ ] Recent games shown in the wrong order
+- [ ] Fix the click not opening the right text source file.
 - [ ] Windows size in game.vecta is ignored on first launch.
 - [ ] Screenshot API
   - [ ] Button to screenshot in the editor
