@@ -1,6 +1,5 @@
 # TO-DO
 
-- [ ] Windows size in game.vecta is ignored on first launch.
 - [ ] Screenshot API
   - [ ] Button to screenshot in the editor
   - [ ] Button to record a short gif in the editor
@@ -43,6 +42,7 @@
 
 # Done
 
+- [x] Windows size in game.vecta is ignored on first launch.
 - [x] Joystick/gamepad support
 - [x] Fix the camera/vector reference bug thing
 - [x] When exporting, append the .vecta file to the .exe + a magic check sum. Have the runtime read itself to unpack this bundle.

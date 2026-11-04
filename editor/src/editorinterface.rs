@@ -105,7 +105,7 @@ impl EditorState {
         let config_store = self.config.clone();
         let project = self.project.clone();
         let gl = self.gl.clone();
-        let window = self.window.clone();
+        let game_drawing_surface = self.game_drawing_surface.clone();
         let debouncer = self.debouncer.clone();
         let trusted_plugins = self.get_trusted_plugins();
         let gamepad_system = self.gamepad_system.clone();
@@ -142,7 +142,7 @@ impl EditorState {
                             &project_path,
                             Box::new(LocalFileSystem),
                             gl,
-                            window,
+                            game_drawing_surface,
                             gamepad_system,
                             &trusted_plugins,
                             |loaded_project| {
