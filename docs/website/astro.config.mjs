@@ -84,6 +84,14 @@ export default defineConfig({
                             link: "/gallery/snake/",
                         },
                         {
+                            label: "Explorium",
+                            link: "/gallery/explorium/",
+                        },
+                        {
+                            label: "The dark forest",
+                            link: "/gallery/the-dark-forest/",
+                        },
+                        {
                             label: "Sokoban",
                             link: "/gallery/sokoban/",
                         },
