@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use vectarine_plugin_sdk::mlua::{Result, Table};
 use vectarine_plugin_sdk::sdl2::keyboard::Scancode;
-use vectarine_plugin_sdk::sdl2::{self, keyboard};
+use vectarine_plugin_sdk::sdl2::{self};
 
 use crate::{
     io::IoEnvState,

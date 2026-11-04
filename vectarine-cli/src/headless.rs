@@ -15,6 +15,7 @@ use runtime::drawing_surface::DrawingSurface;
 use runtime::drawing_surface::SurfaceMargins;
 use runtime::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
 use runtime::game::Game;
+use runtime::gamepad::DummyGamepadSystem;
 use runtime::glow::HasContext;
 use runtime::glow::PixelPackData;
 use runtime::inithelpers::RenderingBlock;
@@ -22,7 +23,7 @@ use runtime::io::localfs::LocalFileSystem;
 use runtime::projectinfo::get_project_info;
 use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::sdl2;
-use vectarine_plugin_sdk::sdl2::video::{SwapInterval, Window};
+use vectarine_plugin_sdk::sdl2::video::Window;
 
 pub fn init_sdl_headless<F>(make_gl_from_video_system: F) -> RenderingBlock
 where
@@ -61,9 +62,6 @@ where
 
     let gl = make_gl_from_video_system(&video_subsystem);
     let gl: Arc<glow::Context> = Arc::new(gl);
-
-    let _ = video_subsystem.gl_set_swap_interval(SwapInterval::VSync);
-
     RenderingBlock {
         sdl: sdl_context,
         window: Rc::new(RefCell::new(SdlDrawingSurface::new(
@@ -75,6 +73,7 @@ where
         gl_context,
         gl,
         video_subsystem,
+        gamepad_system: Rc::new(DummyGamepadSystem),
     }
 }
 
@@ -126,6 +125,7 @@ impl GameHeadlessRunner {
             window,
             event_pump: _event_pump,
             gl,
+            gamepad_system,
             ..
         } = init_sdl_headless(|video_subsystem| unsafe {
             glow::Context::from_loader_function(|name| {
@@ -160,6 +160,7 @@ impl GameHeadlessRunner {
             local_fs,
             gl,
             &drawing_surface,
+            gamepad_system,
             true,
         );
 

@@ -5,6 +5,7 @@ use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
 use vectarine_plugin_sdk::sdl2;
 
+use crate::gamepad::GamepadSystem;
 use crate::{
     console::print_warn,
     drawing_surface::{DrawingSurface, SurfaceMargins},
@@ -44,6 +45,7 @@ impl Game {
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
         window: &Rc<RefCell<dyn DrawingSurface>>,
+        gamepad_system: Rc<dyn GamepadSystem>,
         callback: F,
     ) where
         F: FnOnce(vectarine_plugin_sdk::anyhow::Result<Self>),
@@ -71,7 +73,13 @@ impl Game {
             &project_info.plugins,
             &resources.clone(),
             move |plugin_environment| {
-                let lua_env = LuaEnvironment::new(batch, metrics.clone(), resources, project_info);
+                let lua_env = LuaEnvironment::new(
+                    batch,
+                    metrics.clone(),
+                    resources,
+                    gamepad_system,
+                    project_info,
+                );
 
                 // Make the game!
                 let mut game = Game::from_lua(
@@ -113,6 +121,7 @@ impl Game {
         file_system: Box<dyn ReadOnlyFileSystem>,
         gl: Arc<glow::Context>,
         window: &Rc<RefCell<dyn DrawingSurface>>,
+        gamepad_system: Rc<dyn GamepadSystem>,
         deterministic: bool,
     ) -> vectarine_plugin_sdk::anyhow::Result<Self> {
         // TODO: from_project_safe_sync contains duplicated code with from_project. A refacto would be cool.
@@ -134,7 +143,13 @@ impl Game {
         let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
         let resources = Rc::new(ResourceManager::new(file_system, project_dir));
 
-        let lua_env = LuaEnvironment::new(batch, metrics.clone(), resources, project_info);
+        let lua_env = LuaEnvironment::new(
+            batch,
+            metrics.clone(),
+            resources,
+            gamepad_system,
+            project_info,
+        );
 
         let mut game = Game::from_lua(
             &gl,

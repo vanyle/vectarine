@@ -3,6 +3,7 @@ pub mod console;
 pub mod drawing_surface;
 pub mod game;
 pub mod game_resource;
+pub mod gamepad;
 pub mod graphics;
 pub mod inithelpers;
 pub mod io;
@@ -17,9 +18,11 @@ pub mod sound;
 use crate::drawing_surface::DrawingSurface;
 use crate::drawing_surface::SurfaceMargins;
 use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
-// Re-export commonly used crates for the editor
+use crate::gamepad::{DummyGamepadSystem, GamepadSystem};
 use crate::inithelpers::RenderingBlock;
 use crate::inithelpers::set_opengl_attributes;
+
+// Re-export commonly used crates for the editor
 pub use image;
 pub use vectarine_plugin_sdk::anyhow;
 pub use vectarine_plugin_sdk::egui;
@@ -100,6 +103,12 @@ where
         .borrow_mut()
         .set_drawable_size_in_logical_px(800, 600);
 
+    let gamepad_system = sdl_context.game_controller();
+    let gamepad_system: Rc<dyn GamepadSystem> = match gamepad_system {
+        Ok(system) => Rc::new(system),
+        Err(_) => Rc::new(DummyGamepadSystem),
+    };
+
     RenderingBlock {
         sdl: sdl_context,
         window,
@@ -107,6 +116,7 @@ where
         gl_context,
         gl,
         video_subsystem,
+        gamepad_system,
     }
 }
 
@@ -143,6 +153,7 @@ pub fn lib_main() {
         window,
         mut event_pump,
         gl,
+        gamepad_system,
         ..
     } = init_sdl(|video_subsystem| unsafe {
         glow::Context::from_loader_function(|name| {
@@ -163,6 +174,7 @@ pub fn lib_main() {
             fs,
             gl,
             &drawing_surface.clone(),
+            gamepad_system,
             |result| {
                 let Ok(mut game) = result else {
                     panic!("Failed to load the game project at {:?}", project_path);
