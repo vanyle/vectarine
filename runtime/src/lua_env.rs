@@ -514,9 +514,23 @@ pub fn get_line_and_file_of_error(error: &vectarine_plugin_sdk::mlua::Error) -> 
     // path:line: message
 
     // or like this: syntax error: path:line: message
+    // or like this: runtime error: path:line: message
 
     if error.starts_with("syntax error") {
         let re = Regex::new(r"syntax error: (.*):([0-9]+): (.*)").expect("The regex is valid");
+        let Some(captures) = re.captures(&error) else {
+            return (0, "".to_string());
+        };
+        let Some(line) = captures.get(2) else {
+            return (0, "".to_string());
+        };
+        let line = line.as_str().parse::<usize>().unwrap_or_default();
+        let file = captures.get(1).map(|s| s.as_str()).unwrap_or_default();
+        return (line, file.to_string());
+    }
+
+    if error.starts_with("runtime error") {
+        let re = Regex::new(r"runtime error: (.*):([0-9]+): (.*)").expect("The regex is valid");
         let Some(captures) = re.captures(&error) else {
             return (0, "".to_string());
         };
