@@ -378,7 +378,7 @@ pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
             INITIALIZED.with_borrow_mut(|id| *id = true);
             return;
         };
-        let gallery_projects = make_project_list_from_paths(entries.flatten().map(|e| e.path()));
+        let gallery_projects = make_project_list_from_paths(entries.flatten().map(|e| e.path()), true);
         GALLERY_PROJECTS.replace(gallery_projects);
         INITIALIZED.with_borrow_mut(|id| *id = true);
     }
@@ -388,7 +388,7 @@ pub fn draw_gallery(state: &mut EditorState, ui: &mut egui::Ui) {
             ui.label("No gallery projects found. The gallery folder might be missing or empty.");
             ui.label(format!("The gallery folder is located at {}", get_gallery_path().display()));
         } else {
-            draw_project_list(state, ui, gallery_paths);
+            draw_project_list(state, ui, gallery_paths.iter());
         }
     });
 }
@@ -404,28 +404,29 @@ pub fn draw_recent_projects(state: &mut EditorState, ui: &mut egui::Ui) {
         let config = state.config.borrow_mut();
         let recent_projects_as_string = &config.recent_project_paths;
         
-        let recent_projects = make_project_list_from_paths(recent_projects_as_string.iter().map(PathBuf::from));
+        let recent_projects = make_project_list_from_paths(recent_projects_as_string.iter().map(PathBuf::from), false);
+
         RECENT_PROJECTS.replace(recent_projects);
-        INITIALIZED.with_borrow_mut(|id| *id = true);
+        INITIALIZED.with_borrow_mut(|id: &mut bool| *id = true);
     }
     
         RECENT_PROJECTS.with_borrow(|recent_project_paths|{
         if recent_project_paths.is_empty() {
             ui.label("No recent projects found.");
         } else {
-            draw_project_list(state, ui, recent_project_paths);
+            draw_project_list(state, ui, recent_project_paths.iter());
         }
     });
 }
 
-pub fn draw_project_list(state: &mut EditorState, ui: &mut egui::Ui, project_infos: &[(PathBuf, ProjectInfo)]) {
+pub fn draw_project_list<'a>(state: &mut EditorState, ui: &mut egui::Ui, project_infos: impl Iterator<Item = &'a(PathBuf, ProjectInfo)>) {
     // Draw the list of projects
     egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("project_list")
                 .num_columns(1)
                 .spacing([0.0, 8.0])
                 .show(ui, |ui| {
-                    for (project_folder, project_info) in project_infos.iter().cloned() {
+                    for (project_folder, project_info) in project_infos.cloned() {
                         ui.scope_builder(
                             UiBuilder::new()
                                 .id_salt("interactive_container")
@@ -501,15 +502,15 @@ pub fn draw_project_list(state: &mut EditorState, ui: &mut egui::Ui, project_inf
     });
 }
 
-pub fn make_project_list_from_paths(paths: impl IntoIterator<Item = PathBuf>) -> Vec<(PathBuf, ProjectInfo)> {
+pub fn make_project_list_from_paths(paths: impl IntoIterator<Item = PathBuf>, alphabetical_sort: bool) -> Vec<(PathBuf, ProjectInfo)> {
     let mut projects_infos = vec![];
     for path in paths {
         if !path.is_dir() {
-            // println!("Project path {:?} is not a directory, skipping.", path);
             continue;
         }
         let project_file = path.join("game.vecta");
         if !project_file.is_file() {
+            // println!("No project file found at: {:?}", project_file);
             continue;
         }
         let project_manifest_content =
@@ -524,7 +525,9 @@ pub fn make_project_list_from_paths(paths: impl IntoIterator<Item = PathBuf>) ->
         };
         projects_infos.push((path.clone(), project_info));
     }
-    projects_infos.sort_by(|a, b| a.1.title.cmp(&b.1.title));
+    if alphabetical_sort {
+        projects_infos.sort_by(|a, b| a.1.title.cmp(&b.1.title));
+    }
     projects_infos
 }
 
