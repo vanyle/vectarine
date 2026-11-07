@@ -50,11 +50,11 @@ const loader = require("@vectarine/loader")
 const vec = require("@vectarine/vec")
 const V2 = vec.V2
 
-local tileset_image = loader.loadImage("./textures/enemies_tileset.png", false)
-local tileset_data = loader.loadTileset("./textures/enemies_tileset.tsx")
+local tilesetImage = loader.loadImage("./textures/enemies_tileset.png", false)
+local tilesetData = loader.loadTileset("./textures/enemies_tileset.tsx")
 
 -- To use an ImageWithTileset, both the image and tileset resource must be ready.
-local tileset = tileset_image:withTileset(tileset_data)
+local tileset = tilesetImage:withTileset(tilesetData)
 
 -- Draw the "bee_monster" tile.
 tileset:drawTile("bee_monster", V2(-0.1, 0.1), V2(0.2, 0.2))`;
@@ -78,23 +78,23 @@ export const tilemapExample2 = `const graphics = require("@vectarine/graphics")
 const loader = require("@vectarine/loader")
 const vec = require("@vectarine/vec")
 
-local level_tileset_image = loader.loadImage("textures/level_tileset.png", false)
-local level_tileset_data = loader.loadTileset("textures/level_tileset.tsx")
-local level_tileset = level_tileset_image:withTileset(level_tileset_data)
+local levelTilesetImage = loader.loadImage("textures/level_tileset.png", false)
+local levelTilesetData = loader.loadTileset("textures/level_tileset.tsx")
+local levelTileset = levelTilesetImage:withTileset(levelTilesetData)
 
 local tilemap = loader.loadTilemap("levels/level.tmx")
 
 -- Once a tilemap is loaded, you can get a tile at (x,y) on a specific layer with getTile.
 local tileId = tilemap:getTile(0, 1, 2) -- Get the tile on layer 0 at position (x=1, y=2)
 -- Draw the tile
-level_tileset:drawTile(tileId, vec.V2(0, 0), vec.V2(0.1, 0.1))
+levelTileset:drawTile(tileId, vec.V2(0, 0), vec.V2(0.1, 0.1))
 
 -- You can draw a whole layer with a loop.
 -- You can use \`withTransform\` to apply transformation to handle translation, rotation and scale of the level.
 for x = 0, 10 do
     for y = 0, 10 do
         local tileId = tilemap:getTile(0, x, y)
-        level_tileset:drawTile(tileId, vec.V2(x * 0.1, y * 0.1), vec.V2(0.1, 0.1))
+        levelTileset:drawTile(tileId, vec.V2(x * 0.1, y * 0.1), vec.V2(0.1, 0.1))
     end
 end`;
 

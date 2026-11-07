@@ -54,11 +54,11 @@ possible to refactor and annotate correct Luau to fix issues reported by `lute`.
 export const typeCheckExample = `
 -- As _G is a global object, we have no type information about t.
 local t = _G.deps.x
-local t_2 = t + 1 -- typing error!
+local t2 = t + 1 -- typing error!
 
 -- We can fix it by adding an annotation:
 local t: number = _G.deps.x
-local my_module = require("./my_module") -- all types are properly imported!
+local myModule = require("./my_module") -- all types are properly imported!
 
 -- All vectarine functions are properly typed and annotated. Your code should follow this example!
 `;
@@ -170,15 +170,15 @@ It can be used for assigning `require`s to module tables. `const` is generally m
 
 export const gameLuau = `
 -- Owns the game state
-const debug_tools = require("./debug_tools")
-const game_logic = require("./game_logic")
+const debugTools = require("./debug_tools")
+const gameLogic = require("./game_logic")
 const loader = require("@vectarine/loader")
 
 const module = loader.init() or {}
-module.state = module.state or game_logic.newGame()
+module.state = module.state or gameLogic.newGame()
 
 -- Tests and the editor console reach the game through this global.
-module.debug = debug_tools.helpers(module)
+module.debug = debugTools.helpers(module)
 _G.mygame = module
 
 return module
@@ -200,7 +200,7 @@ Instead, the game can read the input once per frame, pass it to an update functi
 
 export const mainLuau = `
 const game = require("./game")
-const game_logic = require("./game_logic")
+const gameLogic = require("./game_logic")
 const io = require("@vectarine/io")
 const render = require("./render")
 
@@ -210,7 +210,7 @@ function Update(dt: number)
 		right = io.isKeyDown("Right"),
 		jump = io.isKeyJustPressed("Space"),
 	}
-	game_logic.update(game.state, input, dt)
+	gameLogic.update(game.state, input, dt)
 	render.draw(game.state)
 end
 `;
@@ -221,7 +221,7 @@ Then helpers can drive the logic without the keyboard.
 Feel free to create your own helpers when you need to. Here are some examples.
 
 export const debugToolsLuau = `
-const game_logic = require("./game_logic")
+const gameLogic = require("./game_logic")
 const loader = require("@vectarine/loader")
 
 const module = loader.init() or {}
@@ -241,7 +241,7 @@ function module.helpers(game)
 	local helpers = {}
 
 	function helpers.step(input: { [string]: boolean }?)
-		game_logic.update(game.state, input or {}, 1 / 60)
+		gameLogic.update(game.state, input or {}, 1 / 60)
 	end
 
 	function helpers.hold(frames: number, input: { [string]: boolean }?)

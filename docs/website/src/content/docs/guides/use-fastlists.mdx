@@ -55,7 +55,7 @@ export const fastlistTimedNested = `const debug = require("@vectarine/debug")
 
 function Update(deltaTime: number)
     debug.timed("Total", function()
-        for i, obj in ipairs(game_objects) do
+        for i, obj in ipairs(gameObjects) do
             debug.timed("Update", function()
                 updateObject(obj)
             end)

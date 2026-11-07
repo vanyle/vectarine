@@ -20,6 +20,9 @@ To be more precise, it uses [Luau](https://luau.org/), a variant of Lua with bet
 
 This manual is an unopinionated guide to making games using Vectarine.
 
+It is designed to allow you to build games offline, with just the zip you downloaded. See [the latest version online](https://vectarineengine.com/guides/overview/)
+
+
 # 🆕 Getting started
 
 I recommend using [Visual Studio Code](https://code.visualstudio.com/) as a text editor with the [Luau extension](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp) but
@@ -70,8 +73,8 @@ With a Luau extension / plugin installed, your text editor be able to autocomple
 # 🌙 Using Vectarine and Luau
 
 When your game is first loaded, its code, located inside `scripts/game.luau`, is executed.
-Then, every frame, the function `Update` you defined is called with `time_delta` which is the duration since the start of the last frame in seconds.
-Vectarine tries to run at 60 fps, so `time_delta` is at least `0.0166667` seconds but can increase if your rendering code is too slow.
+Then, every frame, the function `Update` you defined is called with `timeDelta` which is the duration since the start of the last frame in seconds.
+Vectarine tries to run at 60 fps, so `timeDelta` is at least `0.0166667` seconds but can increase if your rendering code is too slow.
 
 You can print things to the console using the `debug` module. You can open the console by pressing <kbd>Ctrl</kbd>+<kbd>1</kbd>.
 
@@ -116,7 +119,7 @@ const vec4 = require('@vectarine/vec4')
 const V2 = vec.V2 -- alias the V2 function as it is used very often
 const graphics = require('@vectarine/graphics')
 
-function Update(time_delta: number)
+function Update(timeDelta: number)
     -- Draw a white background.
     local bgColor: vec4.Vec4 = vec4.WHITE
     graphics.clear(bgColor)
@@ -137,7 +140,7 @@ end
 > 📖 TLDR; Coordinates are like vectors with a unit.
 
 Drawing with `vec` is convenient, however, often, you want to draw squares, or shapes where the width to height ratio needs to stay constant when the window is resized.
-When using `vec`, this means manually multiplying your position by `screen_height/screen_width` to normalize everything.
+When using `vec`, this means manually multiplying your position by `screenHeight/screenWidth` to normalize everything.
 
 As this is something that all games need, Vectarine provides a shortcut: Coordinates!
 Coordinates come from the `@vectarine/coord` module and allow you to refer to position and distance on the screen in the way you like.
@@ -146,7 +149,7 @@ You can use `coord.px`, `coord.gl`, `coord.vw` and `coord.vh` to create a `Scree
 
 Using `coord.gl` is the same as using `vec`, but you are more explicit.
 
-In the `px` coordinate system, `(0,0)` is the top-left of the screen, and `(window_width, window_height)`, as returned by `Io.getWindowSize()` is the bottom-right of the screen.
+In the `px` coordinate system, `(0,0)` is the top-left of the screen, and `(windowWidth, windowHeight)`, as returned by `io.getWindowSize()` is the bottom-right of the screen.
 This is the coordinate system used by most drawing APIs, for example HTML canvas or SDL.
 
 There is also the `vw` system where `100` represents the full width of the screen and `vh` where `100` represents the full height of the screen, which are inspired by CSS units.
@@ -172,13 +175,13 @@ const vec4 = require('@vectarine/vec4')
 
 const V2 = vec.V2
 
-function Update(time_delta)
+function Update(timeDelta)
     graphics.clear(vec4.WHITE)
     local rectColor = vec4.RED
 
     -- There are multiple ways to create a 'ScreenPosition' using the coordinate system you prefer
     local pos = coord.gl(V2(0, 0)) -- refer to the center of the screen
-    local other_pos = coord.px(V2(200, 200)) -- refers to position (200,200), in pixels, from the top-left
+    local otherPos = coord.px(V2(200, 200)) -- refers to position (200,200), in pixels, from the top-left
     debug.print(pos:px()) -- print the corresponding pixel position as a regular vector
 
     -- Draw a square at the center of the screen, with side length 200px
@@ -336,7 +339,7 @@ const playerPos = persist.onReload(vec.V2(0, 0), "playerPos")
 
 -- You can use persist.save and persist.load to save and load values between game sessions.
 -- These function use the file system to store values, or IndexedDB on the web.
-persist.save({ health = 100 }, "playerInfo")
+persist.save("playerInfo", { health = 100 })
 local playerInfo = persist.load("playerInfo")
 ```
 
@@ -368,7 +371,7 @@ local myImage = loader.loadImage("textures/my_image.png")
 function Update()
     if myImage:isReady() then
         -- Draw the image at the center of the screen with size 200x200 pixels
-        local size = coord.pxDelta(vec.V2(200, 200))
+        local size = coord.pxVec(vec.V2(200, 200))
         myImage:draw(coord.gl(vec.ZERO2) - size:scale(0.5), size)
     end
 end
@@ -433,15 +436,15 @@ const event = require('@vectarine/event')
 local otherScriptResource = loader.loadScript("scripts/other_script.luau")
 local resourceReadyEvent = event.getResourceLoadedEvent()
 
-resourceReadyEvent:on(function(resource_handle)
-    if otherScriptResource == resource_handle then
+resourceReadyEvent:on("otherScriptLoaded", function(resourceId: number)
+    if otherScriptResource:getId() == resourceId then
         -- The resource is ready, you can access global variables and functions defined inside other_script
     end
 end)
 
 -- You can also check at any point if a resource is ready or not:
 if otherScriptResource:isReady() then
-    local otherScript = require("other_script.luau")
+    local otherScript = require("./other_script")
     -- OK, I can now use functions and variables defined inside other_script.luau
 end
 ```
@@ -460,7 +463,7 @@ This has pros and cons:
 
 Because of that, we recommend doing the following (this is just a recommendation, you do you!):
 
-- Keep functions local whenever possible using the `local function(...) function_content() end` syntax.
+- Keep functions local whenever possible using the `local function(...) functionContent() end` syntax.
 - Put the functions and variables exported by a module in a table that gets returned.
 - Never use globals.
 
@@ -470,16 +473,16 @@ There is a simple example with 2 files: `helper.luau` and `main.luau`.
 -- helper.luau
 const loader = require('@vectarine/loader')
 const module = loader.init() or {} -- This is where all our exports will go
-local my_value = 3
+local myValue = 3
 
--- add_things is inside module, it gets exported
-function module.add_things(a: number, b: number): number
-    -- Notice that despite my_value not being exported, it can be used inside exported functions!
-    return a + b + my_value
+-- addThings is inside module, it gets exported
+function module.addThings(a: number, b: number): number
+    -- Notice that despite myValue not being exported, it can be used inside exported functions!
+    return a + b + myValue
 end
 
 -- You can also keep track of how many times the module has been reloaded
-module.reload_count = if module.reload_count then module.reload_count + 1 else 1
+module.reloadCount = if module.reloadCount then module.reloadCount + 1 else 1
 
 return module -- return for the module to make it available
 ```
@@ -494,7 +497,7 @@ local helper = require("./helper")
 
 function Update()
     -- The script is loaded and ready for use!
-    debug.fprint("adding things: ", helper.add_things(3+1))
+    debug.fprint("adding things: ", helper.addThings(3, 1))
 end
 ```
 
@@ -508,20 +511,20 @@ const ui = require("@vectarine/ui")
 const io = require("@vectarine/io")
 const vec = require("@vectarine/vec")
 
-local size_of_the_widget = vec.V2(2, 2)
-local widget: ui.Widget<any> = ui.widget(size_of_the_widget, function()
+local sizeOfTheWidget = vec.V2(2, 2)
+local widget: ui.Widget<any> = ui.widget(sizeOfTheWidget, function()
     -- Code for drawing the widget.
 end)
 
-local another_widget: ui.Widget<any> = ui.widget(size_of_the_widget, function()
+local anotherWidget: ui.Widget<any> = ui.widget(sizeOfTheWidget, function()
     -- Code for drawing the other widget.
 end)
 
 -- List all the widgets you want to draw here
-local tabs: ui.TabWidget<any> = ui.tabs({ "default_tab_name" = widget, "another_tab_name" = another_widget })
+local tabs: ui.TabWidget<any> = ui.tabs({ ["default_tab_name"] = widget, ["another_tab_name"] = anotherWidget })
 tabs:setActiveTab("default_tab_name")
 
-function Update(time_delta: number)
+function Update(timeDelta: number)
     
     if io.isKeyJustPressed("Space") then
         -- Depending on the player action, you can switch to another screen
@@ -529,12 +532,12 @@ function Update(time_delta: number)
             -- You can add transition between screens if you want, or transition directly
             -- You can also use a custom function as the animationType
             duration = 1.0,
-			animationType = "slide_up",
+			animationType = "slideUp",
         })
     end
 
     -- Don't forget to draw tabs widget!
-    tabs:draw()
+    tabs:draw({})
 end
 ```
 
@@ -602,7 +605,7 @@ end
 
 You can find more information about shaders in [the great book of shaders](https://thebookofshaders.com/)
 
-> ⚠️ Inside the paint callback, `coord:pxVec(V2(1, 1))` refers to 1px on the canvas, not on the window!
+> ⚠️ Inside the paint callback, `coord.pxVec(V2(1, 1))` refers to 1px on the canvas, not on the window!
 > You can pass an optional argument to pxVec to specify the size of the drawing area if you want.
 >
 > ```lua

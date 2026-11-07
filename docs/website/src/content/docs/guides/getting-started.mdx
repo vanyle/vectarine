@@ -729,6 +729,8 @@ local Ball = persist.onReload({
 	velocity = vec.V2(1, 1.5),
 }, "ball")
 
+local racketSize = 0.4
+
 function resetBall()
 	Ball.position = vec.V2(0, 0)
 	Ball.velocity.y = math.random() * 2
