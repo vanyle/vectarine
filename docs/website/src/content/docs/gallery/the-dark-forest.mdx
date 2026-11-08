@@ -1,9 +1,12 @@
 ---
 title: The dark forest
 description: A strategy game about exploring and conquering the universe without being seen. 
+sidebar:
+    order: 3
 ---
 
 import GameWrapper from '../../../components/GameWrapper.astro';
+import thumbnail from "./the-dark-forest/thumbnail.png";
 
 *The Dark Forest* is the first large vectarine **strategy** game. It has more polished graphics and shaders, using procedural generation
 for rendering the planet textures.
@@ -13,7 +16,7 @@ A large map, enemies, resources, technologies, etc.
 
 For the best experience (fullscreen), you should play it on [itch.io](https://vanyle0.itch.io/the-dark-forest)
 
-<GameWrapper src="/the-dark-forest/index.html" width="1056px" height="594px" />
+<GameWrapper src="/the-dark-forest/index.html" width="1056px" aspectRatio="16 / 9" poster={thumbnail} />
 
 
 **Description**

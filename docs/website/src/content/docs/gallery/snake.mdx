@@ -1,15 +1,18 @@
 ---
 title: Snake
 description: A snake game made with Vectarine.
+sidebar:
+    order: 1
 ---
 
 import GameWrapper from '../../../components/GameWrapper.astro';
+import thumbnail from "./snake/thumbnail.png";
 
 **Authors:**
 
 - [Antoine Delègue](http://vanyle0.itch.io/) (Code, Art)
 
-<GameWrapper src="/snake/index.html" width="800px" height="600px" />
+<GameWrapper src="/snake/index.html" width="800px" aspectRatio="4 / 3" poster={thumbnail} />
 
 This snake is the first true game made with Vectarine, and it is available to tweak and modify in the Vectarine Gallery.
 

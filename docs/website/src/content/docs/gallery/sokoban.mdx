@@ -1,9 +1,12 @@
 ---
 title: Sokoban
 description: A block pushing puzzle game made with Vectarine.
+sidebar:
+    order: 4
 ---
 
 import GameWrapper from '../../../components/GameWrapper.astro';
+import thumbnail from "./sokoban/thumbnail.png";
 
 **Authors:**
 
@@ -12,7 +15,7 @@ import GameWrapper from '../../../components/GameWrapper.astro';
 - [Kenney](https://kenney.nl/) (Art)
 
 
-<GameWrapper src="/sokoban/index.html" width="800px" height="600px" />
+<GameWrapper src="/sokoban/index.html" width="800px" aspectRatio="4 / 3" poster={thumbnail} />
 
 You can also play this game on <a href="https://vanyle0.itch.io/sokoban">itch.io</a> if you want.
 

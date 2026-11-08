@@ -1,9 +1,12 @@
 ---
 title: Xmas 3A
 description: An action chrismas game about collecting As
+sidebar:
+    order: 5
 ---
 
 import GameWrapper from '../../../components/GameWrapper.astro';
+import thumbnail from "./xmas-3a/thumbnail.png";
 
 **Authors:**
 
@@ -13,7 +16,7 @@ import GameWrapper from '../../../components/GameWrapper.astro';
 
 This game has sound. You have been warned.
 
-<GameWrapper src="/xmas-3a/index.html" width="800px" height="600px" />
+<GameWrapper src="/xmas-3a/index.html" width="800px" aspectRatio="4 / 3" poster={thumbnail} />
 
 This is one of the first games made with Vectarine. Its [source code is available here](https://github.com/codekiwifi/xmas-3a-game).
 

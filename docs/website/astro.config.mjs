@@ -98,32 +98,7 @@ export default defineConfig({
             sidebar: [
                 {
                     label: "Gallery",
-                    items: [
-                        {
-                            label: "What is the Gallery?",
-                            link: "/gallery/",
-                        },
-                        {
-                            label: "Snake",
-                            link: "/gallery/snake/",
-                        },
-                        {
-                            label: "Explorium",
-                            link: "/gallery/explorium/",
-                        },
-                        {
-                            label: "The dark forest",
-                            link: "/gallery/the-dark-forest/",
-                        },
-                        {
-                            label: "Sokoban",
-                            link: "/gallery/sokoban/",
-                        },
-                        {
-                            label: "Xmas AAA",
-                            link: "/gallery/xmas-3a/",
-                        },
-                    ],
+                    link: "/gallery/",
                 },
                 {
                     label: "Start here",
