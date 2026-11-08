@@ -14,6 +14,12 @@
     --sl-color-accent-high: color-mix(in hsl, #5d001d 50%, #ffffff 50%);
 }
 
+nav.sidebar ul ul .group-label .large {
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+}
+
 .sl-markdown-content img{
     margin: auto;
 }

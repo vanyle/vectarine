@@ -1,0 +1,79 @@
+---
+title: Debugging
+description: How to troubleshoot issues
+sidebar:
+    order: 4
+---
+
+import { Aside, Code, TabItem, Tabs } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import { Kbd } from 'starlight-kbd/components';
+
+When writing code and making games, you will encouter bugs: unexpected behavior that you struggle to understand.
+
+In this section, we'll focus on techniques you can apply to find and fix bugs effectivly.
+
+## Displaying a value to debug
+
+Sometimes, unexpected behavior is caused by unexpected content inside a variable. This can be because you forgot how a function works.
+
+export const gettingStartedScoreDef = `local score = mysteryFunction()`;
+
+<Code lang="luau" code={gettingStartedScoreDef} />
+
+To understand your program, it is useful to know the content of your variable. To do so, you can use the `debug` module to print the content of your variable to the console:
+
+export const startedDebugPrint = `const debug = require("@vectarine/debug")
+
+local score = mysteryFunction()
+debug.print("The score is: ", score)`;
+
+<Code lang="luau" code={startedDebugPrint} />
+
+`print` is also useful to know if a bit of code was executed in the first place.
+If for example you expected to see something on the screen but find nothing, add a print statement next to the code responsible for drawing to see if this code was executed.
+
+## Global values and the watcher
+
+You can create variables without using the `local` keyword. These variables are called global and can be accessed from any file in your project.
+You can see the content of a global variable in the watcher tool, which you can open from the tools menu or with <Kbd windows="Ctrl+3" mac="Ctrl+3"/>.
+
+You can search for the variable to watch by name in the search bar and its value will be shown and updated in real-time.
+
+Alternatively, you can use the `persist` module to create global variables.
+
+export const usingPersist = `const persist = require("@vectarine/persist")
+const debug = require("@vectarine/debug")
+
+-- persist.onReload creates a global variable named "global_persisted".
+-- You can inspect it in the watcher tool by searching for "global_persisted".
+-- Global variables are persisted between hot-reloads and can be inspected in the watcher tool
+local persisted = persist.onReload({
+	value = 0,
+}, "global_persisted")
+
+-- Every time you edit the file and save, the time since the game was loaded will be displayed.
+-- You can hit Ctrl+R to perform a hard reload and reset this value to 0.
+debug.print(persisted.value)
+
+function Update(deltaTime: number)
+	persisted.value += deltaTime
+end`;
+
+<Code lang="luau" code={usingPersist} />
+
+Printing allows you to see the content of a variable at a specific time in your game, while the watcher shows you what the variable contains *right now* and allows you to edit its content.
+This can be useful to tweak some gameplay properties like `speed`, or colors for quickly testing things.
+
+## Simplifying and complexifying the code
+
+When a large piece of code doesn't work, try to see if you can reproduce the problem with a smaller bit of code. You can start with only one line sometimes.
+
+To see why some drawing code does not work, start by drawing a simple rectangle using `graphics.drawRect(vec.V2(0, 0), vec.V2(1, 1), vec4.RED)` and progressively increase the complexity of the code by copying
+bits from the non-working code until you hit your issue.
+
+## Conclusion
+
+If you get stuck and/or don't understand a part of your program, don't hesitate to go back to this section to apply the techniques we've seen!
+
+There are guides written to help you with specific issues, like performance or automated testing. You can find them in the sidebar.

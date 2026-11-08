@@ -4,6 +4,7 @@ description: Understand how Vectarine's fastlist work and how they can be used t
 ---
 
 import { Aside, Code } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
 
 Is your game slow? This guide will show you how to find and fix performance issues.
 
@@ -26,7 +27,9 @@ To know what to optimize, you need to know what is taking time.
 
 Vectarine has a built in profiler that shows you how long it takes to render a frame as well as other performance information.
 
-![The Vectarine Profiler Tool](.././../../assets/profiler.png)
+import profilerImage from "./use-fastlists/profiler.png";
+
+<Image alt="The Vectarine Profiler Tool" src={profilerImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 - `total_lua_script_time` is how long your Luau code took to run this frame.
 

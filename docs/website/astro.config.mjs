@@ -3,6 +3,8 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import expressiveCode from "astro-expressive-code";
 import { defineConfig } from "astro/config";
+import { satteri } from "@astrojs/markdown-satteri";
+import katex from "katex";
 import starlightBlog from "starlight-blog";
 import starlightKbd from "starlight-kbd";
 
@@ -16,12 +18,34 @@ export default defineConfig({
     },
     base: "/",
     site: "https://vectarineengine.com",
+    redirects: {
+        "/guides/getting-started": "/tutorial/breakout/",
+    },
+    markdown: {
+        processor: satteri({
+            features: { math: true },
+            mdastPlugins: [
+                {
+                    name: "katex",
+                    // mdxExpressions: false keeps the braces of the KaTeX HTML from being read as MDX expressions.
+                    inlineMath: (node) => ({
+                        raw: katex.renderToString(node.value, { throwOnError: false }),
+                        mdxExpressions: false,
+                    }),
+                    math: (node) => ({
+                        raw: katex.renderToString(node.value, { throwOnError: false, displayMode: true }),
+                        mdxExpressions: false,
+                    }),
+                },
+            ],
+        }),
+    },
     integrations: [
         expressiveCode(),
         starlight({
             title: "Vectarine",
             titleDelimiter: " | ",
-            tagline:
+            description:
                 "The cross-platform Luau game engine focusing on ultra fast prototyping and having fun.",
             favicon: "favicon.ico",
             head: [
@@ -34,7 +58,7 @@ export default defineConfig({
                     },
                 },
             ],
-            customCss: ["./src/styles/custom.css"],
+            customCss: ["./src/styles/custom.css", "katex/dist/katex.min.css"],
             logo: {
                 src: "./src/assets/vectarine.png",
                 alt: "Vectarine Logo",
@@ -102,17 +126,18 @@ export default defineConfig({
                     ],
                 },
                 {
-                    label: "Introductions",
+                    label: "Start here",
                     items: [
                         {
-                            label: "Create your first game",
-                            link: "/guides/getting-started/",
+                            label: "Create your first game!",
+                            collapsed: true,
+                            items: [{ autogenerate: { directory: "tutorial/breakout" } }],
                         },
                         {
-                            label: "Overview",
+                            label: "Take a tour of Vectarine",
                             link: "/guides/overview/",
                         },
-                    ],
+                    ], 
                 },
                 {
                     label: "Guides",

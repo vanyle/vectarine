@@ -1,0 +1,75 @@
+---
+// A footnote shown as a tooltip next to the text, instead of at the bottom of the page.
+// Hover to preview, click (or tap on mobile) to keep it open and click its links. Usage: text<Footnote>The note, **markdown** works.</Footnote>
+---
+
+<span class="footnote">
+    <button type="button" class="footnote-ref" aria-label="Show footnote"></button>
+    <span class="footnote-content" role="note"><slot /></span>
+</span>
+
+<style>
+    :global(.sl-markdown-content) {
+        counter-reset: footnote;
+    }
+
+    /* The tooltip is placed relative to the paragraph, so it spans the text column and is never cut on the sides. */
+    :global(.sl-markdown-content :has(> .footnote)) {
+        position: relative;
+    }
+
+    .footnote {
+        counter-increment: footnote;
+    }
+
+    .footnote-ref {
+        all: unset;
+        cursor: pointer;
+        font-size: 0.75em;
+        vertical-align: super;
+        line-height: 0;
+        padding: 0 0.15em;
+        color: var(--sl-color-text-accent);
+    }
+
+    .footnote-ref::before {
+        content: "[" counter(footnote) "]";
+    }
+
+    .footnote-ref:focus-visible {
+        outline: 2px solid var(--sl-color-text-accent);
+        border-radius: 2px;
+    }
+
+    .footnote-content {
+        display: none;
+        position: absolute;
+        z-index: 10;
+        bottom: calc(100% + 0.4em);
+        left: 0;
+        right: 0;
+        padding: 0.6em 0.8em;
+        font-size: var(--sl-text-sm);
+        line-height: 1.5;
+        color: var(--sl-color-white);
+        background: var(--sl-color-gray-6);
+        border: 1px solid var(--sl-color-hairline-light);
+        border-radius: 0.5rem;
+        box-shadow: var(--sl-shadow-md);
+    }
+
+    .footnote:hover .footnote-content,
+    .footnote:focus-within .footnote-content {
+        display: block;
+    }
+
+    /* On narrow screens an absolute tooltip can overflow the sides, so it becomes a card at the bottom of the screen. */
+    @media (max-width: 50rem) {
+        .footnote-content {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+        }
+    }
+</style>

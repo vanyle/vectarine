@@ -1,0 +1,566 @@
+---
+title: Winning and losing
+description: Working with state machines
+sidebar:
+    order: 8
+---
+
+import { Aside, Code } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import { Kbd } from 'starlight-kbd/components';
+
+Our game can be played, but it never end. When the ball falls, it comes back. When all the bricks are broken, nothing happens.
+
+In this part, we'll give the player 3 lives, a score, and a way to win and to lose. To do this, we'll use one of the most useful tools in game development: the *state machine*.
+
+## State machine
+
+At any moment, our game is in one of these situations:
+
+- **ready**: the ball sits on the paddle and waits for the player to press <Kbd windows="Space" mac="Space"/>.
+- **playing**: the ball moves and breaks bricks.
+- **won**: all the bricks are broken.
+- **lost**: the player has no lives left.
+
+These situations are called *states*. The game is always in exactly one state, and some events make it go from one state to another.
+For example, pressing <Kbd windows="Space" mac="Space"/> goes from *ready* to *playing*, and losing the last life goes from *playing* to *lost*.
+
+We can draw all the states and the events that connect them:
+
+<br/>
+
+import stateMachine from "./assets/state-machine.png";
+
+<Image alt="A diagram with 4 states: ready, playing, won and lost, and arrows between them labeled with the events that change the state" src={stateMachine} loading="lazy" style="max-width: min(700px, 100%);" />
+
+<br/>
+
+This is a *state machine*. You can draw it before writing the code to check that every state has a way out,
+and that you didn't forget a case, or use [excalidraw](https://excalidraw.com/) which is super useful if you don't have paper on hand.
+
+In the code, we store the current state in a `Game` object, with the number of lives and the score:
+
+export const gameObject = `const startLives = 3
+
+-- ...
+
+local Game = persist.onReload({
+	-- "ready", "playing", "won" or "lost"
+	state = "ready",
+	lives = startLives,
+	score = 0,
+}, "game")`;
+
+<Code lang="luau" code={gameObject} title="game.luau" />
+
+<details>
+<summary>Why is the state a string and not a number?</summary>
+We could write `state = 1` for *ready*, `state = 2` for *playing*, etc. It would work, but when you read `if Game.state == 2 then`, you have to remember what `2` means.
+`if Game.state == "playing" then` can be read without remembering anything.
+</details>
+
+export const gameStateType = `-- The game state can only be one of these 4 strings
+type GameState = "ready" | "playing" | "won" | "lost"
+
+local Game = persist.onReload({
+	state = "ready" :: GameState,
+	lives = startLives,
+	score = 0,
+}, "game")`;
+
+<Aside type='tip' title='Avoiding typos with types'>
+
+Using strings has one problem: if you write `Game.state = "wom"` instead of `"won"`, Luau won't complain. The game simply never shows the victory screen, and you have to find the typo yourself.
+
+We can tell Luau which values are allowed using a *type*:
+
+<Code lang="luau" code={gameStateType} title="game.luau" />
+
+`type GameState = ...` creates a new type named `GameState`. The `|` means "or": a `GameState` is either `"ready"`, `"playing"`, `"won"` or `"lost"`, and nothing else.
+
+`"ready" :: GameState` tells Luau that this value is a `GameState`, and not any string. Without it, Luau would guess that `state` can contain any text.
+
+Now, if you write `Game.state = "wom"`, the Luau extension underlines it in red in VSCode, with an error message telling you that `"wom"` is not one of the allowed values.
+You find the mistake as soon as you type it, without even running the game!
+
+Luau only checks the values you *put* in `Game.state`. If you make a typo in a comparison, like `if Game.state == "playign" then`, there is no error, and the condition is simply never true.
+The type still helps there: when you type `Game.state == "`, VSCode can suggest the 4 allowed values.
+
+We've already used types without paying much attention: `deltaTime: number` in `Update` says that `deltaTime` is a number,
+and `: boolean` after a function says that it returns a boolean. Types are optional in Luau, but they catch a lot of mistakes before you even run your game.
+
+</Aside>
+
+### The ready state
+
+In the *ready* state, the ball stays on the middle of the paddle and follows it. When the player presses <Kbd windows="Space" mac="Space"/>, we launch the ball and go to the *playing* state:
+
+export const updateReady = `local function updateReady()
+	-- The ball sits on the middle of the paddle
+	local x = Paddle.position.x + Paddle.size.x / 2 - Ball.size.x / 2
+	local y = Paddle.position.y + Paddle.size.y
+	Ball.position = vec.V2(x, y)
+
+	if io.isKeyJustPressed("Space") then
+		Game.state = "playing"
+		-- Launch the ball up, and a bit to the right
+		Ball.velocity = vec.V2(0.4, 1):normalized():scale(ballSpeed)
+	end
+end`;
+
+<Code lang="luau" code={updateReady} title="game.luau" />
+
+We use `io.isKeyJustPressed` and not `io.isKeyDown`. `isKeyDown` is true on every frame while the key is held down, while `isKeyJustPressed` is only true on the frame where the key starts being pressed.
+For something that happens once, like launching the ball, `isKeyJustPressed` is what we want.
+
+### Losing a life
+
+At the end of `updateBall`, we replace the code that put the ball back at its starting position. Now, falling below the screen costs a life:
+
+export const loseLife = `	-- The ball fell below the screen: lose a life
+	if Ball.position.y < -1 then
+		Game.lives -= 1
+		if Game.lives > 0 then
+			Game.state = "ready"
+		else
+			Game.state = "lost"
+		end
+	end`;
+
+<Code lang="luau" code={loseLife} title="game.luau (at the end of updateBall)" />
+
+If there are lives left, we go back to the *ready* state, so the ball goes back on the paddle. Otherwise, the game is lost.
+
+<Aside type='tip'>
+The `Game` object is persisted. If you saved while writing this code, your game might be in a strange state.
+Press <Kbd windows="Ctrl+R" mac="Ctrl+R"/> to start from the beginning.
+</Aside>
+
+## Showing the score, lives and messages
+
+The player needs to know how many lives they have left, and what to do in each state. Let's draw some text!
+
+First, every broken brick gives 10 points. In `updateBall`, add this line right after `brick.broken = true`:
+
+export const addScore = `			Game.score += 10`;
+
+<Code lang="luau" code={addScore} title="game.luau (in the brick collision code)" />
+
+To draw text, we need a font. Vectarine provides the Roboto font by default (which looks a bit like the text you are currently reading), but it doesn't match the style of this game!
+Instead, we use [`m6x11.ttf` font](https://managore.itch.io/m6x11) from the `fonts` folder (made by Daniel Linssen). We load it with the `loader` module, like images.
+
+We'll also load the `heart.png` image to show the lives:
+
+export const loadFont = `const heartImage = loader.loadImage("textures/heart.png", false)
+const font = loader.loadFont("fonts/m6x11.ttf")`;
+
+<Code lang="luau" code={loadFont} title="game.luau" />
+
+Then, at the end of `drawGame`, after the ball, we draw the score and one heart per life:
+
+export const drawHud = `	-- The score, at the top left
+	font:drawText("SCORE " .. Game.score, vec.V2(-0.92, 0.87), 0.09, vec4.WHITE)
+
+	-- One heart per life, at the top right
+	for life = 1, Game.lives do
+		heartImage:draw(vec.V2(0.92 - life * 0.09, 0.87), vec.V2(0.07, 0.06))
+	end`;
+
+<Code lang="luau" code={drawHud} title="game.luau (at the end of drawGame)" />
+
+`font:drawText` takes the text, the position of its bottom left corner, its height and its color.
+
+`..` glues two pieces of text together. `"SCORE " .. 120` gives `"SCORE 120"`.
+
+### Centering the messages
+
+The messages like "GAME OVER" should be in the middle of the screen. To center a text, we need to know how wide it is: `font:measureText` tells us.
+Then, if we start drawing the text at minus half its width, the middle of the text is at `x = 0`, the center of the screen.
+
+We'll draw several centered messages, so let's write a function for it. Put it above `drawGame`:
+
+export const drawCentered = `-- Draws text centered horizontally at the height y
+local function drawCenteredText(text: string, y: number, size: number)
+	local width = font:measureText(text, size).width
+	font:drawText(text, vec.V2(-width / 2, y), size, vec4.WHITE)
+end`;
+
+<Code lang="luau" code={drawCentered} title="game.luau" />
+
+Now, at the very end of `drawGame`, we show a different message in each state:
+
+export const drawMessages = `	if Game.state == "ready" then
+		drawCenteredText("PRESS SPACE TO LAUNCH", -0.3, 0.09)
+	elseif Game.state == "won" then
+		-- A see-through black rectangle over the game makes the text easier to read
+		graphics.drawRect(vec.V2(-1, -1), vec.V2(2, 2), vec4.createColor(0, 0, 0, 0.6))
+		drawCenteredText("YOU WIN!", 0, 0.18)
+		drawCenteredText("PRESS SPACE TO PLAY AGAIN", -0.15, 0.08)
+	elseif Game.state == "lost" then
+		graphics.drawRect(vec.V2(-1, -1), vec.V2(2, 2), vec4.createColor(0, 0, 0, 0.6))
+		drawCenteredText("GAME OVER", 0, 0.18)
+		drawCenteredText("PRESS SPACE TO TRY AGAIN", -0.15, 0.08)
+	end`;
+
+<Code lang="luau" code={drawMessages} title="game.luau (at the end of drawGame)" />
+
+The last number of `vec4.createColor` is the *alpha*, the opacity of the color. `1` is fully opaque, `0` is invisible, and `0.6` lets us see the game behind the rectangle.
+
+import stateReady from "./assets/state-ready.png";
+import stateLost from "./assets/state-lost.png";
+
+<Image alt="The ready state: the ball on the paddle, the score and 3 hearts at the top, and the message PRESS SPACE TO LAUNCH" src={stateReady} loading="lazy" style="max-width: min(600px, 100%); border: 2px solid black;" />
+
+<Image alt="The game over screen: the game is darkened, with GAME OVER written in the middle" src={stateLost} loading="lazy" style="max-width: min(600px, 100%); border: 2px solid black;" />
+
+## Reset
+
+When the game is won or lost, pressing <Kbd windows="Space" mac="Space"/> calls `resetGame` to start a new game. Resetting means putting everything back like at the start:
+the lives, the score, and the bricks.
+
+export const resetGame = `local function resetGame()
+	Game.lives = startLives
+	Game.score = 0
+	-- Repair all the bricks
+	for _, brick in Bricks do
+		brick.broken = false
+	end
+	Game.state = "ready"
+end`;
+
+<Code lang="luau" code={resetGame} title="game.luau" />
+
+Because we used a `broken` value for the bricks in the previous part, bringing them back is easy: we just set `broken` to `false` for all of them.
+
+`resetGame` uses `Bricks` and changes the state, so put it after `updateReady`, below the creation of `Bricks`.
+
+<details>
+<summary>Why don't we call createBricks() again?</summary>
+We could write `Bricks = createBricks()`, but `Bricks` is persisted: `persist.onReload` gave us a table that Vectarine remembers between reloads.
+If we replace it with a new table, the new bricks would be lost on the next save, and the old ones would come back!
+It is simpler to modify the bricks we already have.
+</details>
+
+## Using the states in Update
+
+We now have a function for each state: `updateReady`, `updateBall` and `resetGame`. We can use them in `Update`, so that it does something different depending on the state:
+
+export const updateWithStates = `function Update(deltaTime: number)
+	updatePaddle(deltaTime)
+	if Game.state == "ready" then
+		updateReady()
+	elseif Game.state == "playing" then
+		updateBall(deltaTime)
+	elseif Game.state == "won" or Game.state == "lost" then
+		if io.isKeyJustPressed("Space") then
+			resetGame()
+		end
+	end
+	drawGame()
+end`;
+
+<Code lang="luau" code={updateWithStates} title="game.luau" />
+
+`elseif` means "otherwise, if". Luau checks the conditions from top to bottom and only runs the first block whose condition is true.
+So, on every frame, the code of only one state is executed.
+
+This is important! Imagine we wrote two separate `if` instead. When the player presses <Kbd windows="Space" mac="Space"/> on the *lost* screen, `resetGame` changes the state to *ready*.
+Then, the next `if` would see the *ready* state and the same <Kbd windows="Space" mac="Space"/> press, and launch the ball immediately. With `elseif`, the ball is launched on the next press.
+
+The paddle can move in every state, so `updatePaddle` stays outside of the `if`.
+
+## Winning
+
+The player wins when all the bricks are broken. To check this, we go through all the bricks and look for one that is not broken:
+
+export const allBricksBroken = `-- Returns true if all the bricks are broken
+local function allBricksBroken(): boolean
+	for _, brick in Bricks do
+		if not brick.broken then
+			-- We found a brick that is not broken, no need to look further
+			return false
+		end
+	end
+	-- We went through all the bricks and they are all broken
+	return true
+end`;
+
+<Code lang="luau" code={allBricksBroken} title="game.luau" />
+
+`return` stops the function immediately, even in the middle of a loop. As soon as we find one brick that is not broken, we know the answer is `false`, so we stop there.
+If the loop finishes without finding one, all the bricks are broken and we return `true`.
+
+Put this function above `updateBall`, and use it in `updateBall`, right after the brick collision loop:
+
+export const checkWin = `	if allBricksBroken() then
+		Game.state = "won"
+	end`;
+
+<Code lang="luau" code={checkWin} title="game.luau (in updateBall)" />
+
+import stateWon from "./assets/state-won.png";
+
+<Image alt="The victory screen: no bricks left, the game is darkened, with YOU WIN! written in the middle" src={stateWon} loading="lazy" style="max-width: min(600px, 100%); border: 2px solid black;" />
+
+Breaking 60 bricks every time you want to test the victory screen takes a while. I don't want to beat the game every time I want to test the end screen! To test things faster, change `rows` to `1` and press <Kbd windows="Ctrl+R" mac="Ctrl+R"/>: you only have 10 bricks to break.
+Don't forget to put it back to `6` afterwards!
+
+In the same way, you can test the game over screen by opening the watcher with <Kbd windows="Ctrl+3" mac="Ctrl+3"/>, searching for `game` and setting `lives` to `1`.
+
+## The whole code so far
+
+export const wholeCodeWin = `const debug = require("@vectarine/debug")
+const graphics = require("@vectarine/graphics")
+const vec4 = require("@vectarine/vec4")
+const vec = require("@vectarine/vec")
+const io = require("@vectarine/io")
+const persist = require("@vectarine/persist")
+const loader = require("@vectarine/loader")
+
+const backgroundImage = loader.loadImage("textures/background.png", false)
+const paddleImage = loader.loadImage("textures/paddle.png", false)
+const ballImage = loader.loadImage("textures/ball.png", false)
+const brickImage = loader.loadImage("textures/brick.png", false)
+const heartImage = loader.loadImage("textures/heart.png", false)
+const font = loader.loadFont("fonts/m6x11.ttf")
+
+const paddleSpeed = 1.8
+const ballSpeed = 1.3
+const startLives = 3
+
+const brickSize = vec.V2(0.17, 0.08)
+-- The space between two bricks
+const brickGap = 0.01
+const columns = 10
+const rows = 6
+
+-- One color per row of bricks, from the top row to the bottom row
+const rowColors = {
+	vec4.createColor(1.0, 0.0, 0.27, 1),
+	vec4.createColor(0.97, 0.46, 0.13, 1),
+	vec4.createColor(1.0, 0.68, 0.2, 1),
+	vec4.createColor(0.39, 0.78, 0.3, 1),
+	vec4.createColor(0.17, 0.91, 0.96, 1),
+	vec4.createColor(0.71, 0.31, 0.53, 1),
+}
+
+-- The game state can only be one of these 4 strings
+type GameState = "ready" | "playing" | "won" | "lost"
+
+local Game = persist.onReload({
+	state = "ready" :: GameState,
+	lives = startLives,
+	score = 0,
+}, "game")
+
+local Paddle = persist.onReload({
+	position = vec.V2(-0.16, -0.85),
+	size = vec.V2(0.32, 0.06),
+}, "paddle")
+
+local Ball = persist.onReload({
+	position = vec.V2(0, -0.5),
+	size = vec.V2(0.045, 0.045),
+	velocity = vec.V2(0.6, 1.1),
+}, "ball")
+
+-- Creates the list of all the bricks of the level
+local function createBricks()
+	local bricks = {}
+	local y = 0.7
+	for row = 1, rows do
+		local x = -0.9
+		for column = 1, columns do
+			table.insert(bricks, {
+				position = vec.V2(x, y),
+				color = rowColors[row],
+				broken = false,
+			})
+			x += brickSize.x + brickGap
+		end
+		y -= brickSize.y + brickGap
+	end
+	return bricks
+end
+
+local Bricks = persist.onReload(createBricks(), "bricks")
+
+-- Returns true if the rectangle at posA of size sizeA touches the rectangle at posB of size sizeB.
+local function overlaps(posA: vec.Vec2, sizeA: vec.Vec2, posB: vec.Vec2, sizeB: vec.Vec2): boolean
+	return posA.x < posB.x + sizeB.x
+		and posA.x + sizeA.x > posB.x
+		and posA.y < posB.y + sizeB.y
+		and posA.y + sizeA.y > posB.y
+end
+
+-- Returns true if all the bricks are broken
+local function allBricksBroken(): boolean
+	for _, brick in Bricks do
+		if not brick.broken then
+			return false
+		end
+	end
+	return true
+end
+
+-- Moves the paddle using the arrow keys
+local function updatePaddle(deltaTime: number)
+	if io.isKeyDown("right") then
+		Paddle.position.x += paddleSpeed * deltaTime
+	end
+	if io.isKeyDown("left") then
+		Paddle.position.x -= paddleSpeed * deltaTime
+	end
+	Paddle.position.x = math.clamp(Paddle.position.x, -1, 1 - Paddle.size.x)
+end
+
+-- Moves the ball and makes it bounce on the walls, the paddle and the bricks
+local function updateBall(deltaTime: number)
+	Ball.position += Ball.velocity:scale(deltaTime)
+
+	-- Left, right and top sides
+	if Ball.position.x < -1 then
+		Ball.velocity.x = math.abs(Ball.velocity.x)
+	end
+	if Ball.position.x + Ball.size.x > 1 then
+		Ball.velocity.x = -math.abs(Ball.velocity.x)
+	end
+	if Ball.position.y + Ball.size.y > 1 then
+		Ball.velocity.y = -math.abs(Ball.velocity.y)
+	end
+
+	-- Bounce on the paddle, only when the ball is going down
+	if Ball.velocity.y < 0 and overlaps(Ball.position, Ball.size, Paddle.position, Paddle.size) then
+		local ballCenter = Ball.position.x + Ball.size.x / 2
+		local paddleCenter = Paddle.position.x + Paddle.size.x / 2
+		-- offset is -1 on the left end of the paddle, 0 in the center and 1 on the right end
+		local offset = (ballCenter - paddleCenter) / (Paddle.size.x / 2)
+		Ball.velocity = vec.V2(offset, 1):normalized():scale(ballSpeed)
+	end
+
+	-- Break the first brick the ball touches
+	for _, brick in Bricks do
+		if not brick.broken and overlaps(Ball.position, Ball.size, brick.position, brickSize) then
+			brick.broken = true
+			Game.score += 10
+			local ballCenter = Ball.position.x + Ball.size.x / 2
+			local hitTheSide = ballCenter < brick.position.x or ballCenter > brick.position.x + brickSize.x
+			if hitTheSide then
+				Ball.velocity.x = -Ball.velocity.x
+			else
+				Ball.velocity.y = -Ball.velocity.y
+			end
+			break
+		end
+	end
+
+	if allBricksBroken() then
+		Game.state = "won"
+	end
+
+	-- The ball fell below the screen: lose a life
+	if Ball.position.y < -1 then
+		Game.lives -= 1
+		if Game.lives > 0 then
+			Game.state = "ready"
+		else
+			Game.state = "lost"
+		end
+	end
+end
+
+-- The ball waits on the paddle until the player presses Space
+local function updateReady()
+	local x = Paddle.position.x + Paddle.size.x / 2 - Ball.size.x / 2
+	local y = Paddle.position.y + Paddle.size.y
+	Ball.position = vec.V2(x, y)
+
+	if io.isKeyJustPressed("Space") then
+		Game.state = "playing"
+		Ball.velocity = vec.V2(0.4, 1):normalized():scale(ballSpeed)
+	end
+end
+
+-- Puts everything back like at the start of the game
+local function resetGame()
+	Game.lives = startLives
+	Game.score = 0
+	for _, brick in Bricks do
+		brick.broken = false
+	end
+	Game.state = "ready"
+end
+
+-- Draws text centered horizontally at the height y
+local function drawCenteredText(text: string, y: number, size: number)
+	local width = font:measureText(text, size).width
+	font:drawText(text, vec.V2(-width / 2, y), size, vec4.WHITE)
+end
+
+-- Draws the whole game
+local function drawGame()
+	backgroundImage:draw(vec.V2(-1, -1), vec.V2(2, 2))
+	for _, brick in Bricks do
+		if not brick.broken then
+			brickImage:draw(brick.position, brickSize, brick.color)
+		end
+	end
+	paddleImage:draw(Paddle.position, Paddle.size)
+	ballImage:draw(Ball.position, Ball.size)
+
+	font:drawText("SCORE " .. Game.score, vec.V2(-0.92, 0.87), 0.09, vec4.WHITE)
+	for life = 1, Game.lives do
+		heartImage:draw(vec.V2(0.92 - life * 0.09, 0.87), vec.V2(0.07, 0.06))
+	end
+
+	if Game.state == "ready" then
+		drawCenteredText("PRESS SPACE TO LAUNCH", -0.3, 0.09)
+	elseif Game.state == "won" then
+		graphics.drawRect(vec.V2(-1, -1), vec.V2(2, 2), vec4.createColor(0, 0, 0, 0.6))
+		drawCenteredText("YOU WIN!", 0, 0.18)
+		drawCenteredText("PRESS SPACE TO PLAY AGAIN", -0.15, 0.08)
+	elseif Game.state == "lost" then
+		graphics.drawRect(vec.V2(-1, -1), vec.V2(2, 2), vec4.createColor(0, 0, 0, 0.6))
+		drawCenteredText("GAME OVER", 0, 0.18)
+		drawCenteredText("PRESS SPACE TO TRY AGAIN", -0.15, 0.08)
+	end
+end
+
+function Update(deltaTime: number)
+	updatePaddle(deltaTime)
+	if Game.state == "ready" then
+		updateReady()
+	elseif Game.state == "playing" then
+		updateBall(deltaTime)
+	elseif Game.state == "won" or Game.state == "lost" then
+		if io.isKeyJustPressed("Space") then
+			resetGame()
+		end
+	end
+	drawGame()
+end`;
+
+
+<details>
+<summary>Here is the whole `game.luau` file at this point:</summary>
+
+<Code lang="luau" code={wholeCodeWin} title="game.luau" />
+
+</details>
+
+## What we've seen so far
+
+Our game is now a complete game: you can win, you can lose, and you can play again.
+
+We've seen:
+
+- What a state machine is.
+- How to use `elseif` to run the code of only one state per frame.
+- The difference between `io.isKeyDown` and `io.isKeyJustPressed`.
+- How to load a font and draw text, and how to center it with `measureText`.
+- How to glue text together with `..`.
+- How to make a color see-through with its alpha.
+- How to stop a function early with `return`.
+
+The game works, but it still feels a bit flat: there is no sound, and breaking a brick is not very satisfying.
+In the next part, we'll add sounds, particles and screen shake to make the game feel great to play.

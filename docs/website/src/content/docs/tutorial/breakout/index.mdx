@@ -1,0 +1,31 @@
+---
+title: A Breakout-style game in Vectarine
+description: A step-by-step tutorial to build a Breakout-style game and learn Vectarine along the way.
+sidebar:
+    order: 1
+---
+
+import { Aside, Code } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
+import { Kbd } from 'starlight-kbd/components';
+
+In this step-by-step tutorial, we'll see how you can create your first game using Vectarine.
+This will be a *Breakout*-style game (also called a brick breaker), where you control a paddle to bounce a ball and break bricks.
+
+The whole tutorial takes about 3 hours, and you don't need to know anything about programming to follow it.
+
+Along the way, you'll learn:
+
+- How to write programs using the same tools as professional game devs.
+- Basic game dev concepts, like drawing graphics, working with coordinates, handling sound, physics, ...
+- Basic game design concepts, like juice and UX.
+- How to use Vectarine to quickly build games and prototypes.
+
+You can play the finished version of the game to see what the result will look like. Use the arrow keys and <Kbd windows="Space" mac="Space"/>, or press the left and right sides of the screen on a phone:
+
+import GameWrapper from "../../../../components/GameWrapper.astro";
+import finishedGame from "./assets/finished-game.png";
+
+<GameWrapper src="/tutorials/breakout/game/index.html" width="600px" aspectRatio="1 / 1" poster={finishedGame} posterAlt="The finished game: colorful bricks, a ball breaking one of them with a shockwave, and the paddle at the bottom" />
+
+This guide is made for *beginners*. If you are **already familiar with programming** and game development, you can take [a guided tour of Vectarine](/guides/overview/) to see how to use the different features of the engine.

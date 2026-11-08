@@ -85,7 +85,12 @@ impl Tilemap for GeneratedTilemap {
                 if self.ensure_chunk(layer, chunk_x, chunk_y).is_none() {
                     continue;
                 }
-                if let Some(chunk) = self.cache.borrow().get(&(layer, chunk_x, chunk_y)) {
+                // We clone here, because we cannot hold the borrow.
+                // This is because the callback can invoke Lua code that will need to mutably borrow the tilemap to update
+                // the cache. I don't really like this solution (because of how the cache works, there is no first of issues, the
+                // whole generated tilemap is immutable anyway...)
+                let cloned_chunk = self.cache.borrow().get(&(layer, chunk_x, chunk_y)).cloned();
+                if let Some(chunk) = cloned_chunk {
                     let local_x = x.rem_euclid(CHUNK_SIZE) as usize;
                     let local_y = y.rem_euclid(CHUNK_SIZE) as usize;
                     if let Some(&tile) = chunk.get(local_y * CHUNK_SIZE as usize + local_x) {
@@ -113,6 +118,8 @@ impl GeneratedTilemap {
         let chunk: Vec<u32> = (1..=size)
             .map(|i| result.get::<u32>(i).unwrap_or(0))
             .collect();
+        // Mutable borrow of the cache can fail if we are already borrowing the cache...
+        // This often happens when we call get_tile inside get_tile_part
         let mut mut_ref_cache = self.cache.try_borrow_mut().ok()?;
         mut_ref_cache.insert((layer, chunk_x, chunk_y), chunk);
         Some(())

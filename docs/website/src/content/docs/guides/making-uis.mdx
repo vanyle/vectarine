@@ -4,6 +4,7 @@ description: How does Vectarine's UI system work and how to use it?
 ---
 
 import { Aside, Code } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
 
 Vectarine has a built-in UI module to make interfaces, like menus, setting screens, inventories, etc. It is designed to be very customizable to match the
 feel and style of any game.
@@ -92,7 +93,9 @@ end`;
 
 <Code lang="luau" code={makingUiRowColumn} />
 
-![Using rows and columns to make interfaces in Vectarine](../../../assets/widget_rows.png)
+import widgetRowsImage from "./making-uis/widget_rows.png";
+
+<Image alt="Using rows and columns to make interfaces in Vectarine" src={widgetRowsImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 Using rows and columns, we can layout widgets in a flexible way on the screen.
 
@@ -127,7 +130,9 @@ end`;
 
 <Code lang="luau" code={makingUiPaddingGap} />
 
-![Using padding and gaps to make interfaces in Vectarine](../../../assets/widget_row_padding.png)
+import widgetRowPaddingImage from "./making-uis/widget_row_padding.png";
+
+<Image alt="Using padding and gaps to make interfaces in Vectarine" src={widgetRowPaddingImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 By composing rows and columns, you can make any interface you want.
 
@@ -474,7 +479,9 @@ end`;
 
 <Code lang="luau" code={makingUiSliderWidget} />
 
-![The slider widget of vectarine](../../../assets/widget_slider.png)
+import widgetSliderImage from "./making-uis/widget_slider.png";
+
+<Image alt="The slider widget of vectarine" src={widgetSliderImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 Remember that a widget = a *size* + a *draw function*.
 

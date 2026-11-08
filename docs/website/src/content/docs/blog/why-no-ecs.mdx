@@ -1,0 +1,217 @@
+---
+title: Why Vectarine does not have an Entity Component System
+description: "Vectarine and Entity Component Systems: the different ways to structure your game, with their advantages and drawbacks."
+cover:
+    alt: An entity component system table with three entities and three components
+    image: why-no-ecs/ecs-table.png
+date: 2026-11-08
+---
+
+import { Aside, Code, TabItem, Tabs } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import Footnote from '../../../components/Footnote.astro';
+
+A few game engines, mainly [Bevy](https://bevy.org/) or [Murder](https://github.com/isadorasophia/murder), are built around an ECS (Entity Component System) to structure their games.
+Unity also added [an ECS in late 2022](https://discussions.unity.com/t/unity-released-ecs-1-0-production-ready-finally/901873) to their engine.
+
+In online spaces, mainly Reddit and YouTube, it feels (at least to me) like ECS are growing in popularity, maybe since 2020.
+
+In this article, I want to describe what ECS are, what their purpose is, and why I didn't structure Vectarine around an ECS. 
+
+{/* excerpt */}
+
+## What is an entity component system?
+
+An ECS is a way to structure your game or game engine. It breaks down games into 3 parts: entities, components and systems.
+
+<Aside type="note">
+I'll be using *Bevy*'s syntax to illustrate the code examples, because it looks very clean and is super readable.
+</Aside>
+
+### Entities
+
+Entities are the "things" in your game, the *nouns*. Players, Monsters, Projectiles, Terrain, etc.
+In an ECS, they are represented with a single ID. So the entity part of an ECS could be implemented like this:
+
+export const ecsEntities = `
+struct Entities {
+    data: Vec<u32>
+};
+`;
+
+<Code lang="rs" code={ecsEntities}/>
+
+If you are using an ECS library, you won't need to write this struct yourself, the library will handle this.
+
+### Components
+
+Of course, entities need to store data associated with them. Things like positions, speed, color, sprite, etc. that are more complex than a single number.
+This is where components come in. You can think of components like the *adjectives* of your game.
+
+For example, you could have a position component and a color component:
+
+export const ecsPositionComponent = `
+#[derive(Component)]
+struct Position {
+    x: f32,
+    y: f32,
+}
+
+#[derive(Component)]
+struct Color {
+    r: f32,
+    g: f32,
+    b: f32,
+}`;
+
+<Code lang="rs" code={ecsPositionComponent}/>
+
+And your ECS will allow you to create entities that have a position property.
+
+export const creatingEntity = `
+// Create an entity with just a position
+commands.spawn(Position { x: 0.0, y: 0.0 });
+
+// Create an entity with a position and a color
+commands.spawn((Position { x: 1.0, y: 1.0 }, Color { r: 1.0, g: 0.0, b: 0.0 }));
+`;
+
+<Code lang="rs" code={creatingEntity}/>
+
+### Systems
+
+We have things, with properties. Now we want them to do things. This is where systems come in. Systems are the *verbs*.
+
+For example, one system could be "gravity" that decreases the `y` position of all entities with a position:
+
+export const gravitySystem = `
+fn gravity(mut query: Query<&mut Position>) {
+    for mut pos in &mut query {
+        // In a true game, you would have collisions and entities that are not affected by gravity.
+        // I'm simplifying to keep the code short and easy to understand.
+        pos.y -= 1.0;
+    }
+}`;
+
+<Code lang="rs" code={gravitySystem}/>
+
+The idea of ECS is that you are composing systems together to create your game. Every system runs queries to fetch the entities it
+needs, and processes them to advance the state of the game.
+
+The ECS's job is to efficiently implement `Query` to fetch the entities that match the predicate (you can run more complex queries, like fetching all entities that
+have a given set of components).
+
+## What is the purpose of an ECS?
+
+ECS has 2 main promises: *Performance* and *Good Code Structure*.
+
+**Performance**:
+
+A well-written ECS will put all of the data of one component into one contiguous array. This data layout is very efficient in the CPU
+(because of cache locality) and makes fetching and updating lots of components very efficient.
+
+This is similar to what column-oriented databases like Apache Druid or ClickHouse do.
+
+**Code organization**:
+
+By allowing you to structure your entities with components and systems, it is easy to add new game mechanics. For example, to add a new powerup to your game,
+you can create entities with the Powerup component, and with a new component specific to that kind of powerup.
+
+This allows for greater flexibility than *pure inheritance*. This is because when using inheritance, each entity type can only inherit from one other entity type.
+So if you want to add to your game a power-up that is also an enemy, you cannot inherit from both your power-up and your enemy class.
+
+With an ECS, you don't have this limitation.
+
+**ECS as SQL databases**
+
+You can think of an ECS like an in-memory SQL database for your program. Components are tables that are joined using the entity IDs. Systems
+allow you to efficiently execute the queries and do the "table joins".
+
+## Why doesn't Vectarine have an ECS?
+
+With all these benefits of ECS, you might wonder why Vectarine doesn't provide such a system. This is because Vectarine doesn't want to
+provide the user with a built-in concept of entities.
+
+Entities can be tricky and not all games want them. So we prefer to provide lower-level functions for drawing, physics, etc. and let users
+assemble these concepts together to create their game.
+
+Because we give users full control, they can build systems that are purpose-built for their specific games that are more efficient than what an ECS can provide.
+
+### Limitations when using complex queries
+
+This is because an ECS is only as good as its query system. If you want to fetch all entities that are monsters, it's super simple, it's just a tag.
+
+But when you want to fetch all triplets of entities that are within 10 units of one another where one is a monster, another is a player and the third is an explosive
+(maybe your monster AI has monsters shoot at TNT to hurt the player), your ECS might struggle to do that efficiently, even if you use a general-purpose space partitioning system.
+
+But if you build your own entity storage, you know what your game needs, so you can optimize for it specifically.
+
+For example, you can write a purpose-built space partitioning system to quickly answer queries about finding close entities that
+can efficiently create, move and delete large amounts of entities, or maybe you can use knowledge about how TNT spawns in your game
+to optimize your lookup. This is something that a general-purpose querying system cannot do.
+
+### ECS make engineering more fun than game design
+
+There's an old joke in the Rust community: for every game made in Rust, there are ten game engines. I'm writing a game engine myself, so I'm in no position to laugh too hard.
+
+But I think ECS makes this worse. Designing systems and queries is satisfying in the same way building an engine is: it feels like progress, and there's always something to optimize.
+Making a game fun is a different, messier job, and an architecture that rewards engineering can quietly pull you away from it.
+
+This matches what I see online: a lot of praise for Bevy's architecture, and far fewer shipped games.<Footnote>At the time of writing, [Bevy](https://github.com/bevyengine/bevy) is about 5x more popular than [Löve2D](https://github.com/love2d/love) on GitHub, but has about 8.5x fewer games on itch.io ([Bevy games](https://itch.io/games/made-with-bevy-engine), [Löve2D games](https://itch.io/games/tag-love2d)). This doesn't prove anything: Bevy is younger, has no editor, and Rust is harder to learn than Lua.</Footnote>
+
+### Extra indirection
+
+Personally, I find this code easier to read than a set of systems:
+
+export const classicImperativeGameCode = `
+
+local strongestPlayer = nil
+for player in players do
+    if isStronger(player, strongestPlayer) then
+        strongestPlayer = player
+    end
+    -- Note that methods does not mean OOP. The ':' syntax is about convenient for autocompletion, not class hierarchies
+    -- The vectarine guide about understanding hot-reloading explains how you can turn functions into methods simply.
+    player:handleMovement()
+end
+
+for enemy in enemies do
+    local nearbyPlayers = findClosePlayers(enemy.position, enemy.sightRange)
+    if #nearbyPlayers == 0 then
+        enemy:wander()
+    else
+        if contains(nearbyPlayers, strongestPlayer) then
+            enemy:flee()
+        else
+            enemy:chase()
+        end
+    end
+end
+`;
+
+<Code lang="luau" code={classicImperativeGameCode}/>
+
+In this example, I understand read the complexity straight from the code: one loop over the players, one loop over the enemies,
+and `findClosePlayers`, which I wrote myself and know uses a spatial index.<Footnote>Assuming players are spread evenly, on average, that's about
+$O(\text{\#enemies} \times \frac{\text{\#players}}{\text{\#chunks}})$.</Footnote>
+Nothing runs that I can't see.
+With systems, the same logic is split between queries, the ECS's storage and the scheduler, and estimating its cost means knowing how the ECS works inside, which
+can be tough when you're not experienced with it.
+
+
+## What does Vectarine do instead?
+
+Vectarine essentially lets you do whatever. I'm encouraging you to use functions that take tables and produce other tables, and generally follow functional patterns.
+I think this is better, especially for beginners who might not be experienced in programming, as they have less to learn and worry about.
+
+You have data inside tables, and functions that act on the data, because that's all you need, especially for game prototypes where you might have fewer than a few thousand "entities".
+
+If you want performance, you can use a [fastlist](/guides/use-fastlists/) which packs data together in memory and allows for very fast mutations.
+
+This gives you a lot of flexibility in your code and allows you to follow the structure that is best suited for your game. Because Luau is dynamic,
+you can add the fields you want to your tables.
+
+You can build your own ECS on top of Vectarine if you have a simulation-like game, or follow an inheritance-based approach using Luau's metatables. You're
+free to choose the paradigm you know best!
+
+Vectarine optimizes for getting a fun game running quickly, and the structure should serve the game and the fun, not the other way around.

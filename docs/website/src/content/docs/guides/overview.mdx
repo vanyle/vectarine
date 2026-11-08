@@ -1,16 +1,17 @@
 ---
-title: Overview
+title: A tour of Vectarine
 description: A guided tour through most of Vectarine's features
 ---
 
 import { Aside, Code } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
 import { Kbd } from 'starlight-kbd/components';
 
 This tour will go through most essential Vectarine features and show how to use them. It is not an exhaustive list of all APIs.
 Read the dedicated articles on [UI](/guides/making-uis), [physics](/guides/making-a-platformer), [performance](/guides/use-fastlists), etc. for more in-depth information about specific features.
 
 This manual is an unopinionated guide to making games using Vectarine. If you already have a bit of game making experience and want to integrate Vectarine into your workflow,
-this guide is for you. If you are new to making games, you can still read this guide, but consider reading [Create your first game](/guides/getting-started/) first.
+this guide is for you. If you are new to making games, you can still read this guide, but consider reading [Create your first game](/tutorial/breakout/) first.
 We assume you have some experience with programming and making games. You know the concept of functions, variables, loops, etc.
 
 The goal of this guide is to give you the building blocks to make your first 2D game with Vectarine and to serve as a quick reference with simple examples.
@@ -37,7 +38,9 @@ you are free to use any text editor you want, for example [Zed](https://zed.dev/
 
 Start the editor by running the `VectarineEditor` executable. A window should open.
 
-![The Start Screen of Vectarine](../../../assets/startscreen.png)
+import startscreenImage from "../tutorial/breakout/assets/startscreen.png";
+
+<Image alt="The Start Screen of Vectarine" src={startscreenImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 <Aside type='caution'>
 On MacOS, executables from the internet are quarantined by default.
@@ -53,7 +56,9 @@ You can open the resources tab from the tools menu or with <Kbd windows="Ctrl+2"
 
 Your game has only one resource, the main script, `scripts/game.luau`.
 
-![An empty Vectarine project](../../../assets/emptygame.png)
+import emptygameImage from "../tutorial/breakout/assets/emptygame.png";
+
+<Image alt="An empty Vectarine project" src={emptygameImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 You can click the blue text `scripts/game.luau` to open it in your default text editor. You can also open it manually from your file explorer.
 
@@ -117,7 +122,9 @@ The first argument to `V2` (called x) is the horizontal position, the second arg
 
 The screen is always 2 units wide and 2 units tall, regardless of the window size or aspect ratio.
 
-![The screen coordinate in vectarine](../../../assets/vecta-screen.png)
+import vectaScreenCoordinatesImage from "../tutorial/breakout/assets/vecta-screen-coordinates.png";
+
+<Image alt="The screen coordinate in vectarine" src={vectaScreenCoordinatesImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 export const tourDrawVec = `--- Import the vec module to create 2D vectors
 const vec = require('@vectarine/vec')
@@ -370,7 +377,7 @@ First, you can inspect and edit the value of a global variable in the _Watcher_ 
 Second, the value of global variables is preserved between script reloads. This is useful when developing as there is usually part of your state that you
 want to reset when reloading and part that you want to keep.
 
-My recommendation is to **always use local**, but set them using the `persist` API:
+My recommendation is to **always use local**, but set them using the `persist` API if you need persistence:
 
 export const tourPersistApi = `const persist = require("@vectarine/persist")
 const vec = require("@vectarine/vec")
@@ -394,6 +401,9 @@ export const tourPersistInternal = `local function onReload(initialValue, name)
 end`;
 
 <Code lang="luau" code={tourPersistInternal} />
+
+While `persist.onReload` uses globals internally which allows you to see their value in the watcher tab, you also get the benefits of local variables,
+like the correct types.
 
 ## 🖼️ Loading images, scripts, and other resources
 
@@ -452,6 +462,14 @@ end`;
 ### Sound and Music
 
 Loading sounds works just like images, but you call the `loadAudio` function instead of `loadImage`.
+
+### General project organization
+
+You are free to organise your project how you want, but for consistency between vectarine projects and ease of reading, you should do the following:
+
+- Only use lower case in your file names and folders. Vectarine enforces this to have cross-platform consistency.
+- Put your scripts inside the `scripts` folder. You can use subfolders for more organisation.
+- Put your images inside `textures`, sounds and music in `audio`, fonts in `fonts` and shaders in `shaders`. This is not enforced by vectarine, but is nice to stay organized.
 
 ### Others
 
@@ -567,7 +585,7 @@ module.hotReloadCount += 1 -- Increase the counter.
 return module -- This value will be returned by loader.init() on the next hot-reload
 `;
 
-<Code lang="luau" title="script/reload_counter.luau" code={loaderInitExample}>
+<Code lang="luau" title="script/reload_counter.luau" code={loaderInitExample}/>
 
 There are many ways to use this to preserve state across reloads: For example, if you have a "world" variable initialized in a file, you can write `local world = module.world or ... default value here ...` to avoid
 resetting the world state when the file is reloaded.

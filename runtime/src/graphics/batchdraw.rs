@@ -442,6 +442,8 @@ impl BatchDraw2d {
         // Add uniforms to replicate shader toy style
         uniforms.add("tex", UniformValue::Sampler2D(canvas.color_texture_id()));
         let elapsed = Instant::now() - env.start_time;
+        // TODO: We use Instant::now() here which is non-deterministic when testing.
+        // We should instead store the start time of the current frame in the env and use that.
         uniforms.add("iTime", UniformValue::Float(elapsed.as_secs_f32()));
 
         let shader_to_use = if let Some(id) = custom_shader {

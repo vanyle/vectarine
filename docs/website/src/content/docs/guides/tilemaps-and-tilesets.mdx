@@ -4,13 +4,16 @@ description: Use tilesets and tilemaps to draw images, sprite sheets and levels 
 ---
 
 import { Code } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
 
 Games use images to display their graphics. However, when you want to draw a lot of different images,
 it can be annoying and inefficient to load each image as a separate resource as you need to wait for every resource to load.
 
 The solution to this is a tileset. A tileset is a single image that contains multiple smaller images, called tiles.
 
-![A tileset example from kenney.nl](../../../assets/tileset_enemies_kenneynl.png)
+import tilesetEnemiesKenneynlImage from "./tilemaps-and-tilesets/tileset_enemies_kenneynl.png";
+
+<Image alt="A tileset example from kenney.nl" src={tilesetEnemiesKenneynlImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 This is an image from [kenney.nl](https://kenney.nl/assets/new-platformer-pack) that contains multiple tiles of different enemies.
 Each tile is 64x64 pixels and there is 1px of spacing between tiles with 8 tiles per row, so the entire image is 519x519 pixels (519 = 64 * 8 + 1 * 7).
@@ -70,7 +73,9 @@ Tileset are useful to draw individual tiles, but sometimes, you want to represen
 To do this, you can use a tilemap. A tilemap is a resource ending in `.tmx` that is basically a grid of tile ids.
 It can be created with [Tiled](https://www.mapeditor.org/), [LDtk](https://ldtk.io/) or another level editor.
 
-![An example of a level being created in Tiled](../../../assets/tiled_tmx.png)
+import tiledTmxImage from "./tilemaps-and-tilesets/tiled_tmx.png";
+
+<Image alt="An example of a level being created in Tiled" src={tiledTmxImage} loading="lazy" style="max-width: min(600px, 100%);" />
 
 Once you have made your level in your level editor of choice, you can export it to a `tmx` file and load it in your game.
 

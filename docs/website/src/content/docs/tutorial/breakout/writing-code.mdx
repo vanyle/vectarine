@@ -1,0 +1,433 @@
+---
+title: Writing code
+description: Learning to program with Vectarine
+sidebar:
+    order: 3
+---
+
+import { Aside, Code, TabItem, Tabs } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
+import { Kbd } from 'starlight-kbd/components';
+
+Let's start working on our game for real! In this part, you'll learn the basics of coding, editing code and drawing on the screen.
+
+<Aside type='note'>
+A lot of programming tutorials start by teaching you how to print to the console, and saying that drawing to the screen is "too advanced". They
+proceed to teach you about lots of advanced concepts like object-oriented programming and polymorphism without ever going back to teaching you how
+to draw on the screen. I want to change that.
+</Aside>
+
+## Using VSCode
+
+At the end of the previous section, we opened the project in VSCode using the "Open game folder in editor" button in the `Resources` tab.
+
+<br/>
+
+import vscodeEmpty from "./assets/vscode-empty.png"
+
+<Image alt="An empty vectarine project in VSCode" src={vscodeEmpty} loading="lazy" style="max-width: min(800px, 100%); border: 2px solid black;"/>
+
+<Aside type="note">
+If you are not using VSCode, I assume you are already familiar with your text editor and configured it to edit Luau, so you can skip this section.
+</Aside>
+
+To the left, you have a black panel with gray-white icons:
+
+- "A stack of paper": This is the most useful, it allows you to see the files in your project
+- "A magnifying glass": This is the search feature. You can search for text in your whole project. It is convenient when you are working on larger games.
+- "A stethoscope-looking thing": This is the `Git`-integration, a version control system. Don't worry about it for now.
+- "A play button with a bug on top": This is used to run standalone programs, Vectarine games don't need it.
+- "A crate": This is for installing extensions, you already used it to install the Luau extension in the previous section.
+
+We'll only use the first icon, as for now, we only need to see the files of the project. As you can see, an "empty" project already has a lot of files.
+
+To start, we only care about the `scripts` folder. You can click to open it and then click on the `game.luau` file to open it in the center panel.
+
+## Editing the code
+
+The empty `game.luau` script of the `From scratch` project looks like this:
+
+export const startedEmptyGame = `const debug = require('@vectarine/debug')
+const graphics = require('@vectarine/graphics')
+const vec4 = require('@vectarine/vec4')
+const vec = require('@vectarine/vec')
+
+-- Need help to get started?
+-- Read: https://github.com/vanyle/vectarine/blob/main/docs/user-manual.md
+-- The manual is available offline in the Help menu.
+
+debug.print(\"Loaded.\")
+
+-- ... extra code to draw the message here ...
+
+function Update(deltaTime: number)
+	debug.fprint("Rendered in ", deltaTime, "sec")
+
+	if
+		graphics.drawSplashScreenIfNeeded({
+			-- Put the resources that need to be loaded here.
+		}, "Loading")
+	then
+		return
+	end
+
+	fakeLoadingTimer.value = fakeLoadingTimer.value + deltaTime
+	if fakeLoadingTimer.value < 4.0 then
+		graphics.drawSplashScreen("Pretending to load...", fakeLoadingTimer.value / 4.0)
+		return
+	end
+
+	gettingStartedUi:draw({})
+end`;
+
+<Code lang="luau" code={startedEmptyGame} showLineNumbers mark={["gettingStartedUi:draw({})"]} />
+
+
+Before explaining what all the code does, try to replace `gettingStartedUi:draw({})` at the bottom of the file with `graphics.drawSplashScreen("Empty game", 0.0)` and save the file.
+You should see the change in the editor immediately without needing to restart the game.
+
+When using Vectarine, it is very convenient to see the Vectarine Editor window at the same time as your editor to see what is happening in your game as you edit the code.
+
+- If you have 2 monitors, you can put the text editor on one screen and the Vectarine editor on the other.
+
+- If you only have one monitor, don't worry! You can open the `Preferences` window and tick the "Game always on top" checkbox. This will allow you to write code in your text editor
+while keeping the Vectarine window on top, so you can see both at the same time. I usually keep the text editor fullscreen and put a smaller Vectarine window on the right side of my screen.
+
+## The basics of Luau programming
+
+When your game is first loaded, the `game.luau` file is executed. Files ending with `.luau` contain Luau code that is executed to make your game work.
+
+Code is read top to bottom and every line contains something for the computer to do, like a cooking recipe.
+
+### Functions
+
+Code is organized into functions. Functions are reusable pieces of code that do useful things.
+
+export const gettingStartedFuncDef = `function functionName()
+
+-- put content of the function here
+
+end`;
+
+<Code lang="luau" code={gettingStartedFuncDef} />
+
+You can call a function to run it by writing its name followed by parentheses:
+
+export const gettingStartedFuncCall = `functionName()`;
+
+<Code lang="luau" code={gettingStartedFuncCall} />
+
+This will run the content of `functionName`. While you can write and call your own functions, Vectarine and Luau have a lot of functions to do all kinds of things useful for making games like drawing to the screen, playing sound, etc.
+A simple example is the `math.abs` function which removes the sign of a number so `math.abs(-3)` is 3 and `math.abs(1.2)` is 1.2.
+
+### Comments
+
+Inside code, you can add explanations that do nothing for the computer but are useful for you to understand and remember what the code does.
+These explanations are preceded by `--` and are called comments. You can write anything you want in comments, and they will be ignored by the computer.
+
+export const gettingStartedComment = `-- Hello, I'm explaining the code below.`;
+
+<Code lang="luau" code={gettingStartedComment} />
+
+As this is a tutorial, I will use a lot of comments to explain what is going on all of the time. To help
+you distinguish between comments and code, the comments are grayed out.
+
+### The `Update` function
+
+The `Update` function is a special function that is called every frame by Vectarine.
+This is where you put the code that needs to be executed continuously, like drawing your game.
+
+Code outside of the `Update` function is executed once at the start of the game and can be used to initialize things.
+
+When you save, Vectarine will re-execute your `game.luau` file to provide hot-reload.
+
+export const gettingStartedUpdateDef = `
+-- We define a function named Update. Vectarine tries to call the function named Update every frame.
+function Update(deltaTime: number)
+	-- This code is executed every frame
+end`;
+
+<Code lang="luau" code={gettingStartedUpdateDef} />
+
+This is the smallest valid Vectarine game. It does nothing, but you can add code inside `Update` to draw things.
+
+`deltaTime` is the time in seconds since the last frame. You can use it to make objects move at a consistent speed regardless of how fast the code is executed.
+
+### Modules
+
+Modules are groups of related functions. To get access to a module, you need to *import* it using the `require` function, like so:
+
+export const importingModules = `
+const myModule = require("moduleName")
+-- To execute a function, you need to put parentheses after its name.
+-- Inside these parentheses, you can sometimes put arguments to give the function more information to do its job.
+myModule.functionInsideModule()
+myModule.functionWithArguments(1, 4, 5)
+`;
+
+<Code lang="luau" code={importingModules} />
+
+Vectarine has many modules to do many things. The first modules we'll see are the `debug`, `graphics`, `vec` and `vec4` modules.
+
+- `debug` provides functions for debugging your game.
+- `graphics` provides functions to draw on the screen.
+- `vec` provides functions to make and modify 2d vectors
+- `vec4` provides functions to make and modify 4d vectors, which are used to represent colors.
+
+As the screen is 2D, a lot of *graphics* functions take 2d vectors called `Vec2` as arguments to represent screen locations.
+
+<Aside type='note'>
+Variables contain values which have a type.
+For example 3 is of type `number`, `"Hello"` is of type `string`, `vec.V2(1, 2)` is of type `Vec2` (2d vector) and `true` and `false` are of type `boolean`.
+
+When we write:
+
+<Code lang="luau" code={gettingStartedUpdateDef} />
+
+We say that the `Update` function takes one argument named `deltaTime` of type number.
+Specifying the type of function arguments is optional, but is very helpful to remember what functions want as inputs.
+
+Functions, like `math.abs` can also *return* values. You can think of functions that return values like factories that take some input product
+and output a new product. You can also specify the return type like so:
+
+export const addFunction = `
+-- We create a function named addPlusTwo that takes 2 numbers as arguments and returns (outputs) a number.
+function addPlusTwo(firstInputValue: number, secondInputValue: number): number
+	-- Inside the function, we write code that explains how the output is produced using the input arguments.
+	-- We write 'return' followed by the value we want to output.
+	-- 'return' stops the execution of the function: once the function produced its output, it finished.
+	return firstInputValue + secondInputValue + 2
+end`;
+
+<Code lang="luau" code={addFunction} />
+
+</Aside>
+
+To be able to use a vectarine function, you first need to *import* the module that contains it using `require("@vectarine/modulename")`,
+for example `const debug = require("@vectarine/debug")` to import the `debug` module.
+
+However, to use a built-in Luau module, you don't need to import anything. For example the `math` module is built-in and is thus always available. We
+say that the `math` module is part of the *Luau Standard Library*. Other modules of the standard library include `table`, `string` or `bit32`.
+`require` is another example of a function from the standard library, as it is always available without needing to import anything.
+
+You can find the list of all built-in modules in the [Luau Standard Library Reference](https://luau.org/library/).
+
+The vectarine modules are not part of the standard library, so you need to import them using `require` to use them.
+You can find the list of all vectarine modules and the functions they provide inside the `luau-api` folder of your project.
+
+Reading the list of available functions and their documentation is a good way to learn what you can do with vectarine.
+
+## From theory to practice
+
+This is a lot of theory, let's see how it works in practice. You can remove the existing content of `game.luau`, copy and paste the following code instead and save it to see what it does:
+
+export const usingDebugModule = `-- We require the debug module to get access to its functions
+const debug = require("@vectarine/debug")
+
+-- We call the print function from the debug module to display a message in the console.
+-- We give the message as an argument to the print function, which is a string.
+debug.print("Hello, vectarine!")
+
+-- We define the Update function that is called every frame.
+function Update(deltaTime: number)
+	-- We call the fprint function from the debug module to display a message in the console that is updated every frame.
+	debug.fprint("This message is updated every frame. The deltaTime is: ", deltaTime)
+	-- The print and fprint function can take as many arguments as you want and will display them. 
+end`;
+
+<Code lang="luau" code={usingDebugModule} />
+
+You can open the console from the tools menu or with <Kbd windows="Ctrl+1" mac="Ctrl+1"/> to see the output of the debug module.
+You should see a black screen (as nothing is drawn yet) and this in the console:
+
+import consoleOutput from './assets/console_output.png';
+
+<Image src={consoleOutput} alt="Console output of the debug module" loading="lazy" style="max-width: min(600px, 100%);" />
+
+### Using the graphics module
+
+Now, let's see how to draw a circle on the screen using the `graphics` module. You can copy and paste the following code in your `game.luau` file and save it to see what it does:
+
+export const usingGraphicsModule = `-- We require the graphics, vec and vec4 modules to get access to their functions
+const vec = require("@vectarine/vec")
+const vec4 = require("@vectarine/vec4")
+const graphics = require("@vectarine/graphics")
+
+function Update(deltaTime: number)
+	-- We call the clear function from the graphics module to set the background color to white.
+	graphics.clear(vec4.WHITE)
+	-- We call the drawCircle function from the graphics module to draw a red circle at the center of the screen with a radius of 0.5 units.
+	graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.RED)
+end`;
+
+<Code lang="luau" code={usingGraphicsModule} />
+
+### Variables
+
+We can use `variables` to store the results of functions for later use.
+
+You can make a vector using the `vec.V2` function like so:
+
+export const startedVecCreate = `-- Import the vec module to get access to the Vec2 type
+const vec = require("@vectarine/vec")
+
+-- Use the vec.V2 function to create a vector with x = 1 and y = 2, and put it in a variable named v
+local v = vec.V2(1, 2)`;
+
+<Code lang="luau" code={startedVecCreate} />
+
+We are using the `local` keyword to create a variable named `v` that contains the vector `(1, 2)`. Variables are like boxes that contain values.
+The `local` keyword and the `const` keywords are similar, but `const` variables cannot be changed after they are created (we could call them *constants* to be more precise),
+while `local` variables can be changed.
+
+export const localKeyword=`
+const debug = require("@vectarine/debug")
+
+-- var contains the value 3
+local var = 3
+-- name contains the value "Joe"
+local name = "Joe"
+
+-- var2 contains the value 5 because it is the result of adding 2 to 3.
+local var2 = var + 2
+-- You can modify the content of a variable by assigning it a new value like so:
+-- Now var contains the value 4 because we added 1 to it.
+var = var + 1
+
+-- var is shown to the console (this is the same as printing 4)
+debug.print(var)
+`;
+
+<Code lang="luau" code={localKeyword} />
+
+When requiring a module, we put it into a variable to use all of its functions later which is why we also use the `const` keyword there.
+
+Colors are represented as `vec4` because they are made of a mix of red, green, blue and alpha (opacity).
+The `vec4` module contains a few default colors like `vec4.WHITE` and `vec4.RED` but you can also create your own colors with `vec4.createColor(r, g, b, a)` where r, g, b and a are numbers between 0 and 1.
+
+Try to replace the code inside your project with this one, and save the file. You should see a red circle and a blue rectangle on a white background.
+
+export const startedDrawBasic = `-- Import the graphics, vec and vec4 modules
+-- modules that start with @vectarine/ are built-in modules provided by Vectarine
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const vec4 = require('@vectarine/vec4')
+
+function Update(deltaTime: number)
+	-- Set the background color to white using the clear function
+	graphics.clear(vec4.WHITE)
+
+	-- Draw a red circle at the center of the screen (0,0) with a radius of 0.5 units (2 units is the width of the screen)
+	graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.RED)
+
+	local rectColor = vec4.createColor(0, 0, 1, 1) -- Create a blue color
+	-- Draw a blue rectangle at the bottom right of the screen
+	graphics.drawRect(vec.V2(0.7, -1), vec.V2(0.3, 0.3), rectColor)
+end`;
+
+<Code lang="luau" code={startedDrawBasic} />
+
+When using Vectors:
+
+- `(0,0)` is the center of the screen.
+- `(-1,-1)` is the bottom left of the screen.
+- `(-1,1)` is the top left of the screen.
+- `(1,-1)` is the bottom right of the screen.
+- `(1,1)` is the top right of the screen.
+
+The screen is 2x2 units.
+
+import vectaScreenCoordinatesImage from "./assets/vecta-screen-coordinates.png";
+
+<Image alt="The screen coordinate in vectarine" src={vectaScreenCoordinatesImage} loading="lazy" style="max-width: min(600px, 100%);" />
+
+## Quiz
+
+You can quiz yourself to test your understanding. What will these pieces of code do when put inside Vectarine?
+
+export const exampleCodeQuiz1 = `
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const vec4 = require('@vectarine/vec4')
+
+-- What happens if I draw outside of Update?
+graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.BLUE)
+
+function Update(deltaTime: number)
+    graphics.clear(vec4.WHITE)
+    graphics.drawCircle(vec.V2(0, 0), 0.5, vec4.GREEN)
+end
+`;
+
+<Code lang="luau" title="game.luau" code={exampleCodeQuiz1}/>
+
+<details>
+<summary>Solution</summary>
+Code outside of Update is for initialization. So, the blue circle gets drawn once and is immediately overwritten by the green circle inside the `Update` function.
+Only the green circle is seen on the window.
+</details>
+
+export const exampleCodeQuiz2 = `
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const vec4 = require('@vectarine/vec4')
+
+local function magic(size: number)
+    graphics.drawCircle(vec.V2(0, 0), size, vec4.BLUE)
+end
+
+function Update(deltaTime: number)
+    graphics.clear(vec4.WHITE)
+    magic(0.2)
+end
+`;
+
+<Code lang="luau" title="game.luau" code={exampleCodeQuiz2}/>
+
+<details>
+<summary>Solution</summary>
+We create a function called `magic` which draws a blue circle of the provided size.
+Inside Update, we call this function with a size of `0.2`. This will thus draw a blue circle of size 0.2.
+</details>
+
+
+export const exampleCodeQuiz3 = `
+const graphics = require("@vectarine/graphics")
+const vec = require("@vectarine/vec")
+const vec4 = require('@vectarine/vec4')
+
+local time = 0
+
+function Update(deltaTime: number)
+    time += deltaTime
+    graphics.clear(vec4.WHITE)
+    graphics.drawCircle(vec.V2(0, 0), math.cos(time)/10 + 0.2, vec4.RED)	
+end
+`;
+
+<Code lang="luau" title="game.luau" code={exampleCodeQuiz3}/>
+
+<details>
+<summary>Solution</summary>
+We create a variable named `time` and set it to 0. On every frame, we increase `time` by the amount of elapsed time, so the time variable
+increases on every frame.
+
+Then, we use it to draw a red circle of size `math.cos(time)/10 + 0.2`. Remember that `cos` is a function returning values between `-1` and `1`, so this will
+draw a circle with a size between `-1/10 + 0.2 = 0.1` and `1/10 + 0.2 = 0.3`. As `cos` is smooth, the size of the circle will smoothly animate between `0.1` and `0.3`.
+</details>
+
+## What we've seen so far
+
+Congratulations for making it this far! Programming can be hard, but you should now understand the most important building blocks to create your games.
+
+We've seen:
+
+- Code is what controls your game and defines its appearance and gameplay.
+- Code is made of text files named scripts or modules which are divided into functions.
+- What are functions, how to write and call them.
+- The role of the special `Update` function.
+- How to use *functions* to display information to the `console`
+- How to use *functions* to draw on the screen.
+- How to store the output of *functions* inside *variables*.
+
+This is a lot! Feel free to re-read this section multiple times and play around with the examples, create functions, variables, etc...
