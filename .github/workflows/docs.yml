@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'docs/website/**'
+      - 'luau-api/**'
   workflow_dispatch:
 
 permissions:
@@ -32,6 +33,12 @@ jobs:
               with:
                 lfs: true
 
+            - name: 🏷️ Fetch the latest release tag
+              run: |
+                # The reference is also generated for the latest x.y.z tag: fetch only that tag, without its history.
+                TAG=$(git ls-remote --tags --refs origin | sed 's#.*refs/tags/##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+                git fetch --depth=1 origin "refs/tags/${TAG}:refs/tags/${TAG}"
+
             - uses: actions/setup-node@v3
               name: ⚙️ Setup Node.js
               with:
@@ -51,6 +58,17 @@ jobs:
               run: |
                 cd docs/website
                 pnpm build
+
+            - name: 🔍 Check that the generated reference is up to date
+              run: |
+                # pnpm build regenerates the reference from luau-api. If that changed anything,
+                # the reference was not regenerated and committed after editing luau-api.
+                if [ -n "$(git status --porcelain -- docs/website/src/content/docs/references)" ]; then
+                  echo "::error::The reference pages are out of date. Run 'pnpm references' in docs/website and commit the result."
+                  git status --porcelain -- docs/website/src/content/docs/references
+                  git --no-pager diff -- docs/website/src/content/docs/references
+                  exit 1
+                fi
 
             - name: ⬆️ Upload static files as artifact
               uses: actions/upload-pages-artifact@v3

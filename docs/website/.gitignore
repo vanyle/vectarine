@@ -15,6 +15,9 @@ pnpm-debug.log*
 !bundle.vecta
 !*.wasm
 
+# Personal script to make sure the reference script is not messing up.
+scripts/check-luau-api.mjs
+
 # environment variables
 .env
 .env.production

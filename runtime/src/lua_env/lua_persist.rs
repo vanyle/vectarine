@@ -13,14 +13,11 @@ use crate::projectinfo::ProjectInfo;
 fn serialize_lua(
     lua: &vectarine_plugin_sdk::mlua::Lua,
     value: &vectarine_plugin_sdk::mlua::Value,
-) -> Box<[u8]> {
-    let json_value: Result<serde_json::Value, _> = lua.from_value(value.clone());
-    match json_value {
-        Ok(json) => serde_json::to_vec(&json)
-            .unwrap_or_default()
-            .into_boxed_slice(),
-        Err(_) => vec![].into_boxed_slice(),
-    }
+) -> vectarine_plugin_sdk::mlua::Result<Box<[u8]>> {
+    let json: serde_json::Value = lua.from_value(value.clone())?;
+    serde_json::to_vec(&json)
+        .map(|bytes| bytes.into_boxed_slice())
+        .map_err(|e| vectarine_plugin_sdk::mlua::Error::SerializeError(e.to_string()))
 }
 
 fn deserialize_lua(
@@ -135,7 +132,11 @@ pub fn setup_persist_api(
 
     add_fn_to_table(lua, &persist_module, "save", {
         move |lua, (key, value): (String, vectarine_plugin_sdk::mlua::Value)| {
-            let value = serialize_lua(lua, &value);
+            let value = serialize_lua(lua, &value).map_err(|e| {
+                vectarine_plugin_sdk::mlua::Error::RuntimeError(format!(
+                    "persist.save(\"{key}\"): this value can't be saved ({e}). Only nil, booleans, numbers, strings and tables of these can be saved."
+                ))
+            })?;
             save_data_in_kv_store(&store_path, key, value);
             Ok(())
         }
@@ -183,7 +184,9 @@ mod tests {
             .to_value(&"test")
             .expect("Unable to convert value to lua");
         let serialized = serialize_lua(&lua, &value);
-        let deserialized = deserialize_lua(&lua, serialized).expect("Unable to deserialize value");
+        let deserialized =
+            deserialize_lua(&lua, serialized.expect("The value should be serializable."))
+                .expect("Unable to deserialize value");
         assert_eq!(value, deserialized);
     }
 }

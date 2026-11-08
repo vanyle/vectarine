@@ -5,7 +5,8 @@
 	"scripts": {
 		"dev": "astro dev",
 		"start": "astro dev",
-		"build": "astro build",
+		"build": "node scripts/generate-references.mjs && astro build",
+		"references": "node scripts/generate-references.mjs",
 		"preview": "astro preview",
 		"astro": "astro"
 	},

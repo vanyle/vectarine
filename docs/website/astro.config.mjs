@@ -184,6 +184,11 @@ export default defineConfig({
                         },
                     ],
                 },
+                {
+                    label: "Reference",
+                    collapsed: true,
+                    items: [{ autogenerate: { directory: "references" } }],
+                },
             ],
         }),
         react(),

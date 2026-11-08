@@ -1,0 +1,59 @@
+---
+interface Props {
+	current: "latest" | "master";
+	latestLabel: string;
+	latestHref: string;
+	masterHref: string;
+}
+
+const { current, latestLabel, latestHref, masterHref } = Astro.props;
+---
+
+<div class="reference-version not-content">
+	<label>
+		Version
+		<select class="reference-version-select">
+			<option value={latestHref} selected={current === "latest"}>{latestLabel} (latest release)</option>
+			<option value={masterHref} selected={current === "master"}>master (unreleased)</option>
+		</select>
+	</label>
+</div>
+
+<style>
+	.reference-version {
+		display: flex;
+		justify-content: flex-end;
+		margin-bottom: 1rem;
+	}
+
+	label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-2);
+	}
+
+	select {
+		padding: 0.3rem 0.6rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.4rem;
+		background-color: var(--sl-color-bg-nav);
+		color: var(--sl-color-white);
+		font-size: var(--sl-text-sm);
+		cursor: pointer;
+	}
+</style>
+
+<script>
+	function setupReferenceVersionSelects() {
+		document.querySelectorAll<HTMLSelectElement>(".reference-version-select").forEach((select) => {
+			select.addEventListener("change", () => {
+				window.location.href = select.value;
+			});
+		});
+	}
+
+	setupReferenceVersionSelects();
+	document.addEventListener("astro:after-swap", setupReferenceVersionSelects);
+</script>
