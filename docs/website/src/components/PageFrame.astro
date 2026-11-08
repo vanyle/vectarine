@@ -1,5 +1,5 @@
 ---
-import MobileMenuToggle from '@astrojs/starlight/components/MobileMenuToggle.astro';
+import MobileMenuToggle from 'virtual:starlight/components/MobileMenuToggle';
 
 const { hasSidebar } = Astro.locals.starlightRoute;
 
@@ -9,13 +9,35 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 	<header class="header"><slot name="header" /></header>
 	{
 		hasSidebar && (
-			<nav class="sidebar print:hidden" aria-label="sidebar">
+			<nav class="sidebar print:hidden" aria-label={Astro.locals.t('sidebarNav.accessibleLabel')}>
 				<MobileMenuToggle />
-				<div id="starlight__sidebar" class="sidebar-pane">
+				<script>
+					// Same as Starlight's PageFrame: the mobile menu is a popover (opened by the menu button
+					// through popovertarget), with focus trapping while it is open.
+					class StarlightSidebarPane extends HTMLElement {
+						constructor() {
+							super();
+							const desktopMediaQuery = matchMedia('(min-width: 50em)');
+							const resetPopoverAttribute = () => {
+								this.popover = desktopMediaQuery.matches ? null : 'auto';
+							};
+							resetPopoverAttribute();
+							desktopMediaQuery.addEventListener('change', () => resetPopoverAttribute());
+							this.addEventListener('toggle', ({ newState }) => this.trapFocus(newState === 'open'));
+						}
+						trapFocus(shouldTrap: boolean) {
+							document.querySelectorAll<HTMLElement>('.main-frame, .sl-skip-link').forEach((el) => {
+								el.toggleAttribute('inert', shouldTrap);
+							});
+						}
+					}
+					customElements.define('sl-sidebar-pane', StarlightSidebarPane);
+				</script>
+				<sl-sidebar-pane popover="" id="starlight__sidebar" class="sidebar-pane">
 					<div class="sidebar-content sl-flex">
 						<slot name="sidebar" />
 					</div>
-				</div>
+				</sl-sidebar-pane>
 			</nav>
 		)
 	}
@@ -141,7 +163,12 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 		}
 
 		.sidebar-pane {
-			visibility: var(--sl-sidebar-visibility, hidden);
+			/* User agents apply some opinionated styles to popovers, which we don't want. */
+			border: unset;
+			padding: unset;
+			height: unset;
+			color: unset;
+
 			position: fixed;
 			z-index: var(--sl-z-index-menu);
 			inset-block: var(--sl-nav-height) 0;
@@ -149,10 +176,7 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 			width: 100%;
 			background-color: var(--sl-color-black);
 			overflow-y: auto;
-		}
-
-		:global([aria-expanded='true']) ~ .sidebar-pane {
-			--sl-sidebar-visibility: visible;
+			scrollbar-gutter: stable;
 		}
 
 		.sidebar-content {
@@ -180,7 +204,8 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 				padding-inline-end: var(--sl-nav-pad-x);
 			}
 			.sidebar-pane {
-				--sl-sidebar-visibility: visible;
+				/* On larger screens the sidebar is always visible instead of depending on the popover state. */
+				display: block;
 				width: var(--sl-sidebar-width);
 				background-color: var(--sl-color-bg-sidebar);
 				border-inline-end: 1px solid var(--sl-color-hairline-shade);
