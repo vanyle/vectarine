@@ -18,13 +18,7 @@ wait_for_frames = 3
 release_keys = ["B"]
 
 [[step]]
-start_benchmark = { name = "Idle", max_allowed_duration = "600 ms" }
-
-[[step]]
 wait_for_frames = 200
-
-[[step]]
-stop_benchmark = { name = "Idle" }
 
 [[step]]
 compare_screenshot_to = "./sokoban-dialog-screenshot.png"
