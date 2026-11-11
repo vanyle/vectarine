@@ -446,12 +446,8 @@ impl BatchDraw2d {
         canvas: &Framebuffer,
         custom_shader: Option<CanvasShader>,
     ) {
-        let q = self
-            .affine_transform
-            .apply_quad(&make_rect(pos.x(), pos.y(), size.x(), size.y()));
-
         self.draw_canvas_part(
-            q,
+            make_rect(pos.x(), pos.y(), size.x(), size.y()),
             canvas,
             Vec2::new(0.0, 0.0),
             Vec2::new(1.0, 1.0),
