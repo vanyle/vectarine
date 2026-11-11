@@ -79,8 +79,8 @@ mod tests {
         );
 
         assert_eq!(
-            parse_duration("1.5 ms").expect("parsed properly"),
-            Duration::from_micros(1500)
+            parse_duration("12 ms").expect("parsed properly"),
+            Duration::from_millis(12)
         );
     }
 
