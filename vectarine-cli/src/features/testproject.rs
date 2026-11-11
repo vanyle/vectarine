@@ -214,7 +214,6 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
                         &mut recordings,
                         &mut frame_counter,
                     )?;
-                    frame_counter += 1;
                     logs.extend(result.logs);
                 }
             }

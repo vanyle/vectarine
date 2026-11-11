@@ -1,8 +1,9 @@
 # TO-DO
 
+- [ ] The title of the editor window matches the first game opened with it.
 - [ ] Screenshot API
-  - [ ] Button to screenshot in the editor
-  - [ ] Button to record a short gif in the editor
+  - [ ] Button to screenshot in the editor (Inside tools menu)
+  - [ ] Button to record a short gif in the editor (Inside tools menu)
 - [ ] Android support
 - [ ] Add a text input widget (to the best of your ability...)
 - [ ] Better heap info

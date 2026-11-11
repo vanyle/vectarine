@@ -35,7 +35,7 @@ pub fn parse_duration(duration_str: &str) -> Result<Duration> {
 
     let duration = match unit {
         "ns" => Duration::from_nanos(value),
-        "us" => Duration::from_millis(value),
+        "us" => Duration::from_micros(value),
         "ms" => Duration::from_millis(value),
         "sec" => Duration::from_secs(value),
         "s" => Duration::from_secs(value),
@@ -50,24 +50,42 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_duration() {
-        assert_eq!(parse_duration("10ms").unwrap(), Duration::from_millis(10));
-        assert_eq!(parse_duration("10 ms").unwrap(), Duration::from_millis(10));
-
-        assert_eq!(parse_duration("441 ns").unwrap(), Duration::from_nanos(441));
-        assert_eq!(parse_duration("30us").unwrap(), Duration::from_micros(30));
-        assert_eq!(parse_duration("30 us").unwrap(), Duration::from_micros(30));
-
-        assert_eq!(parse_duration("30 s").unwrap(), Duration::from_secs(30));
+    fn parse_duration_works() {
+        assert_eq!(
+            parse_duration("10ms").expect("parsed properly"),
+            Duration::from_millis(10)
+        );
+        assert_eq!(
+            parse_duration("10 ms").expect("parsed properly"),
+            Duration::from_millis(10)
+        );
 
         assert_eq!(
-            parse_duration("1.5 ms").unwrap(),
+            parse_duration("441 ns").expect("parsed properly"),
+            Duration::from_nanos(441)
+        );
+        assert_eq!(
+            parse_duration("30us").expect("parsed properly"),
+            Duration::from_micros(30)
+        );
+        assert_eq!(
+            parse_duration("30 us").expect("parsed properly"),
+            Duration::from_micros(30)
+        );
+
+        assert_eq!(
+            parse_duration("30 s").expect("parsed properly"),
+            Duration::from_secs(30)
+        );
+
+        assert_eq!(
+            parse_duration("1.5 ms").expect("parsed properly"),
             Duration::from_micros(1500)
         );
     }
 
     #[test]
-    fn test_parse_duration_invalid() {
+    fn parse_duration_invalid() {
         assert!(parse_duration("").is_err());
         assert!(parse_duration("10").is_err());
         assert!(parse_duration("10m").is_err());
