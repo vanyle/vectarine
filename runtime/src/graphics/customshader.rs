@@ -208,6 +208,7 @@ impl CustomShader {
             Some((name, index)) => (name, index.trim().parse::<usize>().ok()),
             None => (name, None),
         };
+        // TODO: This can be slow as we iterate over all the fields. A cache of some sort would be nice to have.
         let field = self
             .uniform_fields
             .iter()
