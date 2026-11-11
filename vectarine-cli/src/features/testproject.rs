@@ -1,25 +1,25 @@
-use runtime::image::{
-    Delay, Frame,
-    codecs::gif::{GifEncoder, Repeat},
-};
 use runtime::{
     anyhow::{self, Result, anyhow},
-    image::RgbaImage,
     sdl2::{self, event::Event},
     toml,
 };
 use std::{
-    fs::File,
-    io::{BufWriter, Write},
+    collections::HashMap,
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crate::{
-    features::testproject::testfileparsing::{TestFile, TestStep},
+    features::testproject::{
+        benchmark::{Benchmark, parse_duration},
+        recording::{Recording, capture_screenshot},
+        testfileparsing::{TestFile, TestStep},
+    },
     headless::{FrameResult, GameHeadlessRunner},
 };
+
+pub mod benchmark;
+pub mod recording;
 
 mod testfileparsing {
     use runtime::serde::{Deserialize, Serialize};
@@ -66,6 +66,14 @@ mod testfileparsing {
         RunLuaCode(String),
         #[serde(rename = "record_gif")]
         RecordGif { frames: u32, output: String },
+
+        #[serde(rename = "start_benchmark")]
+        StartBenchmark {
+            name: String,
+            max_allowed_duration: Option<String>,
+        },
+        #[serde(rename = "stop_benchmark")]
+        StopBenchmark { name: String },
     }
 }
 
@@ -124,127 +132,15 @@ fn push_key_events(
     }
 }
 
-enum Encoder {
-    Gif(GifEncoder<BufWriter<File>>),
-    Mp4(Child),
-}
-
-struct Recording {
-    output: PathBuf,
-    frame_count: usize,
-    frames_recorded: usize,
-    encoder: Option<Encoder>,
-}
-
-impl Recording {
-    fn new(output: PathBuf, frame_count: usize) -> Result<Self> {
-        if !matches!(
-            output.extension().and_then(|e| e.to_str()),
-            Some("gif" | "mp4")
-        ) {
-            return Err(anyhow!(
-                "Unsupported recording format for {}: use .gif or .mp4",
-                output.display()
-            ));
-        }
-        Ok(Self {
-            output,
-            frame_count,
-            frames_recorded: 0,
-            encoder: None,
-        })
-    }
-
-    fn start_encoder(&self, width: u32, height: u32) -> Result<Encoder> {
-        if self.output.extension().and_then(|e| e.to_str()) == Some("gif") {
-            let file = BufWriter::new(File::create(&self.output)?);
-            let mut gif = GifEncoder::new_with_speed(file, 10);
-            gif.set_repeat(Repeat::Infinite)?;
-            return Ok(Encoder::Gif(gif));
-        }
-        let ffmpeg = Command::new("ffmpeg")
-            .args(["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s"])
-            .arg(format!("{width}x{height}"))
-            .args(["-r", "60", "-i", "-", "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2"])
-            .args(["-c:v", "libx264", "-crf", "12", "-pix_fmt", "yuv420p"])
-            .args(["-movflags", "+faststart"])
-            .arg(&self.output)
-            .stdin(Stdio::piped())
-            .spawn()
-            .map_err(|e| {
-                anyhow!("Recording an mp4 requires ffmpeg in your PATH ({e}). Record a .gif instead, or install ffmpeg.")
-            })?;
-        Ok(Encoder::Mp4(ffmpeg))
-    }
-
-    fn add_frame(&mut self, frame: &RgbaImage) -> Result<()> {
-        if self.encoder.is_none() {
-            self.encoder = Some(self.start_encoder(frame.width(), frame.height())?);
-        }
-        match &mut self.encoder {
-            // GIF delays are in centiseconds and browsers slow down delays under 2, so we keep 30 fps.
-            Some(Encoder::Gif(gif)) if self.frames_recorded.is_multiple_of(2) => {
-                let centiseconds_at = |frame_index: usize| (frame_index as u32 * 100 + 30) / 60;
-                let delay = centiseconds_at(self.frames_recorded + 2)
-                    - centiseconds_at(self.frames_recorded);
-                gif.encode_frame(Frame::from_parts(
-                    frame.clone(),
-                    0,
-                    0,
-                    Delay::from_numer_denom_ms(delay * 10, 1),
-                ))?;
-            }
-            Some(Encoder::Mp4(ffmpeg)) => {
-                ffmpeg
-                    .stdin
-                    .as_mut()
-                    .ok_or_else(|| anyhow!("Failed to send the frames to ffmpeg"))?
-                    .write_all(frame.as_raw())?;
-            }
-            _ => {}
-        }
-        self.frames_recorded += 1;
-        Ok(())
-    }
-
-    fn finish(self) -> Result<()> {
-        match self.encoder {
-            None => {
-                println!(
-                    "Warning: no frames were recorded for {}",
-                    self.output.display()
-                );
-                return Ok(());
-            }
-            Some(Encoder::Gif(gif)) => drop(gif),
-            Some(Encoder::Mp4(mut ffmpeg)) => {
-                drop(ffmpeg.stdin.take());
-                if !ffmpeg.wait()?.success() {
-                    return Err(anyhow!("ffmpeg failed to write {}", self.output.display()));
-                }
-            }
-        }
-        println!(
-            "Recorded {} frames to {}",
-            self.frames_recorded,
-            self.output.display()
-        );
-        Ok(())
-    }
-}
-
-fn capture_screenshot(game_runner: &GameHeadlessRunner) -> Result<RgbaImage> {
-    let (data, width, height) = game_runner.screenshot()?;
-    RgbaImage::from_raw(width, height, data)
-        .ok_or_else(|| anyhow!("Failed to create image buffer from screenshot data"))
-}
-
 fn step_frame(
     game_runner: &mut GameHeadlessRunner,
     event_buffer: &mut Vec<Event>,
     recordings: &mut Vec<Recording>,
+    frame_counter: &mut u32,
 ) -> Result<FrameResult> {
     let result = game_runner.step(Duration::from_secs_f32(1.0 / 60.0), event_buffer);
+    *frame_counter += 1;
+
     event_buffer.clear();
     if !recordings.is_empty() {
         let frame = capture_screenshot(game_runner)?;
@@ -304,12 +200,21 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
     let mut event_buffer = vec![];
     let mut logs = vec![];
     let mut recordings = vec![];
+    let mut benchmarks: HashMap<String, Benchmark> = HashMap::new();
+
+    let mut frame_counter = 0;
 
     for step in test_manifest.step {
         match step {
             TestStep::Idle(count) => {
                 for _ in 0..count {
-                    let result = step_frame(&mut game_runner, &mut event_buffer, &mut recordings)?;
+                    let result = step_frame(
+                        &mut game_runner,
+                        &mut event_buffer,
+                        &mut recordings,
+                        &mut frame_counter,
+                    )?;
+                    frame_counter += 1;
                     logs.extend(result.logs);
                 }
             }
@@ -460,7 +365,12 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
             }
             TestStep::ActionKeyTap(key_names) => {
                 push_key_events(&mut event_buffer, &key_names, true, game_runner.window_id());
-                let result = step_frame(&mut game_runner, &mut event_buffer, &mut recordings)?;
+                let result = step_frame(
+                    &mut game_runner,
+                    &mut event_buffer,
+                    &mut recordings,
+                    &mut frame_counter,
+                )?;
                 logs.extend(result.logs);
                 // The keys are released on the next frame, like a release_keys step.
                 push_key_events(
@@ -496,6 +406,70 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
                     y,
                 });
             }
+            TestStep::StartBenchmark {
+                name,
+                max_allowed_duration,
+            } => {
+                if benchmarks.contains_key(&name) {
+                    eprintln!(
+                        "Warning: Trying to create a benchmark with the same name ({}) as an existing one. Ignoring the request.",
+                        name
+                    );
+                } else {
+                    let max_allowed_duration =
+                        if let Some(max_allowed_duration) = max_allowed_duration {
+                            let dur = parse_duration(&max_allowed_duration);
+                            match dur {
+                                Err(cause) => {
+                                    return Err(anyhow!(
+                                        "Failed to parse duration '{}': {}",
+                                        max_allowed_duration,
+                                        cause
+                                    ));
+                                }
+                                Ok(duration) => Some(duration),
+                            }
+                        } else {
+                            None
+                        };
+
+                    benchmarks.insert(
+                        name.clone(),
+                        Benchmark::Pending(benchmark::PendingBenchmark {
+                            start_frame: frame_counter,
+                            start_instant: Instant::now(),
+                            max_allowed_duration,
+                        }),
+                    );
+                }
+            }
+            TestStep::StopBenchmark { name } => {
+                let Some(benchmark) = benchmarks.get(&name) else {
+                    eprintln!("Unable to stop a benchmark ({}) which doesn't exist.", name);
+                    return Err(anyhow!(
+                        "Test malformed, a stop_benchmark was used without a start_benchmark."
+                    ));
+                };
+                let Benchmark::Pending(pending) = benchmark else {
+                    eprintln!(
+                        "Warning: Unable to stop a benchmark ({}) which is not pending.",
+                        name
+                    );
+                    return Err(anyhow!(
+                        "Test malformed, a stop_benchmark was used multiple times for the same benchmark."
+                    ));
+                };
+
+                benchmarks.insert(
+                    name.clone(),
+                    Benchmark::Finished(benchmark::BenchmarkResult {
+                        name,
+                        frame_count: frame_counter - pending.start_frame,
+                        duration: Instant::now().duration_since(pending.start_instant),
+                        max_allowed_duration: pending.max_allowed_duration,
+                    }),
+                );
+            }
         }
     }
 
@@ -509,5 +483,47 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
         recording.finish()?;
     }
 
-    Ok(())
+    let mut was_duration_failure = false;
+
+    for (name, benchmark) in benchmarks {
+        match benchmark {
+            Benchmark::Pending(..) => {
+                eprintln!(
+                    "Warning: The benchmark {} was started, but never finished.",
+                    name
+                )
+            }
+            Benchmark::Finished(benchmark::BenchmarkResult {
+                name,
+                frame_count,
+                duration,
+                max_allowed_duration,
+            }) => {
+                println!(
+                    "{} took {} µs ({} ms) over {} frame or {} µs/frames ({} ms/frames)",
+                    name,
+                    duration.as_micros(),
+                    duration.as_millis(),
+                    frame_count,
+                    ((duration.as_micros() as f64 / frame_count as f64) * 10.0).round() / 10.0,
+                    ((duration.as_millis() as f64 / frame_count as f64) * 10.0).round() / 10.0
+                );
+                if let Some(max_allowed_duration) = max_allowed_duration
+                    && max_allowed_duration < duration
+                {
+                    eprintln!(
+                        "This was more than the maximum allowed duration of {} ms",
+                        max_allowed_duration.as_millis()
+                    );
+                    was_duration_failure = true;
+                }
+            }
+        }
+    }
+
+    if was_duration_failure {
+        Err(anyhow!("Test failed because a benchmark was too slow."))
+    } else {
+        Ok(())
+    }
 }

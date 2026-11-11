@@ -214,6 +214,31 @@ compare_logs_to = "./my-test-logs.txt"`;
 
 <Code lang="toml" code={testExample3} />
 
+## Benchmarking performance
+
+Sometimes, you want to evaluate performance and check that it is above a given threshold. This is useful to run in a CI to prevent commiting
+code that unexpectedly degrades the performance of your game by a lot.
+
+Vectarine's automated test have steps for that:
+
+export const testExamplePerf = ```
+[[step]]
+start_benchmark = {name = "Idle Performance"}
+
+
+[[step]]
+# Measure the speed it takes to process 200 frames.
+wait_for_frames = 200
+
+[[step]]
+stop_benchmark = {name = "Idle Performance", max_allowed_duration = "600 ms"}
+```
+
+This will provide you with both the total time and the average time per frame when you run the test.
+Optionally, you can provide a `max_allowed_duration` (like "10 sec", "40ms" or "20us") for the duration of the benchmark above which it will fail.
+
+Note that the max value doesn't interrupt the benchmark, it will still run to completion.
+
 ## Recording gifs and videos
 
 `record_gif` records the next frames of your game into a `.gif` or `.mp4` file, for example to show a feature on your store page.
