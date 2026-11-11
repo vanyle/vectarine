@@ -9,13 +9,13 @@
 // Re-export commonly used crates for the editor
 pub use anyhow;
 pub use egui;
-pub use egui_glow;
-// pub use glow;
+pub use egui_wgpu;
 pub use lazy_static;
 pub use mlua;
 pub use rapier2d;
 pub use sdl2;
 pub use serde;
 pub use toml;
+pub use wgpu;
 
 pub mod plugininterface;

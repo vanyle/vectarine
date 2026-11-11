@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use runtime::{
     drawing_surface::{DrawingSurface, SurfaceMargins},
-    glow::{self, HasContext},
+    graphics::framebuffer::Viewport,
 };
 
 pub struct GameDrawingSurface {
@@ -82,7 +82,7 @@ impl DrawingSurface for GameDrawingSurface {
         self.title = title.to_string();
     }
 
-    unsafe fn configure_viewport(&self, gl: &glow::Context, margins: SurfaceMargins) {
+    fn viewport(&self, margins: SurfaceMargins) -> Viewport {
         // The drawing surface is centered horizontally and vertically after taking margins into account.
         // The aspect ratio of the drawing surface is preserved, and it is scaled to fit inside the window.
         let surface_size = self
@@ -111,13 +111,11 @@ impl DrawingSurface for GameDrawingSurface {
             }
         };
 
-        unsafe {
-            gl.viewport(
-                (margins.left + offset_x).round() as i32,
-                (margins.bottom + offset_y).round() as i32,
-                final_width.round() as i32,
-                final_height.round() as i32,
-            );
+        Viewport {
+            x: (margins.left + offset_x).round() as i32,
+            y: (margins.top + offset_y).round() as i32,
+            width: final_width.round() as i32,
+            height: final_height.round() as i32,
         }
     }
 

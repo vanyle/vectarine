@@ -3,10 +3,9 @@ use std::{
     collections::{HashMap, HashSet},
     path::{Path, PathBuf},
     rc::{Rc, Weak},
-    sync::Arc,
 };
 
-use vectarine_plugin_sdk::egui_glow::glow;
+use crate::graphics::gfx::Gfx;
 use vectarine_plugin_sdk::mlua::IntoLua;
 use vectarine_plugin_sdk::serde::{Deserialize, Serialize};
 
@@ -83,7 +82,7 @@ impl ResourceHolder {
         file_system: &dyn ReadOnlyFileSystem,
         assigned_id: ResourceId,
         resource_manager: Rc<ResourceManager>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         lua: Rc<LuaHandle>,
         resource_event: EventType,
     ) {
@@ -132,7 +131,7 @@ impl ResourceHolder {
                     assigned_id,
                     &dr,
                     &lua,
-                    gl.clone(),
+                    gfx.clone(),
                     &self.path,
                     data.into_boxed_slice(),
                 );
@@ -175,7 +174,7 @@ impl ResourceHolder {
 
     pub fn draw_debug_gui(
         &self,
-        painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         self.resource.draw_debug_gui(painter, ui);
@@ -429,7 +428,7 @@ impl ResourceManager {
         self: &Rc<Self>,
         path: &Path,
         loading_cause_path: Option<&Path>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         lua: Rc<LuaHandle>,
         loaded_event: EventType,
     ) -> ResourceId {
@@ -437,7 +436,7 @@ impl ResourceManager {
             return id;
         }
         let id = self.schedule_load_resource::<T>(path, loading_cause_path);
-        self.reload(id, gl, lua, loaded_event);
+        self.reload(id, gfx, lua, loaded_event);
         id
     }
 
@@ -470,7 +469,7 @@ impl ResourceManager {
     pub fn reload(
         self: &Rc<Self>,
         id: ResourceId,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         lua: Rc<LuaHandle>,
         loaded_event: EventType,
     ) {
@@ -479,7 +478,7 @@ impl ResourceManager {
             self.file_system.as_ref(),
             id,
             self.clone(),
-            gl,
+            gfx,
             lua,
             loaded_event,
         );
@@ -593,7 +592,7 @@ pub trait Resource: ResourceToAny {
         assigned_id: ResourceId,
         dependency_reporter: &DependencyReporter,
         lua: &Rc<LuaHandle>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         path: &Path,
         data: Box<[u8]>,
     ) -> Status;
@@ -601,7 +600,7 @@ pub trait Resource: ResourceToAny {
     /// Draw an interface with information about the resource.
     fn draw_debug_gui(
         &self,
-        painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     );
 

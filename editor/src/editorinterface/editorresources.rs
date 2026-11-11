@@ -1,17 +1,16 @@
-use std::{cell::RefCell, path::PathBuf, sync::Arc};
+use std::{cell::RefCell, path::PathBuf};
 
 use egui_extras::{Column, TableBuilder};
 use runtime::egui::ScrollArea;
 use runtime::game::Game;
-use runtime::glow;
-use runtime::{egui, egui_glow};
+use runtime::{egui, egui_wgpu};
 
 use crate::editorinterface::EditorState;
 use crate::editorinterface::extra::openfileatline;
 
 pub fn draw_editor_resources(
     editor: &EditorState,
-    painter: &mut egui_glow::Painter,
+    painter: &mut egui_wgpu::Renderer,
     ui: &mut egui::Ui,
 ) {
     let mut project = editor.project.borrow_mut();
@@ -209,10 +208,9 @@ fn draw_resource_table(
                     });
                     row.col(|ui| {
                         if ui.button("Reload").clicked() {
-                            let gl: Arc<glow::Context> = editor.gl.clone();
                             resources.reload(
                                 id,
-                                gl,
+                                editor.gfx.clone(),
                                 game.lua_env.lua_handle.clone(),
                                 game.lua_env.default_events.resource_loaded_event.clone(),
                             );

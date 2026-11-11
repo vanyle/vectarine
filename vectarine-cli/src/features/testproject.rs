@@ -4,7 +4,7 @@ use runtime::image::{
 };
 use runtime::{
     anyhow::{self, Result, anyhow},
-    image::{DynamicImage, RgbaImage},
+    image::RgbaImage,
     sdl2::{self, event::Event},
     toml,
 };
@@ -235,9 +235,8 @@ impl Recording {
 
 fn capture_screenshot(game_runner: &GameHeadlessRunner) -> Result<RgbaImage> {
     let (data, width, height) = game_runner.screenshot()?;
-    let image = RgbaImage::from_raw(width, height, data)
-        .ok_or_else(|| anyhow!("Failed to create image buffer from screenshot data"))?;
-    Ok(DynamicImage::ImageRgba8(image).flipv().to_rgba8())
+    RgbaImage::from_raw(width, height, data)
+        .ok_or_else(|| anyhow!("Failed to create image buffer from screenshot data"))
 }
 
 fn step_frame(

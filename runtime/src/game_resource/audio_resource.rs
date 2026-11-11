@@ -3,12 +3,12 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 use rubato::{Fft, FixedSync, Resampler, audioadapter_buffers::direct::InterleavedSlice};
 use symphonia::core::io::MediaSourceStream;
 
+use crate::graphics::gfx::Gfx;
 use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::LuaHandle,
     sound::{self, ChannelId},
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 
 /// Sounds are converted to this rate and to stereo when they load, so that they can be mixed together.
 pub static AUDIO_SAMPLE_FREQUENCY: i32 = 48000; // in Hz
@@ -50,7 +50,7 @@ impl Resource for AudioResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        _gl: std::sync::Arc<glow::Context>,
+        _gfx: Gfx,
         path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -147,7 +147,7 @@ impl Resource for AudioResource {
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         let c = self.currently_used_channel.borrow();

@@ -13,6 +13,8 @@ fn main() {
             "cargo:rustc-link-arg=-sEXPORTED_FUNCTIONS=_main,_read_rust_callback_from_js,_alloc_rust_buffer"
         );
         println!("cargo:rustc-link-arg=-sUSE_WEBGL2=1");
+        // wgpu draws with the whole OpenGL ES 3 API, not only the part that maps directly to WebGL 2
+        println!("cargo:rustc-link-arg=-sFULL_ES3=1");
         // println!("cargo:rustc-link-arg=-sUSE_SDL_MIXER=2");
         println!("cargo:rustc-link-arg=-sASSERTIONS=1");
         println!("cargo:rustc-link-arg=-lidbfs.js");

@@ -432,7 +432,7 @@ pub fn setup_ui_api(
 
     ui_module.raw_set("scrollableArea", {
         let resources = _resources.clone();
-        let gl = batch.borrow().drawing_target.gl().clone();
+        let gfx = batch.borrow().gfx().clone();
         lua.create_function(
             move |_lua,
                   (view_size, content, scrollbar_draw_fn): (
@@ -447,7 +447,7 @@ pub fn setup_ui_api(
                     scroll_speed: 0.1,
                     scrollbar_draw_fn,
                     resources: resources.clone(),
-                    gl: gl.clone(),
+                    gfx: gfx.clone(),
                     event_state: EventState::default(),
                     dragging_scrollbar: false,
                 })));
@@ -457,7 +457,7 @@ pub fn setup_ui_api(
     })?;
 
     ui_module.raw_set("text", {
-        let gl = batch.borrow().drawing_target.gl().clone();
+        let gfx = batch.borrow().gfx().clone();
         let resources = _resources.clone();
         lua.create_function(
             move |lua, (get_text, options): (mlua::Value, mlua::Table)| {
@@ -497,7 +497,7 @@ pub fn setup_ui_api(
 
                 let widget = WidgetBox(RefCell::new(Box::new(TextWidget {
                     get_text_fn,
-                    gl: gl.clone(),
+                    gfx: gfx.clone(),
                     width,
                     height,
                     font_size,
@@ -592,7 +592,7 @@ pub fn setup_ui_api(
 
     ui_module.raw_set("tabs", {
         let resources = _resources.clone();
-        let gl = batch.borrow().drawing_target.gl().clone();
+        let gfx = batch.borrow().gfx().clone();
         lua.create_function(move |_lua, (tabs_table,): (mlua::Table,)| {
             let mut tabs = HashMap::new();
             for pair in tabs_table.pairs::<String, WidgetBox>() {
@@ -608,7 +608,7 @@ pub fn setup_ui_api(
                 tabs,
                 current_tab,
                 transition: None,
-                gl: gl.clone(),
+                gfx: gfx.clone(),
                 resources: resources.clone(),
                 event_state: EventState::default(),
             })));

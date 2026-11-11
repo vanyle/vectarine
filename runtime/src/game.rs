@@ -1,7 +1,6 @@
-use std::{cell::RefCell, ops::DerefMut, path::Path, rc::Rc, sync::Arc};
+use std::{cell::RefCell, ops::DerefMut, path::Path, rc::Rc};
 
-use vectarine_plugin_sdk::egui_glow::glow;
-use vectarine_plugin_sdk::egui_glow::glow::HasContext;
+use crate::graphics::gfx::Gfx;
 use vectarine_plugin_sdk::plugininterface::PluginInterface;
 use vectarine_plugin_sdk::sdl2;
 
@@ -25,7 +24,7 @@ use crate::{
 };
 
 pub struct Game {
-    pub gl: Arc<glow::Context>,
+    pub gfx: Gfx,
     pub lua_env: LuaEnvironment,
     pub was_main_script_executed: bool,
     pub main_script_path: String,
@@ -43,7 +42,7 @@ impl Game {
         project_path: &Path,
         project_info: &ProjectInfo,
         file_system: Box<dyn ReadOnlyFileSystem>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         window: &Rc<RefCell<dyn DrawingSurface>>,
         gamepad_system: Rc<dyn GamepadSystem>,
         callback: F,
@@ -65,7 +64,7 @@ impl Game {
         );
 
         // Create all the things we need for a game
-        let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
+        let batch = BatchDraw2d::new(&gfx).expect("Failed to create batch 2d");
         let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
         let resources = Rc::new(ResourceManager::new(file_system, project_dir));
 
@@ -83,7 +82,7 @@ impl Game {
 
                 // Make the game!
                 let mut game = Game::from_lua(
-                    &gl,
+                    &gfx,
                     lua_env,
                     project_info.main_script_path.clone(),
                     metrics,
@@ -100,7 +99,7 @@ impl Game {
                 game.lua_env.resources.load_resource::<ScriptResource>(
                     path,
                     None, // The main script is always loaded with no cause.
-                    gl,
+                    gfx,
                     game.lua_env.lua_handle.clone(),
                     game.lua_env.default_events.resource_loaded_event.clone(),
                 );
@@ -119,7 +118,7 @@ impl Game {
         project_path: &Path,
         project_info: &ProjectInfo,
         file_system: Box<dyn ReadOnlyFileSystem>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         window: &Rc<RefCell<dyn DrawingSurface>>,
         gamepad_system: Rc<dyn GamepadSystem>,
         deterministic: bool,
@@ -139,7 +138,7 @@ impl Game {
         );
 
         // Create all the things we need for a game
-        let batch = BatchDraw2d::new(&gl).expect("Failed to create batch 2d");
+        let batch = BatchDraw2d::new(&gfx).expect("Failed to create batch 2d");
         let metrics = Rc::new(RefCell::new(MetricsHolder::new()));
         let resources = Rc::new(ResourceManager::new(file_system, project_dir));
 
@@ -152,7 +151,7 @@ impl Game {
         );
 
         let mut game = Game::from_lua(
-            &gl,
+            &gfx,
             lua_env,
             project_info.main_script_path.clone(),
             metrics,
@@ -174,7 +173,7 @@ impl Game {
         game.lua_env.resources.load_resource::<ScriptResource>(
             path,
             None,
-            gl,
+            gfx,
             game.lua_env.lua_handle.clone(),
             game.lua_env.default_events.resource_loaded_event.clone(),
         );
@@ -186,14 +185,14 @@ impl Game {
     }
 
     fn from_lua(
-        gl: &Arc<glow::Context>,
+        gfx: &Gfx,
         lua_env: LuaEnvironment,
         main_script_path: String,
         metrics_holder: Rc<RefCell<MetricsHolder>>,
         plugin_env: PluginEnvironment,
     ) -> Self {
         Game {
-            gl: gl.clone(),
+            gfx: gfx.clone(),
             lua_env,
             was_main_script_executed: false,
             main_script_path,
@@ -248,16 +247,8 @@ impl Game {
         _in_editor: bool,
         margins: SurfaceMargins,
     ) {
-        self.lua_env
-            .batch
-            .borrow()
-            .drawing_target
-            .reset_draw_call_counter();
-
-        let gl = &self.gl;
-        unsafe {
-            window.borrow().configure_viewport(gl, margins);
-        }
+        self.gfx.reset_draw_call_counter();
+        self.gfx.set_viewport(window.borrow().viewport(margins));
 
         sound::update_sound_system();
 
@@ -309,20 +300,8 @@ impl Game {
 
         process_events(self, events, window.borrow_mut().deref_mut(), &margins);
 
-        // 2D Settings
-        unsafe {
-            let gl = self.gl.as_ref();
-            gl.enable(glow::BLEND);
-            gl.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
-            gl.disable(glow::DEPTH_TEST);
-            // gl.enable(glow::SAMPLE_ALPHA_TO_COVERAGE); // Not needed for 2D.
-            #[cfg(not(target_os = "emscripten"))]
-            gl.enable(glow::MULTISAMPLE);
-
-            // If we don't clear and the game crashes, it looks weird.
-            gl.clear_color(0.0, 0.0, 0.0, 1.0);
-            gl.clear(glow::COLOR_BUFFER_BIT);
-        }
+        // If we don't clear and the game crashes, it looks weird.
+        self.gfx.clear([0.0, 0.0, 0.0, 1.0]);
 
         let plugin_interface = PluginInterface {
             lua: &self.lua_env.lua_handle.lua,
@@ -385,14 +364,9 @@ impl Game {
             LUA_HEAP_SIZE_METRIC_NAME,
             self.lua_env.lua_handle.lua.used_memory(),
         );
-        self.metrics_holder.borrow_mut().record_number_metric(
-            DRAW_CALL_METRIC_NAME,
-            self.lua_env
-                .batch
-                .borrow()
-                .drawing_target
-                .get_draw_call_counter(),
-        );
+        self.metrics_holder
+            .borrow_mut()
+            .record_number_metric(DRAW_CALL_METRIC_NAME, self.gfx.get_draw_call_counter());
 
         self.metrics_holder.borrow_mut().flush();
     }
@@ -415,24 +389,10 @@ impl Game {
         for resource_id in to_reload {
             self.lua_env.resources.clone().reload(
                 resource_id,
-                self.gl.clone(),
+                self.gfx.clone(),
                 self.lua_env.lua_handle.clone(),
                 self.lua_env.default_events.resource_loaded_event.clone(),
             );
         }
-    }
-}
-
-#[cfg(not(target_os = "emscripten"))]
-pub fn set_viewport(gl: &glow::Context, width: u32, height: u32) {
-    unsafe {
-        gl.viewport(0, 0, width as i32, height as i32);
-    }
-}
-
-#[cfg(target_os = "emscripten")]
-pub fn set_viewport(gl: &glow::Context, width: u32, height: u32) {
-    unsafe {
-        gl.viewport(0, 0, width as i32, height as i32);
     }
 }

@@ -1,16 +1,21 @@
 use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
+use crate::graphics::gfx::Gfx;
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
-    graphics::gltexture::{self, ImageAntialiasing, Texture},
+    graphics::{
+        gpu::Gpu,
+        texture::{self, ImageAntialiasing, Texture},
+    },
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 
 pub struct ImageResource {
-    pub texture: RefCell<Option<Arc<gltexture::Texture>>>,
+    pub texture: RefCell<Option<Arc<texture::Texture>>>,
     pub egui_id: RefCell<Option<vectarine_plugin_sdk::egui::TextureId>>,
     pub antialiasing: Option<ImageAntialiasing>,
+    /// The graphics card that holds the texture
+    pub gpu: RefCell<Option<Arc<Gpu>>>,
 }
 
 impl Resource for ImageResource {
@@ -22,7 +27,7 @@ impl Resource for ImageResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         _path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -33,19 +38,20 @@ impl Resource for ImageResource {
         };
 
         self.texture.replace(Some(Texture::new_rgba(
-            &gl,
+            gfx.gpu(),
             Some(image.to_rgba8().as_raw().as_slice()),
             image.width(),
             image.height(),
             self.antialiasing.unwrap_or(ImageAntialiasing::Linear),
         )));
         self.egui_id.replace(None);
+        self.gpu.replace(Some(gfx.gpu().clone()));
         Status::Loaded
     }
 
     fn draw_debug_gui(
         &self,
-        painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         ui.label("Image Details:");
@@ -57,14 +63,19 @@ impl Resource for ImageResource {
         ui.label(format!("Width: {}", tex.width()));
         ui.label(format!("Height: {}", tex.height()));
         ui.label(format!("Antialiasing: {:?}", self.antialiasing));
-        ui.label(format!("OpenGL ID: {}", tex.id().0));
 
+        let gpu = self.gpu.borrow();
+        let Some(gpu) = gpu.as_ref() else {
+            return;
+        };
         let mut egui_id = self.egui_id.borrow_mut();
         let texture_id = match egui_id.as_mut() {
             Some(id) => *id,
             None => {
                 let native_tex = painter.register_native_texture(
-                    vectarine_plugin_sdk::egui_glow::glow::NativeTexture(tex.id().0),
+                    &gpu.device,
+                    tex.view(),
+                    vectarine_plugin_sdk::wgpu::FilterMode::Linear,
                 );
                 *egui_id = Some(native_tex);
                 native_tex
@@ -95,6 +106,7 @@ impl Resource for ImageResource {
             texture: RefCell::new(None),
             egui_id: RefCell::new(None),
             antialiasing: None,
+            gpu: RefCell::new(None),
         }
     }
 }

@@ -1,31 +1,14 @@
-use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
+use std::{cell::RefCell, path::Path, rc::Rc};
 
+use crate::graphics::gfx::Gfx;
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
-    graphics::{
-        glprogram,
-        gltypes::{DataLayout, GLTypes, UsageHint},
-    },
+    graphics::customshader::CustomShader,
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::egui_glow::glow;
-
-pub struct Shader {
-    pub shader: glprogram::GLProgram,
-}
-
-// Fragment-shader is user-provided.
-const BASE_VERTEX_SHADER: &str = r#"
-layout (location = 0) in vec3 in_vert;
-layout (location = 1) in vec2 in_uv;
-out vec2 uv;
-void main() {
-    uv = in_uv;
-    gl_Position = vec4(in_vert.xyz, 1.0);
-}"#;
 
 pub struct ShaderResource {
-    pub shader: RefCell<Option<Shader>>,
+    pub shader: RefCell<Option<CustomShader>>,
 }
 
 impl Resource for ShaderResource {
@@ -37,7 +20,7 @@ impl Resource for ShaderResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         _path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -47,35 +30,41 @@ impl Resource for ShaderResource {
                 return Status::Error(format!("Shader is not valid UTF-8: {e}"));
             }
         };
-        let program = glprogram::GLProgram::from_source(&gl, BASE_VERTEX_SHADER, frag_src);
-        let mut program = match program {
-            Ok(p) => p,
+        let shader = match CustomShader::from_source(gfx.gpu(), frag_src) {
+            Ok(shader) => shader,
             Err(e) => {
                 println!("Shader compilation error: {}", e);
                 return Status::Error(format!("Failed to compile shader: {e}"));
             }
         };
-        let mut layout = DataLayout::new();
-        layout.add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position));
-        layout.add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
-        program.vertex_layout = layout;
-        self.shader.replace(Some(Shader { shader: program }));
+        // The values set before a hot reload are kept: games often set a uniform only once.
+        if let Some(previous) = self.shader.borrow().as_ref() {
+            shader.copy_uniforms_from(previous);
+        }
+        self.shader.replace(Some(shader));
 
         Status::Loaded
     }
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         ui.label("Shader Details:");
-        let tex = self.shader.borrow();
-        let Some(shader) = tex.as_ref() else {
-            ui.label("No texture loaded.");
+        let shader = self.shader.borrow();
+        let Some(shader) = shader.as_ref() else {
+            ui.label("No shader loaded.");
             return;
         };
-        ui.label(format!("Layout: {}", shader.shader.vertex_layout));
+        if shader.uniform_fields().is_empty() {
+            ui.label("No uniforms.");
+        } else {
+            ui.label("Uniforms:");
+            for field in shader.uniform_fields() {
+                ui.label(format!("  {field}"));
+            }
+        }
     }
 
     fn default() -> Self

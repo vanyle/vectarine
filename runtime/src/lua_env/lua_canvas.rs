@@ -7,10 +7,11 @@ use crate::{
     console::print_warn,
     game_resource::{self, ResourceId, shader_resource::ShaderResource},
     graphics::{
-        batchdraw, glframebuffer,
-        gltexture::ImageAntialiasing,
-        gluniforms::{UniformValue, Uniforms},
+        batchdraw::{self, CanvasShader},
+        customshader::{UniformError, UniformValue},
+        framebuffer,
         shape::Quad,
+        texture::ImageAntialiasing,
     },
     io,
     lua_env::{
@@ -29,23 +30,43 @@ make_resource_lua_compatible!(ShaderResourceId);
 
 #[derive(Clone)]
 pub struct RcFramebuffer {
-    buffer: Rc<glframebuffer::Framebuffer>,
+    buffer: Rc<framebuffer::Framebuffer>,
     shader: RefCell<Option<ShaderResourceId>>,
 }
 auto_impl_lua_clone!(RcFramebuffer, Framebuffer);
 
 impl RcFramebuffer {
-    fn new(fb: glframebuffer::Framebuffer) -> Self {
+    fn new(fb: framebuffer::Framebuffer) -> Self {
         RcFramebuffer {
             buffer: Rc::new(fb),
             shader: RefCell::new(None),
         }
     }
-    pub fn gl(&self) -> &glframebuffer::Framebuffer {
+    pub fn framebuffer(&self) -> &framebuffer::Framebuffer {
         self.buffer.deref()
     }
     pub fn current_shader(&self) -> Option<ResourceId> {
         self.shader.borrow().map(|s| s.to_resource_id())
+    }
+
+    /// The shader used to draw the canvas, with the current values of its uniforms.
+    fn shader_for_drawing(
+        &self,
+        resources: &game_resource::ResourceManager,
+        env: &io::IoEnvState,
+    ) -> Option<CanvasShader> {
+        let id = self.current_shader()?;
+        // TODO: We use Instant::now() here which is non-deterministic when testing.
+        // We should instead store the start time of the current frame in the env and use that.
+        let elapsed = std::time::Instant::now() - env.start_time;
+        let uniforms = resources
+            .get_by_id::<ShaderResource>(id)
+            .ok()
+            .and_then(|shader| {
+                let shader = shader.shader.borrow();
+                shader.as_ref()?.uniform_snapshot(elapsed.as_secs_f32())
+            });
+        Some(CanvasShader { id, uniforms })
     }
 }
 
@@ -60,8 +81,8 @@ pub fn setup_canvas_api(
     add_fn_to_table(lua, &canvas_module, "createCanvas", {
         let batch = batch.clone();
         move |_lua, (width, height): (u32, u32)| {
-            let canvas = RcFramebuffer::new(glframebuffer::Framebuffer::new_rgba(
-                batch.borrow().drawing_target.gl(),
+            let canvas = RcFramebuffer::new(framebuffer::Framebuffer::new_rgba(
+                batch.borrow().gfx().gpu(),
                 width,
                 height,
                 ImageAntialiasing::LinearWithMipmaps,
@@ -88,7 +109,8 @@ pub fn setup_canvas_api(
             move |_, canvas, (func,): (vectarine_plugin_sdk::mlua::Function,)| {
                 let mut result = Ok(());
                 batch.borrow_mut().draw(&resources, true); // flush before changing framebuffer
-                canvas.gl().using(|| {
+                let gfx = batch.borrow().gfx().clone();
+                canvas.framebuffer().using(&gfx, || {
                     result = func.call::<()>(());
                     batch.borrow_mut().draw(&resources, true);
                 });
@@ -107,29 +129,19 @@ pub fn setup_canvas_api(
                 let Ok(shader) = shader else {
                     return Ok(()); // no op if shader resource is not loaded
                 };
-                let mut shader = shader.shader.borrow_mut();
-                let shader = shader.as_mut();
-                let Some(shader) = shader else {
+                let shader = shader.shader.borrow();
+                let Some(shader) = shader.as_ref() else {
                     return Ok(()); // no op if shader is not compiled
                 };
-                shader.shader.use_program();
-                let mut uniforms = Uniforms::new();
-                match value {
-                    vectarine_plugin_sdk::mlua::Value::Number(n) => {
-                        uniforms.add(&name, UniformValue::Float(n as f32));
-                    }
+                let value = match value {
                     // In Lua code, integers and float are confused, so we treat them the same.
-                    vectarine_plugin_sdk::mlua::Value::Integer(n) => {
-                        uniforms.add(&name, UniformValue::Float(n as f32));
-                    }
+                    vectarine_plugin_sdk::mlua::Value::Number(n) => UniformValue::Float(n as f32),
+                    vectarine_plugin_sdk::mlua::Value::Integer(n) => UniformValue::Float(n as f32),
                     vectarine_plugin_sdk::mlua::Value::UserData(ud) => {
                         if let Ok(vec2) = Vec2::from_userdata(&ud) {
-                            uniforms.add(&name, UniformValue::Vec2([vec2.x(), vec2.y()]));
+                            UniformValue::Vec2([vec2.x(), vec2.y()])
                         } else if let Ok(vec4) = Vec4::from_userdata(&ud) {
-                            uniforms.add(
-                                &name,
-                                UniformValue::Vec4([vec4.x(), vec4.y(), vec4.z(), vec4.w()]),
-                            );
+                            UniformValue::Vec4([vec4.x(), vec4.y(), vec4.z(), vec4.w()])
                         } else {
                             return Err(vectarine_plugin_sdk::mlua::Error::external(
                                 "Unable to set a uniform value to a value of this type",
@@ -141,13 +153,18 @@ pub fn setup_canvas_api(
                             "Unable to set a uniform value to a value of this type",
                         ));
                     }
-                }
-                let warnings = shader.shader.set_uniforms(&uniforms);
-                for warning in warnings {
-                    print_warn(format!(
-                        "Uniform {} not found in shader, maybe it was unused and optimized out?",
-                        warning.uniform_name
-                    ));
+                };
+                match shader.set_uniform(&name, value) {
+                    Ok(()) => {}
+                    Err(UniformError::NotFound) => print_warn(format!(
+                        "Uniform {name} not found in shader: it needs to be a member of the uniform struct of the shader"
+                    )),
+                    Err(UniformError::WrongType { expected }) => print_warn(format!(
+                        "Uniform {name} cannot receive this value, the shader declares `{expected}`"
+                    )),
+                    Err(UniformError::OutOfBounds { len }) => print_warn(format!(
+                        "Uniform {name} is outside of its array, which has {len} elements"
+                    )),
                 }
                 Ok(())
             }
@@ -155,7 +172,7 @@ pub fn setup_canvas_api(
 
         registry.add_method("getSize", {
             move |_lua, canvas, (): ()| {
-                let size = Vec2::new(canvas.gl().width() as f32, canvas.gl().height() as f32);
+                let size = Vec2::new(canvas.framebuffer().width() as f32, canvas.framebuffer().height() as f32);
                 Ok(size)
             }
         });
@@ -163,14 +180,15 @@ pub fn setup_canvas_api(
         registry.add_method("draw", {
             let batch = batch.clone();
             let env = env_state.clone();
+            let resources = resources.clone();
             move |_, canvas, (mpos, msize): (AnyUserData, AnyUserData)| {
                 let pos = get_pos_as_vec2(mpos)?;
                 let size = get_size_as_vec2(msize)?;
-                let framebuffer = canvas.gl();
-                let shader = canvas.current_shader();
+                let framebuffer = canvas.framebuffer();
+                let shader = canvas.shader_for_drawing(&resources, &env.borrow());
                 batch
                     .borrow_mut()
-                    .draw_canvas(pos, size, framebuffer, shader, &env.borrow());
+                    .draw_canvas(pos, size, framebuffer, shader);
                 Ok(())
             }
         });
@@ -178,6 +196,7 @@ pub fn setup_canvas_api(
         registry.add_method("drawPart", {
             let batch = batch.clone();
             let env_state = env_state.clone();
+            let resources = resources.clone();
             move |_,
                   canvas,
                   (mp1, mp2, mp3, mp4, src_pos, src_size): (
@@ -192,15 +211,14 @@ pub fn setup_canvas_api(
                 let p2 = get_pos_as_vec2(mp2)?;
                 let p3 = get_pos_as_vec2(mp3)?;
                 let p4 = get_pos_as_vec2(mp4)?;
-                let framebuffer = canvas.gl();
-                let shader = canvas.current_shader();
+                let framebuffer = canvas.framebuffer();
+                let shader = canvas.shader_for_drawing(&resources, &env_state.borrow());
                 batch.borrow_mut().draw_canvas_part(
                     Quad { p1, p2, p3, p4 },
                     framebuffer,
                     src_pos,
                     src_size,
                     shader,
-                    &env_state.borrow(),
                 );
                 Ok(())
             }

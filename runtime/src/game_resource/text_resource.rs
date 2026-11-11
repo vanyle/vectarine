@@ -1,10 +1,10 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
+use crate::graphics::gfx::Gfx;
 use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 
 /// The most simple resource, a .txt file with some content.
 pub struct TextResource {
@@ -17,7 +17,7 @@ impl Resource for TextResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        _gl: std::sync::Arc<glow::Context>,
+        _gfx: Gfx,
         _path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -27,7 +27,7 @@ impl Resource for TextResource {
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         ui.label("Text Resource");

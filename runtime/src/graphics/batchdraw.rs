@@ -1,29 +1,23 @@
-use std::{sync::Arc, time::Instant};
+use std::{collections::HashMap, sync::Arc};
+
+use vectarine_plugin_sdk::wgpu;
 
 use crate::{
+    console::print_warn,
     game_resource::{
         ResourceId, ResourceManager, font_resource::FontRenderingData,
         shader_resource::ShaderResource,
     },
     graphics::{
         affinetransform::AffineTransform,
-        glbuffer::{BufferUsageHint, SharedGPUCPUBuffer},
-        gldraw::DrawingTarget,
-        glframebuffer::Framebuffer,
-        glprogram::GLProgram,
-        gltexture::Texture,
-        gltypes::{DataLayout, GLTypes, UsageHint},
-        gluniforms::{UniformValue, Uniforms},
-        shadersources::{
-            COLOR_FRAG_SHADER_SOURCE, COLOR_VERTEX_SHADER_SOURCE, FONT_FRAG_SHADER_SOURCE,
-            FONT_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE, TEX_VERTEX_SHADER_SOURCE,
-        },
+        framebuffer::Framebuffer,
+        gfx::Gfx,
+        pipeline::{BuiltinShader, VertexFormat},
         shape::Quad,
+        texture::Texture,
     },
-    io::IoEnvState,
     lua_env::lua_vec2::Vec2,
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum BatchShader {
@@ -33,59 +27,80 @@ pub enum BatchShader {
     Custom(ResourceId), // Id of the custom shader
 }
 
+impl BatchShader {
+    fn vertex_format(self) -> VertexFormat {
+        match self {
+            BatchShader::Color => VertexFormat::PositionColor,
+            BatchShader::Texture | BatchShader::Font => VertexFormat::PositionUvColor,
+            BatchShader::Custom(_) => VertexFormat::PositionUv,
+        }
+    }
+}
+
+/// A custom shader used to draw a canvas, with the values of its uniforms for this drawing.
+pub struct CanvasShader {
+    pub id: ResourceId,
+    pub uniforms: Option<Vec<u8>>,
+}
+
+#[derive(Clone, PartialEq)]
+struct BatchTexture {
+    bind_group: wgpu::BindGroup,
+    texture: wgpu::Texture,
+}
+
+impl BatchTexture {
+    fn from_texture(texture: &Texture) -> Self {
+        Self {
+            bind_group: texture.bind_group().clone(),
+            texture: texture.raw().clone(),
+        }
+    }
+}
+
+/// Drawings that can be sent to the graphics card in one call: same shader, same texture, same uniforms.
+struct BatchEntry {
+    shader: BatchShader,
+    texture: Option<BatchTexture>,
+    uniforms: Option<Vec<u8>>,
+    vertices: Vec<f32>,
+    indices: Vec<u32>,
+}
+
 /// A simple structure to get quickly start drawing shapes.
-/// Batches OpenGL calls together when possible.
+/// Batches draw calls together when possible.
 /// Designed for immediate drawing
 pub struct BatchDraw2d {
-    color_program: GLProgram,
-    texture_program: GLProgram,
-    text_program: GLProgram,
     aspect_ratio: f32,
 
     pub affine_transform: AffineTransform,
 
-    vertex_data: Vec<(SharedGPUCPUBuffer, Uniforms, BatchShader)>,
-    pub drawing_target: DrawingTarget,
+    entries: Vec<BatchEntry>,
+    gfx: Gfx,
+
+    vertex_staging: Vec<f32>,
+    index_staging: Vec<u32>,
+    vertex_buffer: Option<wgpu::Buffer>,
+    index_buffer: Option<wgpu::Buffer>,
 }
 
 impl BatchDraw2d {
-    // Create a new batch for drawing on the current window.
-    pub fn new(gl: &Arc<glow::Context>) -> Result<Self, String> {
-        let mut color_program =
-            GLProgram::from_source(gl, COLOR_VERTEX_SHADER_SOURCE, COLOR_FRAG_SHADER_SOURCE)?;
-        let mut layout = DataLayout::new();
-        layout
-            .add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position))
-            .add_field("in_color", GLTypes::Vec4, Some(UsageHint::Color));
-        color_program.vertex_layout = layout;
-
-        let mut texture_program =
-            GLProgram::from_source(gl, TEX_VERTEX_SHADER_SOURCE, TEX_FRAG_SHADER_SOURCE)?;
-        let mut layout = DataLayout::new();
-        layout
-            .add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position))
-            .add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
-        texture_program.vertex_layout = layout;
-
-        let mut text_program =
-            GLProgram::from_source(gl, FONT_VERTEX_SHADER_SOURCE, FONT_FRAG_SHADER_SOURCE)?;
-        let mut layout = DataLayout::new();
-        layout
-            .add_field("in_vert", GLTypes::Vec2, Some(UsageHint::Position))
-            .add_field("in_uv", GLTypes::Vec2, Some(UsageHint::TexCoord));
-        text_program.vertex_layout = layout;
-
-        let drawing_target = DrawingTarget::new(gl);
-
+    // Create a new batch for drawing on the current target of `gfx`.
+    pub fn new(gfx: &Gfx) -> Result<Self, String> {
         Ok(Self {
-            color_program,
-            texture_program,
-            text_program,
-            vertex_data: Vec::new(),
+            entries: Vec::new(),
             aspect_ratio: 1.0,
             affine_transform: AffineTransform::identity(),
-            drawing_target,
+            gfx: gfx.clone(),
+            vertex_staging: Vec::new(),
+            index_staging: Vec::new(),
+            vertex_buffer: None,
+            index_buffer: None,
         })
+    }
+
+    pub fn gfx(&self) -> &Gfx {
+        &self.gfx
     }
 
     pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {
@@ -93,96 +108,149 @@ impl BatchDraw2d {
     }
 
     pub fn draw(&mut self, resources: &ResourceManager, auto_flush: bool) {
-        // This is probably a dubious optimization, it needs to be benchmarked.
-        let hint = if auto_flush {
-            BufferUsageHint::StreamDraw
-        } else {
-            BufferUsageHint::StaticDraw
-        };
-
-        for (vertex, uniforms, shader) in &mut self.vertex_data {
-            let draw = |vertex: &mut SharedGPUCPUBuffer, program, uniforms| {
-                self.drawing_target.draw(
-                    vertex.send_to_gpu_with_usage(self.drawing_target.gl(), &hint),
-                    program,
-                    uniforms,
-                );
-            };
-
-            match shader {
-                BatchShader::Color => draw(vertex, &self.color_program, uniforms),
-                BatchShader::Texture => draw(vertex, &self.texture_program, uniforms),
-                BatchShader::Font => draw(vertex, &self.text_program, uniforms),
-                BatchShader::Custom(id) => {
-                    let shader = resources.get_by_id::<ShaderResource>(id.to_owned());
-                    let Ok(shader) = shader else {
-                        continue;
-                    };
-                    let shader = &shader.shader;
-                    let shader = shader.borrow();
-                    let Some(shader) = shader.as_ref() else {
-                        continue;
-                    };
-                    draw(vertex, &shader.shader, uniforms);
-                    continue;
-                }
-            };
+        if !self.entries.is_empty() {
+            self.send_to_gpu(resources);
         }
         if auto_flush {
             self.flush();
         }
     }
 
+    fn send_to_gpu(&mut self, resources: &ResourceManager) {
+        let gfx = self.gfx.clone();
+        let gpu = gfx.gpu();
+        let flip_y = gfx.flip_y();
+
+        // All the entries share a vertex buffer and an index buffer, each has its own range inside.
+        self.vertex_staging.clear();
+        self.index_staging.clear();
+        let mut ranges = Vec::with_capacity(self.entries.len());
+        for entry in &self.entries {
+            let vertex_start = self.vertex_staging.len();
+            let index_start = self.index_staging.len();
+            self.vertex_staging.extend_from_slice(&entry.vertices);
+            self.index_staging.extend_from_slice(&entry.indices);
+            if flip_y {
+                let stride = entry.shader.vertex_format().floats_per_vertex();
+                for vertex in self.vertex_staging[vertex_start..].chunks_exact_mut(stride) {
+                    vertex[1] = -vertex[1];
+                }
+            }
+            ranges.push((
+                (vertex_start * size_of::<f32>()) as u64
+                    ..(self.vertex_staging.len() * size_of::<f32>()) as u64,
+                index_start as u32..self.index_staging.len() as u32,
+            ));
+        }
+
+        let vertex_buffer = write_buffer(
+            &gfx,
+            &mut self.vertex_buffer,
+            wgpu::BufferUsages::VERTEX,
+            bytemuck::cast_slice(&self.vertex_staging),
+        );
+        let index_buffer = write_buffer(
+            &gfx,
+            &mut self.index_buffer,
+            wgpu::BufferUsages::INDEX,
+            bytemuck::cast_slice(&self.index_staging),
+        );
+
+        let entries = &self.entries;
+        gfx.render(|pass, info| {
+            let mut uniform_slots: HashMap<ResourceId, usize> = HashMap::new();
+            pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+
+            for (entry, (vertex_range, index_range)) in entries.iter().zip(ranges) {
+                if let Some(texture) = &entry.texture
+                    && texture.texture == info.texture
+                {
+                    print_warn("A canvas cannot be drawn on itself".to_string());
+                    continue;
+                }
+
+                match entry.shader {
+                    BatchShader::Color => {
+                        pass.set_pipeline(&gfx.builtin_pipeline(BuiltinShader::Color, info.target));
+                    }
+                    BatchShader::Texture => {
+                        pass.set_pipeline(
+                            &gfx.builtin_pipeline(BuiltinShader::Texture, info.target),
+                        );
+                    }
+                    BatchShader::Font => {
+                        pass.set_pipeline(&gfx.builtin_pipeline(BuiltinShader::Font, info.target));
+                    }
+                    BatchShader::Custom(id) => {
+                        let Ok(shader) = resources.get_by_id::<ShaderResource>(id) else {
+                            continue;
+                        };
+                        let shader = shader.shader.borrow();
+                        let Some(shader) = shader.as_ref() else {
+                            continue;
+                        };
+                        pass.set_pipeline(&shader.pipeline(gpu, info.target));
+
+                        let slot = uniform_slots.entry(id).or_default();
+                        let uniforms = match &entry.uniforms {
+                            Some(uniforms) => shader.uniform_bind_group(gpu, *slot, uniforms),
+                            None => None,
+                        };
+                        // The shader was reloaded since the drawing was asked: its current uniforms are used.
+                        let uniforms = uniforms.or_else(|| {
+                            let current = shader.uniform_snapshot(0.0)?;
+                            shader.uniform_bind_group(gpu, *slot, &current)
+                        });
+                        if let Some(uniforms) = uniforms {
+                            pass.set_bind_group(1, &uniforms, &[]);
+                            *slot += 1;
+                        }
+                    }
+                }
+                if let Some(texture) = &entry.texture {
+                    pass.set_bind_group(0, &texture.bind_group, &[]);
+                }
+                pass.set_vertex_buffer(0, vertex_buffer.slice(vertex_range));
+                pass.draw_indexed(index_range, 0, 0..1);
+                gfx.count_draw_call();
+            }
+        });
+    }
+
     fn add_to_batch_by_trying_to_merge(
         &mut self,
         vertices: &[f32],
         indices: &[u32],
-        uniforms: Uniforms,
-        shader_to_use: BatchShader,
+        shader: BatchShader,
+        texture: Option<BatchTexture>,
+        uniforms: Option<Vec<u8>>,
     ) {
         // Trying to draw empty data can lead to crashes.
         if vertices.is_empty() || indices.is_empty() {
             return;
         }
 
-        let last_item = self.vertex_data.last_mut();
-        let Some(last_item) = last_item else {
-            self.add_to_batch_as_new_entry(vertices, indices, uniforms, shader_to_use);
-            return;
-        };
-        let (last_vertex_buffer, last_uniforms, last_shader) = last_item;
         // Merging is not possible if the uniforms are not the same / the shader is different.
-        if *last_shader != shader_to_use || !last_uniforms.similar(&uniforms) {
-            self.add_to_batch_as_new_entry(vertices, indices, uniforms, shader_to_use);
+        if let Some(last) = self.entries.last_mut()
+            && last.shader == shader
+            && last.texture == texture
+            && last.uniforms == uniforms
+        {
+            let vertex_offset =
+                (last.vertices.len() / shader.vertex_format().floats_per_vertex()) as u32;
+            last.vertices.extend_from_slice(vertices);
+            last.indices
+                .extend(indices.iter().map(|i| i + vertex_offset));
             return;
         }
 
-        last_vertex_buffer.append_from(vertices, indices);
-    }
-
-    fn add_to_batch_as_new_entry(
-        &mut self,
-        vertices: &[f32],
-        indices: &[u32],
-        uniforms: Uniforms,
-        shader_to_use: BatchShader,
-    ) {
-        let layout = (match shader_to_use {
-            BatchShader::Color => &self.color_program,
-            BatchShader::Texture => &self.texture_program,
-            BatchShader::Font => &self.text_program,
-            BatchShader::Custom(_) => {
-                &self.texture_program // Custom shaders have the same layout as texture shaders
-            }
-        })
-        .vertex_layout
-        .clone();
-
-        self.vertex_data.push((
-            SharedGPUCPUBuffer::from_data(layout, vertices, indices),
+        self.entries.push(BatchEntry {
+            shader,
+            texture,
             uniforms,
-            shader_to_use,
-        ));
+            vertices: vertices.to_vec(),
+            indices: indices.to_vec(),
+        });
     }
 
     pub fn draw_polygon(&mut self, points: impl Iterator<Item = Vec2>, color: [f32; 4]) {
@@ -209,12 +277,7 @@ impl BatchDraw2d {
             indices.push((i + 1) as u32);
         }
 
-        self.add_to_batch_by_trying_to_merge(
-            &vertices,
-            &indices,
-            Uniforms::new(),
-            BatchShader::Color,
-        );
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, BatchShader::Color, None, None);
     }
 
     pub fn draw_rect(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
@@ -235,8 +298,9 @@ impl BatchDraw2d {
         self.add_to_batch_by_trying_to_merge(
             &vertices,
             &INDICES_FOR_QUAD,
-            Uniforms::new(),
             BatchShader::Color,
+            None,
+            None,
         );
     }
 
@@ -277,12 +341,7 @@ impl BatchDraw2d {
             }
         }
 
-        self.add_to_batch_by_trying_to_merge(
-            &vertices,
-            &indices,
-            Uniforms::new(),
-            BatchShader::Color,
-        );
+        self.add_to_batch_by_trying_to_merge(&vertices, &indices, BatchShader::Color, None, None);
     }
 
     pub fn draw_image(
@@ -306,10 +365,26 @@ impl BatchDraw2d {
         );
     }
 
-    #[rustfmt::skip]
     pub fn draw_image_part(
-        &mut self, pos_size: Quad, texture: &Arc<Texture>, uv_pos: Vec2, uv_size: Vec2, color: [f32; 4]
+        &mut self,
+        pos_size: Quad,
+        texture: &Arc<Texture>,
+        uv_pos: Vec2,
+        uv_size: Vec2,
+        color: [f32; 4],
     ) {
+        let vertices = self.image_vertices(&pos_size, uv_pos, uv_size, color);
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &INDICES_FOR_QUAD,
+            BatchShader::Texture,
+            Some(BatchTexture::from_texture(texture)),
+            None,
+        );
+    }
+
+    #[rustfmt::skip]
+    fn image_vertices(&self, pos_size: &Quad, uv_pos: Vec2, uv_size: Vec2, color: [f32; 4]) -> [f32; 4 * 8] {
         let uv_x1 = uv_pos.x();
         let uv_y1 = uv_pos.y();
         let uv_x2 = uv_pos.x() + uv_size.x();
@@ -319,22 +394,15 @@ impl BatchDraw2d {
         let p2 = self.affine_transform.apply(&pos_size.p2);
         let p3 = self.affine_transform.apply(&pos_size.p3);
         let p4 = self.affine_transform.apply(&pos_size.p4);
+        let [r, g, b, a] = color;
 
-        #[rustfmt::skip]
-        let vertices: [f32; 4 * 4] = [
-            // positions       // tex coords
-            p1.x(), p1.y(), uv_x1, uv_y2, // bottom left
-            p2.x(), p2.y(), uv_x2, uv_y2, // bottom right
-            p3.x(), p3.y(), uv_x2, uv_y1, // top right
-            p4.x(), p4.y(), uv_x1, uv_y1, // top left
-        ];
-
-        let mut uniforms = Uniforms::new();
-
-        uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
-        uniforms.add("tint_color", UniformValue::Vec4([color[0], color[1], color[2], color[3]]));
-
-        self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, BatchShader::Texture);
+        [
+            // positions    // tex coords  // tint
+            p1.x(), p1.y(), uv_x1, uv_y2, r, g, b, a, // bottom left
+            p2.x(), p2.y(), uv_x2, uv_y2, r, g, b, a, // bottom right
+            p3.x(), p3.y(), uv_x2, uv_y1, r, g, b, a, // top right
+            p4.x(), p4.y(), uv_x1, uv_y1, r, g, b, a, // top left
+        ]
     }
 
     /// Like draw_image_part, but draws lots of images with the same texture and shader. Ideal for efficiently drawing many tiles.
@@ -350,25 +418,7 @@ impl BatchDraw2d {
             .iter()
             .zip(uv_pos_size)
             .flat_map(|(pos_size, (uv_pos, uv_size))| {
-                let uv_x1 = uv_pos.x();
-                let uv_y1 = uv_pos.y();
-                let uv_x2 = uv_pos.x() + uv_size.x();
-                let uv_y2 = uv_pos.y() + uv_size.y();
-
-                let p1 = self.affine_transform.apply(&pos_size.p1);
-                let p2 = self.affine_transform.apply(&pos_size.p2);
-                let p3 = self.affine_transform.apply(&pos_size.p3);
-                let p4 = self.affine_transform.apply(&pos_size.p4);
-
-                #[rustfmt::skip]
-                let vertices = [
-                    // positions       // tex coords
-                    p1.x(), p1.y(), uv_x1, uv_y2, // bottom left
-                    p2.x(), p2.y(), uv_x2, uv_y2, // bottom right
-                    p3.x(), p3.y(), uv_x2, uv_y1, // top right
-                    p4.x(), p4.y(), uv_x1, uv_y1, // top left
-                ];
-                vertices
+                self.image_vertices(pos_size, *uv_pos, *uv_size, color)
             })
             .collect::<Box<[f32]>>();
 
@@ -380,15 +430,13 @@ impl BatchDraw2d {
             })
             .collect();
 
-        let mut uniforms = Uniforms::new();
-
-        uniforms.add("tex", UniformValue::Sampler2D(texture.id()));
-        uniforms.add(
-            "tint_color",
-            UniformValue::Vec4([color[0], color[1], color[2], color[3]]),
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &indices,
+            BatchShader::Texture,
+            Some(BatchTexture::from_texture(texture)),
+            None,
         );
-
-        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, BatchShader::Texture);
     }
 
     pub fn draw_canvas(
@@ -396,8 +444,7 @@ impl BatchDraw2d {
         pos: Vec2,
         size: Vec2,
         canvas: &Framebuffer,
-        custom_shader: Option<ResourceId>,
-        env: &IoEnvState,
+        custom_shader: Option<CanvasShader>,
     ) {
         let q = self
             .affine_transform
@@ -409,14 +456,16 @@ impl BatchDraw2d {
             Vec2::new(0.0, 0.0),
             Vec2::new(1.0, 1.0),
             custom_shader,
-            env,
         );
     }
 
-    #[rustfmt::skip]
     pub fn draw_canvas_part(
-        &mut self, pos_size: Quad, canvas: &Framebuffer, uv_pos: Vec2, uv_size: Vec2,
-        custom_shader: Option<ResourceId>, env: &IoEnvState
+        &mut self,
+        pos_size: Quad,
+        canvas: &Framebuffer,
+        uv_pos: Vec2,
+        uv_size: Vec2,
+        custom_shader: Option<CanvasShader>,
     ) {
         let uv_x1 = uv_pos.x();
         let uv_y1 = uv_pos.y();
@@ -428,32 +477,45 @@ impl BatchDraw2d {
         let p3 = self.affine_transform.apply(&pos_size.p3);
         let p4 = self.affine_transform.apply(&pos_size.p4);
 
-        // Weird that we need to flip the y coordinates in canvas, but not image.
-        #[rustfmt::skip]
-        let vertices: [f32; 4 * 4] = [
-            // positions       // tex coords
-            p4.x(), p4.y(), uv_x1, uv_y2, // bottom left
-            p3.x(), p3.y(), uv_x2, uv_y2, // bottom right
-            p2.x(), p2.y(), uv_x2, uv_y1, // top right
-            p1.x(), p1.y(), uv_x1, uv_y1, // top left
-        ];
+        let texture = Some(BatchTexture {
+            bind_group: canvas.bind_group().clone(),
+            texture: canvas.color_texture().clone(),
+        });
 
-        let mut uniforms = Uniforms::new();
-        // Add uniforms to replicate shader toy style
-        uniforms.add("tex", UniformValue::Sampler2D(canvas.color_texture_id()));
-        let elapsed = Instant::now() - env.start_time;
-        // TODO: We use Instant::now() here which is non-deterministic when testing.
-        // We should instead store the start time of the current frame in the env and use that.
-        uniforms.add("iTime", UniformValue::Float(elapsed.as_secs_f32()));
-
-        let shader_to_use = if let Some(id) = custom_shader {
-            BatchShader::Custom(id)
+        // The y of the texture coordinates of a canvas goes up, unlike the one of an image: see `RenderTarget::flip_y`.
+        if let Some(shader) = custom_shader {
+            #[rustfmt::skip]
+            let vertices: [f32; 4 * 4] = [
+                // positions    // tex coords
+                p4.x(), p4.y(), uv_x1, uv_y2, // top left
+                p3.x(), p3.y(), uv_x2, uv_y2, // top right
+                p2.x(), p2.y(), uv_x2, uv_y1, // bottom right
+                p1.x(), p1.y(), uv_x1, uv_y1, // bottom left
+            ];
+            self.add_to_batch_by_trying_to_merge(
+                &vertices,
+                &INDICES_FOR_QUAD,
+                BatchShader::Custom(shader.id),
+                texture,
+                shader.uniforms,
+            );
         } else {
-            // If we use the Texture Shader, add default white as color
-            uniforms.add("tint_color", UniformValue::Vec4([1.0, 1.0, 1.0, 1.0]));
-            BatchShader::Texture
-        };
-        self.add_to_batch_by_trying_to_merge(&vertices, &INDICES_FOR_QUAD, uniforms, shader_to_use);
+            #[rustfmt::skip]
+            let vertices: [f32; 4 * 8] = [
+                // positions    // tex coords  // tint
+                p4.x(), p4.y(), uv_x1, uv_y2, 1.0, 1.0, 1.0, 1.0, // top left
+                p3.x(), p3.y(), uv_x2, uv_y2, 1.0, 1.0, 1.0, 1.0, // top right
+                p2.x(), p2.y(), uv_x2, uv_y1, 1.0, 1.0, 1.0, 1.0, // bottom right
+                p1.x(), p1.y(), uv_x1, uv_y1, 1.0, 1.0, 1.0, 1.0, // bottom left
+            ];
+            self.add_to_batch_by_trying_to_merge(
+                &vertices,
+                &INDICES_FOR_QUAD,
+                BatchShader::Texture,
+                texture,
+                None,
+            );
+        }
     }
 
     pub fn draw_text(
@@ -470,6 +532,7 @@ impl BatchDraw2d {
         let mut indices = Vec::<u32>::new();
         let mut x_pos = 0.0;
         let mut y_pos = 0.0;
+        let [r, g, b, a] = color;
 
         for c in text.chars() {
             if let Some(char_info) = font_resource.font_cache.get(&c) {
@@ -493,18 +556,18 @@ impl BatchDraw2d {
                 let p3 = self.affine_transform.apply(&Vec2::new(x1, y1));
                 let p4 = self.affine_transform.apply(&Vec2::new(x0, y1));
 
+                let base_index = (vertices.len() / 8) as u32; // Each vertex has 8 components
+
                 #[rustfmt::skip]
                 let s = &[
-                    // positions       // tex coords
-                    p1.x(), p1.y(), s0, t1, // bottom left
-                    p2.x(), p2.y(), s1, t1, // bottom right
-                    p3.x(), p3.y(), s1, t0, // top right
-                    p4.x(), p4.y(), s0, t0, // top left
+                    // positions    // tex coords  // color
+                    p1.x(), p1.y(), s0, t1, r, g, b, a, // bottom left
+                    p2.x(), p2.y(), s1, t1, r, g, b, a, // bottom right
+                    p3.x(), p3.y(), s1, t0, r, g, b, a, // top right
+                    p4.x(), p4.y(), s0, t0, r, g, b, a, // top left
                 ];
 
                 vertices.extend_from_slice(s);
-
-                let base_index = (vertices.len() / 4 - 4) as u32; // Each vertex has 4 components
 
                 indices.extend_from_slice(&[
                     base_index,
@@ -517,23 +580,44 @@ impl BatchDraw2d {
             }
         }
 
-        let mut uniforms = Uniforms::new();
-        uniforms.add(
-            "tex",
-            UniformValue::Sampler2D(font_resource.font_atlas.id()),
+        self.add_to_batch_by_trying_to_merge(
+            &vertices,
+            &indices,
+            BatchShader::Font,
+            Some(BatchTexture::from_texture(&font_resource.font_atlas)),
+            None,
         );
-        uniforms.add("text_color", UniformValue::Vec4(color));
-        self.add_to_batch_by_trying_to_merge(&vertices, &indices, uniforms, BatchShader::Font);
     }
 
     pub fn flush(&mut self) {
-        self.vertex_data.clear();
+        self.entries.clear();
     }
 
     pub fn clear(&self, color: [f32; 4]) {
-        self.drawing_target
-            .clear(color[0], color[1], color[2], color[3]);
+        self.gfx.clear(color);
     }
+}
+
+/// Copies `data` to a buffer of the graphics card, which is replaced by a larger one if it is too small.
+fn write_buffer(
+    gfx: &Gfx,
+    buffer: &mut Option<wgpu::Buffer>,
+    usage: wgpu::BufferUsages,
+    data: &[u8],
+) -> wgpu::Buffer {
+    let gpu = gfx.gpu();
+    let needed = data.len() as wgpu::BufferAddress;
+    let buffer = match buffer {
+        Some(buffer) if buffer.size() >= needed => buffer,
+        _ => buffer.insert(gpu.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("batch"),
+            size: needed.next_power_of_two().max(1 << 16),
+            usage: usage | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        })),
+    };
+    gpu.queue.write_buffer(buffer, 0, data);
+    buffer.clone()
 }
 
 const INDICES_FOR_QUAD: [u32; 6] = [

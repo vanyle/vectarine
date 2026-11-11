@@ -1,13 +1,13 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::game_resource::ResourceManager;
 use crate::game_resource::font_resource::FontRenderingData;
 use crate::graphics::batchdraw;
+use crate::graphics::gfx::Gfx;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_text::FontResourceId;
 use crate::lua_env::lua_vec2::Vec2;
 use crate::lua_env::lua_vec4::Vec4;
-use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::mlua;
 
 use super::{Alignment, EventState, VectarineWidget};
@@ -36,7 +36,7 @@ pub struct TextWidget {
     pub font_size: f32,
     pub align: Alignment,
     // For now, we don't handle line-height or letter spacing.
-    pub gl: Arc<glow::Context>,
+    pub gfx: Gfx,
     pub resources: Rc<ResourceManager>,
     pub event_state: EventState,
 }
@@ -73,7 +73,7 @@ impl VectarineWidget for TextWidget {
 
                 let line_count =
                     self.font_id
-                        .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+                        .get_font_resource(&self.gfx, &self.resources, |font_renderer| {
                             wrap_lines(font_renderer, &text, &layout).len()
                         });
 
@@ -98,7 +98,7 @@ impl VectarineWidget for TextWidget {
 
                 let Some((w, _h, _max_ascent)) =
                     self.font_id
-                        .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+                        .get_font_resource(&self.gfx, &self.resources, |font_renderer| {
                             font_renderer.measure_text(&text, self.font_size, aspect_ratio)
                         })
                 else {
@@ -140,10 +140,10 @@ impl VectarineWidget for TextWidget {
         let true_size = self.size(lua, io_env, &extra);
 
         self.font_id
-            .get_font_resource(&self.gl, &self.resources, |font_renderer| {
+            .get_font_resource(&self.gfx, &self.resources, |font_renderer| {
                 draw_fixed_size(
                     font_renderer,
-                    &self.gl,
+                    &self.gfx,
                     batch,
                     &text,
                     color.0,
@@ -162,7 +162,7 @@ impl VectarineWidget for TextWidget {
     fn clone_box(&self) -> Box<dyn VectarineWidget> {
         Box::new(TextWidget {
             get_text_fn: self.get_text_fn.clone(),
-            gl: self.gl.clone(),
+            gfx: self.gfx.clone(),
             align: self.align,
             font_id: self.font_id,
             resources: self.resources.clone(),
@@ -277,7 +277,7 @@ fn truncate_with_ellipsis(
 
 fn draw_fixed_size(
     font_renderer: &mut FontRenderingData,
-    gl: &Arc<glow::Context>,
+    gfx: &Gfx,
     batch: &RefCell<batchdraw::BatchDraw2d>,
     text: &str,
     color: [f32; 4],
@@ -298,7 +298,7 @@ fn draw_fixed_size(
     }
 
     let all_text: String = lines.join("");
-    font_renderer.enrich_atlas(gl, &all_text);
+    font_renderer.enrich_atlas(gfx, &all_text);
 
     for (i, line) in lines.iter().enumerate() {
         let y = -1.0 + widget_height - (i as f32) * line_height - line_height + baseline_height;

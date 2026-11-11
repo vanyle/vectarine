@@ -1,13 +1,14 @@
-pub mod glbuffer;
-pub mod gldraw;
-pub mod glframebuffer;
-pub mod glprogram;
-pub mod gltypes;
-
 pub mod batchdraw;
-pub mod glstencil;
-pub mod gltexture;
-pub mod gluniforms;
+pub mod customshader;
+#[cfg(target_os = "emscripten")]
+pub mod emscripten_egl;
+pub mod framebuffer;
+pub mod gfx;
+pub mod gpu;
+pub mod pipeline;
+pub mod stencil;
+pub mod surface;
+pub mod texture;
 
 pub mod shadersources;
 pub mod shape;

@@ -18,60 +18,46 @@ pub mod sound;
 use crate::drawing_surface::DrawingSurface;
 use crate::drawing_surface::SurfaceMargins;
 use crate::drawing_surface::sdl_drawing_surface::SdlDrawingSurface;
+use crate::drawing_surface::sdl_drawing_surface::drawable_screen_size;
 use crate::gamepad::{DummyGamepadSystem, GamepadSystem};
+use crate::graphics::gfx::Gfx;
+use crate::graphics::gpu::Gpu;
+use crate::graphics::surface::WindowSurface;
 use crate::inithelpers::RenderingBlock;
-use crate::inithelpers::set_opengl_attributes;
 
 // Re-export commonly used crates for the editor
 pub use image;
 pub use vectarine_plugin_sdk::anyhow;
 pub use vectarine_plugin_sdk::egui;
-pub use vectarine_plugin_sdk::egui_glow;
-pub use vectarine_plugin_sdk::egui_glow::glow;
+pub use vectarine_plugin_sdk::egui_wgpu;
 pub use vectarine_plugin_sdk::lazy_static;
 pub use vectarine_plugin_sdk::mlua;
 pub use vectarine_plugin_sdk::rapier2d;
 pub use vectarine_plugin_sdk::sdl2;
 pub use vectarine_plugin_sdk::serde;
 pub use vectarine_plugin_sdk::toml;
+pub use vectarine_plugin_sdk::wgpu;
 
-use std::{cell::RefCell, mem::ManuallyDrop, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
-use sdl2::{VideoSubsystem, video::Window};
+use sdl2::video::Window;
 
 use crate::{
     game_resource::audio_resource::{AUDIO_CHANNELS, AUDIO_SAMPLE_FREQUENCY},
     sound::init_sound_system,
 };
 
-pub fn get_shader_version() -> &'static str {
-    #[cfg(target_os = "macos")]
-    {
-        "#version 330 core"
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        "#version 300 es"
-    }
-}
-
-pub fn init_sdl<F>(make_gl_from_video_system: F) -> RenderingBlock
-where
-    F: FnOnce(&VideoSubsystem) -> glow::Context,
-{
+pub fn init_sdl() -> RenderingBlock {
     let sdl_context = sdl2::init().expect("Failed to initialize SDL");
     let video_subsystem = sdl_context
         .video()
         .expect("Failed to initialize video subsystem");
-    let gl_attr = video_subsystem.gl_attr();
-
-    set_opengl_attributes(gl_attr);
 
     let window: Window = video_subsystem
         .window("Vectarine", 800, 600)
-        .opengl()
         .allow_highdpi() // For Retina displays on macOS
         .position_centered()
+        .metal_view()
         .build()
         .expect("Failed to create window");
 
@@ -79,19 +65,12 @@ where
         .event_pump()
         .expect("Failed to create event pump");
 
-    let gl_context = ManuallyDrop::new(
-        window
-            .gl_create_context()
-            .expect("Failed to create GL context"),
-    );
-
-    // window.gl_make_current(&_gl_context);
-
-    let gl = make_gl_from_video_system(&video_subsystem);
-    let gl: Arc<glow::Context> = Arc::new(gl);
-
-    #[cfg(not(target_os = "emscripten"))]
-    let _ = video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::VSync);
+    // Safety: the window is kept in the RenderingBlock with its surface.
+    let (gpu, surface) =
+        unsafe { Gpu::for_window(&window) }.expect("Failed to initialize the graphics");
+    let (width, height) = drawable_screen_size(&window);
+    let surface = WindowSurface::new(&gpu, surface, width, height);
+    let gfx = Gfx::new(gpu);
 
     let window = Rc::new(RefCell::new(SdlDrawingSurface::new(
         window,
@@ -113,8 +92,8 @@ where
         sdl: sdl_context,
         window,
         event_pump,
-        gl_context,
-        gl,
+        gfx,
+        surface,
         video_subsystem,
         gamepad_system,
     }
@@ -152,27 +131,24 @@ pub fn lib_main() {
         sdl,
         window,
         mut event_pump,
-        gl,
+        gfx,
+        mut surface,
         gamepad_system,
         ..
-    } = init_sdl(|video_subsystem| unsafe {
-        glow::Context::from_loader_function(|name| {
-            video_subsystem.gl_get_proc_address(name) as *const _
-        })
-    });
+    } = init_sdl();
     init_sound_system(&sdl);
 
     // Initialize IDBFS for persistent storage on Emscripten
     init_fs();
 
-    let drawing_surface: Rc<RefCell<dyn DrawingSurface>> = window.clone();
+    let drawing_surface: Rc<RefCell<dyn DrawingSurface>> = window;
 
     loader(move |(project_path, project_info, fs)| {
         Game::from_project(
             &project_path,
             &project_info,
             fs,
-            gl,
+            gfx.clone(),
             &drawing_surface.clone(),
             gamepad_system,
             |result| {
@@ -188,6 +164,10 @@ pub fn lib_main() {
                     let delta_duration =
                         std::time::Duration::from_micros(((now_instant - now) * 1000.0) as u64);
                     now = now_instant;
+
+                    let (width, height) =
+                        drawing_surface.borrow().get_drawable_size_in_hardware_px();
+                    let is_visible = surface.begin_frame(&gfx, width, height);
                     game.main_loop(
                         latest_events.iter(),
                         &drawing_surface,
@@ -211,13 +191,21 @@ pub fn lib_main() {
                     }
                     console::clear_all_logs();
 
-                    window.borrow().window.gl_swap_window();
+                    surface.end_frame(&gfx);
+
+                    // Nothing waits for the screen when the window is hidden
+                    #[cfg(not(target_os = "emscripten"))]
+                    if !is_visible {
+                        std::thread::sleep(std::time::Duration::from_millis(16));
+                    }
+                    #[cfg(target_os = "emscripten")]
+                    let _ = is_visible;
                 });
             },
         );
     });
 
-    // Prevent exit from destroying the GL context.
+    // Prevent exit from destroying the graphics context.
     #[cfg(target_os = "emscripten")]
     {
         emscripten_functions::emscripten::exit_with_live_runtime();

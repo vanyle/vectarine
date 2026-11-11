@@ -9,27 +9,29 @@ crate-type = ["lib"]
 [dependencies]
 anyhow = "1.0.100"
 egui = "0.36.2"
-egui_glow = "0.36.2"
+egui-wgpu = { version = "0.36.2", default-features = false }
+# Backend features only apply on the platforms that have them (metal on Apple, dx12 on Windows, gles on Windows/Linux/Emscripten...)
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "metal", "dx12", "vulkan", "gles", "fragile-send-sync-non-atomic-wasm"] }
 toml = "0.9.8"
 rapier2d = "0.35.3"
 lazy_static = "1.5.0"
 serde = { version = "1.0.221", features = ["derive"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg", "raw-window-handle"] }
 # Targets Luau 0.740
 mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(any(target_os = "macos"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "use-vcpkg", "raw-window-handle"] }
 mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(any(target_os = "linux"))'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled"] }
+sdl2 = { version = "0.38", default-features = false, features = ["static-link", "bundled", "raw-window-handle"] }
 mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau-jit", "serde", "vendored", "async"] }
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
-sdl2 = { version = "0.38", default-features = false, features = [] }
+sdl2 = { version = "0.38", default-features = false, features = ["raw-window-handle"] }
 mlua = { git = "https://github.com/mlua-rs/mlua", version = "0.12.2", features = ["luau", "serde", "vendored", "async"] }
 
 [package.metadata.vcpkg]

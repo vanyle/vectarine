@@ -200,7 +200,7 @@ impl LuaEnvironment {
             | vectarine_plugin_sdk::mlua::StdLib::BUFFER
             | vectarine_plugin_sdk::mlua::StdLib::BIT
             | vectarine_plugin_sdk::mlua::StdLib::DEBUG;
-        let gl = batch.borrow().drawing_target.gl().clone();
+        let gfx = batch.borrow().gfx().clone();
 
         // Same flags as mlua's init_jit_flags, or the bytecode of exports crashes the VM
         // This is brittle and can break web exports if Luau changes their JIT compile flags in a new release!
@@ -260,7 +260,7 @@ impl LuaEnvironment {
         let color_module = lua_handle.lua.create_table().unwrap();
         register_vectarine_module(&lua_handle.lua, "color", color_module);
 
-        let coords_module = lua_coord::setup_coords_api(&lua_handle.lua, &gl, &env_state).unwrap();
+        let coords_module = lua_coord::setup_coords_api(&lua_handle.lua, &gfx, &env_state).unwrap();
         register_vectarine_module(&lua_handle.lua, "coord", coords_module);
 
         let (event_module, default_events, _event_manager) =

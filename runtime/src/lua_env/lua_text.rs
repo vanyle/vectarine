@@ -1,16 +1,13 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
-use vectarine_plugin_sdk::{
-    egui_glow::glow::Context,
-    mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value},
-};
+use vectarine_plugin_sdk::mlua::{AnyUserData, FromLua, IntoLua, UserDataMethods, Value};
 
 use crate::{
     game_resource::{
         self, ResourceId, ResourceManager, Status,
         font_resource::{self, FontRenderingData, FontResource},
     },
-    graphics::batchdraw,
+    graphics::{batchdraw, gfx::Gfx},
     io,
     lua_env::{
         lua_coord::{ScreenVec, get_pos_as_vec2},
@@ -33,7 +30,7 @@ impl FontResourceId {
     /// Access the underlying FontResource. Returns None if the resource is not yet loaded.
     pub fn get_font_resource<F, R>(
         &self,
-        gl: &Arc<Context>,
+        gfx: &Gfx,
         resources: &ResourceManager,
         callback: F,
     ) -> Option<R>
@@ -54,7 +51,7 @@ impl FontResourceId {
             };
             Some(callback(font_resource))
         } else {
-            Some(font_resource::use_default_font(gl, callback))
+            Some(font_resource::use_default_font(gfx, callback))
         }
     }
 }
@@ -145,7 +142,7 @@ pub fn setup_text_api(
                 let color = color.unwrap_or(BLACK);
                 let draw_with_renderer = |font_renderer: &mut FontRenderingData|{
                     {
-                        font_renderer.enrich_atlas(batch.borrow().drawing_target.gl(), &text);
+                        font_renderer.enrich_atlas(batch.borrow().gfx(), &text);
                     }
                     batch
                         .borrow_mut()
@@ -163,8 +160,8 @@ pub fn setup_text_api(
                     };
                     draw_with_renderer(font_resource);
                 }else{
-                    let gl = batch.borrow().drawing_target.gl().clone();
-                    font_resource::use_default_font(&gl, draw_with_renderer);
+                    let gfx = batch.borrow().gfx().clone();
+                    font_resource::use_default_font(&gfx, draw_with_renderer);
                 };
                 Ok(())
             }
@@ -211,7 +208,7 @@ pub fn setup_text_api(
                     };
                     make_measurement(font_resource)
                 }else{
-                    font_resource::use_default_font(batch.borrow().drawing_target.gl(), make_measurement)
+                    font_resource::use_default_font(batch.borrow().gfx(), make_measurement)
                 }
             }
         });
