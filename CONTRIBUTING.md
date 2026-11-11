@@ -60,7 +60,7 @@ rustup target add wasm32-unknown-emscripten
 ## Getting started on the engine
 
 Once you have everything installed, we need to setup SDL2.
-SDL2 is the library we use for windowing, input, and OpenGL context creation.
+SDL2 is the library we use for windowing, input and sound.
 You can use the [following reference](https://github.com/Rust-SDL2/rust-sdl2) for more details.
 
 If you are on linux and want to only compile for linux or the web, you can simply install the following packages:
@@ -109,8 +109,8 @@ Build the game for the web:
 ```bash
 # On Mac/Linux/WSL, mise can install emscripten for you. On Windows, you clone the repository yourself
 wind> git clone https://github.com/emscripten-core/emsdk
-wind> ./emsdk/emsdk install 4.0.13
-wind> ./emsdk/emsdk activate 4.0.13
+wind> ./emsdk/emsdk install 5.0.3
+wind> ./emsdk/emsdk activate 5.0.3
 wind> ./emsdk/emsdk_env.ps1 # once you have run activate once, you can use this as a shorthand
 both> cargo build -p runtime --target wasm32-unknown-emscripten
 both> uv run ./scripts/serve.py # Start this in another terminal.

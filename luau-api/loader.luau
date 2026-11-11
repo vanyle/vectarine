@@ -153,9 +153,11 @@ end
 
 --- Starts loading a shader and returns it.
 ---
---- Use it with the functions of the `canvas` module once it is ready.
+--- A shader is a text file written in WGSL: see the `canvas` module for what it contains. Use it with the functions of
+--- the `canvas` module once it is ready. If the shader has a mistake, the error (with its line) is the status of the
+--- resource, shown in the Resources window of the editor.
 ---
---- @param path The path of the shader file, for example `"shaders/wave.glsl"`.
+--- @param path The path of the shader file, for example `"shaders/wave.wgsl"`.
 --- @return The `ShaderResource`, not ready yet.
 ---
 --- # Example
@@ -163,7 +165,7 @@ end
 --- ```luau
 --- const loader = require("@vectarine/loader")
 ---
---- local wave = loader.loadShader("shaders/wave.glsl")
+--- local wave = loader.loadShader("shaders/wave.wgsl")
 --- print(wave:getStatus())
 --- ```
 --- @nodiscard

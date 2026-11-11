@@ -28,6 +28,20 @@ emcc -v
 cargo build -p runtime --target=wasm32-unknown-emscripten
 ```
 
+## Graphics on the web
+
+The runtime draws with wgpu on every platform. On the web, wgpu uses its OpenGL ES backend, which Emscripten translates
+to WebGL 2 (`-sUSE_WEBGL2=1 -sFULL_ES3=1` in `runtime/build.rs`). No patch of wgpu is needed, but 2 things are specific
+to this target:
+
+- wgpu is built for EGL 1.5 and Emscripten only provides EGL 1.4. The 2 missing functions are never called on the web,
+  so `runtime/src/graphics/emscripten_egl.rs` defines them to make the link succeed.
+- `-sEXPORTED_FUNCTIONS` needs to stay in `runtime/build.rs`: without an explicit list, every function that
+  `wasm-bindgen` generates in the dependencies of wgpu is exported, and the link fails on `__wbindgen_placeholder__`.
+
+wgpu cannot use WebGPU with Emscripten yet (see https://github.com/gfx-rs/wgpu/pull/10515, which needs
+Emscripten 6.0.10 or newer).
+
 ## Quickly testing the web version (export + web runtime)
 
 ```bash

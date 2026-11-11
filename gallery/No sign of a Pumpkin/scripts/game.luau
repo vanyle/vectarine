@@ -123,7 +123,7 @@ local animations = {
 	running = running_animation,
 }
 
-local shadowShader = Loader.loadShader("shaders/simple_shadow.glsl")
+local shadowShader = Loader.loadShader("shaders/simple_shadow.wgsl")
 
 local V2 = vec.V2
 local timer = 0.0
