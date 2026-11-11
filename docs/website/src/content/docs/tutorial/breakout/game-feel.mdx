@@ -59,7 +59,7 @@ Click on "Pickup/Coin" or "Hit/Hurt" a few times until you find one you like!
 A *shader* is a small program that runs on the graphics card. The graphics card is very good at doing the same thing for a lot of pixels at the same time,
 so a shader can change the colour of every pixel of the screen, on every frame, without slowing down the game.
 
-Shaders are not written in Luau, but in a language called *GLSL*. Don't worry, we'll only write a small one, and I'll explain every line.
+Shaders are not written in Luau, but in a language called *WGSL*. Don't worry, we'll only write a small one, and I'll explain every line.
 
 We'll make a *shockwave*: when a brick breaks, a ring grows from it and bends the picture as it passes, like a wave in water.
 
@@ -72,7 +72,7 @@ export const createCanvas = `const canvas = require("@vectarine/canvas")
 
 -- ...
 
-const shockwaveShader = loader.loadShader("shaders/shockwave.glsl")
+const shockwaveShader = loader.loadShader("shaders/shockwave.wgsl")
 
 -- ...
 
@@ -92,27 +92,26 @@ export const paintCanvas = `	-- Everything drawn inside paint goes into the canv
 
 ### Your first shader
 
-Create a `shaders` folder in your project, and a `shockwave.glsl` file inside it. Let's start with a very simple shader that inverts all the colors:
+Create a `shaders` folder in your project, and a `shockwave.wgsl` file inside it. Let's start with a very simple shader that inverts all the colors:
 
-export const invertShader = `precision mediump float;
+export const invertShader = `@group(0) @binding(0) var tex: texture_2d<f32>; // the image of our game
+@group(0) @binding(1) var tex_sampler: sampler; // how to read the image
 
-in vec2 uv;            // position of the pixel on the screen, from (0, 0) to (1, 1)
-uniform sampler2D tex; // the image of our game
-out vec4 frag_color;   // the color of the pixel
-
-void main() {
-    vec4 color = texture(tex, uv);
-    frag_color = vec4(1.0 - color.rgb, 1.0);
+// uv is the position of the pixel on the screen, from (0, 0) to (1, 1)
+@fragment
+fn main(@location(0) uv: vec2f) -> @location(0) vec4f {
+    let color = textureSample(tex, tex_sampler, uv);
+    return vec4f(1.0 - color.rgb, 1.0);
 }`;
 
-<Code lang="glsl" code={invertShader} title="shaders/shockwave.glsl" />
+<Code lang="wgsl" code={invertShader} title="shaders/shockwave.wgsl" />
 
-The `main` function runs once for every pixel of the screen. In GLSL, comments start with `//` instead of `--`, and every line ends with a `;`.
+The `main` function runs once for every pixel of the screen, and returns the color of that pixel. In WGSL, comments start with `//` instead of `--`, and every line ends with a `;`.
 
 - `uv` is the position of the pixel. Careful, it goes from `(0, 0)` at the bottom left to `(1, 1)` at the top right, not from `-1` to `1` like in Luau!
-- `tex` is the image of our game, the content of the canvas.
-- `texture(tex, uv)` reads the color of our game at the position `uv`.
-- `frag_color` is the color the pixel will have on the screen.
+- `tex` is the image of our game, the content of the canvas, and `tex_sampler` tells the graphics card how to read it. These two lines are the same in every shader: you can copy them.
+- `textureSample(tex, tex_sampler, uv)` reads the color of our game at the position `uv`.
+- `vec4f(red, green, blue, alpha)` makes a color. The one that `main` returns is the color the pixel will have on the screen.
 
 Here, we read the color of the game, and replace it with `1.0 - color`: black becomes white, red becomes cyan, etc.
 
@@ -121,42 +120,45 @@ import feelInvert from "./assets/feel-invert.png";
 <Image alt="The game with all its colors inverted: the background is white and the bricks have opposite colors" src={feelInvert} loading="lazy" style="max-width: min(600px, 100%); border: 2px solid black;" />
 
 Shaders are hot-reloaded too: try to change the shader and save, the game updates immediately.
-For example, `frag_color = vec4(color.r, 0.0, 0.0, 1.0);` only keeps the red part of each color.
+For example, `return vec4f(color.r, 0.0, 0.0, 1.0);` only keeps the red part of each color.
 
 ### The shockwave
 
-Now, let's write the real shader. Replace the content of `shockwave.glsl` with this:
+Now, let's write the real shader. Replace the content of `shockwave.wgsl` with this:
 
-export const shockwaveShader = `precision mediump float;
+export const shockwaveShader = `@group(0) @binding(0) var tex: texture_2d<f32>; // the image of our game
+@group(0) @binding(1) var tex_sampler: sampler; // how to read the image
 
-in vec2 uv;            // position of the pixel on the screen, from (0, 0) to (1, 1)
-uniform sampler2D tex; // the image of our game
-out vec4 frag_color;   // the color of the pixel
+struct Uniforms {
+    center: vec2f,  // where the brick broke, from (0, 0) to (1, 1)
+    strength: f32,  // 1 when the brick breaks, then goes down to 0
+}
+@group(1) @binding(0) var<uniform> uniforms: Uniforms;
 
-uniform vec2 center;    // where the brick broke, from (0, 0) to (1, 1)
-uniform float strength; // 1 when the brick breaks, then goes down to 0
-
-void main() {
-    vec2 offset = uv - center;
-    float dist = length(offset);
+// uv is the position of the pixel on the screen, from (0, 0) to (1, 1)
+@fragment
+fn main(@location(0) uv: vec2f) -> @location(0) vec4f {
+    let offset = uv - uniforms.center;
+    let dist = length(offset);
 
     // The ring starts small and grows while strength goes down
-    float radius = (1.0 - strength) * 0.5;
+    let radius = (1.0 - uniforms.strength) * 0.5;
     // 1 on the ring, 0 far from it
-    float ring = 1.0 - smoothstep(0.0, 0.05, abs(dist - radius));
+    let ring = 1.0 - smoothstep(0.0, 0.05, abs(dist - radius));
 
     // Read the pixel a bit closer to the center, so the picture looks pushed outwards on the ring
-    vec2 direction = offset / max(dist, 0.001);
-    vec2 p = uv - direction * ring * strength * 0.025;
+    let direction = offset / max(dist, 0.001);
+    let p = uv - direction * ring * uniforms.strength * 0.025;
 
     // The ring is also a bit brighter
-    vec3 color = texture(tex, p).rgb + ring * strength * 0.12;
-    frag_color = vec4(color, 1.0);
+    let color = textureSample(tex, tex_sampler, p).rgb + ring * uniforms.strength * 0.12;
+    return vec4f(color, 1.0);
 }`;
 
-<Code lang="glsl" code={shockwaveShader} title="shaders/shockwave.glsl" />
+<Code lang="wgsl" code={shockwaveShader} title="shaders/shockwave.wgsl" />
 
 This shader has two new inputs: `center` and `strength`. Inputs that we give to the shader from our Luau code are called *uniforms*.
+They are written together in a `struct`, and the shader reads them with `uniforms.center` and `uniforms.strength`.
 
 Here is what it does for each pixel:
 
@@ -361,7 +363,7 @@ const launchSound = loader.loadAudio("audio/launch.mp3")
 const loseSound = loader.loadAudio("audio/lose.mp3")
 const winSound = loader.loadAudio("audio/win.mp3")
 
-const shockwaveShader = loader.loadShader("shaders/shockwave.glsl")
+const shockwaveShader = loader.loadShader("shaders/shockwave.wgsl")
 
 const paddleSpeed = 1.8
 const ballSpeed = 1.3
@@ -667,7 +669,7 @@ end`;
 - What game feel is, and why it matters as much as the rules of the game.
 - How to load and play sounds.
 - How to draw the game into a canvas and apply a shader to it.
-- How to write a shader in GLSL, and give it values from Luau with uniforms.
+- How to write a shader in WGSL, and give it values from Luau with uniforms.
 - How to shake the screen with `graphics.withTransformation`.
 - What anonymous functions are.
 - How to create, update and remove particles.

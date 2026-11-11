@@ -11,7 +11,7 @@ Light and darkness. The explorium is dark: the player only sees around light sou
 - A `lightless` level (the Dark Hollow) is pitch black past its entrance: the dark swallows the flashlight and the
   halo of the player (`blackout`), only the eternal lantern lights it. The player can still walk in, blind.
 
-The darkness is drawn by a shader (shaders/darkness.glsl) that computes the light of every pixel on the GPU.
+The darkness is drawn by a shader (shaders/darkness.wgsl) that computes the light of every pixel on the GPU.
 `lightAt` computes the same light in Lua, for the rules: keep the two in sync.
 ]]
 const canvas = require("@vectarine/canvas")
@@ -69,7 +69,7 @@ function module.blackout(game: types.Game): number
 	return math.clamp((module.darkness(game) - 0.9) / (module.BLACK - 0.9), 0, 1)
 end
 
-module.shader = loader.loadShader("shaders/darkness.glsl")
+module.shader = loader.loadShader("shaders/darkness.wgsl")
 
 --- The shader handles this many light sources at once (the ones closest to the view)
 const MAX_LIGHTS = 10

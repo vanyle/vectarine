@@ -553,22 +553,28 @@ In Vectarine, shaders are attached to a canvas, a custom drawing surface.
 
 As an example, Let's use this shader which applies a wave deformation effect to its input
 
-```c
-precision mediump float; // you need to specify this for your shader to run in a browser
-in vec2 uv; // input position
-uniform sampler2D tex; // input image (the content of the canvas)
-uniform float iTime; // you have access to a time variable in all shaders to apply dynamic effects
-out vec4 frag_color; // output color
+```wgsl
+// The content of the canvas
+@group(0) @binding(0) var tex: texture_2d<f32>;
+@group(0) @binding(1) var tex_sampler: sampler;
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    fragColor = texture(tex, vec2(uv.x + cos((uv.y*4.0+iTime)*10.0)/100.0, uv.y + sin((uv.x*4.0+iTime)*10.0)/100.0));
+// The values that the game gives to the shader with canvas:setUniform
+struct Uniforms {
+    iTime: f32, // filled for you: the seconds since the game started, to apply dynamic effects
 }
-void main() {
-    mainImage(frag_color, uv);
+@group(1) @binding(0) var<uniform> uniforms: Uniforms;
+
+// Called for every pixel. uv is the position of the pixel: (0, 0) is the bottom left of the canvas, (1, 1) its top right.
+// Returns the color of the pixel.
+@fragment
+fn main(@location(0) uv: vec2f) -> @location(0) vec4f {
+    let time = uniforms.iTime;
+    let offset = vec2f(cos((uv.y * 4.0 + time) * 10.0), sin((uv.x * 4.0 + time) * 10.0)) / 100.0;
+    return textureSample(tex, tex_sampler, uv + offset);
 }
 ```
 
-You can put it inside `gamedata/shaders/wave.glsl`.
+Shaders are written in [WGSL](https://google.github.io/tour-of-wgsl/). You can put this one inside `gamedata/shaders/wave.wgsl`.
 
 Then you can use it like so:
 
@@ -581,7 +587,7 @@ const graphics = require("@vectarine/graphics")
 const vec = require("@vectarine/vec")
 const V2 = vec.V2
 
-local shaderResource = loader.loadShader("shaders/wave.glsl")
+local shaderResource = loader.loadShader("shaders/wave.wgsl")
 
 -- Create a canvas of size 1200x800 pixels and attach the shader to it.
 local canvas = canvas.createCanvas(1200, 800)
@@ -603,7 +609,7 @@ function Update()
 end
 ```
 
-You can find more information about shaders in [the great book of shaders](https://thebookofshaders.com/)
+You can find more information about shaders in [the great book of shaders](https://thebookofshaders.com/). Its examples are written in GLSL, a close cousin of WGSL: the ideas are the same, only the syntax changes a bit.
 
 > ⚠️ Inside the paint callback, `coord.pxVec(V2(1, 1))` refers to 1px on the canvas, not on the window!
 > You can pass an optional argument to pxVec to specify the size of the drawing area if you want.

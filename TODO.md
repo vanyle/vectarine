@@ -29,7 +29,6 @@
   - [ ] Add a way to load scripts in a separate environment with a subset of available functions
   - [ ] Add a way to pass data to and from the sandbox
 - [ ] The 3D API!!
-  - [ ] Migrate to wgpu as a rendering backend
   - [ ] Use https://kiss3d.dimforge.com/
   - [ ] Camera
   - [ ] Scene
@@ -42,6 +41,7 @@
 
 # Done
 
+- [x] Migrate to wgpu as a rendering backend
 - [x] Windows size in game.vecta is ignored on first launch.
 - [x] Joystick/gamepad support
 - [x] Fix the camera/vector reference bug thing

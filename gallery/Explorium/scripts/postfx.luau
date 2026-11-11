@@ -1,6 +1,6 @@
 --[[
 Post-processing: the whole frame is drawn into a canvas, which is then drawn on the screen through
-a shader (shaders/postfx.glsl). The shader adds flashes, color splits, transitions, and colors the edges of the screen
+a shader (shaders/postfx.wgsl). The shader adds flashes, color splits, transitions, and colors the edges of the screen
 when the player is in danger.
 
 Usage (see main.luau):
@@ -23,7 +23,7 @@ const vec4 = require("@vectarine/vec4")
 
 const module = loader.init() or {}
 
-module.shader = loader.loadShader("shaders/postfx.glsl")
+module.shader = loader.loadShader("shaders/postfx.wgsl")
 
 module.state = module.state
 	or {

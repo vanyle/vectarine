@@ -21,7 +21,7 @@ uses the runtime as a dependency to execute games.
 
 The main object that the runtime uses is called `Game` and represents a game. There is only one game built during the life of the runtime for packaged games but this is not true inside the editor.
 
-The runtime also setups the environment needed to run games. This includes the default Lua APIs, the resource system or the OpenGL function calls.
+The runtime also setups the environment needed to run games. This includes the default Lua APIs, the resource system or the drawing code (see [graphics.md](./graphics.md)).
 
 **The editor**
 

@@ -23,7 +23,7 @@ const TAIL_SNAKE_SEGMENT = { 11, 12, 13, 14 }
 const snakeImage = loader.loadImage("textures/snake-tilemap.png", false)
 const environmentImage = loader.loadImage("textures/env.png", false)
 const fontResource = loader.loadFont("fonts/m6x11.ttf")
-const shaderResource = loader.loadShader("shaders/base.glsl")
+const shaderResource = loader.loadShader("shaders/base.wgsl")
 
 const gameCanvas = canvas.createCanvas(1200, 800)
 gameCanvas:setShader(shaderResource)

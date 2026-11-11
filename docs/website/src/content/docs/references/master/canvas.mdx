@@ -48,6 +48,33 @@ function Update(deltaTime: number)
 end
 ```
 
+### Writing a shader
+
+A shader is a text file written in [WGSL](https://google.github.io/tour-of-wgsl/), with a function marked `@fragment`
+that is called for every pixel of the canvas and returns the color of that pixel:
+
+```wgsl
+// The canvas, as a texture
+
+// The values sent with Canvas:setUniform
+struct Uniforms {
+    iTime: f32, // filled by the engine: the seconds since the game started
+    amplitude: f32,
+}
+
+fn main(@location(0) uv: vec2f) -> @location(0) vec4f {
+    let wave = sin((uv.y * 4.0 + uniforms.iTime) * 10.0) * uniforms.amplitude;
+    return textureSample(tex, tex_sampler, uv + vec2f(wave, 0.0));
+}
+```
+
+- `uv` is the position of the pixel on the canvas: (0, 0) is its bottom left and (1, 1) its top right.
+- The texture, its sampler and the uniforms can have any name, but they need the `@group` and `@binding` numbers above.
+  Leave out the ones you do not use.
+- The uniforms are the members of one struct. Their types can be `f32`, `i32`, `u32`, `vec2f`, `vec3f`, `vec4f`, or an
+  array of these like `array<vec4f, 8>`.
+- A member named `iTime` of type `f32` receives the time in seconds since the game started.
+
 ### Common mistakes
 
 - Creating a canvas is expensive. Do not call [`canvas.createCanvas`](/references/master/canvas/#canvascreatecanvas) every frame: create it once and reuse it.
@@ -184,9 +211,7 @@ Sets the shader used to draw this canvas, or removes it.
 
 When the canvas is drawn with [`Canvas:draw`](/references/master/canvas/#canvasdraw) or [`Canvas:drawPart`](/references/master/canvas/#canvasdrawpart), it is not copied as is. Instead, the shader
 receives the canvas as a texture and its output is what appears on screen. Use it for post-processing effects,
-outlines, recoloring and so on. The shader sees the canvas as a texture named `tex` and the time in seconds since
-the game started as a float named `iTime`, in the style of [ShaderToy](https://www.shadertoy.com/), where you can
-find many examples.
+outlines, recoloring and so on. See "Writing a shader" at the top of this module for what a shader file contains.
 
 Pass `nil` to go back to drawing the canvas as is. The shader only affects drawing: painting on the canvas is not
 changed.
@@ -206,7 +231,7 @@ const loader = require("@vectarine/loader")
 const vec = require("@vectarine/vec")
 
 local scene = canvas.createCanvas(320, 180)
-local blur = loader.loadShader("shaders/blur.glsl")
+local blur = loader.loadShader("shaders/blur.wgsl")
 scene:setShader(blur)
 
 function Update(deltaTime: number)
@@ -228,16 +253,19 @@ Canvas:setUniform(name: string, value: number | vec.Vec2 | vec4.Vec4): ()
 Sets a uniform of the shader of this canvas, a value that the shader can read.
 
 Use it to send values from your game to the shader, for example the strength of an effect. `name` is the name of
-the uniform in the shader code. A number is sent as a float, a [`Vec2`](/references/master/vec/#vec2) as a `vec2` and a [`Vec4`](/references/master/vec4/#vec4) as a [`vec4`](/references/master/vec4/). Whole
-numbers are also sent as floats.
+a member of the uniform struct of the shader. A number can be sent to a `f32`, `i32` or `u32` member, a [`Vec2`](/references/master/vec/#vec2) to a
+`vec2f` and a [`Vec4`](/references/master/vec4/#vec4) to a `vec4f` (or to a `vec3f`, which receives its first 3 values). To set an element of an
+array, add its index (starting at 0) to the name: `"lights[2]"`.
 
-The value is set on the shader itself, so canvases that use the same shader share it.
+The value is set on the shader itself, so canvases that use the same shader share it. It is used by the canvases
+drawn after the call: a canvas drawn before keeps the value that the uniform had when it was drawn, so the same
+shader can be used several times in a frame with different values.
 
 If the canvas has no shader, or the shader is not loaded or compiled yet, the call does nothing and the value is
 lost. Call it again once the shader is ready.
 
-If the shader has no uniform with this name (for example because it never uses it and the compiler removed it), a
-warning is printed in the console and nothing else happens.
+If the uniform struct of the shader has no member with this name, or if the member has another type than the value,
+a warning is printed in the console and nothing else happens.
 
 **Parameters**
 
@@ -246,7 +274,8 @@ warning is printed in the console and nothing else happens.
 
 #### Errors
 
-Raises an error if `value` is of another type, for example a string. This is only checked once the shader is ready.
+Raises an error if `value` is not a number, a [`Vec2`](/references/master/vec/#vec2) or a [`Vec4`](/references/master/vec4/#vec4), for example a string. This is only checked once
+the shader is ready.
 
 #### Example
 
@@ -256,7 +285,7 @@ const loader = require("@vectarine/loader")
 const vec = require("@vectarine/vec")
 
 local scene = canvas.createCanvas(320, 180)
-local wave = loader.loadShader("shaders/wave.glsl")
+local wave = loader.loadShader("shaders/wave.wgsl")
 scene:setShader(wave)
 
 function Update(deltaTime: number)
