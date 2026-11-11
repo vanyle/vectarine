@@ -1,10 +1,10 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
+use crate::graphics::gfx::Gfx;
 use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 
 #[derive(Debug)]
 pub struct ScriptResource {
@@ -19,7 +19,7 @@ impl Resource for ScriptResource {
         assigned_id: ResourceId,
         dependency_reporter: &super::DependencyReporter,
         lua: &Rc<LuaHandle>,
-        _gl: std::sync::Arc<glow::Context>,
+        _gfx: Gfx,
         path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -54,7 +54,7 @@ impl Resource for ScriptResource {
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         // If we wanted a script editor, it would be here.

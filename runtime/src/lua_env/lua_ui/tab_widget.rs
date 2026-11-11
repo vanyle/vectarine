@@ -1,11 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc, time::Instant};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Instant};
 
 use crate::game_resource::ResourceManager;
 use crate::graphics::batchdraw;
-use crate::graphics::glstencil::draw_with_mask;
+use crate::graphics::gfx::Gfx;
+use crate::graphics::stencil::draw_with_mask;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_vec2::Vec2;
-use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::mlua;
 
 use super::{EventState, VectarineWidget, WidgetBox};
@@ -32,7 +32,7 @@ pub struct TabWidget {
     pub tabs: HashMap<String, WidgetBox>,
     pub current_tab: String,
     pub transition: Option<TabTransitionState>,
-    pub gl: Arc<glow::Context>,
+    pub gfx: Gfx,
     pub resources: Rc<ResourceManager>,
     pub event_state: EventState,
 }
@@ -199,7 +199,7 @@ impl VectarineWidget for TabWidget {
                 .collect(),
             current_tab: self.current_tab.clone(),
             transition: self.transition.clone(),
-            gl: self.gl.clone(),
+            gfx: self.gfx.clone(),
             resources: self.resources.clone(),
             event_state: self.event_state.clone(),
         })
@@ -232,7 +232,7 @@ impl TabWidget {
         // Draw old tab with shrinking mask (no event processing)
         if let Some(old_widget) = self.tabs.get(old_tab_key) {
             let (_, content_result) = draw_with_mask(
-                &self.gl,
+                &self.gfx,
                 || {
                     batch.borrow_mut().draw_rect(
                         old_mask.0,
@@ -262,7 +262,7 @@ impl TabWidget {
         // Draw new tab with growing mask
         if let Some(new_widget) = self.tabs.get(&self.current_tab) {
             let (_, content_result) = draw_with_mask(
-                &self.gl,
+                &self.gfx,
                 || {
                     batch.borrow_mut().draw_rect(
                         new_mask.0,
@@ -331,7 +331,7 @@ impl TabWidget {
 
         if let Some(new_widget) = self.tabs.get(&self.current_tab) {
             let (_, content_result) = draw_with_mask(
-                &self.gl,
+                &self.gfx,
                 || {
                     batch
                         .borrow_mut()

@@ -17,6 +17,8 @@ num-traits = "0.2.19"
 vectarine-plugin-sdk = { path = "../vectarine-plugin-sdk" }
 futures = "0.3.33"
 rubato = "5.0.1"
+pollster = "0.4.0"
+bytemuck = "1.25"
 
 [target.'cfg(not(target_os = "emscripten"))'.dependencies]
 libloading = "0.9.0"

@@ -1,14 +1,14 @@
 use std::cell::RefCell;
+use std::ops;
 use std::rc::Rc;
-use std::{ops, sync::Arc};
 
-use vectarine_plugin_sdk::egui_glow::glow::Context;
 use vectarine_plugin_sdk::mlua::{self, AnyUserData, FromLua, IntoLua, UserDataMethods};
 
+use crate::graphics::gfx::Gfx;
 use crate::lua_env::lua_fastlist::value_to_f32;
 use crate::{
     auto_impl_lua_copy,
-    graphics::glframebuffer::Viewport,
+    graphics::framebuffer::Viewport,
     lua_env::{IoEnvState, add_fn_to_table, lua_vec2::Vec2},
 };
 
@@ -141,7 +141,7 @@ pub fn extract_vec_for_args(
 
 pub fn setup_coords_api(
     lua: &mlua::Lua,
-    _gl: &Arc<Context>,
+    _gfx: &Gfx,
     env_state: &Rc<RefCell<IoEnvState>>,
 ) -> vectarine_plugin_sdk::mlua::Result<vectarine_plugin_sdk::mlua::Table> {
     let coords_module = lua.create_table()?;

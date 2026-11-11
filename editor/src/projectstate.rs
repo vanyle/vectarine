@@ -4,7 +4,6 @@ use std::{
     fs::{self},
     path::{Path, PathBuf},
     rc::Rc,
-    sync::Arc,
 };
 
 use runtime::{
@@ -12,7 +11,7 @@ use runtime::{
     console,
     drawing_surface::DrawingSurface,
     game::Game,
-    glow,
+    graphics::gfx::Gfx,
     io::fs::ReadOnlyFileSystem,
     lua_env::BUILT_IN_MODULES,
     projectinfo::{ProjectInfo, get_project_info},
@@ -46,13 +45,13 @@ pub struct ProjectState {
 impl ProjectState {
     pub fn reload(&mut self) {
         console::print_reload();
-        let gl = self.game.gl.clone();
+        let gfx = self.game.gfx.clone();
         let drawable_surface: Rc<RefCell<dyn DrawingSurface>> = self.window.clone();
         Game::from_project(
             &self.project_path,
             &self.project_info,
             Box::new(LocalFileSystem),
-            gl,
+            gfx,
             &drawable_surface,
             self.gamepad_system.clone(),
             |result| {
@@ -72,7 +71,7 @@ impl ProjectState {
     pub fn new<F>(
         project_path: &Path,
         file_system: Box<dyn ReadOnlyFileSystem>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         window: Rc<RefCell<dyn DrawingSurface>>,
         gamepad_system: Rc<dyn GamepadSystem>,
         trusted_plugins: &[TrustedPlugin],
@@ -102,7 +101,7 @@ impl ProjectState {
             project_path,
             &project_info.clone(),
             file_system,
-            gl,
+            gfx,
             &drawing_surface,
             gamepad_system.clone(),
             move |result| {

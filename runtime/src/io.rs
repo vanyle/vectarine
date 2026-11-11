@@ -235,9 +235,7 @@ pub fn process_events<'a>(
                 let mut env_state = game.lua_env.env_state.borrow_mut();
                 let mouse_state = &mut env_state.mouse_state;
 
-                // let viewport = get_viewport(&game.gl);
-                // Invert the viewport formula. Be careful, OpenGL's origin is bottom-left, while SDL's origin is top-left.
-                // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
+                // Be careful, the y axis of the game goes up, while SDL's goes down.
                 let (open_gl_x, open_gl_y) =
                     surface.convert_sdl_to_opengl_coordinates(*x as f32, *y as f32, margins);
 

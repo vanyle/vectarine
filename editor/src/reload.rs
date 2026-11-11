@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::Arc};
+use std::rc::Rc;
 
 use notify_debouncer_full::{
     DebouncedEvent,
@@ -7,7 +7,7 @@ use notify_debouncer_full::{
         event::{MetadataKind, ModifyKind, RenameMode},
     },
 };
-use runtime::glow;
+use runtime::graphics::gfx::Gfx;
 use runtime::{
     game_resource::{ResourceManager, Status, script_resource::ScriptResource},
     lua_env::LuaEnvironment,
@@ -16,7 +16,7 @@ use runtime::{
 // Reload assets corresponding to changed file as needed without blocking
 // Returns true if any script resource was reloaded
 pub fn reload_assets_if_needed(
-    gl: &Arc<glow::Context>,
+    gfx: &Gfx,
     resources: &Rc<ResourceManager>,
     lua_for_reload: &LuaEnvironment,
     debounce_receiver: &std::sync::mpsc::Receiver<DebouncedEvent>,
@@ -58,7 +58,7 @@ pub fn reload_assets_if_needed(
 
                     resources.reload(
                         res_id,
-                        gl.clone(),
+                        gfx.clone(),
                         lua_for_reload.lua_handle.clone(),
                         lua_for_reload.default_events.resource_loaded_event.clone(),
                     );

@@ -13,7 +13,7 @@ use crate::{
         image_resource::ImageResource, shader_resource::ShaderResource,
         text_resource::TextResource, tile_resource::TilesetResource,
     },
-    graphics::gltexture::ImageAntialiasing,
+    graphics::texture::ImageAntialiasing,
     lua_env::{
         add_fn_to_table,
         lua_audio::AudioResourceId,
@@ -81,6 +81,7 @@ pub fn setup_loader_api(
                 || ImageResource {
                     texture: RefCell::new(None),
                     egui_id: RefCell::new(None),
+                    gpu: RefCell::new(None),
                     antialiasing: antialiasing.map(|is_antialiasing| {
                         if is_antialiasing {
                             ImageAntialiasing::Linear

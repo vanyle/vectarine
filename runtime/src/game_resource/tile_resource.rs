@@ -2,11 +2,11 @@ use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc, sync::Arc};
 
 use tiled::{DefaultResourceCache, Loader, ResourceCache};
 
+use crate::graphics::gfx::Gfx;
 use crate::{
     game_resource::{Resource, ResourceId, Status},
     lua_env::LuaHandle,
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 
 // MARK: Tileset
 
@@ -38,7 +38,7 @@ impl Resource for TilesetResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &super::DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        _gl: std::sync::Arc<glow::Context>,
+        _gfx: Gfx,
         _path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -74,7 +74,7 @@ impl Resource for TilesetResource {
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         ui.label("Tileset Resource");
@@ -190,7 +190,7 @@ impl Resource for TilemapResource {
         assigned_id: ResourceId,
         dependency_reporter: &super::DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        _gl: std::sync::Arc<glow::Context>,
+        _gfx: Gfx,
         tilemap_path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -224,7 +224,7 @@ impl Resource for TilemapResource {
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         ui.label("Tilemap Resource");

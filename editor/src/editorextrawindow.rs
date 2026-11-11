@@ -1,59 +1,66 @@
 // Functions meant to deal with the case where the editor is separated from the game window.
 
-use std::sync::Arc;
-
 use runtime::{
     anyhow,
-    drawing_surface::DrawingSurface,
-    egui_glow,
-    egui_glow::glow,
+    drawing_surface::{DrawingSurface, sdl_drawing_surface::drawable_screen_size},
+    egui_wgpu,
     game_resource::{ResourceManager, font_resource},
-    graphics::batchdraw::BatchDraw2d,
+    graphics::{batchdraw::BatchDraw2d, gfx::Gfx, surface::WindowSurface},
     sdl2::{
         event::{Event, WindowEvent},
-        video::{GLContext, Window},
+        video::Window,
     },
 };
-use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 
-use crate::{editorinterface::EditorState, egui_sdl2_platform};
+use crate::{
+    editorinterface::{EditorState, clear_window},
+    egui_sdl2_platform,
+};
 
-pub struct EditorInterfaceWithGl {
+/// What is needed to show the editor in its own window.
+pub struct EditorWindowInterface {
     pub platform: egui_sdl2_platform::Platform,
-    pub painter: egui_glow::Painter,
-    pub gl: Arc<glow::Context>,
+    pub painter: egui_wgpu::Renderer,
+    pub surface: WindowSurface,
 }
 
 /// Create an SDL2 Window to display the editor without the game.
 /// This window is hidden by default and is show when the WindowStyle is set to GameSeparateFromEditor.
 pub fn create_specific_editor_window(
     video_subsystem: &runtime::sdl2::VideoSubsystem,
-    gl: &Arc<glow::Context>,
-) -> (Window, EditorInterfaceWithGl) {
+    gfx: &Gfx,
+) -> (Window, EditorWindowInterface) {
     let editor_window: Window = video_subsystem
         .window("Vectarine Editor", 700, 500)
-        .opengl()
         .allow_highdpi() // For Retina displays on macOS
         .resizable()
         .hidden()
+        .metal_view()
         .build()
         .expect("Failed to create window");
     let interface =
-        EditorInterfaceWithGl::new(&editor_window, gl).expect("Failed to create editor interface");
+        EditorWindowInterface::new(&editor_window, gfx).expect("Failed to create editor interface");
     (editor_window, interface)
 }
 
-impl EditorInterfaceWithGl {
-    pub fn new(window: &Window, gl: &Arc<egui_glow::glow::Context>) -> anyhow::Result<Self> {
-        let painter =
-            egui_glow::Painter::new(gl.clone(), "", None, true).expect("Failed to create painter");
+impl EditorWindowInterface {
+    pub fn new(window: &Window, gfx: &Gfx) -> anyhow::Result<Self> {
+        let (width, height) = drawable_screen_size(window);
+        // Safety: the window lives until the editor exits.
+        let surface = unsafe { WindowSurface::for_window(gfx.gpu(), window, width, height) }
+            .map_err(|e| anyhow::anyhow!(e))?;
+        let painter = egui_wgpu::Renderer::new(
+            &gfx.gpu().device,
+            surface.format(),
+            egui_wgpu::RendererOptions::default(),
+        );
         let platform =
             egui_sdl2_platform::Platform::new(window.size()).expect("Failed to create platform");
 
         Ok(Self {
             platform,
             painter,
-            gl: gl.clone(),
+            surface,
         })
     }
 }
@@ -61,81 +68,73 @@ impl EditorInterfaceWithGl {
 pub fn render_editor_in_extra_window(
     sdl: &runtime::sdl2::Sdl,
     video: &runtime::sdl2::VideoSubsystem,
-    gl: &Arc<glow::Context>,
-    gl_context: &GLContext,
+    gfx: &Gfx,
     editor_state: &mut EditorState,
-    editor_interface: &mut EditorInterfaceWithGl,
+    editor_interface: &mut EditorWindowInterface,
     editor_window_events: &[runtime::sdl2::event::Event],
-) {
-    editor_state
-        .editor_batch_draw
-        .drawing_target
-        .enable_multisampling();
+) -> bool {
     editor_state
         .editor_specific_window_surface
         .borrow_mut()
         .window
         .show();
 
-    editor_state
-        .editor_specific_window_surface
-        .borrow()
-        .window
-        .gl_make_current(gl_context)
-        .expect("Failed to make context current");
-    let (width, height) = editor_state
-        .editor_specific_window_surface
-        .borrow()
-        .window
-        .drawable_size();
+    let (width, height) =
+        drawable_screen_size(&editor_state.editor_specific_window_surface.borrow().window);
+    let is_visible = editor_interface.surface.begin_frame(gfx, width, height);
+    clear_window(gfx);
+
     let aspect_ratio = width as f32 / height as f32;
     editor_state
         .editor_batch_draw
         .set_aspect_ratio(aspect_ratio);
 
-    unsafe {
-        gl.viewport(0, 0, width as i32, height as i32);
-    }
-
     if editor_state.project.borrow().is_some() {
         let text = "This is the editor\nYour game is in another window\n\nUse preferences to merge or split\nthe editor and game windows.";
         let font_size = 0.13;
         draw_centered_text(
-            gl,
+            gfx,
             &mut editor_state.editor_batch_draw,
             aspect_ratio,
             text,
             font_size,
         );
     }
+    gfx.apply_pending_clear();
 
-    let platform = &mut editor_interface.platform;
-    let painter = &mut editor_interface.painter;
-    editor_state.draw_editor_interface(platform, sdl, video, editor_window_events, painter);
+    let target = editor_interface.surface.frame_view();
+    editor_state.draw_editor_interface(
+        &mut editor_interface.platform,
+        sdl,
+        video,
+        editor_window_events,
+        &mut editor_interface.painter,
+        target.as_ref(),
+    );
+    editor_interface.surface.end_frame(gfx);
+    is_visible
 }
 
 pub fn draw_info_in_empty_game_window(
-    gl: &Arc<glow::Context>,
+    gfx: &Gfx,
     game_window: &Window,
     batch_draw: &mut BatchDraw2d,
 ) {
-    batch_draw.drawing_target.enable_multisampling();
     let (width, height) = game_window.size();
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
 
     let text = "No game is loaded\nUse the editor window\nto load or create a game.";
     let font_size = 0.13;
-    draw_centered_text(gl, batch_draw, aspect_ratio, text, font_size);
+    draw_centered_text(gfx, batch_draw, aspect_ratio, text, font_size);
 }
 
 pub fn draw_error_in_game_window(
-    gl: &Arc<glow::Context>,
+    gfx: &Gfx,
     game_window: &dyn DrawingSurface,
     batch_draw: &mut BatchDraw2d,
     error: &crate::luau::InfiniteLoopError,
 ) {
-    batch_draw.drawing_target.enable_multisampling();
     let (width, height) = game_window.get_drawable_size_in_hardware_px();
     let aspect_ratio = width as f32 / height as f32;
     batch_draw.set_aspect_ratio(aspect_ratio);
@@ -144,7 +143,7 @@ pub fn draw_error_in_game_window(
     let location = format!("{}:{}", error.file, error.line);
     let hint = "You might have an infinite loop in your code.";
 
-    font_resource::use_default_font(gl, |font_data| {
+    font_resource::use_default_font(gfx, |font_data| {
         let dummy_manager = ResourceManager::dummy_manager();
 
         let title_size = 0.20;
@@ -201,14 +200,14 @@ pub fn send_window_resize_sync_event(
 }
 
 pub fn draw_centered_text(
-    gl: &Arc<glow::Context>,
+    gfx: &Gfx,
     batch_draw: &mut BatchDraw2d,
     aspect_ratio: f32,
     text: &str,
     font_size: f32,
 ) {
     // Draw extras for the editor interface
-    font_resource::use_default_font(gl, |font_data| {
+    font_resource::use_default_font(gfx, |font_data| {
         let dummy_manager = ResourceManager::dummy_manager();
 
         for (i, line) in text.lines().enumerate() {

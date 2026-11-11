@@ -45,15 +45,9 @@ pub fn take_png_screenshot_from_runner(
     let color_type = runtime::image::ColorType::Rgba8;
     let format = runtime::image::ImageFormat::Png;
 
-    let flipped_data = screenshot_data
-        .chunks_exact((width * 4) as usize)
-        .rev()
-        .flat_map(|row| row.to_vec())
-        .collect::<Vec<u8>>();
-
     runtime::image::save_buffer_with_format(
         output_path,
-        &flipped_data,
+        &screenshot_data,
         width,
         height,
         color_type,

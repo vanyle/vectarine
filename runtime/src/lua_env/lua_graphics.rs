@@ -7,8 +7,8 @@ use crate::{
     graphics::{
         affinetransform::AffineTransform,
         batchdraw,
-        glstencil::draw_with_mask,
-        gltexture::{ImageAntialiasing, Texture},
+        stencil::draw_with_mask,
+        texture::{ImageAntialiasing, Texture},
     },
     io,
     lua_env::{
@@ -145,7 +145,7 @@ pub fn setup_graphics_api(
     add_fn_to_table(lua, &graphics_module, "drawWithMask", {
         let batch = batch.clone();
         let resources = resources.clone();
-        let gl = batch.borrow().drawing_target.gl().clone();
+        let gfx = batch.borrow().gfx().clone();
         move |_lua,
               (draw_fn, mask_fn): (
             vectarine_plugin_sdk::mlua::Function,
@@ -153,7 +153,7 @@ pub fn setup_graphics_api(
         )| {
             batch.borrow_mut().draw(&resources, true);
             let (e1, e2) = draw_with_mask(
-                &gl,
+                &gfx,
                 || -> vectarine_plugin_sdk::mlua::Result<()> {
                     mask_fn.call::<()>(())?;
                     batch.borrow_mut().draw(&resources, true);
@@ -254,9 +254,9 @@ pub fn setup_graphics_api(
         crate::graphics::VECTARINE_LOGO_PNG,
         image::ImageFormat::Png,
     )
-        .expect("The logo image should be valid");
+    .expect("The logo image should be valid");
     let logo = Arc::new(Texture::new_rgba(
-        batch.borrow().drawing_target.gl(),
+        batch.borrow().gfx().gpu(),
         Some(logo_data.to_rgba8().as_raw().as_slice()),
         logo_data.width(),
         logo_data.height(),
@@ -327,8 +327,8 @@ pub fn setup_graphics_api(
 
             if let Some(loading_text) = loading_text {
                 let text_size = 0.16;
-                let gl = batch.borrow().drawing_target.gl().clone();
-                use_default_font(&gl, |font_renderer| {
+                let gfx = batch.borrow().gfx().clone();
+                use_default_font(&gfx, |font_renderer| {
                     let mut batch = batch.borrow_mut();
                     let (width, _height, _max_ascent) =
                         font_renderer.measure_text(&loading_text, text_size, aspect);

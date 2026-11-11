@@ -1,5 +1,5 @@
 use crate::drawing_surface::{DrawingSurface, SurfaceMargins};
-use vectarine_plugin_sdk::egui_glow::glow::{self, HasContext};
+use crate::graphics::framebuffer::Viewport;
 use vectarine_plugin_sdk::sdl2::VideoSubsystem;
 use vectarine_plugin_sdk::sdl2::sys::SDL_WindowFlags;
 use vectarine_plugin_sdk::sdl2::video::{FullscreenType, Window, WindowPos};
@@ -82,15 +82,14 @@ impl DrawingSurface for SdlDrawingSurface {
         let _ = self.window.set_title(title);
     }
 
-    unsafe fn configure_viewport(&self, gl: &glow::Context, margins: SurfaceMargins) {
+    fn viewport(&self, margins: SurfaceMargins) -> Viewport {
         let (drawable_width, drawable_height) = self.get_drawable_size_in_hardware_px();
-        let (viewport_x, viewport_y, viewport_width, viewport_height) = (
-            margins.left as i32,
-            margins.top as i32,
-            (drawable_width as f32 - margins.left - margins.right) as i32,
-            (drawable_height as f32 - margins.top - margins.bottom) as i32,
-        );
-        unsafe { gl.viewport(viewport_x, viewport_y, viewport_width, viewport_height) }
+        Viewport {
+            x: margins.left as i32,
+            y: margins.top as i32,
+            width: (drawable_width as f32 - margins.left - margins.right) as i32,
+            height: (drawable_height as f32 - margins.top - margins.bottom) as i32,
+        }
     }
 
     fn convert_sdl_to_opengl_coordinates(
@@ -130,7 +129,16 @@ impl DrawingSurface for SdlDrawingSurface {
 
 #[cfg(not(target_os = "emscripten"))]
 pub fn drawable_screen_size(window: &Window) -> (u32, u32) {
-    window.drawable_size()
+    let (mut width, mut height) = (0, 0);
+    // Safety: the window is valid for as long as its Rust handle.
+    unsafe {
+        vectarine_plugin_sdk::sdl2::sys::SDL_GetWindowSizeInPixels(
+            window.raw(),
+            &mut width,
+            &mut height,
+        );
+    }
+    (width as u32, height as u32)
 }
 
 #[cfg(target_os = "emscripten")]

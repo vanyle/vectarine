@@ -1,3 +1,4 @@
+use crate::graphics::gfx::Gfx;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -5,12 +6,11 @@ use std::{
     rc::Rc,
     sync::{Arc, Mutex},
 };
-use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::lazy_static::lazy_static;
 
 use crate::{
     game_resource::{DependencyReporter, Resource, ResourceId, Status},
-    graphics::gltexture,
+    graphics::texture,
     lua_env::LuaHandle,
 };
 
@@ -24,7 +24,7 @@ pub struct CharacterInfo {
 }
 
 pub struct FontRenderingData {
-    pub font_atlas: Arc<gltexture::Texture>,
+    pub font_atlas: Arc<texture::Texture>,
     pub font_cache: HashMap<char, CharacterInfo>,
     pub font_loader: fontdue::Font,
     pub font_size: f32,
@@ -35,19 +35,22 @@ pub struct FontResource {
     pub font_rendering: RefCell<Option<FontRenderingData>>,
 }
 
-pub fn use_default_font<F, R>(gl: &Arc<glow::Context>, f: F) -> R
+pub fn use_default_font<F, R>(gfx: &Gfx, f: F) -> R
 where
     F: FnOnce(&mut FontRenderingData) -> R,
 {
     lazy_static! {
-        static ref DEFAULT_FONT: Mutex<Option<FontRenderingData>> = Mutex::new(None);
+        // The font is stored with the id of the Gpu that owns its texture, as a process can use several (in tests).
+        static ref DEFAULT_FONT: Mutex<Option<(u64, FontRenderingData)>> = Mutex::new(None);
     }
 
     let mut default_font = DEFAULT_FONT
         .lock()
         .expect("Failed to acquire lock on the default font.");
 
-    if let Some(default_font) = default_font.as_mut() {
+    if let Some((gpu_id, default_font)) = default_font.as_mut()
+        && *gpu_id == gfx.gpu().id()
+    {
         return f(default_font);
     }
 
@@ -56,7 +59,7 @@ where
         .expect("The default font file contains a valid font.");
     let chars: Vec<char> = CHARSET.chars().collect();
     let (atlas_texture, font_cache, max_baseline_height) =
-        initialize_cache_and_texture(gl, &font, chars);
+        initialize_cache_and_texture(gfx, &font, chars);
     let mut font = FontRenderingData {
         font_atlas: atlas_texture,
         font_cache,
@@ -65,7 +68,7 @@ where
         max_baseline_height,
     };
     let result = f(&mut font);
-    *default_font = Some(font);
+    *default_font = Some((gfx.gpu().id(), font));
     result
 }
 
@@ -78,7 +81,7 @@ impl Resource for FontResource {
         _assigned_id: ResourceId,
         _dependency_reporter: &DependencyReporter,
         _lua: &Rc<LuaHandle>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         _path: &Path,
         data: Box<[u8]>,
     ) -> Status {
@@ -93,7 +96,7 @@ impl Resource for FontResource {
         // Initialize the font atlas
         let chars: Vec<char> = CHARSET.chars().collect();
         let (atlas_texture, font_cache, max_baseline_height) =
-            initialize_cache_and_texture(&gl, &font, chars);
+            initialize_cache_and_texture(&gfx, &font, chars);
 
         // Store the results
         self.font_rendering.replace(Some(FontRenderingData {
@@ -108,7 +111,7 @@ impl Resource for FontResource {
 
     fn draw_debug_gui(
         &self,
-        _painter: &mut vectarine_plugin_sdk::egui_glow::Painter,
+        _painter: &mut vectarine_plugin_sdk::egui_wgpu::Renderer,
         ui: &mut vectarine_plugin_sdk::egui::Ui,
     ) {
         let font_data = self.font_rendering.borrow();
@@ -118,8 +121,9 @@ impl Resource for FontResource {
             return;
         };
         ui.label(format!(
-            "Underlying texture atlas: {:?}",
-            font_data.font_atlas.id()
+            "Underlying texture atlas: {}x{}",
+            font_data.font_atlas.width(),
+            font_data.font_atlas.height()
         ));
 
         ui.label(format!("Font size: {:?}", font_data.font_size));
@@ -179,7 +183,7 @@ impl FontRenderingData {
     /// Given some text, rebuild the atlas to include any missing character from the text.
     /// This function can be expensive, so try to use it rarely.
     /// If the text is already in the font altas, this function does nothing.
-    pub fn enrich_atlas(&mut self, gl: &Arc<glow::Context>, text: &str) {
+    pub fn enrich_atlas(&mut self, gfx: &Gfx, text: &str) {
         if text.chars().all(|c| self.font_cache.contains_key(&c)) {
             return;
         }
@@ -195,7 +199,7 @@ impl FontRenderingData {
         }
 
         let (atlas_texture, font_cache, max_baseline_height) =
-            initialize_cache_and_texture(gl, &self.font_loader, chars_to_include);
+            initialize_cache_and_texture(gfx, &self.font_loader, chars_to_include);
 
         // Store the results
         self.font_atlas = atlas_texture;
@@ -205,10 +209,10 @@ impl FontRenderingData {
 }
 
 fn initialize_cache_and_texture(
-    gl: &Arc<glow::Context>,
+    gfx: &Gfx,
     font: &fontdue::Font,
     chars: impl IntoIterator<Item = char>,
-) -> (Arc<gltexture::Texture>, HashMap<char, CharacterInfo>, f32) {
+) -> (Arc<texture::Texture>, HashMap<char, CharacterInfo>, f32) {
     let mut char_data: Vec<(char, fontdue::Metrics, Vec<u8>)> = Vec::new();
     let mut total_width = 0u32;
     let mut max_height = 0u32;
@@ -264,9 +268,8 @@ fn initialize_cache_and_texture(
         current_x += metrics.width as u32 + PADDING;
     }
 
-    // Create the OpenGL texture from the atlas
     let atlas_texture =
-        gltexture::Texture::new_grayscale(gl, &atlas_data, atlas_width, atlas_height);
+        texture::Texture::new_grayscale(gfx.gpu(), &atlas_data, atlas_width, atlas_height);
 
     (atlas_texture, font_cache, max_baseline_height)
 }

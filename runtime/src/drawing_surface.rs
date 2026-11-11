@@ -1,4 +1,6 @@
-use vectarine_plugin_sdk::{egui_glow::glow, sdl2::video::FullscreenType};
+use vectarine_plugin_sdk::sdl2::video::FullscreenType;
+
+use crate::graphics::framebuffer::Viewport;
 
 pub mod sdl_drawing_surface;
 
@@ -16,7 +18,7 @@ pub struct SurfaceMargins {
 /// This can be an SDL window directly, or a framebuffer.
 pub trait DrawingSurface {
     /// Returns the size of the area that game can use to draw pixels on.
-    /// This is the size of the framebuffer, and is fed into glViewport computations.
+    /// This is the size of the framebuffer, and is fed into viewport computations.
     fn get_drawable_size_in_hardware_px(&self) -> (u32, u32);
 
     fn density_ratio(&self) -> (f32, f32);
@@ -42,11 +44,8 @@ pub trait DrawingSurface {
 
     fn set_title(&mut self, title: &str);
 
-    /// Wrapper around the OpenGL `glViewport` function to only draw in this area of the surface.
-    /// # Safety
-    /// The GL context provided needs to be valid.
-    /// The caller needs to use the same thread that owns the GL context.
-    unsafe fn configure_viewport(&self, gl: &glow::Context, margins: SurfaceMargins);
+    /// The area of the surface that the game draws on.
+    fn viewport(&self, margins: SurfaceMargins) -> Viewport;
 
     // Used for the mouse coordinates mainly
     fn convert_sdl_to_opengl_coordinates(

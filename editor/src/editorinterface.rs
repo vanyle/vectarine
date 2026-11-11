@@ -4,7 +4,7 @@ use std::{
     ops::Deref,
     path::{Path, PathBuf},
     rc::Rc,
-    sync::{Arc, mpsc},
+    sync::mpsc,
     time::{Duration, Instant},
 };
 
@@ -15,19 +15,20 @@ use notify_debouncer_full::{
 use runtime::{
     anyhow::{self},
     console,
-    drawing_surface::{DrawingSurface, sdl_drawing_surface::SdlDrawingSurface},
-    egui,
-    egui_glow::{self, glow},
+    drawing_surface::{
+        DrawingSurface,
+        sdl_drawing_surface::{SdlDrawingSurface, drawable_screen_size},
+    },
+    egui, egui_wgpu,
     gamepad::GamepadSystem,
-    graphics::batchdraw::BatchDraw2d,
+    graphics::{batchdraw::BatchDraw2d, gfx::Gfx},
     io::{
         self,
         fs::{FileSystem, ReadOnlyFileSystem},
         localfs::LocalFileSystem,
     },
-    toml,
+    toml, wgpu,
 };
-use vectarine_plugin_sdk::egui_glow::glow::HasContext;
 
 use crate::{
     editorconfig::{EditorConfig, WindowStyle},
@@ -69,7 +70,7 @@ pub struct EditorState {
     pub window: Rc<RefCell<SdlDrawingSurface>>,
     pub gamepad_system: Rc<dyn GamepadSystem>,
     pub game_drawing_surface: Rc<RefCell<GameDrawingSurface>>,
-    pub gl: Arc<glow::Context>,
+    pub gfx: Gfx,
 
     pub editor_specific_window_surface: Rc<RefCell<SdlDrawingSurface>>,
     pub editor_batch_draw: BatchDraw2d,
@@ -104,7 +105,7 @@ impl EditorState {
     pub fn load_config(&self, auto_start_project: bool) {
         let config_store = self.config.clone();
         let project = self.project.clone();
-        let gl = self.gl.clone();
+        let gfx = self.gfx.clone();
         let game_drawing_surface = self.game_drawing_surface.clone();
         let debouncer = self.debouncer.clone();
         let trusted_plugins = self.get_trusted_plugins();
@@ -141,7 +142,7 @@ impl EditorState {
                         ProjectState::new(
                             &project_path,
                             Box::new(LocalFileSystem),
-                            gl,
+                            gfx,
                             game_drawing_surface,
                             gamepad_system,
                             &trusted_plugins,
@@ -159,13 +160,13 @@ impl EditorState {
 
     pub fn new(
         window: Rc<RefCell<SdlDrawingSurface>>,
-        gl: Arc<glow::Context>,
+        gfx: Gfx,
         editor_window: sdl2::video::Window,
         debounce_event_sender: mpsc::Sender<DebouncedEvent>,
         video: &runtime::sdl2::VideoSubsystem,
         gamepad_system: Rc<dyn GamepadSystem>,
     ) -> Self {
-        let editor_batch_draw = BatchDraw2d::new(&gl).expect("Failed to create editor batch draw");
+        let editor_batch_draw = BatchDraw2d::new(&gfx).expect("Failed to create editor batch draw");
         Self {
             config: Rc::new(RefCell::new(EditorConfig::default())),
             text_command: String::new(),
@@ -174,7 +175,7 @@ impl EditorState {
             editor_batch_draw,
             game_drawing_surface: Rc::new(RefCell::new(GameDrawingSurface::new(window.clone()))),
             window,
-            gl,
+            gfx,
             gamepad_system,
             editor_specific_window_surface: Rc::new(RefCell::new(SdlDrawingSurface::new(
                 editor_window,
@@ -225,7 +226,7 @@ impl EditorState {
         ProjectState::new(
             project_path,
             file_system,
-            self.gl.clone(),
+            self.gfx.clone(),
             self.game_drawing_surface.clone(),
             self.gamepad_system.clone(),
             &self.get_trusted_plugins(),
@@ -282,13 +283,16 @@ impl EditorState {
         self.save_config();
     }
 
+    /// Draws the editor interface on `target`, over what it already contains.
+    /// Without a target, the interface still reacts to the events but is not drawn.
     pub fn draw_editor_interface(
         &mut self,
         platform: &mut egui_sdl2_platform::Platform,
         sdl: &sdl2::Sdl,
         video: &sdl2::VideoSubsystem,
         latest_events: &[sdl2::event::Event],
-        painter: &mut egui_glow::Painter,
+        painter: &mut egui_wgpu::Renderer,
+        target: Option<&wgpu::TextureView>,
     ) -> f32 {
         platform.update_time(self.start_time.elapsed().as_secs_f64());
         {
@@ -337,7 +341,7 @@ impl EditorState {
         let window_with_editor = &surface_with_editor.window;
 
         // Render the editor interface on top of the game.
-        let drawable_size = window_with_editor.drawable_size();
+        let drawable_size = drawable_screen_size(window_with_editor);
         // Ratio of hardware pixel (pixel) to software pixels (points)
         let size_in_px = surface_with_editor.get_size_in_vectarine_px();
         let pixels_per_point_x = drawable_size.0 as f32 / size_in_px.0;
@@ -363,7 +367,10 @@ impl EditorState {
                     },
                 ));
 
-                painter.paint_and_update_textures(
+                paint_egui(
+                    &self.gfx,
+                    painter,
+                    target,
                     [drawable_size.0, drawable_size.1],
                     pixels_per_point_x,
                     pj,
@@ -399,10 +406,62 @@ pub fn handle_close_events(latest_events: &[sdl2::event::Event]) {
     }
 }
 
-pub fn clear_window(gl: &glow::Context) {
-    unsafe {
-        gl.clear_color(0.1, 0.1, 0.1, 1.0);
-        gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+pub fn clear_window(gfx: &Gfx) {
+    gfx.clear([0.1, 0.1, 0.1, 1.0]);
+}
+
+fn paint_egui(
+    gfx: &Gfx,
+    painter: &mut egui_wgpu::Renderer,
+    target: Option<&wgpu::TextureView>,
+    size_in_pixels: [u32; 2],
+    pixels_per_point: f32,
+    paint_jobs: &[egui::ClippedPrimitive],
+    textures_delta: &mut egui::TexturesDelta,
+) {
+    let gpu = gfx.gpu();
+    // The textures are updated even when nothing is drawn: egui only sends a change once.
+    for (id, image_deltas) in textures_delta.set.drain() {
+        for image_delta in &image_deltas {
+            painter.update_texture(&gpu.device, &gpu.queue, id, image_delta);
+        }
+    }
+    if let Some(target) = target {
+        let screen = egui_wgpu::ScreenDescriptor {
+            size_in_pixels,
+            pixels_per_point,
+        };
+        let mut encoder = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let mut commands =
+            painter.update_buffers(&gpu.device, &gpu.queue, &mut encoder, paint_jobs, &screen);
+        {
+            let mut pass = encoder
+                .begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("editor interface"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: target,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Load,
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                })
+                .forget_lifetime();
+            painter.render(&mut pass, paint_jobs, &screen);
+        }
+        commands.push(encoder.finish());
+        gpu.queue.submit(commands);
+    }
+    for id in textures_delta.free.drain() {
+        painter.free_texture(&id);
     }
 }
 
@@ -428,14 +487,4 @@ pub fn filter_events(
 
         !needs_filtering_because_keyboard && !needs_filtering_because_mouse
     })
-}
-
-pub fn make_gl_context(
-    video_subsystem: &runtime::sdl2::VideoSubsystem,
-) -> egui_glow::glow::Context {
-    unsafe {
-        egui_glow::painter::Context::from_loader_function(|name| {
-            video_subsystem.gl_get_proc_address(name) as *const _
-        })
-    }
 }

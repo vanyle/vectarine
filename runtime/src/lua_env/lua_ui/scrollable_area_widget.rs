@@ -1,12 +1,12 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::game_resource::ResourceManager;
 use crate::graphics::affinetransform::AffineTransform;
 use crate::graphics::batchdraw;
-use crate::graphics::glstencil::draw_with_mask;
+use crate::graphics::gfx::Gfx;
+use crate::graphics::stencil::draw_with_mask;
 use crate::io::IoEnvState;
 use crate::lua_env::lua_vec2::Vec2;
-use vectarine_plugin_sdk::egui_glow::glow;
 use vectarine_plugin_sdk::mlua;
 
 use super::{EventState, VectarineWidget, WidgetBox};
@@ -18,7 +18,7 @@ pub struct ScrollableArea {
     pub scroll_speed: f32,
     pub scrollbar_draw_fn: Option<mlua::Function>,
     pub resources: Rc<ResourceManager>,
-    pub gl: Arc<glow::Context>,
+    pub gfx: Gfx,
     pub event_state: EventState,
     pub dragging_scrollbar: bool,
 }
@@ -169,7 +169,7 @@ impl VectarineWidget for ScrollableArea {
         let mut content_error: Option<mlua::Error> = None;
 
         draw_with_mask(
-            &self.gl,
+            &self.gfx,
             || {
                 // Mask: a rectangle covering the view area (clips both axes)
                 batch.borrow_mut().draw_rect(
@@ -247,7 +247,7 @@ impl VectarineWidget for ScrollableArea {
             scroll_speed: self.scroll_speed,
             scrollbar_draw_fn: self.scrollbar_draw_fn.clone(),
             resources: self.resources.clone(),
-            gl: self.gl.clone(),
+            gfx: self.gfx.clone(),
             event_state: self.event_state.clone(),
             dragging_scrollbar: self.dragging_scrollbar,
         })
