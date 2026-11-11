@@ -11,7 +11,7 @@ anyhow = "1.0.100"
 egui = "0.36.2"
 egui-wgpu = { version = "0.36.2", default-features = false }
 # Backend features only apply on the platforms that have them (metal on Apple, dx12 on Windows, gles on Windows/Linux/Emscripten...)
-wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "metal", "dx12", "vulkan", "gles", "fragile-send-sync-non-atomic-wasm"] }
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "naga-ir", "metal", "dx12", "vulkan", "gles", "fragile-send-sync-non-atomic-wasm"] }
 toml = "0.9.8"
 rapier2d = "0.35.3"
 lazy_static = "1.5.0"

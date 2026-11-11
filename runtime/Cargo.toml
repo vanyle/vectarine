@@ -22,6 +22,8 @@ bytemuck = "1.25"
 
 [target.'cfg(not(target_os = "emscripten"))'.dependencies]
 libloading = "0.9.0"
+# Same version as wgpu's. Its GLSL output is used to check on desktop that a shader also works on the web.
+naga = { version = "30.0.1", features = ["glsl-out"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 directories = "6.0.0"

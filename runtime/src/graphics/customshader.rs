@@ -97,6 +97,12 @@ pub enum UniformError {
 /// The name of the uniform filled by the engine with the seconds since the start of the game.
 const TIME_UNIFORM: &str = "iTime";
 
+#[derive(Clone, Copy)]
+struct UniformLocation {
+    offset: usize,
+    field: usize,
+}
+
 /// A fragment shader written by the maker of a game, applied to a canvas when it is drawn.
 pub struct CustomShader {
     module: wgpu::ShaderModule,
@@ -105,6 +111,10 @@ pub struct CustomShader {
     pipelines: RefCell<HashMap<TargetKind, wgpu::RenderPipeline>>,
 
     uniform_fields: Vec<UniformField>,
+    /// Where the uniforms already set are, by the name given to `set_uniform` ("lights[2]" for example).
+    uniform_locations: RefCell<HashMap<String, UniformLocation>>,
+    /// Offset of the uniform that receives the time, if the shader has one.
+    time_offset: Option<usize>,
     /// The values of the uniforms, as the shader reads them. Empty if the shader has no uniform.
     uniform_data: RefCell<Vec<u8>>,
     /// A drawing needs its own buffer to have its own values: buffers are reused from one frame to the next.
@@ -113,13 +123,17 @@ pub struct CustomShader {
 
 impl CustomShader {
     pub fn from_source(gpu: &Gpu, source: &str) -> Result<Self, String> {
-        let module = naga::front::wgsl::parse_str(source).map_err(|e| e.emit_to_string(source))?;
-        naga::valid::Validator::new(
-            naga::valid::ValidationFlags::all(),
-            naga::valid::Capabilities::empty(),
-        )
-        .validate(&module)
-        .map_err(|e| e.emit_to_string(source))?;
+        let mut module =
+            naga::front::wgsl::parse_str(source).map_err(|e| e.emit_to_string(source))?;
+        let validate = |module: &naga::Module| {
+            naga::valid::Validator::new(
+                naga::valid::ValidationFlags::all(),
+                naga::valid::Capabilities::empty(),
+            )
+            .validate(module)
+            .map_err(|e| e.emit_to_string(source))
+        };
+        validate(&module)?;
 
         let entry_point = module
             .entry_points
@@ -128,14 +142,20 @@ impl CustomShader {
             .map(|entry_point| entry_point.name.clone())
             .ok_or("The shader has no fragment function. Add `@fragment` before the function that computes the color of a pixel.")?;
 
-        let (uniform_fields, uniform_size) = read_uniforms(&module)?;
+        let (uniform_fields, uniform_size) = read_uniforms(&mut module)?;
+        let module_info = validate(&module)?;
+        // In a browser, wgpu does this check itself when it compiles the shader.
+        #[cfg(not(target_os = "emscripten"))]
+        check_web_support(&module, &module_info, &entry_point)?;
+        #[cfg(target_os = "emscripten")]
+        let _ = module_info;
 
         let error_scope = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let shader_module = gpu
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: None,
-                source: wgpu::ShaderSource::Wgsl(source.into()),
+                source: wgpu::ShaderSource::Naga(std::borrow::Cow::Owned(module)),
             });
         let bind_group_layouts = [Some(&gpu.texture_layout), Some(&gpu.uniform_layout)];
         let used_bind_group_count = if uniform_size > 0 { 2 } else { 1 };
@@ -151,6 +171,15 @@ impl CustomShader {
             entry_point,
             layout,
             pipelines: RefCell::new(HashMap::new()),
+            time_offset: uniform_fields
+                .iter()
+                .find(|field| {
+                    field.name == TIME_UNIFORM
+                        && field.kind == UniformKind::Float
+                        && field.array.is_none()
+                })
+                .map(|field| field.offset),
+            uniform_locations: RefCell::new(HashMap::new()),
             uniform_fields,
             uniform_data: RefCell::new(vec![0; uniform_size]),
             uniform_slots: RefCell::new(Vec::new()),
@@ -204,26 +233,19 @@ impl CustomShader {
     /// Sets the value of a uniform. `name` is the name of a member of the uniform struct, or `member[index]` for an
     /// element of an array.
     pub fn set_uniform(&self, name: &str, value: UniformValue) -> Result<(), UniformError> {
-        let (name, index) = match name.strip_suffix(']').and_then(|name| name.split_once('[')) {
-            Some((name, index)) => (name, index.trim().parse::<usize>().ok()),
-            None => (name, None),
+        let known_location = self.uniform_locations.borrow().get(name).copied();
+        let location = match known_location {
+            Some(location) => location,
+            None => {
+                let location = self.find_uniform(name)?;
+                self.uniform_locations
+                    .borrow_mut()
+                    .insert(name.to_string(), location);
+                location
+            }
         };
-        // TODO: This can be slow as we iterate over all the fields. A cache of some sort would be nice to have.
-        let field = self
-            .uniform_fields
-            .iter()
-            .find(|field| field.name == name)
-            .ok_or(UniformError::NotFound)?;
-
-        let wrong_type = || UniformError::WrongType {
-            expected: field.to_string(),
-        };
-        let offset = match (&field.array, index) {
-            (None, None) => field.offset,
-            (Some(array), Some(index)) if index < array.len => field.offset + index * array.stride,
-            (Some(array), Some(_)) => return Err(UniformError::OutOfBounds { len: array.len }),
-            _ => return Err(wrong_type()),
-        };
+        let UniformLocation { offset, field } = location;
+        let field = &self.uniform_fields[field];
 
         let mut data = self.uniform_data.borrow_mut();
         let mut write = |bytes: &[u8]| data[offset..offset + bytes.len()].copy_from_slice(bytes);
@@ -234,9 +256,41 @@ impl CustomShader {
             (UniformKind::Vec2, UniformValue::Vec2(v)) => write(bytemuck::bytes_of(&v)),
             (UniformKind::Vec3, UniformValue::Vec4(v)) => write(bytemuck::cast_slice(&v[..3])),
             (UniformKind::Vec4, UniformValue::Vec4(v)) => write(bytemuck::bytes_of(&v)),
-            _ => return Err(wrong_type()),
+            _ => {
+                return Err(UniformError::WrongType {
+                    expected: field.to_string(),
+                });
+            }
         }
         Ok(())
+    }
+
+    /// Finds where a uniform is from its name: `member`, or `member[index]` for an element of an array.
+    fn find_uniform(&self, name: &str) -> Result<UniformLocation, UniformError> {
+        let (name, index) = match name.strip_suffix(']').and_then(|name| name.split_once('[')) {
+            Some((name, index)) => (name, index.trim().parse::<usize>().ok()),
+            None => (name, None),
+        };
+        let (field_index, field) = self
+            .uniform_fields
+            .iter()
+            .enumerate()
+            .find(|(_, field)| field.name == name)
+            .ok_or(UniformError::NotFound)?;
+        let offset = match (&field.array, index) {
+            (None, None) => field.offset,
+            (Some(array), Some(index)) if index < array.len => field.offset + index * array.stride,
+            (Some(array), Some(_)) => return Err(UniformError::OutOfBounds { len: array.len }),
+            _ => {
+                return Err(UniformError::WrongType {
+                    expected: field.to_string(),
+                });
+            }
+        };
+        Ok(UniformLocation {
+            offset,
+            field: field_index,
+        })
     }
 
     /// The current values of the uniforms, to give to a drawing. None if the shader has no uniform.
@@ -245,11 +299,8 @@ impl CustomShader {
         if data.is_empty() {
             return None;
         }
-        let time = self.uniform_fields.iter().find(|field| {
-            field.name == TIME_UNIFORM && field.kind == UniformKind::Float && field.array.is_none()
-        });
-        if let Some(time) = time {
-            data[time.offset..time.offset + 4].copy_from_slice(&time_in_seconds.to_ne_bytes());
+        if let Some(offset) = self.time_offset {
+            data[offset..offset + 4].copy_from_slice(&time_in_seconds.to_ne_bytes());
         }
         Some(data)
     }
@@ -311,7 +362,7 @@ impl CustomShader {
 
 /// Finds the uniforms of a shader: the members of the struct at group 1, binding 0.
 /// Returns them with the size in bytes of the struct (0 without uniforms).
-fn read_uniforms(module: &naga::Module) -> Result<(Vec<UniformField>, usize), String> {
+fn read_uniforms(module: &mut naga::Module) -> Result<(Vec<UniformField>, usize), String> {
     let mut uniforms = module
         .global_variables
         .iter()
@@ -381,5 +432,54 @@ fn read_uniforms(module: &naga::Module) -> Result<(Vec<UniformField>, usize), St
             }
         })
         .collect();
-    Ok((fields, *span as usize))
+
+    // WebGL only accepts uniform structs whose size is a multiple of 16 bytes: the end of the struct is padded, so
+    // that the makers of games do not have to think about it.
+    let padded_span = span.next_multiple_of(16);
+    if padded_span != *span {
+        let struct_type = variable.ty;
+        let mut padded_type = module.types[struct_type].clone();
+        if let naga::TypeInner::Struct { span, .. } = &mut padded_type.inner {
+            *span = padded_span;
+        }
+        module.types.replace(struct_type, padded_type);
+    }
+    Ok((fields, padded_span as usize))
+}
+
+/// Checks that the shader can be translated for WebGL 2, which is what draws the game in a browser.
+#[cfg(not(target_os = "emscripten"))]
+fn check_web_support(
+    module: &naga::Module,
+    module_info: &naga::valid::ModuleInfo,
+    entry_point: &str,
+) -> Result<(), String> {
+    use naga::back::glsl;
+
+    let options = glsl::Options {
+        version: glsl::Version::Embedded {
+            version: 300,
+            is_webgl: true,
+        },
+        ..Default::default()
+    };
+    let pipeline_options = glsl::PipelineOptions {
+        shader_stage: naga::ShaderStage::Fragment,
+        entry_point: entry_point.to_string(),
+        multiview: None,
+    };
+    let mut output = String::new();
+    glsl::Writer::new(
+        &mut output,
+        module,
+        module_info,
+        &options,
+        &pipeline_options,
+        naga::proc::BoundsCheckPolicies::default(),
+    )
+    .and_then(|mut writer| writer.write())
+    .map(|_| ())
+    .map_err(|error| {
+        format!("This shader works on this computer, but would not work in a web export: {error}")
+    })
 }
