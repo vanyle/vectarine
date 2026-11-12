@@ -221,7 +221,7 @@ code that unexpectedly degrades the performance of your game by a lot.
 
 Vectarine's automated test have steps for that:
 
-export const testExamplePerf = ```
+export const testExamplePerf = `
 [[step]]
 start_benchmark = {name = "Idle Performance"}
 
@@ -231,8 +231,11 @@ start_benchmark = {name = "Idle Performance"}
 wait_for_frames = 200
 
 [[step]]
+# max_allowed_duration is optional. You can just measure the performance without having a failure threshold.
 stop_benchmark = {name = "Idle Performance", max_allowed_duration = "600 ms"}
-```
+`;
+
+<Code lang="toml" code={testExamplePerf}/>
 
 This will provide you with both the total time and the average time per frame when you run the test.
 Optionally, you can provide a `max_allowed_duration` (like "10 sec", "40ms" or "20us") for the duration of the benchmark above which it will fail.
