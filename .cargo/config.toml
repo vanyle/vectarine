@@ -1,0 +1,6 @@
+[registry]
+global-min-publish-age = "5 days"
+
+[env]
+# Bundled SDL2 declares cmake_minimum_required < 3.5, which CMake 4 rejects.
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"

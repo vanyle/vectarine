@@ -523,7 +523,7 @@ pub fn make_project_list_from_paths(paths: impl IntoIterator<Item = PathBuf>, al
             );
             continue;
         };
-        projects_infos.push((path.clone(), project_info));
+        projects_infos.push((path, project_info));
     }
     if alphabetical_sort {
         projects_infos.sort_by(|a, b| a.1.title.cmp(&b.1.title));

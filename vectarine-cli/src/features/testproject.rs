@@ -4,7 +4,7 @@ use runtime::{
     toml,
 };
 use std::{
-    collections::HashMap,
+    collections::{HashMap, hash_map::Entry},
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -409,37 +409,36 @@ pub fn run_test_file(test_file: &Path, overwrite: bool, acceptable_pixel_diff: u
                 name,
                 max_allowed_duration,
             } => {
-                if benchmarks.contains_key(&name) {
-                    eprintln!(
+                let entry = benchmarks.entry(name);
+                match entry {
+                    Entry::Occupied(_) => eprintln!(
                         "Warning: Trying to create a benchmark with the same name ({}) as an existing one. Ignoring the request.",
-                        name
-                    );
-                } else {
-                    let max_allowed_duration =
-                        if let Some(max_allowed_duration) = max_allowed_duration {
-                            let dur = parse_duration(&max_allowed_duration);
-                            match dur {
-                                Err(cause) => {
-                                    return Err(anyhow!(
-                                        "Failed to parse duration '{}': {}",
-                                        max_allowed_duration,
-                                        cause
-                                    ));
+                        entry.key()
+                    ),
+                    Entry::Vacant(_) => {
+                        let max_allowed_duration =
+                            if let Some(max_allowed_duration) = max_allowed_duration {
+                                let dur = parse_duration(&max_allowed_duration);
+                                match dur {
+                                    Err(cause) => {
+                                        return Err(anyhow!(
+                                            "Failed to parse duration '{}': {}",
+                                            max_allowed_duration,
+                                            cause
+                                        ));
+                                    }
+                                    Ok(duration) => Some(duration),
                                 }
-                                Ok(duration) => Some(duration),
-                            }
-                        } else {
-                            None
-                        };
+                            } else {
+                                None
+                            };
 
-                    benchmarks.insert(
-                        name.clone(),
-                        Benchmark::Pending(benchmark::PendingBenchmark {
+                        entry.insert_entry(Benchmark::Pending(benchmark::PendingBenchmark {
                             start_frame: frame_counter,
                             start_instant: Instant::now(),
                             max_allowed_duration,
-                        }),
-                    );
+                        }));
+                    }
                 }
             }
             TestStep::StopBenchmark { name } => {

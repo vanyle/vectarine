@@ -26,7 +26,6 @@ name = "vecta"
 path = "src/main.rs"
 
 [build-dependencies]
-chrono = "0.4.42"
 winresource = "0.1.23"
 
 [package.metadata.vcpkg]
